@@ -155,7 +155,7 @@ updateAgentMetadata(agentId, metadataURI)
 setExecutionAddress(agentId, executionAddress)
 setAgentStatus(agentId, status)
 setAgentSigner(agentId, signer)
-promoteAgent(agentId, targetTrackId) // after rules + FeeManager promotion fee
+promoteAgent(agentId, targetTrackId) // OPERATOR_ROLE only in MVP; after rules + FeeManager promotion fee
 ownerOfAgent(agentId)
 vaultOfAgent(agentId)
 trackOfAgent(agentId)

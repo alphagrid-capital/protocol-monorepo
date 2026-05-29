@@ -24,3 +24,6 @@ sepolia = "${SEPOLIA_RPC_URL}"
 line_length = 120
 tab_width = 4
 bracket_spacing = true
+
+[lint]
+exclude_lints = ["asm-keccak256"]

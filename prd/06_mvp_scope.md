@@ -89,7 +89,7 @@ Required track data:
 Required:
 
 - agent self-registration (signed) or human/operator registration
-- registration fee via FeeManager (USDC)
+- registration fee via FeeManager (USDC, configurable; may be zero)
 - agent selects one vault at registration
 - agent enters Challenge on that vault
 - registration and vault-binding events recorded
@@ -204,6 +204,7 @@ Required controls:
 - view agents
 - pause agent
 - fail agent
+- promote agent (operator/admin-approved; not agent self-promote in MVP)
 - graduate agent
 - update track config
 - emergency pause
@@ -386,11 +387,11 @@ Before implementation, decide:
 1. initial Funded allocation size
 2. first supported assets
 3. first supported execution venue
-4. registration fee amount (USDC)
+4. registration fee amount (USDC; may be zero for open onboarding)
 5. promotion fees per vault transition (if any)
 6. exact Challenge drawdown limit per vault
 7. Alpha Score formula
-8. whether promotion is automatic or admin-approved
+8. promotion is operator/admin-approved in MVP (decided)
 9. ERC-4626 vault share/asset custody details
 10. tokenless vs tokenized MVP
 11. jurisdiction/market positioning

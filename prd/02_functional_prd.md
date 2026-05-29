@@ -49,7 +49,7 @@ Stores all agents participating in AlphaGrid.
 
 - An agent can **self-register** via signed registration transaction/intent.
 - A human (agent builder) or operator/admin can register an agent on its behalf.
-- Registration requires payment of the **registration fee** defined by `FeeManager` (default: USDC).
+- Registration invokes the **registration fee** path defined by `FeeManager` (default asset: USDC); amount is admin-configurable and **may be zero** for open onboarding.
 - Each agent receives a unique agent ID.
 - At registration, agent must select a **vault** and enter that vault’s **Challenge** track (or enter Challenge immediately after registration in one flow).
 - Agent must be associated with an owner wallet, signer, and/or operator account.
@@ -146,6 +146,7 @@ Funded and Prime draw real capital from the agent’s bound ERC-4626 vault.
 - Admin can configure **vault + track** parameters (rules, limits, promotion criteria).
 - Agents progress **only within their bound vault**: Challenge → Funded → Prime.
 - Promotion requires meeting track rules; may require a **promotion fee** (see FeeManager).
+- Track promotion is **operator/admin-approved** in MVP (`OPERATOR_ROLE` calls `promoteAgent`); agent/owner self-promotion is deferred.
 - Each vault has a public rules page; each track stage shows effective rules for that vault.
 
 ### Track Fields (global track type)
@@ -190,11 +191,11 @@ Centralizes protocol fees for registration and track promotion.
 - Fees are configurable by admin; default settlement asset is **USDC**.
 - Fee payment must be recorded on-chain and reflected in agent lifecycle events.
 - Paying a fee does not bypass promotion rules or guarantee promotion.
-- Registration fee is required for both self-registration and human/operator registration.
+- Registration fee amount is configurable; when non-zero, payment is collected before registration completes. Zero amount skips transfer (open onboarding). Applies to both self-registration and human/operator registration.
 
 ### MVP Decision
 
-- Registration fee: required, USDC, defined in `FeeManager`.
+- Registration fee: configurable in `FeeManager`, default asset USDC; **may be zero** for MVP/open onboarding.
 - Promotion fees: configurable per vault/track transition; may be zero for MVP launch.
 
 Detailed routing is covered in `04_tokenomics_and_incentives.md`.
@@ -441,7 +442,7 @@ In-app event feed is enough. Email/Telegram/Discord can be deferred.
 | Register agent | No | Yes | No | Yes | Yes (self-register) |
 | Edit agent metadata | No | Own agent | No | Yes | No |
 | Select vault / enter Challenge | No | Own agent | No | Yes | Own agent |
-| Promote track (if eligible) | No | Own agent | No | Yes | Via signed promotion |
+| Promote track (if eligible) | No | No | No | Yes (operator) | No (MVP) |
 | Deposit into vault | No | Yes | Yes | Yes | No |
 | Withdraw capital | No | Own capital | Own capital | Yes | No |
 | Submit trade | No | No | No | No | Own permissions |

@@ -218,12 +218,12 @@ These are recommended defaults to unblock MVP planning.
 |---|---|
 | Capital model | Challenge simulated per vault; Funded/Prime use ERC-4626 vault capital. |
 | Vaults | 4 thematic ERC-4626 vaults at MVP. |
-| Agent registration | Self-register or human/operator register; FeeManager registration fee (USDC). |
+| Agent registration | Self-register or human/operator register; FeeManager registration fee (USDC, configurable; may be zero). |
 | Lifecycle | One vault per agent; Challenge → Funded → Prime within that vault. |
 | Promotion fees | Configurable per transition via FeeManager; may be zero. |
 | Execution | Controlled trade intents through execution gateway. |
 | Tracks | Extensible track types; MVP uses Challenge, Funded, Prime. |
-| Graduation | Admin-approved or rule-based promotion in MVP. |
+| Graduation | Operator/admin-approved promotion in MVP (`OPERATOR_ROLE`; not agent self-promote). |
 | Token | Tokenless MVP, optional token later. |
 | Scoring | Simple multi-factor Alpha Score. |
 | Leverage | Disabled in MVP. |
@@ -254,6 +254,49 @@ AlphaGrid needed a clear model for capital pools, agent lifecycle, and fees.
 - Replace track-level vault model with vault-scoped lifecycle.
 - Contracts: `AlphaGridVault` (4626), `FeeManager`, `VaultTrackConfig` in `TrackRegistry`.
 - Update functional, technical, tokenomics, flows, and MVP docs accordingly.
+
+---
+
+## Decision: Registration Fee May Be Zero
+
+**Date:** 2026-05-29  
+**Status:** Accepted  
+
+### Context
+
+Phase 1 review asked whether MVP should require a non-zero registration fee or allow open onboarding.
+
+### Decision
+
+- Registration fee remains configurable in `FeeManager` (default asset USDC).
+- **Amount may be zero** for MVP/open onboarding; zero skips token transfer on-chain.
+- Non-zero fees still collect via `payRegistrationFee` before registration completes.
+
+### Consequences
+
+- PRD fee sections updated; contract behavior unchanged.
+- Launch can start with zero fee and raise later via admin config.
+
+---
+
+## Decision: Operator-Only Track Promotion (MVP)
+
+**Date:** 2026-05-29  
+**Status:** Accepted  
+
+### Context
+
+Phase 1 review clarified who may call `promoteAgent` in MVP.
+
+### Decision
+
+- Track promotion is **operator/admin-approved** in MVP (`OPERATOR_ROLE` on `AgentRegistry`).
+- Agent/owner self-promotion (signed intent) is deferred post-MVP.
+
+### Consequences
+
+- Permissions matrix and admin console docs reflect operator-only promotion.
+- No contract access-control change in Phase 1 follow-up.
 
 ---
 
