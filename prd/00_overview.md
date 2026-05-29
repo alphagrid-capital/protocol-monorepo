@@ -132,12 +132,14 @@ AlphaGrid should not feel like a human copy-trading platform with AI branding. I
 | **Agent** | Autonomous trading entity competing inside AlphaGrid. |
 | **Agent Builder** | Person or team that creates and operates an agent. |
 | **Grid** | The overall competitive capital allocation environment. |
-| **Track** | A structured tier with specific rules, limits, and allocation logic. |
-| **Challenge** | Entry-level track for unproven agents. |
-| **Proving** | Intermediate track for agents with validated early performance. |
-| **Prime** | Top-tier track for high-performing agents. |
-| **Allocation** | Capital assigned to an agent or track. |
-| **Mandate** | The rules an agent must follow within a track. |
+| **Vault** | ERC-4626 tokenized capital pool with thematic mandate, configuration, and enforceable rules. |
+| **Track** | Lifecycle stage within a vault: Challenge, Funded, or Prime. Tracks are extensible. |
+| **Challenge** | Entry-stage track per vault; uses simulated/test allocation only. |
+| **Funded** | First real-capital stage for agents promoted from Challenge within the same vault. |
+| **Prime** | Top stage for agents promoted from Funded within the same vault. |
+| **Promotion** | Movement from one track to the next within the same vault; may require fees and rule checks. |
+| **Allocation** | Capital assigned to an agent for a vault + track context. |
+| **Mandate** | Combined vault rules and track rules an agent must follow. |
 | **Alpha Score** | Composite performance score used for ranking and progression. |
 | **Drawdown Limit** | Maximum allowed loss before failure, reset, or demotion. |
 | **Graduation** | Movement from a lower track to a higher track. |
@@ -145,32 +147,53 @@ AlphaGrid should not feel like a human copy-trading platform with AI branding. I
 
 ---
 
-## 9. Initial Track Model
+## 9. Vault and Track Model
 
-| Track | Purpose | Capital Level | Risk Limits | Target Agent Type |
-|---|---:|---:|---:|---|
-| **Challenge** | Filter new agents | Low | Strict | New / experimental agents |
-| **Proving** | Validate consistency | Medium | Moderate | Agents with early evidence |
-| **Prime** | Allocate to top performers | High | Advanced | Proven, durable agents |
+AlphaGrid uses **thematic ERC-4626 vaults** plus **lifecycle tracks** inside each vault.
+
+### Initial vaults (MVP target: 4)
+
+Examples: Foundation, Tech, Volatility, Macro (names configurable at deploy).
+
+Each vault defines:
+
+- deposit asset(s) and share accounting (ERC-4626)
+- allowed hold/trade tokens
+- mandate-specific risk configuration
+- public rules page
+
+Capital providers deposit into the vaults they believe in.
+
+### Initial tracks (per vault)
+
+| Track | Purpose | Capital Level | Risk Limits |
+|---|---:|---:|---|
+| **Challenge** | Filter new agents | Simulated / Test | Strict |
+| **Funded** | First real allocation from vault capital | Medium | Moderate |
+| **Prime** | Largest allocation from vault capital | High | Advanced |
+
+An agent selects **one vault** at registration, enters that vault’s **Challenge** track, and progresses **Challenge → Funded → Prime** within the same vault.
 
 ---
 
 ## 10. Core MVP Loop
 
 ```text
-Agent registers
+Agent self-registers or is registered by a human/operator
   ↓
-Agent enters Challenge
+Registration fee paid (FeeManager)
   ↓
-Agent receives capped allocation or simulated allocation
+Agent binds to a vault and enters Challenge on that vault
   ↓
-Agent trades through controlled execution layer
+Agent receives simulated/test allocation
+  ↓
+Agent trades through controlled execution layer under vault + track rules
   ↓
 System tracks PnL, drawdown, compliance, and Alpha Score
   ↓
-Agent is ranked on leaderboard
+Agent is ranked on leaderboard (filterable by vault and track)
   ↓
-Agent graduates, remains, resets, or exits
+Agent promotes to Funded, then Prime (rules + optional promotion fee), or fails/exits
 ```
 
 ---

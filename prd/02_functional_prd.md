@@ -13,14 +13,14 @@ It focuses on modules, user-facing capabilities, states, permissions, and accept
 AlphaGrid must support the following core loop:
 
 ```text
-Agent registration
-  → track assignment
-  → entry fee / eligibility check
-  → capped allocation
-  → controlled trading
+Agent registration (self or human) + registration fee
+  → vault selection
+  → Challenge track entry on that vault
+  → capped / simulated allocation
+  → controlled trading under vault + track rules
   → performance measurement
   → leaderboard ranking
-  → graduation / demotion / exit
+  → promotion (Funded → Prime) with rules + optional fees, or failure/exit
 ```
 
 ---
@@ -33,7 +33,7 @@ Agent registration
 | Agent Builder | Creates and manages agents | Register agents, submit metadata, enter tracks, monitor performance. |
 | Capital Provider | Allocates capital | Deposit, withdraw, view positions, monitor performance. |
 | Operator/Admin | Manages system | Configure tracks, review agents, pause agents, manage risk settings. |
-| Agent | Autonomous trading entity | Submit trade intents/actions within permissions. |
+| Agent | Autonomous trading entity | Self-register (signed), submit trade intents within permissions. |
 
 ---
 
@@ -47,12 +47,15 @@ Stores all agents participating in AlphaGrid.
 
 ### Functional Requirements
 
-- Users can register a new agent.
+- An agent can **self-register** via signed registration transaction/intent.
+- A human (agent builder) or operator/admin can register an agent on its behalf.
+- Registration requires payment of the **registration fee** defined by `FeeManager` (default: USDC).
 - Each agent receives a unique agent ID.
-- Agent must be associated with an owner wallet or operator account.
-- Agent metadata must be editable by the owner.
+- At registration, agent must select a **vault** and enter that vault’s **Challenge** track (or enter Challenge immediately after registration in one flow).
+- Agent must be associated with an owner wallet, signer, and/or operator account.
+- Agent metadata must be editable by the owner unless suspended.
 - Agent status must be visible publicly.
-- Agents must be searchable and filterable.
+- Agents must be searchable and filterable by vault, track, and status.
 
 ### Agent Fields
 
@@ -61,9 +64,11 @@ Stores all agents participating in AlphaGrid.
 | `agent_id` | Unique identifier. |
 | `name` | Public agent name. |
 | `description` | Strategy or agent description. |
-| `owner` | Agent builder wallet/account. |
-| `execution_address` | Address allowed to execute agent actions. |
-| `track_id` | Current assigned track. |
+| `owner` | Human owner wallet, if applicable. |
+| `signer_address` | Key used to sign agent intents and self-registration. |
+| `execution_address` | Address allowed to execute agent actions, if distinct from signer. |
+| `vault_id` | ERC-4626 vault the agent is bound to. |
+| `track_id` | Current track within the vault (Challenge, Funded, Prime). |
 | `status` | Draft, Active, Suspended, Failed, Graduated, Exited. |
 | `created_at` | Registration timestamp. |
 | `updated_at` | Last update timestamp. |
@@ -97,6 +102,7 @@ Agent profile must show:
 - name
 - description
 - creator/operator
+- current vault
 - current track
 - current allocation
 - current status
@@ -122,80 +128,104 @@ Agent profile must show:
 
 ### Purpose
 
-Tracks define agent competition tiers and risk rules.
+Tracks define **lifecycle stages** inside a vault. Track definitions are abstract and reusable; per-vault parameters are configured via `VaultTrackConfig`.
 
-Initial tracks:
+Initial track types:
 
 1. Challenge
-2. Proving
+2. Funded
 3. Prime
+
+Challenge uses simulated/test allocation only.
+
+Funded and Prime draw real capital from the agent’s bound ERC-4626 vault.
 
 ### Functional Requirements
 
-- Admin can create/edit tracks.
-- Each track has rules and capital allocation parameters.
-- Agents can be assigned to tracks.
-- Track rules determine success, failure, and progression.
-- Each track has a public rules page.
+- Admin can create/edit global track types.
+- Admin can configure **vault + track** parameters (rules, limits, promotion criteria).
+- Agents progress **only within their bound vault**: Challenge → Funded → Prime.
+- Promotion requires meeting track rules; may require a **promotion fee** (see FeeManager).
+- Each vault has a public rules page; each track stage shows effective rules for that vault.
 
-### Track Fields
+### Track Fields (global track type)
 
 | Field | Description |
 |---|---|
-| `track_id` | Unique track identifier. |
-| `name` | Challenge, Proving, Prime. |
-| `description` | Public explanation. |
-| `min_entry_fee` | Fee required to enter, if enabled. |
-| `initial_allocation` | Starting capital. |
-| `max_allocation` | Maximum allowed allocation. |
+| `track_id` | Unique track type identifier. |
+| `name` | Challenge, Funded, Prime (extensible). |
+| `description` | Public explanation of the stage. |
+| `capital_mode` | `simulated` or `real`. |
+| `default_initial_allocation` | Default starting allocation template. |
+| `default_max_allocation` | Default cap template. |
+
+### VaultTrackConfig Fields (per vault + track)
+
+| Field | Description |
+|---|---|
+| `vault_id` | Target ERC-4626 vault. |
+| `track_id` | Track type within the vault. |
+| `initial_allocation` | Starting allocation for agents entering this stage. |
+| `max_allocation` | Maximum allocation at this stage. |
 | `max_drawdown_bps` | Failure threshold. |
-| `allowed_assets` | Assets agent can trade. |
-| `evaluation_period` | Required duration. |
+| `allowed_assets` | Assets agent may trade (intersected with vault allowlist). |
+| `evaluation_period` | Required duration before promotion eligibility. |
 | `min_trades` | Minimum activity requirement. |
-| `graduation_score` | Required Alpha Score. |
+| `promotion_score` | Required Alpha Score to promote. |
+| `promotion_fee` | Optional fee to promote from this track (via FeeManager). |
 | `failure_rules` | Rule breach conditions. |
 
 ---
 
-## 4.4 Entry Fee / Agent Stake
+## 4.4 Fees (FeeManager)
 
 ### Purpose
 
-Prevents spam and creates skin in the game.
+Centralizes protocol fees for registration and track promotion.
 
 ### Functional Requirements
 
-- Agent builder may be required to pay a challenge fee.
-- Fee amount depends on track.
-- Fee payment must be recorded.
-- Fee can be routed to treasury, reward pool, insurance pool, or burn depending on tokenomics.
-- Entry fee does not guarantee capital allocation.
+- `FeeManager` defines **registration fee** (paid when an agent is created).
+- `FeeManager` defines **promotion fees** per transition (e.g. Challenge → Funded, Funded → Prime).
+- Fees are configurable by admin; default settlement asset is **USDC**.
+- Fee payment must be recorded on-chain and reflected in agent lifecycle events.
+- Paying a fee does not bypass promotion rules or guarantee promotion.
+- Registration fee is required for both self-registration and human/operator registration.
 
 ### MVP Decision
 
-Use a simple fixed Challenge entry fee or simulated fee flag. Detailed token flows are covered in `04_tokenomics_and_incentives.md`.
+- Registration fee: required, USDC, defined in `FeeManager`.
+- Promotion fees: configurable per vault/track transition; may be zero for MVP launch.
+
+Detailed routing is covered in `04_tokenomics_and_incentives.md`.
 
 ---
 
-## 4.5 Capital Vaults
+## 4.5 Capital Vaults (ERC-4626)
 
 ### Purpose
 
-Hold capital and expose it to agents through controlled allocation.
+Hold provider capital in thematic, rule-bound ERC-4626 vaults. Agents compete for allocation from the vault they are bound to.
 
 ### Functional Requirements
 
-- Capital providers can deposit into a track-level vault.
-- System can assign capital from track vault to active agents.
+- Protocol can deploy any number of vaults; **MVP targets 4** thematic vaults.
+- Each vault implements **ERC-4626** share accounting.
+- Each vault has configuration: name, mandate, allowed hold tokens, allowed trade assets/venues, risk parameters.
+- Capital providers deposit into a vault and receive vault shares.
+- System assigns vault capital to agents on Funded and Prime tracks.
+- Challenge uses simulated allocation inside the vault context (no provider capital at risk).
 - Vault must track total deposits, allocated capital, idle capital, and PnL.
 - Withdrawals must respect liquidity and active allocation constraints.
-- Vault state must be visible to users.
+- Vault rules are enforced by contracts + risk/execution layers.
 
 ### MVP Model
 
-Start with track-level vaults and internal agent allocation accounting.
+Deploy 4 ERC-4626 vaults (e.g. Foundation, Tech, Volatility, Macro).
 
-Avoid direct user deposits into individual agents in MVP unless needed for demo.
+Agents bind to exactly one vault for their lifecycle.
+
+Avoid direct user deposits into individual agents in MVP.
 
 ---
 
@@ -207,7 +237,8 @@ Determines how much capital each agent receives.
 
 ### Functional Requirements
 
-- Initial allocation is determined by track rules.
+- Initial allocation is determined by vault + track config.
+- Challenge allocation is simulated/test allocation only within the bound vault.
 - Allocation increases after performance thresholds are met.
 - Allocation decreases or is removed after failures.
 - Allocation must respect track maximums.
@@ -308,8 +339,9 @@ Leaderboard must show:
 ### Filters
 
 - all tracks
+- vault
 - Challenge
-- Proving
+- Funded
 - Prime
 - active agents only
 - failed agents
@@ -406,10 +438,11 @@ In-app event feed is enough. Email/Telegram/Discord can be deferred.
 | Action | Visitor | Agent Builder | Capital Provider | Admin | Agent |
 |---|---:|---:|---:|---:|---:|
 | View leaderboard | Yes | Yes | Yes | Yes | No |
-| Register agent | No | Yes | No | Yes | No |
+| Register agent | No | Yes | No | Yes | Yes (self-register) |
 | Edit agent metadata | No | Own agent | No | Yes | No |
-| Enter track | No | Own agent | No | Yes | No |
-| Deposit capital | No | Yes | Yes | Yes | No |
+| Select vault / enter Challenge | No | Own agent | No | Yes | Own agent |
+| Promote track (if eligible) | No | Own agent | No | Yes | Via signed promotion |
+| Deposit into vault | No | Yes | Yes | Yes | No |
 | Withdraw capital | No | Own capital | Own capital | Yes | No |
 | Submit trade | No | No | No | No | Own permissions |
 | Configure tracks | No | No | No | Yes | No |

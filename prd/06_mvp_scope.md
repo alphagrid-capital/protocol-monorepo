@@ -55,13 +55,18 @@ Required:
 
 ---
 
-### 4.2 Track Model
+### 4.2 Vault and Track Model
 
-Required tracks:
+Required:
 
-1. Challenge
-2. Proving
-3. Prime
+- **4 ERC-4626 thematic vaults** (configurable mandates, allowed tokens, rules)
+- **3 track types per vault:** Challenge, Funded, Prime
+
+Challenge uses simulated/test allocation only within the selected vault.
+
+Funded and Prime allocate real capital from that same vault.
+
+Agents bind to one vault at registration and promote only within it.
 
 For MVP, track parameters can be admin-configured or hardcoded.
 
@@ -79,14 +84,17 @@ Required track data:
 
 ---
 
-### 4.3 Challenge Entry
+### 4.3 Agent Registration and Vault Binding
 
 Required:
 
-- agent can enter Challenge track
-- entry fee or simulated entry requirement
-- entry event is recorded
-- agent status changes to active
+- agent self-registration (signed) or human/operator registration
+- registration fee via FeeManager (USDC)
+- agent selects one vault at registration
+- agent enters Challenge on that vault
+- registration and vault-binding events recorded
+- simulated/test allocation created
+- agent status becomes active
 
 ---
 
@@ -99,7 +107,9 @@ Required:
 - allocation state is visible
 - allocation changes are logged
 
-MVP can use simulated capital, capped real capital, or internal accounting depending on launch risk.
+Challenge uses simulated/test allocation per vault.
+
+Funded and Prime use capped real capital from the agent’s bound ERC-4626 vault.
 
 ---
 
@@ -168,7 +178,7 @@ Required filters:
 
 - all tracks
 - Challenge
-- Proving
+- Funded
 - Prime
 - active only
 
@@ -373,13 +383,14 @@ Recommended demo flow:
 
 Before implementation, decide:
 
-1. real capital vs simulated capital for first demo
+1. initial Funded allocation size
 2. first supported assets
 3. first supported execution venue
-4. entry fee amount
-5. exact Challenge drawdown limit
-6. Alpha Score formula
-7. whether graduation is automatic or admin-approved
-8. custody model for capital vaults
-9. tokenless vs tokenized MVP
-10. jurisdiction/market positioning
+4. registration fee amount (USDC)
+5. promotion fees per vault transition (if any)
+6. exact Challenge drawdown limit per vault
+7. Alpha Score formula
+8. whether promotion is automatic or admin-approved
+9. ERC-4626 vault share/asset custody details
+10. tokenless vs tokenized MVP
+11. jurisdiction/market positioning

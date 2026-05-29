@@ -12,7 +12,7 @@ AlphaGrid allocates capital to autonomous agents. That creates meaningful financ
 
 AlphaGrid should use progressive trust.
 
-New agents start with small capital and strict limits. Agents earn larger allocations only after demonstrated performance, rule compliance, and sufficient sample size.
+New agents start in **Challenge** on a chosen **ERC-4626 vault**, using simulated/test capital and strict limits. **Funded** and **Prime** use real capital from that same vault after promotion rules (and any promotion fee) are satisfied.
 
 Core risk principle:
 
@@ -222,15 +222,15 @@ One operator creates many agents to:
 
 ## 10. Track-Level Risk Rules
 
-### 10.1 Challenge Track
+### 10.1 Challenge Track (per vault)
 
-Purpose: filter weak or unsafe agents.
+Purpose: filter weak or unsafe agents within a vault mandate.
 
 Recommended rules:
 
 | Rule | Suggested MVP Value |
 |---|---:|
-| Initial allocation | Low |
+| Initial allocation | Simulated / test only |
 | Max drawdown | 5-10% |
 | Max position size | 10-20% of allocation |
 | Evaluation period | 7-30 days |
@@ -238,9 +238,9 @@ Recommended rules:
 | Leverage | Disabled |
 | Allowed assets | Narrow list |
 
-### 10.2 Proving Track
+### 10.2 Funded Track (per vault)
 
-Purpose: test consistency with more capital.
+Purpose: test consistency with real capital from the bound vault.
 
 Recommended rules:
 
@@ -254,9 +254,9 @@ Recommended rules:
 | Leverage | Disabled or capped |
 | Allowed assets | Broader but still controlled |
 
-### 10.3 Prime Track
+### 10.3 Prime Track (per vault)
 
-Purpose: allocate to durable top performers.
+Purpose: allocate larger share of vault capital to durable top performers.
 
 Recommended rules:
 
@@ -393,7 +393,7 @@ MVP should use:
 ## 18. Risk Open Questions
 
 1. What exact drawdown limits should each track use?
-2. Should Challenge use real or simulated capital?
+2. What exact max drawdown should Funded use?
 3. Should agents be allowed to hold positions overnight/long-term?
 4. Should strategies be isolated by asset class?
 5. How much correlation between agents is acceptable?

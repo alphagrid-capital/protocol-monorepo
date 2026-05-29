@@ -53,38 +53,35 @@ Questions are grouped by product, technical, tokenomics, risk, legal, and MVP ex
 
 ## 4. Track Questions
 
-1. Are Challenge, Proving, and Prime the final names?
-2. Should tracks be hardcoded in MVP or configurable from admin?
-3. Should agents be able to enter Proving directly if they bring verified history?
-4. Can an agent be demoted from Prime to Proving?
-5. Should there be strategy-specific tracks?
+1. Should tracks be hardcoded in MVP or configurable from admin?
+2. Should agents ever be able to skip Challenge and enter Funded with verified history?
+3. Can an agent be demoted from Prime to Funded?
+4. Should there be strategy-specific tracks?
    - market making
    - directional
    - arbitrage
    - stable yield
    - prediction markets
 
-6. How long is each evaluation period?
-7. What are exact graduation thresholds?
-8. Should graduation be automatic or admin-approved?
+5. How long is each evaluation period?
+6. What are exact graduation thresholds?
+7. Should graduation be automatic or admin-approved?
 
 ---
 
 ## 5. Capital Allocation Questions
 
-1. Should MVP use real capital, simulated capital, or capped real capital?
-2. Who supplies initial Challenge capital?
+1. Who supplies initial Funded capital?
    - protocol treasury
    - sponsors
    - capital providers
-   - entry fees
-   - simulated environment
 
-3. Should capital providers deposit into:
-   - track vaults
+2. Should capital providers deposit into:
+   - ERC-4626 thematic vaults only
    - individual agents
    - both
 
+3. How large should the simulated Challenge allocation be?
 4. How fast can allocation increase after good performance?
 5. Should allocation decrease gradually or be removed immediately after failures?
 6. Should capital be allocated by formula, admin, governance, or hybrid model?
@@ -110,7 +107,7 @@ Questions are grouped by product, technical, tokenomics, risk, legal, and MVP ex
 ## 7. Risk Questions
 
 1. What is the exact max drawdown for Challenge?
-2. What is the exact max drawdown for Proving?
+2. What is the exact max drawdown for Funded?
 3. Should Prime use fixed or strategy-specific risk limits?
 4. Should leverage be completely disabled in MVP?
 5. What assets are allowed in MVP?
@@ -200,7 +197,7 @@ Questions are grouped by product, technical, tokenomics, risk, legal, and MVP ex
 
 Critical decisions:
 
-1. **Real vs simulated capital**
+1. **Funded capital source**
 2. **Launch chain**
 3. **Supported assets**
 4. **Supported execution venue**
@@ -219,20 +216,48 @@ These are recommended defaults to unblock MVP planning.
 
 | Question | Recommended Default |
 |---|---|
-| Capital model | Capped real capital or high-fidelity simulated capital. |
-| Asset scope | Narrow list of liquid crypto assets. |
+| Capital model | Challenge simulated per vault; Funded/Prime use ERC-4626 vault capital. |
+| Vaults | 4 thematic ERC-4626 vaults at MVP. |
+| Agent registration | Self-register or human/operator register; FeeManager registration fee (USDC). |
+| Lifecycle | One vault per agent; Challenge → Funded → Prime within that vault. |
+| Promotion fees | Configurable per transition via FeeManager; may be zero. |
 | Execution | Controlled trade intents through execution gateway. |
-| Tracks | Challenge, Proving, Prime. |
-| Graduation | Admin-approved in MVP. |
+| Tracks | Extensible track types; MVP uses Challenge, Funded, Prime. |
+| Graduation | Admin-approved or rule-based promotion in MVP. |
 | Token | Tokenless MVP, optional token later. |
-| Entry fee | Fixed Challenge fee. |
 | Scoring | Simple multi-factor Alpha Score. |
-| Vault model | Track-level vaults with agent-level accounting. |
 | Leverage | Disabled in MVP. |
 
 ---
 
-## 13. Decision Log Template
+## 13. Decision Log
+
+## Decision: Vault × Track Architecture
+
+**Date:** 2026-05-28  
+**Status:** Accepted  
+
+### Context
+
+AlphaGrid needed a clear model for capital pools, agent lifecycle, and fees.
+
+### Decision
+
+- Deploy thematic capital pools as **ERC-4626 vaults** (MVP: 4 vaults).
+- Agents bind to **one vault** at registration.
+- Agents progress **Challenge → Funded → Prime** within that vault only.
+- **FeeManager** defines **registration fee** and optional **promotion fees**.
+- Agents may **self-register** (signed) or be registered by a human/operator.
+
+### Consequences
+
+- Replace track-level vault model with vault-scoped lifecycle.
+- Contracts: `AlphaGridVault` (4626), `FeeManager`, `VaultTrackConfig` in `TrackRegistry`.
+- Update functional, technical, tokenomics, flows, and MVP docs accordingly.
+
+---
+
+## 14. Decision Log Template
 
 Use this format when a decision is made:
 

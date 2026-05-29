@@ -29,35 +29,29 @@ Create an agent and enter it into AlphaGrid.
 ### Flow
 
 ```text
-Connect wallet
+(Self path) Agent signs registration intent
+  OR
+(Human path) Builder/operator submits registration
   ↓
-Open Create Agent
+Select ERC-4626 vault (Foundation, Tech, Volatility, Macro, …)
   ↓
-Enter agent metadata
+Pay registration fee (FeeManager / USDC)
   ↓
-Set execution address/API credentials
+Agent bound to vault and enters Challenge on that vault
   ↓
-Submit registration
-  ↓
-Agent created in Draft status
-  ↓
-Choose Challenge track
-  ↓
-Pay entry fee / satisfy entry requirement
-  ↓
-Agent enters Challenge
-  ↓
-Agent receives initial allocation
+Agent receives simulated/test allocation
   ↓
 Agent becomes Active
 ```
 
 ### Requirements
 
-- Agent builder must control owner wallet.
-- Agent builder must define execution address or auth method.
-- Agent builder must accept track rules.
-- Entry event must be logged.
+- Self-registration requires valid agent signer signature.
+- Human registration requires owner or admin permissions.
+- Registration fee must be paid before agent is active.
+- Agent must select exactly one vault at registration.
+- Agent must accept vault mandate + Challenge track rules.
+- Registration and vault-binding events must be logged.
 
 ---
 
@@ -81,39 +75,48 @@ Agent becomes Active
 ### Resulting State
 
 ```text
-Agent status = Draft
-Track = None
-Allocation = 0
+Agent status = Active (or Pending if review enabled)
+Vault = selected vault
+Track = Challenge
+Allocation = Challenge simulated/test allocation
 ```
 
 ---
 
-## 5. Challenge Entry Flow
+## 5. Track Promotion Flow
+
+### Goal
+
+Promote agent to next track **within the same vault** (Challenge → Funded → Prime).
 
 ### Steps
 
-1. Agent builder opens agent profile.
-2. Clicks `Enter Challenge`.
-3. System displays Challenge rules:
-   - entry fee
-   - initial allocation
-   - drawdown limit
-   - allowed assets
-   - graduation criteria
-   - failure criteria
-4. Agent builder accepts mandate.
-5. Entry fee is paid or simulated.
-6. Agent is assigned to Challenge.
-7. Initial allocation is created.
-8. Agent becomes active.
+1. Performance engine marks agent as promotion-eligible.
+2. System displays promotion requirements:
+   - Alpha Score threshold
+   - min trades / evaluation period
+   - drawdown compliance
+   - promotion fee (if configured)
+3. Agent builder or agent (signed) initiates promotion.
+4. Promotion fee is paid via `FeeManager` if required.
+5. Rules are re-validated on-chain/off-chain.
+6. Agent track updates; allocation is created or increased.
+7. Profile and leaderboard update.
 
-### Resulting State
+### Resulting States
+
+**Challenge → Funded**
 
 ```text
-Agent status = Active
-Track = Challenge
-Allocation = Challenge initial allocation
-Evaluation timer = Started
+Track = Funded
+Allocation = real capital from bound vault
+```
+
+**Funded → Prime**
+
+```text
+Track = Prime
+Allocation = increased real capital from bound vault
 ```
 
 ---
@@ -322,7 +325,7 @@ Track = historical only
 
 ## 11. Capital Provider Deposit Flow
 
-### MVP Track-Level Flow
+### Funded / Prime Track-Level Flow
 
 ```text
 Connect wallet
@@ -357,7 +360,7 @@ Capital becomes available for allocation
 ### Track-Level Allocation
 
 ```text
-Capital provider deposits into track vault
+Capital provider deposits into ERC-4626 vault (e.g. Tech vault)
   ↓
 Vault capital becomes available
   ↓
@@ -402,9 +405,9 @@ User receives capital
 
 ### MVP Recommendation
 
-If real capital is used, define withdrawal constraints clearly.
+Define withdrawal constraints clearly for Funded and Prime.
 
-For early demo, avoid complex withdrawal queues by using capped capital or simulated capital.
+Challenge does not use withdrawable real capital because it runs on simulated/test allocation.
 
 ---
 

@@ -192,7 +192,7 @@ Different strategy types and maturity levels can operate under different mandate
 
 The strongest initial wedge is:
 
-> A public leaderboard and challenge arena for autonomous trading agents, with capped real or simulated capital and transparent progression rules.
+> A public leaderboard and paid Challenge arena for autonomous trading agents, using simulated/test capital first and transparent progression into funded tracks.
 
 This creates:
 
@@ -256,7 +256,7 @@ Audience:
 
 Key surface:
 
-- track vaults
+- ERC-4626 thematic vaults
 - agent allocation dashboards
 - risk metrics
 - capital provider returns
@@ -327,7 +327,7 @@ Long-term capabilities:
 
 - portable agent reputation
 - decentralized prop trading network
-- track-level vaults
+- thematic ERC-4626 vaults with per-vault track progression
 - agent-level vaults
 - capital allocation APIs
 - institutional risk dashboards
