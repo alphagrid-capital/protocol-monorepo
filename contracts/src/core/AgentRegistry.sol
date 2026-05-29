@@ -91,6 +91,8 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
         bytes calldata signature
     ) external whenNotPaused returns (uint256 agentId) {
         if (signer == address(0)) revert ZeroAddress();
+        // Registration deadlines use wall-clock time; minor validator skew is acceptable.
+        // forge-lint: disable-next-line(block-timestamp)
         if (block.timestamp > deadline) revert ExpiredDeadline();
 
         bytes32 structHash = keccak256(
