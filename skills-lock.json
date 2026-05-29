@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "foundry-solidity": {
+      "source": "tenequm/claude-plugins",
+      "sourceType": "github",
+      "skillPath": "skills/foundry-solidity/SKILL.md",
+      "computedHash": "852fd41402c682ec78a5f8f97bb07800dcdc2e1e86f41d06e4c0d3c930fd44d6"
+    }
+  }
+}

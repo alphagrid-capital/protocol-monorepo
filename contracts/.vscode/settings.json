@@ -1,0 +1,12 @@
+{
+  "solidity.formatter": "forge",
+  "solidity.compileUsingRemoteVersion": "v0.8.30",
+  "editor.formatOnSave": true,
+  "[solidity]": {
+    "editor.defaultFormatter": "NomicFoundation.hardhat-solidity"
+  },
+  "solidity.remappings": [
+    "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/",
+    "forge-std/=lib/forge-std/src/"
+  ]
+}
