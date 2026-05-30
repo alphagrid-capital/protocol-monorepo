@@ -7,8 +7,8 @@ import { AgentRegistry } from "../../src/core/AgentRegistry.sol";
 import { TrackConfig } from "../../src/core/TrackConfig.sol";
 import { IAgentRegistry } from "../../src/interfaces/IAgentRegistry.sol";
 import { ITrackConfig } from "../../src/interfaces/ITrackConfig.sol";
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { IFeeManager } from "../../src/interfaces/IFeeManager.sol";
+import { IAccessControl } from "@openzeppelin/contracts/access/IAccessControl.sol";
 
 contract FeeManagerTest is BaseTest {
     FeeManager internal feeManager;
@@ -132,10 +132,37 @@ contract FeeManagerTest is BaseTest {
         vm.stopPrank();
     }
 
-    function test_RevertWhen_SetFeeWithoutOwner() public {
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, bob));
+    function test_RevertWhen_SetFeeWithoutFeeAdmin() public {
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector, bob, feeManager.FEE_ADMIN_ROLE()
+            )
+        );
         vm.prank(bob);
         feeManager.setRegistrationFee(1);
+    }
+
+    function test_FeeAdminCanSetRegistrationFee() public {
+        address feeAdmin = makeAddr("feeAdmin");
+
+        vm.startPrank(deployer);
+        feeManager.grantRole(feeManager.FEE_ADMIN_ROLE(), feeAdmin);
+        vm.stopPrank();
+
+        vm.prank(feeAdmin);
+        feeManager.setRegistrationFee(200e6);
+
+        assertEq(feeManager.getRegistrationFee(), 200e6);
+    }
+
+    function test_RevertWhen_SetTreasuryWithoutAdmin() public {
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector, bob, feeManager.DEFAULT_ADMIN_ROLE()
+            )
+        );
+        vm.prank(bob);
+        feeManager.setTreasury(makeAddr("newTreasury"));
     }
 
     function _setVaultChallengeConfig(address vault_, bool active) internal {

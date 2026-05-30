@@ -1,16 +1,21 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import { Ownable2Step } from "@openzeppelin/contracts/access/Ownable2Step.sol";
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IFeeManager } from "../interfaces/IFeeManager.sol";
 
 /// @title FeeManager
 /// @notice Defines and collects registration and promotion fees for AlphaGrid.
-contract FeeManager is IFeeManager, Ownable2Step {
+contract FeeManager is IFeeManager, AccessControl {
     using SafeERC20 for IERC20;
+
+    // -------------------------------------------------------------------------
+    // Constants
+    // -------------------------------------------------------------------------
+
+    bytes32 public constant FEE_ADMIN_ROLE = keccak256("FEE_ADMIN_ROLE");
 
     // -------------------------------------------------------------------------
     // State
@@ -35,14 +40,17 @@ contract FeeManager is IFeeManager, Ownable2Step {
     // Constructor
     // -------------------------------------------------------------------------
 
-    /// @param admin Contract owner.
+    /// @param admin Receives `DEFAULT_ADMIN_ROLE` and `FEE_ADMIN_ROLE`.
     /// @param treasury_ Fee recipient address.
     /// @param feeAsset_ ERC20 used for all protocol fees.
-    constructor(address admin, address treasury_, address feeAsset_) Ownable(admin) {
-        if (treasury_ == address(0) || feeAsset_ == address(0)) revert ZeroAddress();
+    constructor(address admin, address treasury_, address feeAsset_) {
+        if (admin == address(0) || treasury_ == address(0) || feeAsset_ == address(0)) revert ZeroAddress();
 
         treasury = treasury_;
         FEE_ASSET = feeAsset_;
+
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        _grantRole(FEE_ADMIN_ROLE, admin);
     }
 
     // -------------------------------------------------------------------------
@@ -73,27 +81,30 @@ contract FeeManager is IFeeManager, Ownable2Step {
     // -------------------------------------------------------------------------
 
     /// @notice Wire the AgentRegistry allowed to invoke fee collection.
-    function setAgentRegistry(address agentRegistry_) external onlyOwner {
+    function setAgentRegistry(address agentRegistry_) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (agentRegistry_ == address(0)) revert ZeroAddress();
         agentRegistry = agentRegistry_;
         emit AgentRegistryUpdated(agentRegistry_);
     }
 
     /// @notice Update the treasury address that receives collected fees.
-    function setTreasury(address treasury_) external onlyOwner {
+    function setTreasury(address treasury_) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (treasury_ == address(0)) revert ZeroAddress();
         treasury = treasury_;
         emit TreasuryUpdated(treasury_);
     }
 
     /// @inheritdoc IFeeManager
-    function setRegistrationFee(uint256 amount) external onlyOwner {
+    function setRegistrationFee(uint256 amount) external onlyRole(FEE_ADMIN_ROLE) {
         _registrationFeeAmount = amount;
         emit RegistrationFeeUpdated(FEE_ASSET, amount);
     }
 
     /// @inheritdoc IFeeManager
-    function setPromotionFee(address vault, uint256 fromTrackId, uint256 toTrackId, uint256 amount) external onlyOwner {
+    function setPromotionFee(address vault, uint256 fromTrackId, uint256 toTrackId, uint256 amount)
+        external
+        onlyRole(FEE_ADMIN_ROLE)
+    {
         if (vault == address(0)) revert ZeroAddress();
         _promotionFeeAmounts[vault][fromTrackId][toTrackId] = amount;
         emit PromotionFeeUpdated(vault, fromTrackId, toTrackId, FEE_ASSET, amount);
