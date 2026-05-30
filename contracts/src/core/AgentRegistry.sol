@@ -9,6 +9,7 @@ import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 import { IAgentRegistry } from "../interfaces/IAgentRegistry.sol";
 import { IFeeManager } from "../interfaces/IFeeManager.sol";
 import { ITrackConfig } from "../interfaces/ITrackConfig.sol";
+import { IAllocationManager } from "../interfaces/IAllocationManager.sol";
 
 /// @title AgentRegistry
 /// @notice Stores canonical agent identities, vault bindings, and track lifecycle state.
@@ -30,6 +31,7 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
 
     IFeeManager public feeManager;
     ITrackConfig public trackConfig;
+    IAllocationManager public allocationManager;
 
     uint256 private _nextAgentId = 1;
 
@@ -91,8 +93,6 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
         bytes calldata signature
     ) external whenNotPaused returns (uint256 agentId) {
         if (signer == address(0)) revert ZeroAddress();
-        // Registration deadlines use wall-clock time; minor validator skew is acceptable.
-        // forge-lint: disable-next-line(block-timestamp)
         if (block.timestamp > deadline) revert ExpiredDeadline();
 
         bytes32 structHash = keccak256(
@@ -160,6 +160,10 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
 
         feeManager.payPromotionFee(msg.sender, agentId, agent.vault, uint256(fromTrack), uint256(targetTrack));
 
+        if (address(allocationManager) != address(0)) {
+            allocationManager.onAgentPromoted(agentId, agent.vault, uint256(fromTrack), uint256(targetTrack));
+        }
+
         agent.track = targetTrack;
         emit AgentPromoted(agentId, agent.vault, fromTrack, targetTrack);
     }
@@ -220,6 +224,12 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
         emit TrackConfigUpdated(address(trackConfig_));
     }
 
+    /// @notice Wire AllocationManager for automatic allocation on register and promote.
+    function setAllocationManager(IAllocationManager allocationManager_) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        allocationManager = allocationManager_;
+        emit AllocationManagerUpdated(address(allocationManager_));
+    }
+
     // -------------------------------------------------------------------------
     // Pause
     // -------------------------------------------------------------------------
@@ -269,6 +279,10 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
         });
 
         emit AgentRegistered(agentId, vault, owner, signer, metadataURI, Track.CHALLENGE);
+
+        if (address(allocationManager) != address(0)) {
+            allocationManager.onAgentRegistered(agentId, vault, uint256(Track.CHALLENGE));
+        }
     }
 
     /// @dev Returns the agent record or reverts if it does not exist.

@@ -62,6 +62,8 @@ interface IAgentRegistry {
 
     event TrackConfigUpdated(address indexed trackConfig);
 
+    event AllocationManagerUpdated(address indexed allocationManager);
+
     // -------------------------------------------------------------------------
     // Registration
     // -------------------------------------------------------------------------
