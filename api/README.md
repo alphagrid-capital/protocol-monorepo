@@ -6,8 +6,12 @@ REST endpoints and MCP tools share the same service layer so agents and classic 
 
 ## Prerequisites
 
-- Node.js 20+
+- Node.js 24+
 - [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/) (installed via `npm install` in this directory)
+
+## Observability
+
+Workers Logs and tracing are enabled in `wrangler.toml` (`observability.enabled`, logs, and traces at 100% head sampling for MVP traffic). After deploy, view invocations in the [Cloudflare dashboard](https://dash.cloudflare.com/) under **Workers & Pages → alphagrid-api → Observability**.
 
 ## Commands
 
