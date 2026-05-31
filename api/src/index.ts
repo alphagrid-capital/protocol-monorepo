@@ -1,13 +1,15 @@
-export interface Env {}
-
+/**
+ * AlphaGrid API entrypoint (Cloudflare Worker).
+ * Route handlers and business logic will be added in a follow-up PR.
+ */
 export default {
-  async fetch(_request: Request, _env: Env, _ctx: ExecutionContext): Promise<Response> {
-    return new Response(
-      JSON.stringify({ service: "alphagrid-api", status: "not_implemented" }),
-      {
-        status: 501,
-        headers: { "content-type": "application/json" },
-      },
-    );
+  async fetch(request: Request): Promise<Response> {
+    const url = new URL(request.url);
+
+    if (request.method === "GET" && url.pathname === "/health") {
+      return Response.json({ status: "ok", service: "alphagrid-api" });
+    }
+
+    return Response.json({ error: "Not implemented" }, { status: 501 });
   },
-} satisfies ExportedHandler<Env>;
+} satisfies ExportedHandler;

@@ -2,7 +2,7 @@
   "name": "@alphagrid/api",
   "version": "0.0.0",
   "private": true,
-  "description": "AlphaGrid backend API (Cloudflare Functions). Empty scaffold; endpoints implemented in a later PR.",
+  "description": "AlphaGrid HTTP API (Cloudflare Workers). Implementation pending.",
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
@@ -10,8 +10,8 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20240909.0",
-    "typescript": "^5.6.2",
-    "wrangler": "^3.78.0"
+    "@cloudflare/workers-types": "^4.20250531.0",
+    "typescript": "^5.8.3",
+    "wrangler": "^4.19.1"
   }
 }

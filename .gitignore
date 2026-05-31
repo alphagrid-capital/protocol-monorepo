@@ -3,3 +3,10 @@ contracts/cache/
 contracts/out/
 contracts/broadcast/
 contracts/.env
+
+# API (api/)
+api/node_modules/
+api/.wrangler/
+api/.dev.vars
+api/.env
+api/dist/

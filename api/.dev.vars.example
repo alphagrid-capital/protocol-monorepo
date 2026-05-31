@@ -1,6 +1,0 @@
-# Local development secrets for `wrangler dev`.
-# Copy to `.dev.vars` and fill in. Do not commit `.dev.vars`.
-#
-# Example (placeholders only; real bindings added when endpoints are implemented):
-# DATABASE_URL=""
-# RPC_URL=""
