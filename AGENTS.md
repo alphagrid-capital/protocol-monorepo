@@ -4,7 +4,7 @@
 
 ### Project overview
 
-AlphaGrid is a Foundry/Solidity smart-contract workspace. The only runnable code lives in `contracts/`. See `README.md` and `contracts/README.md` for standard commands.
+AlphaGrid is a monorepo: Foundry smart contracts in `contracts/`, and an HTTP API scaffold in `api/` (Cloudflare Workers; not yet implemented). See `README.md`, `contracts/README.md`, and `api/README.md` for commands.
 
 ### Prerequisites
 
