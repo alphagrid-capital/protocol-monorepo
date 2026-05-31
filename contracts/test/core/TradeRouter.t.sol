@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import { Phase3Base } from "../helpers/Phase3Base.sol";
+import { TradingTestBase } from "../helpers/TradingTestBase.sol";
 import { TradeRouter } from "../../src/core/TradeRouter.sol";
 import { IAgentRegistry } from "../../src/interfaces/IAgentRegistry.sol";
 import { ITrackConfig } from "../../src/interfaces/ITrackConfig.sol";
 import { IPositionTypes } from "../../src/interfaces/IPositionTypes.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract TradeRouterTest is Phase3Base {
+contract TradeRouterTest is TradingTestBase {
     function setUp() public override {
         super.setUp();
-        setUpPhase3();
+        setUpTradingStack();
     }
 
     function test_OpenAndKeeperExit() public {

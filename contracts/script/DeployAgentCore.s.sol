@@ -6,8 +6,8 @@ import { AgentRegistry } from "../src/core/AgentRegistry.sol";
 import { FeeManager } from "../src/core/FeeManager.sol";
 import { TrackConfig } from "../src/core/TrackConfig.sol";
 
-/// @notice Deploys Phase 1 core contracts: FeeManager, TrackConfig, and AgentRegistry.
-contract DeployPhase1 is Script {
+/// @notice Deploys agent onboarding core: FeeManager, TrackConfig, and AgentRegistry.
+contract DeployAgentCore is Script {
     function run() external returns (FeeManager feeManager, TrackConfig trackConfig, AgentRegistry registry) {
         address admin = vm.envAddress("ADMIN");
         address treasury = vm.envAddress("TREASURY");

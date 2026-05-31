@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import { Phase3Base } from "../helpers/Phase3Base.sol";
+import { TradingTestBase } from "../helpers/TradingTestBase.sol";
 import { AlphaGridVault } from "../../src/vaults/AlphaGridVault.sol";
 import { IAgentRegistry } from "../../src/interfaces/IAgentRegistry.sol";
 import { IPositionTypes } from "../../src/interfaces/IPositionTypes.sol";
 import { TradeRouter } from "../../src/core/TradeRouter.sol";
 
-/// @notice End-to-end Phase 3: register agent, open position, keeper exit.
-contract Phase3IntegrationTest is Phase3Base {
+/// @notice End-to-end trading: register agent, open position, keeper exit.
+contract TradingFlowIntegrationTest is TradingTestBase {
     function setUp() public override {
         super.setUp();
-        setUpPhase3();
+        setUpTradingStack();
     }
 
     function test_RegisterOpenExitFlow() public {

@@ -12,9 +12,9 @@ import { InventorySwapAdapter } from "../src/adapters/InventorySwapAdapter.sol";
 import { ISwapAdapter } from "../src/interfaces/ISwapAdapter.sol";
 import { AlphaGridVault } from "../src/vaults/AlphaGridVault.sol";
 
-/// @notice Deploys Phase 3 trading stack and wires roles to Phase 2 contracts.
+/// @notice Deploys PositionManager, TradeRouter, swap adapter; wires roles to existing vault stack.
 /// @dev Set DEPLOY_MOCK_SWAP_ADAPTER=true (default) for MockSwapAdapter, false for InventorySwapAdapter.
-contract DeployPhase3 is Script {
+contract DeployTrading is Script {
     function run()
         external
         returns (PositionManager positionManager, TradeRouter tradeRouter, ISwapAdapter swapAdapter)

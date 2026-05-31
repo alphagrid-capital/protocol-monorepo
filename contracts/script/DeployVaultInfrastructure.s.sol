@@ -10,8 +10,8 @@ import { TokenRegistry } from "../src/core/TokenRegistry.sol";
 import { AlphaGridVault } from "../src/vaults/AlphaGridVault.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-/// @notice Deploys Phase 2: four thematic vaults plus AllocationManager wiring.
-contract DeployPhase2 is Script {
+/// @notice Greenfield deploy: agent core, token registry, four vaults, and AllocationManager wiring.
+contract DeployVaultInfrastructure is Script {
     function run()
         external
         returns (

@@ -55,12 +55,12 @@ contracts/
 ├── test/
 │   ├── core/
 │   ├── vaults/
-│   ├── integration/                # Phase1–3 integration tests
-│   └── helpers/                    # BaseTest, Phase3Base
+│   ├── integration/                # Agent, vault, and trading flow integration tests
+│   └── helpers/                    # BaseTest, TradingTestBase
 └── script/
-    ├── DeployPhase1.s.sol
-    ├── DeployPhase2.s.sol
-    ├── DeployPhase3.s.sol
+    ├── DeployAgentCore.s.sol
+    ├── DeployVaultInfrastructure.s.sol
+    ├── DeployTrading.s.sol
     ├── DeployAgentRegistry.s.sol
     └── DeployMockERC20.s.sol
 ```
@@ -70,17 +70,17 @@ contracts/
 Copy `.env.example` to `.env` and fill values. Deploy in order:
 
 ```bash
-# Phase 1 — registry, fees, track config
-forge script script/DeployPhase1.s.sol:DeployPhase1 --rpc-url $RPC_URL --broadcast
+# Agent onboarding only (incremental)
+forge script script/DeployAgentCore.s.sol:DeployAgentCore --rpc-url $RPC_URL --broadcast
 
-# Phase 2 — token registry, allocation manager, four vaults
-forge script script/DeployPhase2.s.sol:DeployPhase2 --rpc-url $RPC_URL --broadcast
+# Greenfield: agent core + four vaults + allocation (full base stack)
+forge script script/DeployVaultInfrastructure.s.sol:DeployVaultInfrastructure --rpc-url $RPC_URL --broadcast
 
-# Phase 3 — position manager, trade router, swap adapter
-forge script script/DeployPhase3.s.sol:DeployPhase3 --rpc-url $RPC_URL --broadcast
+# Trading: position manager, trade router, swap adapter (on existing vault stack)
+forge script script/DeployTrading.s.sol:DeployTrading --rpc-url $RPC_URL --broadcast
 ```
 
-Phase 3 env vars: `ADMIN`, `EXECUTOR`, `OPERATOR` (optional), `AGENT_REGISTRY`, `ALLOCATION_MANAGER`, `TRACK_CONFIG`, `VAULT`, `DEPLOY_MOCK_SWAP_ADAPTER`.
+`DeployTrading` env vars: `ADMIN`, `EXECUTOR`, `OPERATOR` (optional), `AGENT_REGISTRY`, `ALLOCATION_MANAGER`, `TRACK_CONFIG`, `VAULT`, `DEPLOY_MOCK_SWAP_ADAPTER`.
 
 - `DEPLOY_MOCK_SWAP_ADAPTER=true` — test/dev adapter (mints mock tokens)
 - `DEPLOY_MOCK_SWAP_ADAPTER=false` — `InventorySwapAdapter` (pre-funded ERC-20 inventory)

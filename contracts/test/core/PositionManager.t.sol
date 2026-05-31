@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import { Phase3Base } from "../helpers/Phase3Base.sol";
+import { TradingTestBase } from "../helpers/TradingTestBase.sol";
 import { PositionManager } from "../../src/core/PositionManager.sol";
 import { IPositionTypes } from "../../src/interfaces/IPositionTypes.sol";
 
-contract PositionManagerTest is Phase3Base {
+contract PositionManagerTest is TradingTestBase {
     function setUp() public override {
         super.setUp();
-        setUpPhase3();
+        setUpTradingStack();
     }
 
     function test_OpenPositionCreditsLedger() public {

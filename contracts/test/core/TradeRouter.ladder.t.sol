@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import { Phase3Base } from "../helpers/Phase3Base.sol";
+import { TradingTestBase } from "../helpers/TradingTestBase.sol";
 import { IPositionTypes } from "../../src/interfaces/IPositionTypes.sol";
 
-contract TradeRouterLadderTest is Phase3Base {
+contract TradeRouterLadderTest is TradingTestBase {
     function setUp() public override {
         super.setUp();
-        setUpPhase3();
+        setUpTradingStack();
     }
 
     function test_LadderPartialThenFullExit() public {

@@ -12,8 +12,8 @@ import { IAgentRegistry } from "../../src/interfaces/IAgentRegistry.sol";
 import { ITrackConfig } from "../../src/interfaces/ITrackConfig.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-/// @notice End-to-end wiring for Phase 2 vault + allocation stack.
-contract Phase2IntegrationTest is BaseTest {
+/// @notice End-to-end wiring for vault deposits, allocations, and agent funding.
+contract VaultAndAllocationIntegrationTest is BaseTest {
     AgentRegistry internal registry;
     FeeManager internal feeManager;
     TrackConfig internal trackConfig;

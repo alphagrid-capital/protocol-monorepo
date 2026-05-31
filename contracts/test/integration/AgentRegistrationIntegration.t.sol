@@ -8,8 +8,8 @@ import { TrackConfig } from "../../src/core/TrackConfig.sol";
 import { IAgentRegistry } from "../../src/interfaces/IAgentRegistry.sol";
 import { ITrackConfig } from "../../src/interfaces/ITrackConfig.sol";
 
-/// @notice End-to-end wiring for Phase 1 core contracts.
-contract Phase1IntegrationTest is BaseTest {
+/// @notice End-to-end wiring for agent registration, fees, and track config.
+contract AgentRegistrationIntegrationTest is BaseTest {
     AgentRegistry internal registry;
     FeeManager internal feeManager;
     TrackConfig internal trackConfig;

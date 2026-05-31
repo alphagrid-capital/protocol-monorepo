@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import { Phase3Base } from "../helpers/Phase3Base.sol";
+import { TradingTestBase } from "../helpers/TradingTestBase.sol";
 import { AgentRegistry } from "../../src/core/AgentRegistry.sol";
 import { FeeManager } from "../../src/core/FeeManager.sol";
 import { TrackConfig } from "../../src/core/TrackConfig.sol";
@@ -16,15 +16,15 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { MockERC20 } from "../../src/mocks/MockERC20.sol";
 import { MockPriceFeed } from "../mocks/MockPriceFeed.sol";
 
-contract InventorySwapAdapterTest is Phase3Base {
+contract InventorySwapAdapterTest is TradingTestBase {
     InventorySwapAdapter internal inventoryAdapter;
 
     function setUp() public override {
         super.setUp();
-        setUpPhase3WithInventoryAdapter();
+        setUpTradingStackWithInventoryAdapter();
     }
 
-    function setUpPhase3WithInventoryAdapter() internal {
+    function setUpTradingStackWithInventoryAdapter() internal {
         treasury = makeAddr("treasury");
         operator = makeAddr("operator");
         executor = makeAddr("executor");

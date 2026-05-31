@@ -18,7 +18,8 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { MockERC20 } from "../../src/mocks/MockERC20.sol";
 import { MockPriceFeed } from "../mocks/MockPriceFeed.sol";
 
-abstract contract Phase3Base is BaseTest {
+/// @notice Shared fixture: full on-chain stack through TradeRouter with MockSwapAdapter.
+abstract contract TradingTestBase is BaseTest {
     bytes32 internal constant VAULT_MANDATE = "TECH";
 
     uint256 internal constant AGENT_SIGNER_PK = 0xA11CE;
@@ -46,7 +47,7 @@ abstract contract Phase3Base is BaseTest {
     address internal agentSigner;
     address internal vaultAddr;
 
-    function setUpPhase3() internal {
+    function setUpTradingStack() internal {
         treasury = makeAddr("treasury");
         operator = makeAddr("operator");
         executor = makeAddr("executor");
