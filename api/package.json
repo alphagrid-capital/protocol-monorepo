@@ -2,10 +2,10 @@
   "name": "@alphagrid/api",
   "version": "0.0.0",
   "private": true,
-  "description": "AlphaGrid HTTP API (Cloudflare Workers). Implementation pending.",
+  "description": "AlphaGrid HTTP API and MCP server (Cloudflare Workers).",
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev",
+    "dev": "wrangler dev --install-skills=false",
     "deploy": "wrangler deploy",
     "typecheck": "tsc --noEmit"
   },
@@ -13,5 +13,14 @@
     "@cloudflare/workers-types": "^4.20250531.0",
     "typescript": "^5.8.3",
     "wrangler": "^4.19.1"
+  },
+  "dependencies": {
+    "@cfworker/json-schema": "^4.1.1",
+    "@hono/swagger-ui": "^0.6.1",
+    "@hono/zod-openapi": "^1.4.0",
+    "@modelcontextprotocol/hono": "^2.0.0-alpha.2",
+    "@modelcontextprotocol/server": "^2.0.0-alpha.2",
+    "hono": "^4.12.23",
+    "zod": "^4.4.3"
   }
 }
