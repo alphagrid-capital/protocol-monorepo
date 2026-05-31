@@ -7,16 +7,17 @@ REST endpoints and MCP tools share the same service layer so agents and classic 
 ## Prerequisites
 
 - Node.js 20+
-- [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/) (installed via `npm install` in this directory)
+- [Yarn](https://yarnpkg.com/) 1.x (Classic)
+- [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/) (installed via `yarn install` in this directory)
 
 ## Commands
 
 ```bash
 cd api
-npm install
-npm run typecheck   # TypeScript check (no emit)
-npm run dev         # Local dev server (wrangler dev)
-npm run deploy      # Deploy to Cloudflare (requires account auth)
+yarn install
+yarn typecheck   # TypeScript check (no emit)
+yarn dev         # Local dev server (wrangler dev)
+yarn deploy      # Deploy to Cloudflare (requires account auth)
 ```
 
 ## Endpoints

@@ -28,14 +28,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: npm
-          cache-dependency-path: api/package-lock.json
+          cache: yarn
+          cache-dependency-path: api/yarn.lock
 
       - name: Install dependencies
-        run: npm ci
+        run: yarn install --frozen-lockfile
 
       - name: Typecheck
-        run: npm run typecheck
+        run: yarn typecheck
 
   deploy:
     name: Deploy to Cloudflare
@@ -50,11 +50,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: npm
-          cache-dependency-path: api/package-lock.json
+          cache: yarn
+          cache-dependency-path: api/yarn.lock
 
       - name: Install dependencies
-        run: npm ci
+        run: yarn install --frozen-lockfile
 
       - name: Deploy Worker
         uses: cloudflare/wrangler-action@v3
