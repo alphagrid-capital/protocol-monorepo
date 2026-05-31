@@ -1,0 +1,6 @@
+name = "alphagrid-api"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+# Bindings (KV, D1, secrets, vars) will be added when endpoints are implemented.
