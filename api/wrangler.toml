@@ -1,0 +1,5 @@
+name = "alphagrid-api"
+main = "src/index.ts"
+compatibility_date = "2025-05-31"
+
+# Routes, bindings (KV, D1, secrets), and environments are added when the API is implemented.
