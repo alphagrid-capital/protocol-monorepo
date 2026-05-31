@@ -1,15 +1,15 @@
 import { swaggerUI } from "@hono/swagger-ui";
 import { OpenAPIHono } from "@hono/zod-openapi";
+import { cors } from "hono/cors";
 import {
   McpServer,
   WebStandardStreamableHTTPServerTransport,
 } from "@modelcontextprotocol/server";
+import { createAlpagridMcpServer } from "./mcp/server.js";
+import { openApiJsonResponse } from "./openapi.js";
+import { registerDiscoveryRoutes } from "./routes/discovery.js";
 import { healthRoutes } from "./routes/health.js";
 import { vaultRoutes } from "./routes/vaults.js";
-import { createAlpagridMcpServer } from "./mcp/server.js";
-
-const API_TITLE = "AlphaGrid API";
-const API_VERSION = "0.1.0";
 
 export const mcpServer: McpServer = createAlpagridMcpServer();
 
@@ -23,22 +23,25 @@ const mcpReady = mcpServer.connect(mcpTransport);
 export function createApp(): OpenAPIHono {
   const app = new OpenAPIHono();
 
+  app.use(
+    "*",
+    cors({
+      origin: "*",
+      allowMethods: ["GET", "HEAD", "OPTIONS", "POST"],
+      allowHeaders: ["Content-Type", "Accept", "MCP-Protocol-Version"],
+    }),
+  );
+
   app.route("/", healthRoutes);
   app.route("/", vaultRoutes);
 
-  app.doc("/openapi.json", {
-    openapi: "3.1.0",
-    info: {
-      title: API_TITLE,
-      version: API_VERSION,
-      description:
-        "AlphaGrid HTTP API. MCP tools mirror these operations at POST /mcp (Streamable HTTP).",
-    },
-    tags: [
-      { name: "System", description: "Health and operational endpoints" },
-      { name: "Vaults", description: "Thematic ERC-4626 vault catalog" },
-    ],
-  });
+  registerDiscoveryRoutes(app);
+
+  app.get("/openapi.json", (c) =>
+    c.json(openApiJsonResponse(app, c.req.url), 200, {
+      "Cache-Control": "public, max-age=300",
+    }),
+  );
 
   app.get(
     "/docs",
