@@ -1,0 +1,441 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.30;
+
+import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
+import { EIP712 } from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
+import { ECDSA } from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
+import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IAgentRegistry } from "../interfaces/IAgentRegistry.sol";
+import { IAllocationManager } from "../interfaces/IAllocationManager.sol";
+import { IAlphaGridVault } from "../interfaces/IAlphaGridVault.sol";
+import { IPositionManager } from "../interfaces/IPositionManager.sol";
+import { ISwapAdapter } from "../interfaces/ISwapAdapter.sol";
+import { ITrackConfig } from "../interfaces/ITrackConfig.sol";
+import { ITradeRouter } from "../interfaces/ITradeRouter.sol";
+import { OracleLib } from "../libraries/OracleLib.sol";
+
+/// @title TradeRouter
+/// @notice Executes signed position opens, permissionless keeper exits, and operator force closes.
+contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
+    using Math for uint256;
+
+    // -------------------------------------------------------------------------
+    // Constants
+    // -------------------------------------------------------------------------
+
+    bytes32 public constant EXECUTOR_ROLE = keccak256("EXECUTOR_ROLE");
+
+    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
+
+    uint256 public constant MAX_BPS = 10_000;
+    uint256 public constant MAX_EXIT_RULES = 5;
+
+    bytes32 public constant OPEN_POSITION_TYPEHASH = keccak256(
+        "OpenPosition(uint256 agentId,address vault,address token,uint256 usdcAmount,uint256 minTokenOut,uint16 maxSlippageBps,bytes32 exitsHash,uint256 deadline,uint256 nonce)"
+    );
+
+    // -------------------------------------------------------------------------
+    // State
+    // -------------------------------------------------------------------------
+
+    IAgentRegistry public agentRegistry;
+    IAllocationManager public allocationManager;
+    IPositionManager public positionManager;
+    ISwapAdapter public swapAdapter;
+    ITrackConfig public trackConfig;
+
+    mapping(uint256 agentId => uint256 nonce) private _nonces;
+    mapping(uint256 agentId => mapping(uint256 day => uint256 turnoverUsdc)) private _dailyTurnoverUsdc;
+
+    uint256 public keeperBountyBps;
+    uint256 public maxKeeperBounty;
+
+    // -------------------------------------------------------------------------
+    // Errors
+    // -------------------------------------------------------------------------
+
+    error ZeroAddress();
+    error ExpiredDeadline();
+    error InvalidSignature();
+    error InvalidNonce(uint256 expected, uint256 provided);
+    error AgentNotTradable(uint256 agentId);
+    error VaultMismatch(uint256 agentId, address expected, address actual);
+    error TokenNotAllowed(address token);
+    error PositionAlreadyOpen(uint256 agentId, address token);
+    error InvalidExitRules();
+    error AllocationNotActive(uint256 agentId);
+    error ExceedsAllocationCap(uint256 agentId, uint256 used, uint256 cap);
+    error ExceedsMaxTradeSize(uint256 tradeSize, uint256 maxTradeSize);
+    error ExceedsDailyTurnover(uint256 agentId, uint256 turnover, uint256 maxTurnover);
+    error TriggerNotMet(uint256 positionId);
+    error PositionNotOpen(uint256 positionId);
+    error AgentNotSuspended(uint256 agentId);
+    error RegistryPaused();
+    error VaultTrackNotActive(address vault, uint256 trackId);
+    error BpsOutOfRange(uint256 bps);
+    error LedgerExceedsVaultBalance(address token, uint256 ledgerTotal, uint256 vaultBalance);
+
+    // -------------------------------------------------------------------------
+    // Constructor
+    // -------------------------------------------------------------------------
+
+    constructor(
+        address admin,
+        IAgentRegistry agentRegistry_,
+        IAllocationManager allocationManager_,
+        IPositionManager positionManager_,
+        ISwapAdapter swapAdapter_,
+        ITrackConfig trackConfig_
+    ) EIP712("AlphaGrid TradeRouter", "1") {
+        if (
+            admin == address(0) || address(agentRegistry_) == address(0) || address(allocationManager_) == address(0)
+                || address(positionManager_) == address(0) || address(swapAdapter_) == address(0)
+                || address(trackConfig_) == address(0)
+        ) revert ZeroAddress();
+
+        agentRegistry = agentRegistry_;
+        allocationManager = allocationManager_;
+        positionManager = positionManager_;
+        swapAdapter = swapAdapter_;
+        trackConfig = trackConfig_;
+
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        _grantRole(EXECUTOR_ROLE, admin);
+        _grantRole(OPERATOR_ROLE, admin);
+    }
+
+    // -------------------------------------------------------------------------
+    // Views
+    // -------------------------------------------------------------------------
+
+    /// @inheritdoc ITradeRouter
+    function nonces(uint256 agentId) external view returns (uint256) {
+        return _nonces[agentId];
+    }
+
+    /// @inheritdoc ITradeRouter
+    function isTriggerMet(uint256 positionId) public view returns (bool) {
+        Position memory position = positionManager.getPosition(positionId);
+        if (position.status != PositionStatus.Open) return false;
+
+        ExitRule memory rule = positionManager.getNextExitRule(positionId);
+        int256 pnlBps = _positionPnlBps(position);
+        return _isRuleTriggered(rule, pnlBps);
+    }
+
+    /// @inheritdoc ITradeRouter
+    function dailyTurnoverUsdc(uint256 agentId, uint256 day) external view returns (uint256) {
+        return _dailyTurnoverUsdc[agentId][day];
+    }
+
+    // -------------------------------------------------------------------------
+    // Execution
+    // -------------------------------------------------------------------------
+
+    /// @inheritdoc ITradeRouter
+    function openPosition(PositionIntent calldata intent, bytes calldata signature)
+        external
+        onlyRole(EXECUTOR_ROLE)
+        nonReentrant
+        returns (uint256 positionId)
+    {
+        _validateOpenIntent(intent, signature);
+        positionId = _openPosition(intent);
+        emit PositionOpenedFromIntent(positionId, intent.agentId, intent.vault, intent.token, intent.usdcAmount);
+    }
+
+    function _validateOpenIntent(PositionIntent calldata intent, bytes calldata signature) private view {
+        if (Pausable(address(agentRegistry)).paused()) revert RegistryPaused();
+        if (block.timestamp > intent.deadline) revert ExpiredDeadline();
+        if (_nonces[intent.agentId] != intent.nonce) {
+            revert InvalidNonce(_nonces[intent.agentId], intent.nonce);
+        }
+        _verifyIntentSignature(intent, signature);
+        _validateExitRules(intent.exits);
+        _validateAgentCanOpen(intent.agentId, intent.vault, intent.token);
+        _validateTradeSize(IAlphaGridVault(intent.vault), intent.agentId, intent.usdcAmount);
+        _validateDailyTurnover(IAlphaGridVault(intent.vault), intent.agentId, intent.usdcAmount);
+
+        IAllocationManager.Allocation memory allocation = allocationManager.getAllocation(intent.agentId);
+        if (allocation.used + intent.usdcAmount > allocation.cap) {
+            revert ExceedsAllocationCap(intent.agentId, allocation.used + intent.usdcAmount, allocation.cap);
+        }
+    }
+
+    function _openPosition(PositionIntent calldata intent) private returns (uint256 positionId) {
+        IAlphaGridVault vault = IAlphaGridVault(intent.vault);
+        IAllocationManager.Allocation memory allocation = allocationManager.getAllocation(intent.agentId);
+
+        vault.pullUsdcForTrade(address(swapAdapter), intent.usdcAmount);
+        uint256 tokenOut =
+            swapAdapter.swapUsdcForToken(intent.vault, intent.token, intent.usdcAmount, intent.minTokenOut);
+
+        uint8 tokenDecimals = vault.tokenRegistry().tokenDecimals(intent.token);
+        uint256 entryPriceUsdc = (intent.usdcAmount * (10 ** tokenDecimals)) / tokenOut;
+
+        positionId = positionManager.openPosition(
+            intent.agentId,
+            intent.vault,
+            intent.token,
+            tokenOut,
+            entryPriceUsdc,
+            intent.usdcAmount,
+            intent.maxSlippageBps,
+            intent.exits
+        );
+
+        _nonces[intent.agentId]++;
+        allocationManager.setAllocationUsedByRouter(intent.agentId, allocation.used + intent.usdcAmount);
+
+        _recordDailyTurnover(intent.agentId, intent.usdcAmount);
+        _assertLedgerInvariant(vault, intent.token);
+    }
+
+    /// @inheritdoc ITradeRouter
+    function executeExit(uint256 positionId) external nonReentrant returns (uint256 usdcOut) {
+        Position memory position = positionManager.getPosition(positionId);
+        if (position.status != PositionStatus.Open) revert PositionNotOpen(positionId);
+
+        ExitRule memory rule = positionManager.getNextExitRule(positionId);
+        int256 pnlBps = _positionPnlBps(position);
+        if (!_isRuleTriggered(rule, pnlBps)) revert TriggerNotMet(positionId);
+
+        uint256 sellAmount = position.tokenAmount.mulDiv(rule.exitBps, MAX_BPS, Math.Rounding.Floor);
+        if (sellAmount == 0) revert TriggerNotMet(positionId);
+
+        uint256 usdcReleased = position.usdcCostBasis.mulDiv(sellAmount, position.tokenAmount, Math.Rounding.Floor);
+        uint8 ruleIndex = position.nextRuleIndex;
+        uint256 bounty;
+
+        (usdcOut, bounty) = _sellAndClose(positionId, position, sellAmount, usdcReleased, msg.sender, true, false);
+
+        emit ExitExecuted(positionId, position.agentId, ruleIndex, msg.sender, usdcOut, bounty);
+    }
+
+    /// @inheritdoc ITradeRouter
+    function forceClose(uint256 positionId) external onlyRole(OPERATOR_ROLE) nonReentrant returns (uint256 usdcOut) {
+        Position memory position = positionManager.getPosition(positionId);
+        if (position.status != PositionStatus.Open) revert PositionNotOpen(positionId);
+
+        IAgentRegistry.Agent memory agent = agentRegistry.getAgent(position.agentId);
+        if (agent.status != IAgentRegistry.AgentStatus.Suspended) revert AgentNotSuspended(position.agentId);
+
+        uint256 sellAmount = position.tokenAmount;
+        uint256 usdcReleased = position.usdcCostBasis;
+
+        (usdcOut,) = _sellAndClose(positionId, position, sellAmount, usdcReleased, address(0), false, true);
+
+        emit PositionForceClosed(positionId, position.agentId, msg.sender, usdcOut);
+    }
+
+    // -------------------------------------------------------------------------
+    // Admin
+    // -------------------------------------------------------------------------
+
+    function setKeeperBounty(uint256 keeperBountyBps_, uint256 maxKeeperBounty_) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (keeperBountyBps_ > MAX_BPS) revert BpsOutOfRange(keeperBountyBps_);
+        keeperBountyBps = keeperBountyBps_;
+        maxKeeperBounty = maxKeeperBounty_;
+        emit KeeperBountyUpdated(keeperBountyBps_, maxKeeperBounty_);
+    }
+
+    // -------------------------------------------------------------------------
+    // Private Functions
+    // -------------------------------------------------------------------------
+
+    function _verifyIntentSignature(PositionIntent calldata intent, bytes calldata signature) private view {
+        bytes32 structHash = keccak256(
+            abi.encode(
+                OPEN_POSITION_TYPEHASH,
+                intent.agentId,
+                intent.vault,
+                intent.token,
+                intent.usdcAmount,
+                intent.minTokenOut,
+                intent.maxSlippageBps,
+                _hashExitRules(intent.exits),
+                intent.deadline,
+                intent.nonce
+            )
+        );
+        bytes32 digest = _hashTypedDataV4(structHash);
+        address signer = ECDSA.recover(digest, signature);
+        if (signer != agentRegistry.signerOf(intent.agentId)) revert InvalidSignature();
+    }
+
+    function _hashExitRules(ExitRule[] calldata exits) private pure returns (bytes32) {
+        uint256 len = exits.length;
+        bytes32[] memory hashes = new bytes32[](len);
+        for (uint256 i = 0; i < len; i++) {
+            hashes[i] = keccak256(abi.encode(exits[i].triggerType, exits[i].triggerBps, exits[i].exitBps));
+        }
+        return keccak256(abi.encode(hashes));
+    }
+
+    function _validateExitRules(ExitRule[] calldata exits) private pure {
+        uint256 len = exits.length;
+        if (len == 0 || len > MAX_EXIT_RULES) revert InvalidExitRules();
+        if (exits[len - 1].exitBps != MAX_BPS) revert InvalidExitRules();
+
+        int256 lastStop = type(int256).max;
+        int256 lastTp = type(int256).min;
+
+        for (uint256 i = 0; i < len; i++) {
+            ExitRule calldata rule = exits[i];
+            if (rule.exitBps == 0) revert InvalidExitRules();
+
+            if (rule.triggerType == TriggerType.StopLoss) {
+                if (rule.triggerBps >= 0) revert InvalidExitRules();
+                if (lastStop != type(int256).max && rule.triggerBps >= lastStop) revert InvalidExitRules();
+                lastStop = rule.triggerBps;
+            } else {
+                if (rule.triggerBps <= 0) revert InvalidExitRules();
+                if (lastTp != type(int256).min && rule.triggerBps <= lastTp) revert InvalidExitRules();
+                lastTp = rule.triggerBps;
+            }
+        }
+    }
+
+    function _validateAgentCanOpen(uint256 agentId, address vault, address token) private view {
+        IAgentRegistry.Agent memory agent = _requireActiveAgent(agentId);
+        if (agent.vault != vault) revert VaultMismatch(agentId, agent.vault, vault);
+
+        uint256 trackId = uint256(agentRegistry.trackOf(agentId));
+        if (!trackConfig.isVaultTrackActive(vault, trackId)) revert VaultTrackNotActive(vault, trackId);
+
+        IAllocationManager.Allocation memory allocation = allocationManager.getAllocation(agentId);
+        if (allocation.status != IAllocationManager.AllocationStatus.Active) revert AllocationNotActive(agentId);
+
+        if (!IAlphaGridVault(vault).isAllowedToken(token)) revert TokenNotAllowed(token);
+        if (positionManager.openPositionId(agentId, token) != 0) revert PositionAlreadyOpen(agentId, token);
+    }
+
+    function _requireActiveAgent(uint256 agentId) private view returns (IAgentRegistry.Agent memory agent) {
+        agent = agentRegistry.getAgent(agentId);
+        if (agent.status != IAgentRegistry.AgentStatus.Active) revert AgentNotTradable(agentId);
+    }
+
+    function _validateTradeSize(IAlphaGridVault vault, uint256 agentId, uint256 usdcAmount) private view {
+        uint256 trackId = uint256(agentRegistry.trackOf(agentId));
+        ITrackConfig.VaultTrackConfig memory config = trackConfig.getVaultTrackConfig(address(vault), trackId);
+        uint256 maxTrade = vault.totalAssets().mulDiv(config.maxTradeSizeBps, MAX_BPS, Math.Rounding.Floor);
+        if (usdcAmount > maxTrade) revert ExceedsMaxTradeSize(usdcAmount, maxTrade);
+    }
+
+    function _validateDailyTurnover(IAlphaGridVault vault, uint256 agentId, uint256 usdcNotional) private view {
+        uint256 maxTurnover = _maxDailyTurnover(vault, agentId);
+        if (maxTurnover == 0) return;
+
+        uint256 day = block.timestamp / 1 days;
+        uint256 nextTurnover = _dailyTurnoverUsdc[agentId][day] + usdcNotional;
+        if (nextTurnover > maxTurnover) revert ExceedsDailyTurnover(agentId, nextTurnover, maxTurnover);
+    }
+
+    function _maxDailyTurnover(IAlphaGridVault vault, uint256 agentId) private view returns (uint256) {
+        uint256 trackId = uint256(agentRegistry.trackOf(agentId));
+        ITrackConfig.VaultTrackConfig memory config = trackConfig.getVaultTrackConfig(address(vault), trackId);
+        if (config.maxDailyTurnoverBps == 0) return 0;
+        return vault.totalAssets().mulDiv(config.maxDailyTurnoverBps, MAX_BPS, Math.Rounding.Floor);
+    }
+
+    function _recordDailyTurnover(uint256 agentId, uint256 usdcNotional) private {
+        if (usdcNotional == 0) return;
+        uint256 day = block.timestamp / 1 days;
+        _dailyTurnoverUsdc[agentId][day] += usdcNotional;
+    }
+
+    function _positionPnlBps(Position memory position) private view returns (int256) {
+        IAlphaGridVault vault = IAlphaGridVault(position.vault);
+        uint8 tokenDecimals = vault.tokenRegistry().tokenDecimals(position.token);
+        uint256 currentPrice = OracleLib.valueInAsset(
+            10 ** tokenDecimals,
+            vault.tokenRegistry().priceFeedOf(position.token),
+            tokenDecimals,
+            6,
+            vault.maxPriceAge()
+        );
+        if (position.entryPriceUsdc == 0) return 0;
+        return
+            (int256(currentPrice) - int256(position.entryPriceUsdc)) * int256(MAX_BPS) / int256(position.entryPriceUsdc);
+    }
+
+    function _isRuleTriggered(ExitRule memory rule, int256 pnlBps) private pure returns (bool) {
+        if (rule.triggerType == TriggerType.StopLoss) {
+            return pnlBps <= rule.triggerBps;
+        }
+        return pnlBps >= rule.triggerBps;
+    }
+
+    function _minUsdcOut(IAlphaGridVault vault, address token, uint256 tokenIn, uint16 maxSlippageBps)
+        private
+        view
+        returns (uint256)
+    {
+        uint256 expected = OracleLib.valueInAsset(
+            tokenIn,
+            vault.tokenRegistry().priceFeedOf(token),
+            vault.tokenRegistry().tokenDecimals(token),
+            6,
+            vault.maxPriceAge()
+        );
+        return expected.mulDiv(MAX_BPS - maxSlippageBps, MAX_BPS, Math.Rounding.Floor);
+    }
+
+    function _keeperBounty(uint256 usdcOut) private view returns (uint256) {
+        if (keeperBountyBps == 0) return 0;
+        uint256 bounty = usdcOut.mulDiv(keeperBountyBps, MAX_BPS, Math.Rounding.Floor);
+        if (maxKeeperBounty != 0 && bounty > maxKeeperBounty) return maxKeeperBounty;
+        return bounty;
+    }
+
+    function _sellAndClose(
+        uint256 positionId,
+        Position memory position,
+        uint256 sellAmount,
+        uint256 usdcReleased,
+        address bountyRecipient,
+        bool payBounty,
+        bool isForceClose
+    ) private returns (uint256 usdcOut, uint256 bounty) {
+        IAlphaGridVault vault = IAlphaGridVault(position.vault);
+        uint256 minUsdcOut = _minUsdcOut(vault, position.token, sellAmount, position.maxSlippageBps);
+
+        if (!isForceClose) {
+            _validateDailyTurnover(vault, position.agentId, minUsdcOut);
+        }
+
+        if (isForceClose) {
+            vault.pullTokenForForceClose(position.token, address(swapAdapter), sellAmount);
+        } else {
+            vault.pullTokenForTrade(position.token, address(swapAdapter), sellAmount);
+        }
+        usdcOut = swapAdapter.swapTokenForUsdc(position.vault, position.token, sellAmount, minUsdcOut);
+
+        if (payBounty) {
+            bounty = _keeperBounty(usdcOut);
+            if (bounty > 0) {
+                vault.pullUsdcForTrade(bountyRecipient, bounty);
+            }
+        }
+
+        positionManager.applyExit(positionId, sellAmount, usdcReleased);
+
+        IAllocationManager.Allocation memory allocation = allocationManager.getAllocation(position.agentId);
+        allocationManager.setAllocationUsedByRouter(position.agentId, allocation.used - usdcReleased);
+
+        if (!isForceClose) {
+            _recordDailyTurnover(position.agentId, usdcOut);
+        }
+
+        _assertLedgerInvariant(vault, position.token);
+    }
+
+    function _assertLedgerInvariant(IAlphaGridVault vault, address token) private view {
+        uint256 ledgerTotal = positionManager.totalTokenLedger(token);
+        uint256 vaultBalance = IERC20(token).balanceOf(address(vault));
+        if (ledgerTotal > vaultBalance) revert LedgerExceedsVaultBalance(token, ledgerTotal, vaultBalance);
+    }
+}

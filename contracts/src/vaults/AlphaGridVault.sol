@@ -25,6 +25,8 @@ contract AlphaGridVault is IAlphaGridVault, ERC4626, AccessControl {
 
     bytes32 public constant VAULT_ADMIN_ROLE = keccak256("VAULT_ADMIN_ROLE");
 
+    bytes32 public constant TRADE_ROUTER_ROLE = keccak256("TRADE_ROUTER_ROLE");
+
     uint256 public constant MAX_BPS = 10_000;
 
     // -------------------------------------------------------------------------
@@ -43,17 +45,24 @@ contract AlphaGridVault is IAlphaGridVault, ERC4626, AccessControl {
     uint256 public withdrawFeeBps;
     address public feeRecipient;
 
+    bool public liquidityPaused;
+    bool public tradingPaused;
+
     // -------------------------------------------------------------------------
     // Errors
     // -------------------------------------------------------------------------
 
     error ZeroAddress();
+    error LiquidityOperationsPaused();
+    error TradingOperationsPaused();
     error TokenNotRegistered(address token);
     error TokenNotActive(address token);
     error TokenNotAllowed(address token);
     error TokenAlreadyAllowed(address token);
     error BpsOutOfRange(uint256 bps);
     error FeeRecipientRequired();
+    error InsufficientIdleUsdc(uint256 requested, uint256 available);
+    error InsufficientTokenBalance(address token, uint256 requested, uint256 available);
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -72,10 +81,7 @@ contract AlphaGridVault is IAlphaGridVault, ERC4626, AccessControl {
         bytes32 vaultName_,
         ITokenRegistry tokenRegistry_,
         address admin
-    )
-        ERC20(name_, symbol_)
-        ERC4626(asset_)
-    {
+    ) ERC20(name_, symbol_) ERC4626(asset_) {
         if (admin == address(0) || address(tokenRegistry_) == address(0)) revert ZeroAddress();
 
         VAULT_NAME = vaultName_;
@@ -170,6 +176,7 @@ contract AlphaGridVault is IAlphaGridVault, ERC4626, AccessControl {
 
     /// @inheritdoc ERC4626
     function _deposit(address caller, address receiver, uint256 assets, uint256 shares) internal override {
+        if (liquidityPaused) revert LiquidityOperationsPaused();
         IERC20 token = IERC20(asset());
         token.safeTransferFrom(caller, address(this), assets);
 
@@ -184,13 +191,12 @@ contract AlphaGridVault is IAlphaGridVault, ERC4626, AccessControl {
     }
 
     /// @inheritdoc ERC4626
-    function _withdraw(
-        address caller,
-        address receiver,
-        address owner,
-        uint256 assets,
-        uint256 shares
-    ) internal override {
+    function _withdraw(address caller, address receiver, address owner, uint256 assets, uint256 shares)
+        internal
+        override
+    {
+        if (liquidityPaused) revert LiquidityOperationsPaused();
+
         if (caller != owner) {
             _spendAllowance(owner, caller, shares);
         }
@@ -292,9 +298,53 @@ contract AlphaGridVault is IAlphaGridVault, ERC4626, AccessControl {
         emit FeeRecipientUpdated(feeRecipient_);
     }
 
+    /// @inheritdoc IAlphaGridVault
+    function setLiquidityPaused(bool paused) external onlyRole(VAULT_ADMIN_ROLE) {
+        liquidityPaused = paused;
+        emit LiquidityPauseUpdated(paused);
+    }
+
+    /// @inheritdoc IAlphaGridVault
+    function setTradingPaused(bool paused) external onlyRole(VAULT_ADMIN_ROLE) {
+        tradingPaused = paused;
+        emit TradingPauseUpdated(paused);
+    }
+
+    /// @inheritdoc IAlphaGridVault
+    function pullUsdcForTrade(address to, uint256 amount) external onlyRole(TRADE_ROUTER_ROLE) {
+        if (tradingPaused) revert TradingOperationsPaused();
+        _pullUsdc(to, amount);
+    }
+
+    /// @inheritdoc IAlphaGridVault
+    function pullTokenForTrade(address token, address to, uint256 amount) external onlyRole(TRADE_ROUTER_ROLE) {
+        if (tradingPaused) revert TradingOperationsPaused();
+        _pullToken(token, to, amount);
+    }
+
+    /// @inheritdoc IAlphaGridVault
+    function pullTokenForForceClose(address token, address to, uint256 amount) external onlyRole(TRADE_ROUTER_ROLE) {
+        _pullToken(token, to, amount);
+    }
+
     // -------------------------------------------------------------------------
     // Private Functions
     // -------------------------------------------------------------------------
+
+    function _pullUsdc(address to, uint256 amount) private {
+        if (to == address(0)) revert ZeroAddress();
+        uint256 idle = idleAssets();
+        if (amount > idle) revert InsufficientIdleUsdc(amount, idle);
+        IERC20(asset()).safeTransfer(to, amount);
+    }
+
+    function _pullToken(address token, address to, uint256 amount) private {
+        if (to == address(0)) revert ZeroAddress();
+        if (!_tokenListed[token] || !_tokenEnabled[token]) revert TokenNotAllowed(token);
+        uint256 balance = IERC20(token).balanceOf(address(this));
+        if (amount > balance) revert InsufficientTokenBalance(token, amount, balance);
+        IERC20(token).safeTransfer(to, amount);
+    }
 
     function _depositFee(uint256 assets) private view returns (uint256) {
         return assets.mulDiv(depositFeeBps, MAX_BPS, Math.Rounding.Floor);

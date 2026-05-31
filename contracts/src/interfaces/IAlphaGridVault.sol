@@ -25,6 +25,10 @@ interface IAlphaGridVault is IERC4626 {
 
     event LiquidityFeeCollected(address indexed payer, address indexed recipient, uint256 fee, bool isDeposit);
 
+    event LiquidityPauseUpdated(bool paused);
+
+    event TradingPauseUpdated(bool paused);
+
     // -------------------------------------------------------------------------
     // Views
     // -------------------------------------------------------------------------
@@ -43,6 +47,8 @@ interface IAlphaGridVault is IERC4626 {
 
     function idleAssets() external view returns (uint256);
 
+    function maxPriceAge() external view returns (uint256);
+
     /// @notice Whether `token` is enabled for this vault mandate and active in the registry.
     function isAllowedToken(address token) external view returns (bool);
 
@@ -51,6 +57,12 @@ interface IAlphaGridVault is IERC4626 {
     function allowedTokenAt(uint256 index) external view returns (address);
 
     function allowedTokenCount() external view returns (uint256);
+
+    /// @notice When true, LP deposits and withdrawals are blocked.
+    function liquidityPaused() external view returns (bool);
+
+    /// @notice When true, routine trade pulls are blocked; force-close pulls remain available.
+    function tradingPaused() external view returns (bool);
 
     // -------------------------------------------------------------------------
     // Admin
@@ -69,4 +81,19 @@ interface IAlphaGridVault is IERC4626 {
     function setWithdrawFeeBps(uint256 withdrawFeeBps) external;
 
     function setFeeRecipient(address feeRecipient) external;
+
+    function setLiquidityPaused(bool paused) external;
+
+    function setTradingPaused(bool paused) external;
+
+    // -------------------------------------------------------------------------
+    // Trade router
+    // -------------------------------------------------------------------------
+
+    function pullUsdcForTrade(address to, uint256 amount) external;
+
+    function pullTokenForTrade(address token, address to, uint256 amount) external;
+
+    /// @notice Pull tokens for operator force-close while trading is paused.
+    function pullTokenForForceClose(address token, address to, uint256 amount) external;
 }

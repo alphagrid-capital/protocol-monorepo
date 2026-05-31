@@ -75,4 +75,7 @@ interface IAllocationManager {
 
     /// @param used USDC-equivalent notional deployed; must not exceed `cap`.
     function setAllocationUsed(uint256 agentId, uint256 used) external;
+
+    /// @notice Updates `used` from TradeRouter after position open/exit.
+    function setAllocationUsedByRouter(uint256 agentId, uint256 used) external;
 }

@@ -275,9 +275,8 @@ contract AlphaGridVaultTest is BaseTest {
     }
 
     function test_RevertWhen_SetDepositFeeWithoutRecipient() public {
-        AlphaGridVault freshVault = new AlphaGridVault(
-            IERC20(address(usdc)), "Fresh Vault", "agFRESH", VAULT_MANDATE, registry, deployer
-        );
+        AlphaGridVault freshVault =
+            new AlphaGridVault(IERC20(address(usdc)), "Fresh Vault", "agFRESH", VAULT_MANDATE, registry, deployer);
 
         vm.expectRevert(AlphaGridVault.FeeRecipientRequired.selector);
         vm.prank(deployer);
@@ -288,5 +287,59 @@ contract AlphaGridVaultTest is BaseTest {
         vm.expectRevert(abi.encodeWithSelector(AlphaGridVault.BpsOutOfRange.selector, 10_001));
         vm.prank(deployer);
         vault.setDepositFeeBps(10_001);
+    }
+
+    function test_LiquidityPauseBlocksDepositAndWithdraw() public {
+        vm.startPrank(lp);
+        usdc.approve(address(vault), 100_000e6);
+        vault.deposit(100_000e6, lp);
+        vm.stopPrank();
+
+        vm.prank(deployer);
+        vault.setLiquidityPaused(true);
+
+        vm.startPrank(lp);
+        usdc.approve(address(vault), 1000e6);
+        vm.expectRevert(AlphaGridVault.LiquidityOperationsPaused.selector);
+        vault.deposit(1000e6, lp);
+
+        vm.expectRevert(AlphaGridVault.LiquidityOperationsPaused.selector);
+        vault.withdraw(1000e6, lp, lp);
+        vm.stopPrank();
+    }
+
+    function test_TradingPauseBlocksRoutinePulls() public {
+        address router = makeAddr("router");
+
+        vm.startPrank(deployer);
+        vault.grantRole(vault.TRADE_ROUTER_ROLE(), router);
+        vault.setTradingPaused(true);
+        vm.stopPrank();
+
+        vm.prank(router);
+        vm.expectRevert(AlphaGridVault.TradingOperationsPaused.selector);
+        vault.pullUsdcForTrade(router, 1e6);
+
+        nvda.mint(address(vault), 1e18);
+
+        vm.prank(router);
+        vm.expectRevert(AlphaGridVault.TradingOperationsPaused.selector);
+        vault.pullTokenForTrade(address(nvda), router, 1e18);
+    }
+
+    function test_ForceClosePullBypassesTradingPause() public {
+        address router = makeAddr("router");
+
+        vm.startPrank(deployer);
+        vault.grantRole(vault.TRADE_ROUTER_ROLE(), router);
+        vault.setTradingPaused(true);
+        vm.stopPrank();
+
+        nvda.mint(address(vault), 1e18);
+
+        vm.prank(router);
+        vault.pullTokenForForceClose(address(nvda), router, 1e18);
+
+        assertEq(nvda.balanceOf(router), 1e18);
     }
 }

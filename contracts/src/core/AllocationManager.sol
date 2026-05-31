@@ -14,6 +14,8 @@ contract AllocationManager is IAllocationManager, AccessControl {
 
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
 
+    bytes32 public constant TRADE_ROUTER_ROLE = keccak256("TRADE_ROUTER_ROLE");
+
     // -------------------------------------------------------------------------
     // State
     // -------------------------------------------------------------------------
@@ -111,11 +113,12 @@ contract AllocationManager is IAllocationManager, AccessControl {
 
     /// @inheritdoc IAllocationManager
     function setAllocationUsed(uint256 agentId, uint256 used) external onlyRole(OPERATOR_ROLE) {
-        Allocation storage allocation = _requireAllocation(agentId);
-        if (used > allocation.cap) revert UsedExceedsCap(agentId, used, allocation.cap);
-        allocation.used = used;
-        allocation.updatedAt = uint64(block.timestamp);
-        emit AllocationUsedUpdated(agentId, used);
+        _setAllocationUsed(agentId, used);
+    }
+
+    /// @inheritdoc IAllocationManager
+    function setAllocationUsedByRouter(uint256 agentId, uint256 used) external onlyRole(TRADE_ROUTER_ROLE) {
+        _setAllocationUsed(agentId, used);
     }
 
     // -------------------------------------------------------------------------
@@ -193,5 +196,13 @@ contract AllocationManager is IAllocationManager, AccessControl {
     function _requireAllocation(uint256 agentId) private view returns (Allocation storage allocation) {
         allocation = _allocations[agentId];
         if (allocation.vault == address(0)) revert AllocationNotFound(agentId);
+    }
+
+    function _setAllocationUsed(uint256 agentId, uint256 used) private {
+        Allocation storage allocation = _requireAllocation(agentId);
+        if (used > allocation.cap) revert UsedExceedsCap(agentId, used, allocation.cap);
+        allocation.used = used;
+        allocation.updatedAt = uint64(block.timestamp);
+        emit AllocationUsedUpdated(agentId, used);
     }
 }

@@ -126,7 +126,9 @@ contract AllocationManagerTest is BaseTest {
         vm.startPrank(operator);
         uint256 agentId = registry.registerAgent(alice, address(vault), "Bot", "ipfs://bot", alice);
 
-        vm.expectRevert(abi.encodeWithSelector(AllocationManager.UsedExceedsCap.selector, agentId, CHALLENGE_CAP + 1, CHALLENGE_CAP));
+        vm.expectRevert(
+            abi.encodeWithSelector(AllocationManager.UsedExceedsCap.selector, agentId, CHALLENGE_CAP + 1, CHALLENGE_CAP)
+        );
         allocationManager.setAllocationUsed(agentId, CHALLENGE_CAP + 1);
         vm.stopPrank();
     }
