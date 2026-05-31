@@ -252,7 +252,7 @@ AlphaGrid needed a clear model for capital pools, agent lifecycle, and fees.
 ### Consequences
 
 - Replace track-level vault model with vault-scoped lifecycle.
-- Contracts: `AlphaGridVault` (4626), `FeeManager`, `VaultTrackConfig` in `TrackRegistry`.
+- Contracts: `AlphaGridVault` (4626), `FeeManager`, `VaultTrackConfig` in `TrackConfig`.
 - Update functional, technical, tokenomics, flows, and MVP docs accordingly.
 
 ---
@@ -264,7 +264,7 @@ AlphaGrid needed a clear model for capital pools, agent lifecycle, and fees.
 
 ### Context
 
-Phase 1 review asked whether MVP should require a non-zero registration fee or allow open onboarding.
+Agent core contract review asked whether MVP should require a non-zero registration fee or allow open onboarding.
 
 ### Decision
 
@@ -286,7 +286,7 @@ Phase 1 review asked whether MVP should require a non-zero registration fee or a
 
 ### Context
 
-Phase 1 review clarified who may call `promoteAgent` in MVP.
+Agent core contract review clarified who may call `promoteAgent` in MVP.
 
 ### Decision
 
@@ -296,7 +296,7 @@ Phase 1 review clarified who may call `promoteAgent` in MVP.
 ### Consequences
 
 - Permissions matrix and admin console docs reflect operator-only promotion.
-- No contract access-control change in Phase 1 follow-up.
+- No further contract access-control change required for this decision.
 
 ---
 

@@ -277,10 +277,16 @@ Allows agents to trade while enforcing permissions.
 
 Support a narrow execution environment:
 
-- limited assets
-- no leverage or tightly controlled leverage
-- fixed supported venues
-- hardcoded risk constraints
+- limited assets (vault + `TokenRegistry` allowlist)
+- no leverage
+- approved swap adapter only (`ISwapAdapter`; production venue adapter TBD)
+- on-chain constraints: max trade size, max daily turnover, exit ladder on every open
+- agent signs **OpenPosition** EIP-712 intent including exit rules (`StopLoss` / `TakeProfit`)
+- executor with `EXECUTOR_ROLE` submits `TradeRouter.openPosition`
+- permissionless keepers call `TradeRouter.executeExit` when triggers fire
+- operator may `forceClose` when agent is `Suspended`
+
+See `contracts/docs/position-intent-eip712.md` for the signing schema.
 
 ---
 

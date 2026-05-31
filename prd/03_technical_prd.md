@@ -109,21 +109,57 @@ Tokenized Stock Venue Adapter
 
 ## 5. Smart Contract Architecture
 
+### 5.0 On-chain implementation status
+
+**Last updated:** 2026-05-29 (aligned with `contracts/` in repo)
+
+The MVP contract stack is implemented in Foundry. Deploy in order:
+
+1. `DeployAgentCore` — `FeeManager`, `TrackConfig`, `AgentRegistry`
+2. `DeployVaultInfrastructure` — greenfield: agent core + `TokenRegistry` + four `AlphaGridVault` instances + `AllocationManager`
+3. `DeployTrading` — `PositionManager`, `TradeRouter`, swap adapter; wire roles to existing vault stack
+
+See `contracts/README.md` and `contracts/docs/position-intent-eip712.md` for deployment env vars and the `OpenPosition` signing schema.
+
+| Component | Status | Notes |
+| --- | --- | --- |
+| `AgentRegistry` | Implemented | Human + operator registration, vault binding, track lifecycle, operator-only promotion |
+| `TrackConfig` | Implemented | Per-vault track rules (`VaultTrackConfig`); PRD name `TrackRegistry` |
+| `FeeManager` | Implemented | Registration + promotion fees (USDC; amount may be zero) |
+| `TokenRegistry` | Implemented | Tradable token + price feed registration |
+| `AllocationManager` | Implemented | Simulated Challenge + real Funded/Prime allocations |
+| `AlphaGridVault` | Implemented | ERC-4626; liquidity pause + trading pause; router-only pulls |
+| `PositionManager` | Implemented | Per-agent token ledger and position storage; router-only mutations |
+| `TradeRouter` | Implemented | Sole settlement path: `openPosition`, `executeExit`, `forceClose` |
+| `ISwapAdapter` | Implemented | `MockSwapAdapter` (dev/tests), `InventorySwapAdapter` (pre-funded inventory) |
+| `IntentValidator` | Consolidated | EIP-712 signature, nonce, deadline checks live in `TradeRouter` |
+| `ExecutionController` | Consolidated | `EXECUTOR_ROLE` / `OPERATOR_ROLE` on `TradeRouter` |
+| `ExecutorRegistry` | Deferred | MVP uses a single executor EOA granted `EXECUTOR_ROLE` |
+| `RiskManager` | Partial | On-chain: max trade size, max daily turnover, registry pause on opens, vault track active; drawdown breach / Alpha Score off-chain |
+| Dedicated `Treasury` | Deferred | Configurable fee recipient on vaults / `FeeManager` |
+
+**Not yet built (off-chain MVP):** indexer, intent gateway API, AlphaGrid executor service, performance engine, leaderboard API, frontend, MCP server.
+
+---
+
 ### 5.1 Core Contracts
 
 Recommended contracts:
 
 1. `AgentRegistry`
-2. `TrackRegistry`
-3. `VaultRegistry` / `AlphaGridVault` (ERC-4626 instances)
-4. `AllocationManager`
-5. `IntentValidator`
-6. `ExecutionController`
-7. `TradeRouter`
-8. `ExecutorRegistry`
-9. `FeeManager`
-10. `RiskManager`
-11. `Treasury`
+2. `TrackConfig` *(implemented; PRD concept: TrackRegistry)*
+3. `AlphaGridVault` (ERC-4626 instances)
+4. `TokenRegistry`
+5. `AllocationManager`
+6. `PositionManager`
+7. `TradeRouter` *(includes MVP intent validation + executor gating)*
+8. `FeeManager`
+9. `ISwapAdapter` *(venue-specific; not a core registry)*
+10. `ExecutorRegistry` *(deferred post-MVP)*
+11. `RiskManager` *(partial; remainder off-chain in MVP)*
+12. `Treasury` *(deferred; configurable recipients today)*
+
+MVP consolidates separate `IntentValidator` and `ExecutionController` designs into `TradeRouter` to reduce contract surface area while preserving the same security properties.
 
 ---
 
@@ -173,11 +209,13 @@ AgentSignerUpdated(agentId, signer)
 
 ---
 
-## 5.3 TrackRegistry
+## 5.3 TrackConfig (TrackRegistry)
 
 ### Purpose
 
 Stores **track types** (lifecycle stages) and **per-vault track configuration**.
+
+**Implementation note:** Deployed as `TrackConfig` in `contracts/src/core/TrackConfig.sol`. The PRD name `TrackRegistry` describes the same responsibility.
 
 ### Responsibilities
 
@@ -339,6 +377,8 @@ PromotionFeePaid(agentId, vault, fromTrackId, toTrackId, payer, asset, amount)
 
 Validates signed agent trade intents before execution.
 
+**MVP implementation:** Validation is performed inside `TradeRouter.openPosition` (EIP-712 `OpenPosition` type, nonce, deadline, agent signer, track/vault rules). A standalone contract is deferred unless multi-router settlement is needed.
+
 ### Responsibilities
 
 - verify EIP-712 agent signature
@@ -385,6 +425,12 @@ isNonceUsed(agentId, nonce)
 
 Controls who can submit execution transactions and under what conditions.
 
+**MVP implementation:** Replaced by role gating on `TradeRouter`:
+
+- `EXECUTOR_ROLE` — may call `openPosition` with a valid agent signature
+- `OPERATOR_ROLE` — may call `forceClose` when agent is `Suspended`
+- Any address — may call `executeExit` when an exit rule triggers (keeper bounty)
+
 ### Responsibilities
 
 - verify executor is approved
@@ -416,33 +462,58 @@ Avoid arbitrary execution and direct agent transactions in MVP.
 
 ### Purpose
 
-On-chain execution entrypoint for all approved trade settlement.
+On-chain execution entrypoint for all approved trade settlement. **Only** path that may move vault assets for agent trades.
 
 ### Responsibilities
 
-- receive valid signed intent
-- call `IntentValidator`
-- call `RiskManager`
-- call approved venue adapter
-- enforce slippage / minimum output
-- emit execution event
-- prevent executor access to vault withdrawals or admin actions
+- validate EIP-712 `OpenPosition` intent (agent signature, nonce, deadline)
+- enforce agent status, vault track active, allocation, max trade size, max daily turnover
+- open positions via approved `ISwapAdapter`
+- execute exit ladder rules (`StopLoss` / `TakeProfit`; partial exits of remaining size)
+- pay keeper bounty on permissionless `executeExit`
+- operator `forceClose` when agent is `Suspended` (bypasses vault trading pause)
+- maintain per-agent nonces and daily turnover accounting
+- emit position and execution events for indexer consumption
 
-### Key Function
+### Position intent (open)
+
+Agents sign an `OpenPosition` intent binding vault, token, USDC size, slippage bounds, and an **exit ladder** hashed as `exitsHash`. Schema: `contracts/docs/position-intent-eip712.md`.
 
 ```solidity
-executeTradeIntent(
-    TradeIntent calldata intent,
-    bytes calldata agentSignature,
-    bytes calldata routeData
-)
+struct PositionIntent {
+    uint256 agentId;
+    address vault;
+    address token;
+    uint256 usdcAmount;
+    uint256 minTokenOut;
+    uint16 maxSlippageBps;
+    ExitRule[] exits;   // last rule must exit 100% of remaining
+    uint256 deadline;
+    uint256 nonce;
+}
 ```
 
-### Design Rule
+### Key functions
 
-Executors do not control funds.
+```solidity
+openPosition(PositionIntent calldata intent, bytes calldata signature) // EXECUTOR_ROLE
+executeExit(uint256 positionId) external                               // permissionless keeper
+forceClose(uint256 positionId) external                                // OPERATOR_ROLE; agent Suspended
+```
 
-Executors only submit valid intents to the router.
+### Design rules
+
+- Executors do not control vault withdrawals or admin actions.
+- Opens respect `AgentRegistry` pause and vault `tradingPaused`; routine pulls blocked when trading paused.
+- `forceClose` remains available when trading is paused so operators can flatten suspended agents.
+- Registry pause blocks **new opens only**; keeper exits continue.
+- Swap adapters receive pulled assets in-transaction; no standalone agent wallet execution.
+
+### Related contracts
+
+- `PositionManager` — stores positions and per-agent token ledger; only `TradeRouter` may mutate.
+- `AlphaGridVault` — `TRADE_ROUTER_ROLE` for `pullUsdcForTrade` / `pullTokenForTrade` / force-close pulls.
+- `AllocationManager` — `TRADE_ROUTER_ROLE` for allocation usage updates on open.
 
 ---
 
@@ -488,6 +559,15 @@ base fee
 ### Purpose
 
 Stores risk rules and can pause or restrict agents.
+
+**MVP implementation:** On-chain guardrails are split across contracts:
+
+- `TrackConfig` — `maxTradeSizeBps`, `maxDailyTurnoverBps`, track caps
+- `TradeRouter` — enforces trade size and daily turnover on open
+- `AgentRegistry` — agent status, global pause (opens only)
+- `AlphaGridVault` — `liquidityPaused` / `tradingPaused`, token allowlist
+
+Drawdown breach, Alpha Score graduation, and automated fail/promote actions remain **off-chain** (performance + risk engines) with operator execution on-chain in MVP.
 
 ### Responsibilities
 
@@ -653,11 +733,11 @@ Responsibilities:
 
 Execution modes:
 
-| Mode                   | Description                                     | Phase               |
-| ---------------------- | ----------------------------------------------- | ------------------- |
-| Central Executor       | AlphaGrid submits txs.                          | MVP                 |
-| Permissioned Executors | Approved external executors can settle intents. | Phase 2             |
-| Solver Auction         | Solvers compete for best execution.             | Phase 3             |
+| Mode                   | Description                                     | Protocol rollout |
+| ---------------------- | ----------------------------------------------- | ---------------- |
+| Central Executor       | AlphaGrid submits txs.                          | MVP              |
+| Permissioned Executors | Approved external executors can settle intents. | Later            |
+| Solver Auction         | Solvers compete for best execution.             | Later            |
 | Direct Agent Execution | Agents submit constrained txs directly.         | Advanced / optional |
 
 ---
@@ -990,23 +1070,21 @@ Do not allow agents to execute arbitrary transactions.
 Use a constrained intent model:
 
 ```text
-Agent submits signed trade intent
+Agent signs OpenPosition intent (includes exit ladder)
   ↓
-Backend validates auth and schema
+Backend validates auth and schema (off-chain; not yet built)
   ↓
-Risk engine validates limits
+Risk engine validates limits (off-chain; partial mirror on-chain)
   ↓
-Execution gateway simulates route
+AlphaGrid executor (EXECUTOR_ROLE) submits openPosition tx
   ↓
-AlphaGrid executor submits tx
+TradeRouter verifies EIP-712 signature, nonce, deadline, rules
   ↓
-IntentValidator verifies signature/nonce/deadline
+Vault + AllocationManager + PositionManager updated; adapter swaps
   ↓
-ExecutionController verifies permissions
+Keepers call executeExit when price triggers fire (permissionless)
   ↓
-TradeRouter executes via approved adapter
-  ↓
-Indexer records result
+Indexer records result (off-chain; not yet built)
 ```
 
 ---
@@ -1041,7 +1119,7 @@ Cons:
 
 ### Mode 2: Permissioned Executor Network
 
-Recommended Phase 2.
+Recommended after MVP (permissioned executor network).
 
 ```text
 Agent signs intent
@@ -1070,7 +1148,7 @@ Cons:
 
 ### Mode 3: OIF-Compatible Solver Layer
 
-Recommended Phase 3.
+Recommended after permissioned executors (solver / OIF layer).
 
 ```text
 Agent signs AlphaGrid intent
@@ -1211,29 +1289,34 @@ Recommended MVP infrastructure:
 
 ## 12. MVP Technical Scope
 
-Build:
+### Implemented on-chain (contracts/)
 
-1. Agent registry contract (self-register + human register)
-2. Track registry contract (track types + VaultTrackConfig)
-3. Four ERC-4626 AlphaGrid vaults
-4. FeeManager (registration + promotion fees)
-5. Allocation manager
-6. Intent validator
-7. Execution controller
-8. Trade router
-9. Backend API
-10. Agent metadata store
-11. MCP server
-12. Intent gateway
-13. Central AlphaGrid executor
-14. Indexer
-15. Performance engine
-16. Risk event engine
-17. Leaderboard API (vault + track filters)
-18. Admin controls
-19. Frontend app
+1. Agent registry (`AgentRegistry`) — self-register + operator register
+2. Track configuration (`TrackConfig`) — track types + `VaultTrackConfig`
+3. Four ERC-4626 `AlphaGridVault` instances (greenfield deploy script)
+4. `FeeManager` (registration + promotion fees)
+5. `TokenRegistry` + vault token allowlist
+6. `AllocationManager`
+7. `PositionManager` + per-agent ledger
+8. `TradeRouter` — open, keeper exit, operator force-close
+9. `ISwapAdapter` implementations (`MockSwapAdapter`, `InventorySwapAdapter`)
+10. Foundry unit + integration tests; deploy scripts (`DeployAgentCore`, `DeployVaultInfrastructure`, `DeployTrading`)
 
-Defer:
+### Remaining MVP (off-chain + product)
+
+1. Backend API
+2. Agent metadata store
+3. MCP server
+4. Intent gateway (HTTP → executor)
+5. Central AlphaGrid executor service
+6. Indexer (positions, trades, allocations, vault TVL)
+7. Performance engine (PnL, drawdown, Alpha Score)
+8. Risk event engine (drawdown breach → operator actions)
+9. Leaderboard API (vault + track filters)
+10. Admin console
+11. Frontend app
+
+### Deferred (post-MVP on-chain)
 
 - full OIF integration
 - permissionless solvers

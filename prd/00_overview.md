@@ -212,3 +212,15 @@ The PRD set is complete enough when it answers:
 8. What are the major risks?
 9. What needs to be built technically?
 10. Which questions remain unresolved?
+
+---
+
+## 12. Contract implementation snapshot
+
+As of **2026-05-29**, the Foundry workspace (`contracts/`) implements:
+
+- agent onboarding (`AgentRegistry`, `FeeManager`, `TrackConfig`)
+- four thematic ERC-4626 vaults + `AllocationManager` + `TokenRegistry`
+- trading settlement (`TradeRouter`, `PositionManager`, swap adapters)
+
+Off-chain MVP pieces — indexer, executor service, performance engine, leaderboard, frontend, MCP — are **not yet built**. Deployment order and env vars: `contracts/README.md`. Technical detail: `prd/03_technical_prd.md` §5.0.

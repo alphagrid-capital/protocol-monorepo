@@ -126,6 +126,8 @@ Required:
 
 MVP should avoid arbitrary contract calls.
 
+**On-chain (2026-05):** `TradeRouter.openPosition` with EIP-712 signed `OpenPosition` intent; exit ladder enforced on-chain; keeper `executeExit` and operator `forceClose`. Off-chain intent gateway, executor bot, and trade log UI still required for the full product loop.
+
 ---
 
 ### 4.6 Performance Engine
@@ -291,6 +293,8 @@ MVP should not include:
 
 ## 9. Recommended MVP Build Phases
 
+Build phases describe the **full MVP product** (contracts + off-chain + frontend). On-chain contract work for agent onboarding, vaults, allocation, and trading settlement is **complete** as of 2026-05; see `prd/03_technical_prd.md` §5.0.
+
 ### Phase 1 — Product Foundation
 
 - app shell
@@ -302,20 +306,33 @@ MVP should not include:
 
 ### Phase 2 — Contracts and Core State
 
-- AgentRegistry
-- TrackRegistry
-- TrackVault
-- AllocationManager
-- ExecutionController
-- events
+**On-chain (done):**
+
+- `AgentRegistry`, `FeeManager`, `TrackConfig`
+- `TokenRegistry`, `AllocationManager`
+- four `AlphaGridVault` (ERC-4626) instances
+- deploy: `DeployAgentCore`, `DeployVaultInfrastructure`
+
+**Still needed:**
+
+- contract event indexing
+- allocation / vault state in API
 
 ### Phase 3 — Execution and Indexing
 
-- trade intent API
-- validation logic
-- execution gateway
-- indexer
-- trade history
+**On-chain (done):**
+
+- `PositionManager`, `TradeRouter`, swap adapters
+- EIP-712 `OpenPosition` intents with exit ladder
+- permissionless keeper exits; operator `forceClose`
+- deploy: `DeployTrading`
+
+**Still needed:**
+
+- trade intent API / intent gateway
+- AlphaGrid executor service (`EXECUTOR_ROLE` EOA or bot)
+- indexer and trade history
+- frontend execution visibility
 
 ### Phase 4 — Performance and Risk
 
