@@ -6,28 +6,44 @@ REST endpoints and MCP tools share the same service layer so agents and classic 
 
 ## Prerequisites
 
-- Node.js 20+
-- [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/) (installed via `npm install` in this directory)
+- Node.js 22+ (required by Wrangler 4; CI uses 24)
+- [Yarn](https://yarnpkg.com/) 1.x (Classic)
+- [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/) (installed via `yarn install` in this directory)
 
 ## Commands
 
 ```bash
 cd api
-npm install
-npm run typecheck   # TypeScript check (no emit)
-npm run dev         # Local dev server (wrangler dev)
-npm run deploy      # Deploy to Cloudflare (requires account auth)
+yarn install
+yarn typecheck   # TypeScript check (no emit)
+yarn dev         # Local dev server (wrangler dev)
+yarn deploy      # Deploy to Cloudflare (requires account auth)
 ```
 
 ## Endpoints
 
 | Method | Path | Description |
 |--------|------|-------------|
+| `GET` | `/` | API discovery JSON (generated from OpenAPI) |
+| `GET` | `/llms.txt` | LLM-oriented index ([llms.txt spec](https://llmstxt.org/)) |
 | `GET` | `/health` | Liveness probe |
-| `GET` | `/vaults` | Mock vault catalog with basic stats |
-| `GET` | `/docs` | Swagger UI |
-| `GET` | `/openapi.json` | OpenAPI 3.1 specification |
+| `GET` | `/vaults` | Mock vault catalog (`?format=md` for markdown) |
+| `GET` | `/docs` | Swagger UI (humans; poor fit for URL paste in chat) |
+| `GET` | `/openapi.json` | OpenAPI 3.1 (Custom GPT Actions) |
 | `POST` | `/mcp` | MCP Streamable HTTP (stateless JSON) |
+
+## Using with ChatGPT and other LLMs
+
+ChatGPT **browsing** only performs simple `GET` requests on **public** URLs. It cannot run your local dev server, open Swagger UI as data, or call `POST /mcp`.
+
+| Goal | What to use |
+|------|-------------|
+| Paste a URL in chat and get vault data | Deployed `GET /vaults` or `GET /vaults?format=md` |
+| Let ChatGPT discover endpoints | Deployed `GET /` or `GET /llms.txt` (both derived from `/openapi.json`) |
+| Custom GPT with structured actions | Import `GET /openapi.json` when creating Actions |
+| Claude / Cursor / MCP-native clients | `POST /mcp` and tool `alphagrid_list_vaults` |
+
+**Do not paste** `/docs` if you want JSON—the UI is HTML. Paste the **data URL**, e.g. `https://<your-worker>.workers.dev/vaults?format=md`.
 
 ### MCP tools
 
