@@ -5,6 +5,9 @@
   "description": "AlphaGrid HTTP API and MCP server (Cloudflare Workers).",
   "type": "module",
   "packageManager": "yarn@1.22.22",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "wrangler dev --install-skills=false",
     "deploy": "wrangler deploy",
