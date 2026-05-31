@@ -7,7 +7,7 @@ import {
 } from "@modelcontextprotocol/server";
 import { createAlpagridMcpServer } from "./mcp/server.js";
 import { openApiJsonResponse } from "./openapi.js";
-import { discoveryRoutes } from "./routes/discovery.js";
+import { registerDiscoveryRoutes } from "./routes/discovery.js";
 import { healthRoutes } from "./routes/health.js";
 import { vaultRoutes } from "./routes/vaults.js";
 
@@ -32,9 +32,10 @@ export function createApp(): OpenAPIHono {
     }),
   );
 
-  app.route("/", discoveryRoutes);
   app.route("/", healthRoutes);
   app.route("/", vaultRoutes);
+
+  registerDiscoveryRoutes(app);
 
   app.get("/openapi.json", (c) =>
     c.json(openApiJsonResponse(app, c.req.url), 200, {

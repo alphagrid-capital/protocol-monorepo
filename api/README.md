@@ -23,7 +23,7 @@ npm run deploy      # Deploy to Cloudflare (requires account auth)
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/` | API discovery JSON (start here for LLMs) |
+| `GET` | `/` | API discovery JSON (generated from OpenAPI) |
 | `GET` | `/llms.txt` | LLM-oriented index ([llms.txt spec](https://llmstxt.org/)) |
 | `GET` | `/health` | Liveness probe |
 | `GET` | `/vaults` | Mock vault catalog (`?format=md` for markdown) |
@@ -38,7 +38,7 @@ ChatGPT **browsing** only performs simple `GET` requests on **public** URLs. It 
 | Goal | What to use |
 |------|-------------|
 | Paste a URL in chat and get vault data | Deployed `GET /vaults` or `GET /vaults?format=md` |
-| Let ChatGPT discover endpoints | Deployed `GET /` or `GET /llms.txt` |
+| Let ChatGPT discover endpoints | Deployed `GET /` or `GET /llms.txt` (both derived from `/openapi.json`) |
 | Custom GPT with structured actions | Import `GET /openapi.json` when creating Actions |
 | Claude / Cursor / MCP-native clients | `POST /mcp` and tool `alphagrid_list_vaults` |
 
