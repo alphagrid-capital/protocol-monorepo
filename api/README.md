@@ -1,8 +1,8 @@
 # AlphaGrid API
 
-HTTP API for AlphaGrid, deployed as [Cloudflare Workers](https://developers.cloudflare.com/workers/).
+HTTP API and MCP server for AlphaGrid, deployed as a [Cloudflare Worker](https://developers.cloudflare.com/workers/).
 
-This package is a scaffold only. Endpoints described in [`prd/03_technical_prd.md`](../prd/03_technical_prd.md) (section 8) will be implemented in a follow-up PR.
+REST endpoints and MCP tools share the same service layer so agents and classic HTTP clients see identical data.
 
 ## Prerequisites
 
@@ -19,12 +19,37 @@ npm run dev         # Local dev server (wrangler dev)
 npm run deploy      # Deploy to Cloudflare (requires account auth)
 ```
 
+## Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/health` | Liveness probe |
+| `GET` | `/vaults` | Mock vault catalog with basic stats |
+| `GET` | `/docs` | Swagger UI |
+| `GET` | `/openapi.json` | OpenAPI 3.1 specification |
+| `POST` | `/mcp` | MCP Streamable HTTP (stateless JSON) |
+
+### MCP tools
+
+| Tool | HTTP equivalent |
+|------|-----------------|
+| `alphagrid_list_vaults` | `GET /vaults` |
+
+Connect MCP clients to `http://localhost:8787/mcp` in development (or your deployed Worker URL). Clients must send `Accept: application/json, text/event-stream` on MCP requests.
+
 ## Layout
 
 ```text
 api/
-  src/index.ts    # Worker entry (fetch handler)
-  wrangler.toml   # Cloudflare Worker config
+  src/
+    index.ts           # Worker entry (exports fetch handler)
+    app.ts             # Hono app, OpenAPI, MCP transport
+    mcp/server.ts      # MCP tool registration
+    routes/            # OpenAPI HTTP routes
+    services/          # Shared business logic (used by HTTP + MCP)
+    schemas/           # Zod / OpenAPI schemas
+    types/             # TypeScript types
+  wrangler.toml
   package.json
 ```
 
@@ -46,14 +71,12 @@ Add these under **Settings → Secrets and variables → Actions → Repository 
 - **Account** → **Workers Scripts** → **Edit**
 - **Account** → **Workers Scripts** → **Read** (included in the template)
 
-If you add custom routes or domains later, you may also need **Workers Routes** (zone) **Edit**.
-
 `workflow_dispatch` on the API workflow also runs deploy when triggered on `main` (after typecheck passes).
 
 ## Environment
 
-Copy `.env.example` to `.env` for local development when bindings and secrets are added. For local deploy, export the same `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` values (or run `wrangler login`). Worker runtime secrets are configured in the Cloudflare dashboard or via `wrangler secret put`.
+Copy `.env.example` to `.env` for local development when bindings and secrets are added. For local deploy, export the same `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` values (or run `wrangler login`).
 
 ## Health check
 
-`GET /health` returns `{ "status": "ok", "service": "alphagrid-api" }` until real routes are wired up.
+`GET /health` returns `{ "status": "ok", "service": "alphagrid-api" }`.
