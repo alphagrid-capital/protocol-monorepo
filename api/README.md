@@ -28,9 +28,31 @@ api/
   package.json
 ```
 
+## CI deployment
+
+Pushes to `main` that touch `api/**` run typecheck, then deploy via [wrangler-action](https://github.com/cloudflare/wrangler-action). Pull requests only run typecheck.
+
+### GitHub repository secrets
+
+Add these under **Settings → Secrets and variables → Actions → Repository secrets**:
+
+| Secret | Description |
+|--------|-------------|
+| `CLOUDFLARE_API_TOKEN` | Cloudflare API token with permission to deploy Workers (see below). |
+| `CLOUDFLARE_ACCOUNT_ID` | Your Cloudflare account ID ([dashboard](https://dash.cloudflare.com/) → right sidebar on any zone/account overview). |
+
+**Create the API token:** [Cloudflare dashboard → My Profile → API Tokens](https://dash.cloudflare.com/profile/api-tokens) → **Create Token** → use the **Edit Cloudflare Workers** template, or create a custom token with at least:
+
+- **Account** → **Workers Scripts** → **Edit**
+- **Account** → **Workers Scripts** → **Read** (included in the template)
+
+If you add custom routes or domains later, you may also need **Workers Routes** (zone) **Edit**.
+
+`workflow_dispatch` on the API workflow also runs deploy when triggered on `main` (after typecheck passes).
+
 ## Environment
 
-Copy `.env.example` to `.env` for local development when bindings and secrets are added. Production secrets are configured in the Cloudflare dashboard or via `wrangler secret put`.
+Copy `.env.example` to `.env` for local development when bindings and secrets are added. For local deploy, export the same `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` values (or run `wrangler login`). Worker runtime secrets are configured in the Cloudflare dashboard or via `wrangler secret put`.
 
 ## Health check
 
