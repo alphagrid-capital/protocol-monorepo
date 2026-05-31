@@ -7,6 +7,7 @@ import { ECDSA } from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
+import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IAgentRegistry } from "../interfaces/IAgentRegistry.sol";
 import { IAllocationManager } from "../interfaces/IAllocationManager.sol";
@@ -358,8 +359,9 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
             vault.maxPriceAge()
         );
         if (position.entryPriceUsdc == 0) return 0;
-        return
-            (int256(currentPrice) - int256(position.entryPriceUsdc)) * int256(MAX_BPS) / int256(position.entryPriceUsdc);
+        int256 price = SafeCast.toInt256(currentPrice);
+        int256 entry = SafeCast.toInt256(position.entryPriceUsdc);
+        return (price - entry) * SafeCast.toInt256(MAX_BPS) / entry;
     }
 
     function _isRuleTriggered(ExitRule memory rule, int256 pnlBps) private pure returns (bool) {

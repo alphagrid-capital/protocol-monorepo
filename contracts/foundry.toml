@@ -26,4 +26,5 @@ tab_width = 4
 bracket_spacing = true
 
 [lint]
-exclude_lints = ["asm-keccak256"]
+# block-timestamp: intentional for EIP-712 deadlines and Chainlink staleness (low proposer skew is acceptable)
+exclude_lints = ["asm-keccak256", "block-timestamp"]
