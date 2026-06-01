@@ -2,7 +2,6 @@
 pragma solidity ^0.8.30;
 
 import { IAccessControl } from "@openzeppelin/contracts/access/IAccessControl.sol";
-import { MessageHashUtils } from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import { AgentRegistry } from "../../src/core/AgentRegistry.sol";
 import { FeeManager } from "../../src/core/FeeManager.sol";
 import { VaultTrackRegistry } from "../../src/core/VaultTrackRegistry.sol";
@@ -25,6 +24,7 @@ contract FeeManagerTest is BaseTest {
 
     uint256 internal constant REGISTRATION_FEE = 100e6;
     uint256 internal constant PROMOTION_FEE = 250e6;
+    uint256 internal constant AGENT_SIGNER_PRIVATE_KEY = 0xA11CE;
 
     function setUp() public override {
         super.setUp();
