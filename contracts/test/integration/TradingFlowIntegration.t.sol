@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import { TradingTestBase } from "../helpers/TradingTestBase.sol";
-import { AlphaGridVault } from "../../src/vaults/AlphaGridVault.sol";
+import { TradeRouter } from "../../src/core/TradeRouter.sol";
 import { IAgentRegistry } from "../../src/interfaces/IAgentRegistry.sol";
 import { IPositionTypes } from "../../src/interfaces/IPositionTypes.sol";
-import { TradeRouter } from "../../src/core/TradeRouter.sol";
+import { MandateVault } from "../../src/vaults/MandateVault.sol";
+import { TradingTestBase } from "../helpers/TradingTestBase.sol";
 
 /// @notice End-to-end trading: register agent, open position, keeper exit.
 contract TradingFlowIntegrationTest is TradingTestBase {
@@ -103,7 +103,7 @@ contract TradingFlowIntegrationTest is TradingTestBase {
         vault.setTradingPaused(true);
 
         vm.prank(executor);
-        vm.expectRevert(AlphaGridVault.TradingOperationsPaused.selector);
+        vm.expectRevert(MandateVault.TradingOperationsPaused.selector);
         tradeRouter.openPosition(intent, sig);
 
         vm.prank(deployer);
@@ -116,7 +116,7 @@ contract TradingFlowIntegrationTest is TradingTestBase {
         vault.setTradingPaused(true);
 
         nvdaFeed.setPrice(120e8);
-        vm.expectRevert(AlphaGridVault.TradingOperationsPaused.selector);
+        vm.expectRevert(MandateVault.TradingOperationsPaused.selector);
         vm.prank(makeAddr("keeper"));
         tradeRouter.executeExit(positionId);
     }

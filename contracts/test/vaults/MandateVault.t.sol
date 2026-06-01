@@ -1,19 +1,22 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import { BaseTest } from "../helpers/BaseTest.sol";
-import { AlphaGridVault } from "../../src/vaults/AlphaGridVault.sol";
-import { TokenRegistry } from "../../src/core/TokenRegistry.sol";
-import { MockPriceFeed } from "../mocks/MockPriceFeed.sol";
-import { MockERC20 } from "../../src/mocks/MockERC20.sol";
-import { OracleLib } from "../../src/libraries/OracleLib.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { TokenRegistry } from "../../src/core/TokenRegistry.sol";
+import { OracleLib } from "../../src/libraries/OracleLib.sol";
+import { MockERC20 } from "../../src/mocks/MockERC20.sol";
+import { MandateVault } from "../../src/vaults/MandateVault.sol";
+import { MandateVaultFactory } from "../../src/vaults/MandateVaultFactory.sol";
+import { BaseTest } from "../helpers/BaseTest.sol";
+import { VaultTestLib } from "../helpers/VaultTestLib.sol";
+import { MockPriceFeed } from "../mocks/MockPriceFeed.sol";
 
-contract AlphaGridVaultTest is BaseTest {
+contract MandateVaultTest is BaseTest {
     bytes32 internal constant VAULT_MANDATE = "TECH";
 
+    MandateVaultFactory internal vaultFactory;
     TokenRegistry internal registry;
-    AlphaGridVault internal vault;
+    MandateVault internal vault;
     MockERC20 internal nvda;
     MockPriceFeed internal nvdaFeed;
 
@@ -31,11 +34,17 @@ contract AlphaGridVaultTest is BaseTest {
 
         vm.startPrank(deployer);
         registry = new TokenRegistry(deployer);
-        vault = new AlphaGridVault(
-            IERC20(address(usdc)), "AlphaGrid Tech Vault", "agTECH", VAULT_MANDATE, registry, deployer
+        (vaultFactory,) = VaultTestLib.deployFactory(IERC20(address(usdc)));
+        vault = VaultTestLib.deployVault(
+            vaultFactory,
+            IERC20(address(usdc)),
+            "AlphaGrid Tech Vault",
+            "agTECH",
+            VAULT_MANDATE,
+            registry,
+            deployer,
+            feeRecipient
         );
-
-        vault.setFeeRecipient(feeRecipient);
 
         nvda = new MockERC20("Mock NVDA", "mNVDA", 18);
         nvdaFeed = new MockPriceFeed(150e8, 8);
@@ -196,7 +205,7 @@ contract AlphaGridVaultTest is BaseTest {
     function test_RevertWhen_EnableUnregisteredToken() public {
         MockERC20 unlisted = new MockERC20("Unlisted", "UNL", 18);
 
-        vm.expectRevert(abi.encodeWithSelector(AlphaGridVault.TokenNotRegistered.selector, address(unlisted)));
+        vm.expectRevert(abi.encodeWithSelector(MandateVault.TokenNotRegistered.selector, address(unlisted)));
         vm.prank(deployer);
         vault.enableToken(address(unlisted));
     }
@@ -209,13 +218,13 @@ contract AlphaGridVaultTest is BaseTest {
         registry.registerToken(address(unlisted), address(feed));
         vm.stopPrank();
 
-        vm.expectRevert(abi.encodeWithSelector(AlphaGridVault.TokenNotAllowed.selector, address(unlisted)));
+        vm.expectRevert(abi.encodeWithSelector(MandateVault.TokenNotAllowed.selector, address(unlisted)));
         vm.prank(deployer);
         vault.setTokenEnabled(address(unlisted), true);
     }
 
     function test_RevertWhen_EnableDuplicateToken() public {
-        vm.expectRevert(abi.encodeWithSelector(AlphaGridVault.TokenAlreadyAllowed.selector, address(nvda)));
+        vm.expectRevert(abi.encodeWithSelector(MandateVault.TokenAlreadyAllowed.selector, address(nvda)));
         vm.prank(deployer);
         vault.enableToken(address(nvda));
     }
@@ -275,16 +284,17 @@ contract AlphaGridVaultTest is BaseTest {
     }
 
     function test_RevertWhen_SetDepositFeeWithoutRecipient() public {
-        AlphaGridVault freshVault =
-            new AlphaGridVault(IERC20(address(usdc)), "Fresh Vault", "agFRESH", VAULT_MANDATE, registry, deployer);
+        MandateVault freshVault = VaultTestLib.deployVault(
+            vaultFactory, IERC20(address(usdc)), "Fresh Vault", "agFRESH", VAULT_MANDATE, registry, deployer, address(0)
+        );
 
-        vm.expectRevert(AlphaGridVault.FeeRecipientRequired.selector);
+        vm.expectRevert(MandateVault.FeeRecipientRequired.selector);
         vm.prank(deployer);
         freshVault.setDepositFeeBps(DEPOSIT_FEE_BPS);
     }
 
     function test_RevertWhen_BpsOutOfRange() public {
-        vm.expectRevert(abi.encodeWithSelector(AlphaGridVault.BpsOutOfRange.selector, 10_001));
+        vm.expectRevert(abi.encodeWithSelector(MandateVault.BpsOutOfRange.selector, 10_001));
         vm.prank(deployer);
         vault.setDepositFeeBps(10_001);
     }
@@ -300,10 +310,10 @@ contract AlphaGridVaultTest is BaseTest {
 
         vm.startPrank(lp);
         usdc.approve(address(vault), 1000e6);
-        vm.expectRevert(AlphaGridVault.LiquidityOperationsPaused.selector);
+        vm.expectRevert(MandateVault.LiquidityOperationsPaused.selector);
         vault.deposit(1000e6, lp);
 
-        vm.expectRevert(AlphaGridVault.LiquidityOperationsPaused.selector);
+        vm.expectRevert(MandateVault.LiquidityOperationsPaused.selector);
         vault.withdraw(1000e6, lp, lp);
         vm.stopPrank();
     }
@@ -317,13 +327,13 @@ contract AlphaGridVaultTest is BaseTest {
         vm.stopPrank();
 
         vm.prank(router);
-        vm.expectRevert(AlphaGridVault.TradingOperationsPaused.selector);
+        vm.expectRevert(MandateVault.TradingOperationsPaused.selector);
         vault.pullUsdcForTrade(router, 1e6);
 
         nvda.mint(address(vault), 1e18);
 
         vm.prank(router);
-        vm.expectRevert(AlphaGridVault.TradingOperationsPaused.selector);
+        vm.expectRevert(MandateVault.TradingOperationsPaused.selector);
         vault.pullTokenForTrade(address(nvda), router, 1e18);
     }
 

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import { TradingTestBase } from "../helpers/TradingTestBase.sol";
 import { IPositionTypes } from "../../src/interfaces/IPositionTypes.sol";
+import { TradingTestBase } from "../helpers/TradingTestBase.sol";
 
 contract TradeRouterLadderTest is TradingTestBase {
     function setUp() public override {

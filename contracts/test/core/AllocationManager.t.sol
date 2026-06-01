@@ -1,24 +1,26 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import { BaseTest } from "../helpers/BaseTest.sol";
-import { AllocationManager } from "../../src/core/AllocationManager.sol";
-import { AgentRegistry } from "../../src/core/AgentRegistry.sol";
-import { TrackConfig } from "../../src/core/TrackConfig.sol";
-import { FeeManager } from "../../src/core/FeeManager.sol";
-import { AlphaGridVault } from "../../src/vaults/AlphaGridVault.sol";
-import { TokenRegistry } from "../../src/core/TokenRegistry.sol";
-import { IAllocationManager } from "../../src/interfaces/IAllocationManager.sol";
-import { ITrackConfig } from "../../src/interfaces/ITrackConfig.sol";
-import { IAgentRegistry } from "../../src/interfaces/IAgentRegistry.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { AgentRegistry } from "../../src/core/AgentRegistry.sol";
+import { AllocationManager } from "../../src/core/AllocationManager.sol";
+import { FeeManager } from "../../src/core/FeeManager.sol";
+import { TokenRegistry } from "../../src/core/TokenRegistry.sol";
+import { VaultTrackRegistry } from "../../src/core/VaultTrackRegistry.sol";
+import { IAgentRegistry } from "../../src/interfaces/IAgentRegistry.sol";
+import { IAllocationManager } from "../../src/interfaces/IAllocationManager.sol";
+import { IVaultTrackRegistry } from "../../src/interfaces/IVaultTrackRegistry.sol";
+import { MandateVault } from "../../src/vaults/MandateVault.sol";
+import { MandateVaultFactory } from "../../src/vaults/MandateVaultFactory.sol";
+import { BaseTest } from "../helpers/BaseTest.sol";
+import { VaultTestLib } from "../helpers/VaultTestLib.sol";
 
 contract AllocationManagerTest is BaseTest {
     AllocationManager internal allocationManager;
     AgentRegistry internal registry;
     FeeManager internal feeManager;
-    TrackConfig internal trackConfig;
-    AlphaGridVault internal vault;
+    VaultTrackRegistry internal vaultTrackRegistry;
+    MandateVault internal vault;
 
     address internal operator;
     address internal treasury;
@@ -34,17 +36,26 @@ contract AllocationManagerTest is BaseTest {
 
         vm.startPrank(deployer);
         feeManager = new FeeManager(deployer, treasury, address(usdc));
-        trackConfig = new TrackConfig(deployer);
+        vaultTrackRegistry = new VaultTrackRegistry(deployer);
         registry = new AgentRegistry(deployer, feeManager);
-        allocationManager = new AllocationManager(deployer, trackConfig);
+        allocationManager = new AllocationManager(deployer, vaultTrackRegistry);
 
         TokenRegistry tokenRegistry = new TokenRegistry(deployer);
-        vault = new AlphaGridVault(
-            IERC20(address(usdc)), "AlphaGrid Tech Vault", "agTECH", "TECH", tokenRegistry, deployer
+        MandateVaultFactory vaultFactory;
+        (vaultFactory,) = VaultTestLib.deployFactory(IERC20(address(usdc)));
+        vault = VaultTestLib.deployVault(
+            vaultFactory,
+            IERC20(address(usdc)),
+            "AlphaGrid Tech Vault",
+            "agTECH",
+            "TECH",
+            tokenRegistry,
+            deployer,
+            address(0)
         );
 
         feeManager.setAgentRegistry(address(registry));
-        registry.setTrackConfig(trackConfig);
+        registry.setVaultTrackRegistry(vaultTrackRegistry);
         registry.setAllocationManager(allocationManager);
         allocationManager.setAgentRegistry(address(registry));
 
@@ -52,8 +63,8 @@ contract AllocationManagerTest is BaseTest {
         registry.grantRole(registry.REGISTRAR_ROLE(), operator);
         allocationManager.grantRole(allocationManager.OPERATOR_ROLE(), operator);
 
-        _setTrackConfig(address(vault), 0, CHALLENGE_CAP, 25_000e6);
-        _setTrackConfig(address(vault), 1, FUNDED_CAP, 100_000e6);
+        _setVaultTrackConfig(address(vault), 0, CHALLENGE_CAP, 25_000e6);
+        _setVaultTrackConfig(address(vault), 1, FUNDED_CAP, 100_000e6);
         vm.stopPrank();
     }
 
@@ -187,24 +198,24 @@ contract AllocationManagerTest is BaseTest {
         assertEq(allocationManager.agentRegistry(), newRegistry);
     }
 
-    function test_SetTrackConfig_EmitsEvent() public {
-        TrackConfig newTrackConfig = new TrackConfig(deployer);
+    function test_SetVaultTrackRegistry_EmitsEvent() public {
+        VaultTrackRegistry newVaultTrackRegistry = new VaultTrackRegistry(deployer);
 
         vm.expectEmit(true, false, false, false);
-        emit IAllocationManager.TrackConfigUpdated(address(newTrackConfig));
+        emit IAllocationManager.VaultTrackRegistryUpdated(address(newVaultTrackRegistry));
         vm.prank(deployer);
-        allocationManager.setTrackConfig(newTrackConfig);
+        allocationManager.setVaultTrackRegistry(newVaultTrackRegistry);
 
-        assertEq(address(allocationManager.trackConfig()), address(newTrackConfig));
+        assertEq(address(allocationManager.vaultTrackRegistry()), address(newVaultTrackRegistry));
     }
 
-    function _setTrackConfig(address vault_, uint256 trackId, uint256 initialAllocation, uint256 maxAllocation)
+    function _setVaultTrackConfig(address vault_, uint256 trackId, uint256 initialAllocation, uint256 maxAllocation)
         internal
     {
-        trackConfig.setVaultTrackConfig(
+        vaultTrackRegistry.setVaultTrackConfig(
             vault_,
             trackId,
-            ITrackConfig.VaultTrackConfig({
+            IVaultTrackRegistry.VaultTrackConfig({
                 vault: vault_,
                 trackId: trackId,
                 initialAllocation: initialAllocation,

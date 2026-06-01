@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import { BaseTest } from "../helpers/BaseTest.sol";
 import { TokenRegistry } from "../../src/core/TokenRegistry.sol";
 import { MockERC20 } from "../../src/mocks/MockERC20.sol";
+import { BaseTest } from "../helpers/BaseTest.sol";
 import { MockPriceFeed } from "../mocks/MockPriceFeed.sol";
 
 contract TokenRegistryTest is BaseTest {

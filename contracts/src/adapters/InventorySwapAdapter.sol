@@ -3,7 +3,7 @@ pragma solidity ^0.8.30;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { IAlphaGridVault } from "../interfaces/IAlphaGridVault.sol";
+import { IMandateVault } from "../interfaces/IMandateVault.sol";
 import { ISwapAdapter } from "../interfaces/ISwapAdapter.sol";
 import { OracleLib } from "../libraries/OracleLib.sol";
 
@@ -39,13 +39,13 @@ contract InventorySwapAdapter is ISwapAdapter {
     {
         if (msg.sender != tradeRouter) revert NotTradeRouter(msg.sender);
 
-        IAlphaGridVault gridVault = IAlphaGridVault(vault);
-        IERC20 usdc = IERC20(gridVault.asset());
+        IMandateVault mandateVault = IMandateVault(vault);
+        IERC20 usdc = IERC20(mandateVault.asset());
         if (usdc.balanceOf(address(this)) < usdcIn) {
             revert InsufficientUsdcBalance(usdcIn, usdc.balanceOf(address(this)));
         }
 
-        tokenOut = _usdcToTokenAmount(gridVault, token, usdcIn);
+        tokenOut = _usdcToTokenAmount(mandateVault, token, usdcIn);
         if (tokenOut < minTokenOut) revert SlippageExceeded();
         if (IERC20(token).balanceOf(address(this)) < tokenOut) {
             revert InsufficientTokenBalance(tokenOut, IERC20(token).balanceOf(address(this)));
@@ -62,8 +62,8 @@ contract InventorySwapAdapter is ISwapAdapter {
     {
         if (msg.sender != tradeRouter) revert NotTradeRouter(msg.sender);
 
-        IAlphaGridVault gridVault = IAlphaGridVault(vault);
-        IERC20 usdc = IERC20(gridVault.asset());
+        IMandateVault mandateVault = IMandateVault(vault);
+        IERC20 usdc = IERC20(mandateVault.asset());
 
         if (IERC20(token).balanceOf(address(this)) < tokenIn) {
             revert InsufficientTokenBalance(tokenIn, IERC20(token).balanceOf(address(this)));
@@ -71,10 +71,10 @@ contract InventorySwapAdapter is ISwapAdapter {
 
         usdcOut = OracleLib.valueInAsset(
             tokenIn,
-            gridVault.tokenRegistry().priceFeedOf(token),
-            gridVault.tokenRegistry().tokenDecimals(token),
+            mandateVault.tokenRegistry().priceFeedOf(token),
+            mandateVault.tokenRegistry().tokenDecimals(token),
             6,
-            gridVault.maxPriceAge()
+            mandateVault.maxPriceAge()
         );
         if (usdcOut < minUsdcOut) revert SlippageExceeded();
         if (usdc.balanceOf(address(this)) < usdcOut) {
@@ -85,7 +85,7 @@ contract InventorySwapAdapter is ISwapAdapter {
         usdc.safeTransfer(vault, usdcOut);
     }
 
-    function _usdcToTokenAmount(IAlphaGridVault vault, address token, uint256 usdcIn) internal view returns (uint256) {
+    function _usdcToTokenAmount(IMandateVault vault, address token, uint256 usdcIn) internal view returns (uint256) {
         uint8 tokenDecimals = vault.tokenRegistry().tokenDecimals(token);
         uint256 oneTokenUsdc = OracleLib.valueInAsset(
             10 ** tokenDecimals, vault.tokenRegistry().priceFeedOf(token), tokenDecimals, 6, vault.maxPriceAge()

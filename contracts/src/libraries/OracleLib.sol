@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import { IPriceFeed } from "../interfaces/IPriceFeed.sol";
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import { IPriceFeed } from "../interfaces/IPriceFeed.sol";
 
 /// @title OracleLib
 /// @notice Converts token amounts to the vault deposit asset using a Chainlink-style feed.

@@ -33,7 +33,7 @@ interface IAllocationManager {
 
     event AgentRegistryUpdated(address indexed newRegistry);
 
-    event TrackConfigUpdated(address indexed newTrackConfig);
+    event VaultTrackRegistryUpdated(address indexed vaultTrackRegistry);
 
     event AllocationCreated(uint256 indexed agentId, address indexed vault, uint256 trackId, uint256 cap);
 

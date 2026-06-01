@@ -2,14 +2,14 @@
 pragma solidity ^0.8.30;
 
 import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
-import { EIP712 } from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
-import { ECDSA } from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import { Nonces } from "@openzeppelin/contracts/utils/Nonces.sol";
 import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
+import { ECDSA } from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import { EIP712 } from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import { IAgentRegistry } from "../interfaces/IAgentRegistry.sol";
-import { IFeeManager } from "../interfaces/IFeeManager.sol";
-import { ITrackConfig } from "../interfaces/ITrackConfig.sol";
 import { IAllocationManager } from "../interfaces/IAllocationManager.sol";
+import { IFeeManager } from "../interfaces/IFeeManager.sol";
+import { IVaultTrackRegistry } from "../interfaces/IVaultTrackRegistry.sol";
 
 /// @title AgentRegistry
 /// @notice Stores canonical agent identities, vault bindings, and track lifecycle state.
@@ -30,7 +30,7 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
     // -------------------------------------------------------------------------
 
     IFeeManager public feeManager;
-    ITrackConfig public trackConfig;
+    IVaultTrackRegistry public vaultTrackRegistry;
     IAllocationManager public allocationManager;
 
     uint256 private _nextAgentId = 1;
@@ -42,7 +42,7 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
     // -------------------------------------------------------------------------
 
     error ZeroAddress();
-    error TrackConfigNotSet();
+    error VaultTrackRegistryNotSet();
     error VaultNotApproved(address vault);
     error AgentNotFound(uint256 agentId);
     error NotAgentOwner(uint256 agentId, address caller);
@@ -218,10 +218,10 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
         emit FeeManagerUpdated(address(feeManager_));
     }
 
-    /// @notice Set TrackConfig for vault approval checks. Required before agent registration.
-    function setTrackConfig(ITrackConfig trackConfig_) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        trackConfig = trackConfig_;
-        emit TrackConfigUpdated(address(trackConfig_));
+    /// @notice Set VaultTrackRegistry for vault approval checks. Required before agent registration.
+    function setVaultTrackRegistry(IVaultTrackRegistry vaultTrackRegistry_) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        vaultTrackRegistry = vaultTrackRegistry_;
+        emit VaultTrackRegistryUpdated(address(vaultTrackRegistry_));
     }
 
     /// @notice Wire AllocationManager for automatic allocation on register and promote.
@@ -291,9 +291,9 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
         if (agent.owner == address(0)) revert AgentNotFound(agentId);
     }
 
-    /// @dev A vault is approved when CHALLENGE track config is active in TrackConfig.
+    /// @dev A vault is approved when CHALLENGE track config is active in VaultTrackRegistry.
     function _isVaultApproved(address vault) private view returns (bool) {
-        if (address(trackConfig) == address(0)) revert TrackConfigNotSet();
-        return trackConfig.isVaultTrackActive(vault, uint256(Track.CHALLENGE));
+        if (address(vaultTrackRegistry) == address(0)) revert VaultTrackRegistryNotSet();
+        return vaultTrackRegistry.isVaultTrackActive(vault, uint256(Track.CHALLENGE));
     }
 }

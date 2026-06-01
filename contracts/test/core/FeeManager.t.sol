@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import { BaseTest } from "../helpers/BaseTest.sol";
-import { FeeManager } from "../../src/core/FeeManager.sol";
-import { AgentRegistry } from "../../src/core/AgentRegistry.sol";
-import { TrackConfig } from "../../src/core/TrackConfig.sol";
-import { IAgentRegistry } from "../../src/interfaces/IAgentRegistry.sol";
-import { ITrackConfig } from "../../src/interfaces/ITrackConfig.sol";
-import { IFeeManager } from "../../src/interfaces/IFeeManager.sol";
 import { IAccessControl } from "@openzeppelin/contracts/access/IAccessControl.sol";
+import { AgentRegistry } from "../../src/core/AgentRegistry.sol";
+import { FeeManager } from "../../src/core/FeeManager.sol";
+import { VaultTrackRegistry } from "../../src/core/VaultTrackRegistry.sol";
+import { IAgentRegistry } from "../../src/interfaces/IAgentRegistry.sol";
+import { IFeeManager } from "../../src/interfaces/IFeeManager.sol";
+import { IVaultTrackRegistry } from "../../src/interfaces/IVaultTrackRegistry.sol";
+import { BaseTest } from "../helpers/BaseTest.sol";
 
 contract FeeManagerTest is BaseTest {
     FeeManager internal feeManager;
     AgentRegistry internal registry;
-    TrackConfig internal trackConfig;
+    VaultTrackRegistry internal vaultTrackRegistry;
 
     address internal treasury;
     address internal operator;
@@ -31,10 +31,10 @@ contract FeeManagerTest is BaseTest {
 
         vm.startPrank(deployer);
         feeManager = new FeeManager(deployer, treasury, address(usdc));
-        trackConfig = new TrackConfig(deployer);
+        vaultTrackRegistry = new VaultTrackRegistry(deployer);
         registry = new AgentRegistry(deployer, feeManager);
         feeManager.setAgentRegistry(address(registry));
-        registry.setTrackConfig(trackConfig);
+        registry.setVaultTrackRegistry(vaultTrackRegistry);
         registry.grantRole(registry.OPERATOR_ROLE(), operator);
         registry.grantRole(registry.REGISTRAR_ROLE(), operator);
         _setVaultChallengeConfig(vault, true);
@@ -166,10 +166,10 @@ contract FeeManagerTest is BaseTest {
     }
 
     function _setVaultChallengeConfig(address vault_, bool active) internal {
-        trackConfig.setVaultTrackConfig(
+        vaultTrackRegistry.setVaultTrackConfig(
             vault_,
             0,
-            ITrackConfig.VaultTrackConfig({
+            IVaultTrackRegistry.VaultTrackConfig({
                 vault: vault_,
                 trackId: 0,
                 initialAllocation: 10_000e6,

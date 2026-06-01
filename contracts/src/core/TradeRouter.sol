@@ -2,20 +2,20 @@
 pragma solidity ^0.8.30;
 
 import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
-import { EIP712 } from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
-import { ECDSA } from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { ECDSA } from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import { EIP712 } from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IAgentRegistry } from "../interfaces/IAgentRegistry.sol";
 import { IAllocationManager } from "../interfaces/IAllocationManager.sol";
-import { IAlphaGridVault } from "../interfaces/IAlphaGridVault.sol";
+import { IMandateVault } from "../interfaces/IMandateVault.sol";
 import { IPositionManager } from "../interfaces/IPositionManager.sol";
 import { ISwapAdapter } from "../interfaces/ISwapAdapter.sol";
-import { ITrackConfig } from "../interfaces/ITrackConfig.sol";
 import { ITradeRouter } from "../interfaces/ITradeRouter.sol";
+import { IVaultTrackRegistry } from "../interfaces/IVaultTrackRegistry.sol";
 import { OracleLib } from "../libraries/OracleLib.sol";
 
 /// @title TradeRouter
@@ -46,7 +46,7 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
     IAllocationManager public allocationManager;
     IPositionManager public positionManager;
     ISwapAdapter public swapAdapter;
-    ITrackConfig public trackConfig;
+    IVaultTrackRegistry public vaultTrackRegistry;
 
     mapping(uint256 agentId => uint256 nonce) private _nonces;
     mapping(uint256 agentId => mapping(uint256 day => uint256 turnoverUsdc)) private _dailyTurnoverUsdc;
@@ -89,19 +89,19 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
         IAllocationManager allocationManager_,
         IPositionManager positionManager_,
         ISwapAdapter swapAdapter_,
-        ITrackConfig trackConfig_
+        IVaultTrackRegistry vaultTrackRegistry_
     ) EIP712("AlphaGrid TradeRouter", "1") {
         if (
             admin == address(0) || address(agentRegistry_) == address(0) || address(allocationManager_) == address(0)
                 || address(positionManager_) == address(0) || address(swapAdapter_) == address(0)
-                || address(trackConfig_) == address(0)
+                || address(vaultTrackRegistry_) == address(0)
         ) revert ZeroAddress();
 
         agentRegistry = agentRegistry_;
         allocationManager = allocationManager_;
         positionManager = positionManager_;
         swapAdapter = swapAdapter_;
-        trackConfig = trackConfig_;
+        vaultTrackRegistry = vaultTrackRegistry_;
 
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(EXECUTOR_ROLE, admin);
@@ -157,8 +157,8 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
         _verifyIntentSignature(intent, signature);
         _validateExitRules(intent.exits);
         _validateAgentCanOpen(intent.agentId, intent.vault, intent.token);
-        _validateTradeSize(IAlphaGridVault(intent.vault), intent.agentId, intent.usdcAmount);
-        _validateDailyTurnover(IAlphaGridVault(intent.vault), intent.agentId, intent.usdcAmount);
+        _validateTradeSize(IMandateVault(intent.vault), intent.agentId, intent.usdcAmount);
+        _validateDailyTurnover(IMandateVault(intent.vault), intent.agentId, intent.usdcAmount);
 
         IAllocationManager.Allocation memory allocation = allocationManager.getAllocation(intent.agentId);
         if (allocation.used + intent.usdcAmount > allocation.cap) {
@@ -167,7 +167,7 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
     }
 
     function _openPosition(PositionIntent calldata intent) private returns (uint256 positionId) {
-        IAlphaGridVault vault = IAlphaGridVault(intent.vault);
+        IMandateVault vault = IMandateVault(intent.vault);
         IAllocationManager.Allocation memory allocation = allocationManager.getAllocation(intent.agentId);
 
         vault.pullUsdcForTrade(address(swapAdapter), intent.usdcAmount);
@@ -305,12 +305,12 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
         if (agent.vault != vault) revert VaultMismatch(agentId, agent.vault, vault);
 
         uint256 trackId = uint256(agentRegistry.trackOf(agentId));
-        if (!trackConfig.isVaultTrackActive(vault, trackId)) revert VaultTrackNotActive(vault, trackId);
+        if (!vaultTrackRegistry.isVaultTrackActive(vault, trackId)) revert VaultTrackNotActive(vault, trackId);
 
         IAllocationManager.Allocation memory allocation = allocationManager.getAllocation(agentId);
         if (allocation.status != IAllocationManager.AllocationStatus.Active) revert AllocationNotActive(agentId);
 
-        if (!IAlphaGridVault(vault).isAllowedToken(token)) revert TokenNotAllowed(token);
+        if (!IMandateVault(vault).isAllowedToken(token)) revert TokenNotAllowed(token);
         if (positionManager.openPositionId(agentId, token) != 0) revert PositionAlreadyOpen(agentId, token);
     }
 
@@ -319,14 +319,15 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
         if (agent.status != IAgentRegistry.AgentStatus.Active) revert AgentNotTradable(agentId);
     }
 
-    function _validateTradeSize(IAlphaGridVault vault, uint256 agentId, uint256 usdcAmount) private view {
+    function _validateTradeSize(IMandateVault vault, uint256 agentId, uint256 usdcAmount) private view {
         uint256 trackId = uint256(agentRegistry.trackOf(agentId));
-        ITrackConfig.VaultTrackConfig memory config = trackConfig.getVaultTrackConfig(address(vault), trackId);
+        IVaultTrackRegistry.VaultTrackConfig memory config =
+            vaultTrackRegistry.getVaultTrackConfig(address(vault), trackId);
         uint256 maxTrade = vault.totalAssets().mulDiv(config.maxTradeSizeBps, MAX_BPS, Math.Rounding.Floor);
         if (usdcAmount > maxTrade) revert ExceedsMaxTradeSize(usdcAmount, maxTrade);
     }
 
-    function _validateDailyTurnover(IAlphaGridVault vault, uint256 agentId, uint256 usdcNotional) private view {
+    function _validateDailyTurnover(IMandateVault vault, uint256 agentId, uint256 usdcNotional) private view {
         uint256 maxTurnover = _maxDailyTurnover(vault, agentId);
         if (maxTurnover == 0) return;
 
@@ -335,9 +336,10 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
         if (nextTurnover > maxTurnover) revert ExceedsDailyTurnover(agentId, nextTurnover, maxTurnover);
     }
 
-    function _maxDailyTurnover(IAlphaGridVault vault, uint256 agentId) private view returns (uint256) {
+    function _maxDailyTurnover(IMandateVault vault, uint256 agentId) private view returns (uint256) {
         uint256 trackId = uint256(agentRegistry.trackOf(agentId));
-        ITrackConfig.VaultTrackConfig memory config = trackConfig.getVaultTrackConfig(address(vault), trackId);
+        IVaultTrackRegistry.VaultTrackConfig memory config =
+            vaultTrackRegistry.getVaultTrackConfig(address(vault), trackId);
         if (config.maxDailyTurnoverBps == 0) return 0;
         return vault.totalAssets().mulDiv(config.maxDailyTurnoverBps, MAX_BPS, Math.Rounding.Floor);
     }
@@ -349,7 +351,7 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
     }
 
     function _positionPnlBps(Position memory position) private view returns (int256) {
-        IAlphaGridVault vault = IAlphaGridVault(position.vault);
+        IMandateVault vault = IMandateVault(position.vault);
         uint8 tokenDecimals = vault.tokenRegistry().tokenDecimals(position.token);
         uint256 currentPrice = OracleLib.valueInAsset(
             10 ** tokenDecimals,
@@ -371,7 +373,7 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
         return pnlBps >= rule.triggerBps;
     }
 
-    function _minUsdcOut(IAlphaGridVault vault, address token, uint256 tokenIn, uint16 maxSlippageBps)
+    function _minUsdcOut(IMandateVault vault, address token, uint256 tokenIn, uint16 maxSlippageBps)
         private
         view
         returns (uint256)
@@ -402,7 +404,7 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
         bool payBounty,
         bool isForceClose
     ) private returns (uint256 usdcOut, uint256 bounty) {
-        IAlphaGridVault vault = IAlphaGridVault(position.vault);
+        IMandateVault vault = IMandateVault(position.vault);
         uint256 minUsdcOut = _minUsdcOut(vault, position.token, sellAmount, position.maxSlippageBps);
 
         if (!isForceClose) {
@@ -435,7 +437,7 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
         _assertLedgerInvariant(vault, position.token);
     }
 
-    function _assertLedgerInvariant(IAlphaGridVault vault, address token) private view {
+    function _assertLedgerInvariant(IMandateVault vault, address token) private view {
         uint256 ledgerTotal = positionManager.totalTokenLedger(token);
         uint256 vaultBalance = IERC20(token).balanceOf(address(vault));
         if (ledgerTotal > vaultBalance) revert LedgerExceedsVaultBalance(token, ledgerTotal, vaultBalance);

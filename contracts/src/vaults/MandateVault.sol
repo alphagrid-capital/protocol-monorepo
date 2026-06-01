@@ -1,21 +1,23 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import { ERC4626 } from "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
 import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { IERC4626 } from "@openzeppelin/contracts/interfaces/IERC4626.sol";
-import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
+import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { ERC4626 } from "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
+import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { IAlphaGridVault } from "../interfaces/IAlphaGridVault.sol";
+import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
+import { IMandateVault } from "../interfaces/IMandateVault.sol";
 import { ITokenRegistry } from "../interfaces/ITokenRegistry.sol";
 import { OracleLib } from "../libraries/OracleLib.sol";
 
-/// @title AlphaGridVault
+/// @title MandateVault
 /// @notice USDC ERC-4626 vault. Deposits are USDC-only; NAV includes whitelisted token holdings at oracle prices.
-contract AlphaGridVault is IAlphaGridVault, ERC4626, AccessControl {
+/// @dev EIP-1167 clone deployments: implementation constructor binds the ERC-4626 asset; per-clone state is set in {initialize}.
+contract MandateVault is IMandateVault, Initializable, ERC4626, AccessControl {
     using Math for uint256;
     using SafeERC20 for IERC20;
 
@@ -33,8 +35,10 @@ contract AlphaGridVault is IAlphaGridVault, ERC4626, AccessControl {
     // State
     // -------------------------------------------------------------------------
 
-    bytes32 public immutable VAULT_NAME;
-    ITokenRegistry public immutable TOKEN_REGISTRY;
+    string private _shareName;
+    string private _shareSymbol;
+    bytes32 private _vaultName;
+    ITokenRegistry private _tokenRegistry;
 
     address[] private _allowedTokens;
     mapping(address token => bool enabled) private _tokenEnabled;
@@ -65,48 +69,72 @@ contract AlphaGridVault is IAlphaGridVault, ERC4626, AccessControl {
     error InsufficientTokenBalance(address token, uint256 requested, uint256 available);
 
     // -------------------------------------------------------------------------
-    // Constructor
+    // Constructor (implementation only)
     // -------------------------------------------------------------------------
 
-    /// @param asset_ USDC deposit asset.
-    /// @param name_ ERC-20 share name.
-    /// @param symbol_ ERC-20 share symbol.
-    /// @param vaultName_ Thematic mandate identifier (e.g. TECH).
-    /// @param tokenRegistry_ Shared token and oracle catalog.
-    /// @param admin Receives vault admin roles.
-    constructor(
-        IERC20 asset_,
-        string memory name_,
-        string memory symbol_,
+    /// @param asset_ ERC-4626 underlying asset (e.g. USDC). Shared by all clones using this implementation.
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor(IERC20 asset_) ERC20("", "") ERC4626(asset_) {
+        _disableInitializers();
+    }
+
+    // -------------------------------------------------------------------------
+    // Initializer (clone instances)
+    // -------------------------------------------------------------------------
+
+    /// @notice Initializes a minimal-clone vault instance.
+    function initialize(
+        string calldata shareName_,
+        string calldata shareSymbol_,
         bytes32 vaultName_,
         ITokenRegistry tokenRegistry_,
-        address admin
-    ) ERC20(name_, symbol_) ERC4626(asset_) {
-        if (admin == address(0) || address(tokenRegistry_) == address(0)) revert ZeroAddress();
+        address admin_,
+        address feeRecipient_
+    ) external initializer {
+        if (admin_ == address(0) || address(tokenRegistry_) == address(0)) revert ZeroAddress();
 
-        VAULT_NAME = vaultName_;
-        TOKEN_REGISTRY = tokenRegistry_;
+        _shareName = shareName_;
+        _shareSymbol = shareSymbol_;
+        _vaultName = vaultName_;
+        _tokenRegistry = tokenRegistry_;
 
-        _grantRole(DEFAULT_ADMIN_ROLE, admin);
-        _grantRole(VAULT_ADMIN_ROLE, admin);
+        _grantRole(DEFAULT_ADMIN_ROLE, admin_);
+        _grantRole(VAULT_ADMIN_ROLE, admin_);
+
+        if (feeRecipient_ != address(0)) {
+            feeRecipient = feeRecipient_;
+            emit FeeRecipientUpdated(feeRecipient_);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // ERC-20 metadata (per-proxy)
+    // -------------------------------------------------------------------------
+
+    function name() public view override(ERC20, IERC20Metadata) returns (string memory) {
+        return _shareName;
+    }
+
+    function symbol() public view override(ERC20, IERC20Metadata) returns (string memory) {
+        return _shareSymbol;
     }
 
     // -------------------------------------------------------------------------
     // ERC-4626 overrides
     // -------------------------------------------------------------------------
 
-    /// @inheritdoc IAlphaGridVault
+    /// @inheritdoc IMandateVault
     /// @notice Thematic mandate identifier (e.g. TECH). Not the ERC-20 share token name.
     function vaultName() external view returns (bytes32) {
-        return VAULT_NAME;
+        return _vaultName;
     }
 
-    /// @inheritdoc IAlphaGridVault
+    /// @inheritdoc IMandateVault
     function tokenRegistry() external view returns (ITokenRegistry) {
-        return TOKEN_REGISTRY;
+        return _tokenRegistry;
     }
 
-    /// @inheritdoc IAlphaGridVault
+    /// @inheritdoc IMandateVault
     function idleAssets() public view returns (uint256) {
         return IERC20(asset()).balanceOf(address(this));
     }
@@ -139,15 +167,15 @@ contract AlphaGridVault is IAlphaGridVault, ERC4626, AccessControl {
         for (uint256 i = 0; i < len; i++) {
             address token = _allowedTokens[i];
             if (!_tokenListed[token] || !_tokenEnabled[token]) continue;
-            if (!TOKEN_REGISTRY.isTokenActive(token)) continue;
+            if (!_tokenRegistry.isTokenActive(token)) continue;
 
             uint256 balance = IERC20(token).balanceOf(address(this));
             if (balance == 0) continue;
 
             total += OracleLib.valueInAsset(
                 balance,
-                TOKEN_REGISTRY.priceFeedOf(token),
-                TOKEN_REGISTRY.tokenDecimals(token),
+                _tokenRegistry.priceFeedOf(token),
+                _tokenRegistry.tokenDecimals(token),
                 IERC20Metadata(asset()).decimals(),
                 maxPriceAge
             );
@@ -218,23 +246,23 @@ contract AlphaGridVault is IAlphaGridVault, ERC4626, AccessControl {
     // Views
     // -------------------------------------------------------------------------
 
-    /// @inheritdoc IAlphaGridVault
+    /// @inheritdoc IMandateVault
     function isAllowedToken(address token) external view returns (bool) {
-        return _tokenListed[token] && _tokenEnabled[token] && TOKEN_REGISTRY.isTokenActive(token);
+        return _tokenListed[token] && _tokenEnabled[token] && _tokenRegistry.isTokenActive(token);
     }
 
-    /// @inheritdoc IAlphaGridVault
+    /// @inheritdoc IMandateVault
     function priceFeedOf(address token) external view returns (address) {
         _requireAllowedToken(token);
-        return TOKEN_REGISTRY.priceFeedOf(token);
+        return _tokenRegistry.priceFeedOf(token);
     }
 
-    /// @inheritdoc IAlphaGridVault
+    /// @inheritdoc IMandateVault
     function allowedTokenAt(uint256 index) external view returns (address) {
         return _allowedTokens[index];
     }
 
-    /// @inheritdoc IAlphaGridVault
+    /// @inheritdoc IMandateVault
     function allowedTokenCount() external view returns (uint256) {
         return _allowedTokens.length;
     }
@@ -243,11 +271,11 @@ contract AlphaGridVault is IAlphaGridVault, ERC4626, AccessControl {
     // Admin
     // -------------------------------------------------------------------------
 
-    /// @inheritdoc IAlphaGridVault
+    /// @inheritdoc IMandateVault
     function enableToken(address token) external onlyRole(VAULT_ADMIN_ROLE) {
         if (!_tokenListed[token]) {
-            if (!TOKEN_REGISTRY.isTokenListed(token)) revert TokenNotRegistered(token);
-            if (!TOKEN_REGISTRY.isTokenActive(token)) revert TokenNotActive(token);
+            if (!_tokenRegistry.isTokenListed(token)) revert TokenNotRegistered(token);
+            if (!_tokenRegistry.isTokenActive(token)) revert TokenNotActive(token);
 
             _tokenListed[token] = true;
             _tokenEnabled[token] = true;
@@ -260,22 +288,22 @@ contract AlphaGridVault is IAlphaGridVault, ERC4626, AccessControl {
         revert TokenAlreadyAllowed(token);
     }
 
-    /// @inheritdoc IAlphaGridVault
+    /// @inheritdoc IMandateVault
     function setTokenEnabled(address token, bool enabled) external onlyRole(VAULT_ADMIN_ROLE) {
         if (!_tokenListed[token]) revert TokenNotAllowed(token);
-        if (enabled && !TOKEN_REGISTRY.isTokenActive(token)) revert TokenNotActive(token);
+        if (enabled && !_tokenRegistry.isTokenActive(token)) revert TokenNotActive(token);
 
         _tokenEnabled[token] = enabled;
         emit MandateTokenStatusUpdated(token, enabled);
     }
 
-    /// @inheritdoc IAlphaGridVault
+    /// @inheritdoc IMandateVault
     function setMaxPriceAge(uint256 maxPriceAge_) external onlyRole(VAULT_ADMIN_ROLE) {
         maxPriceAge = maxPriceAge_;
         emit MaxPriceAgeUpdated(maxPriceAge_);
     }
 
-    /// @inheritdoc IAlphaGridVault
+    /// @inheritdoc IMandateVault
     function setDepositFeeBps(uint256 depositFeeBps_) external onlyRole(VAULT_ADMIN_ROLE) {
         _validateFeeBps(depositFeeBps_);
         if (depositFeeBps_ != 0 && feeRecipient == address(0)) revert FeeRecipientRequired();
@@ -283,7 +311,7 @@ contract AlphaGridVault is IAlphaGridVault, ERC4626, AccessControl {
         emit DepositFeeUpdated(depositFeeBps_);
     }
 
-    /// @inheritdoc IAlphaGridVault
+    /// @inheritdoc IMandateVault
     function setWithdrawFeeBps(uint256 withdrawFeeBps_) external onlyRole(VAULT_ADMIN_ROLE) {
         _validateFeeBps(withdrawFeeBps_);
         if (withdrawFeeBps_ != 0 && feeRecipient == address(0)) revert FeeRecipientRequired();
@@ -291,38 +319,38 @@ contract AlphaGridVault is IAlphaGridVault, ERC4626, AccessControl {
         emit WithdrawFeeUpdated(withdrawFeeBps_);
     }
 
-    /// @inheritdoc IAlphaGridVault
+    /// @inheritdoc IMandateVault
     function setFeeRecipient(address feeRecipient_) external onlyRole(VAULT_ADMIN_ROLE) {
         if (feeRecipient_ == address(0)) revert ZeroAddress();
         feeRecipient = feeRecipient_;
         emit FeeRecipientUpdated(feeRecipient_);
     }
 
-    /// @inheritdoc IAlphaGridVault
+    /// @inheritdoc IMandateVault
     function setLiquidityPaused(bool paused) external onlyRole(VAULT_ADMIN_ROLE) {
         liquidityPaused = paused;
         emit LiquidityPauseUpdated(paused);
     }
 
-    /// @inheritdoc IAlphaGridVault
+    /// @inheritdoc IMandateVault
     function setTradingPaused(bool paused) external onlyRole(VAULT_ADMIN_ROLE) {
         tradingPaused = paused;
         emit TradingPauseUpdated(paused);
     }
 
-    /// @inheritdoc IAlphaGridVault
+    /// @inheritdoc IMandateVault
     function pullUsdcForTrade(address to, uint256 amount) external onlyRole(TRADE_ROUTER_ROLE) {
         if (tradingPaused) revert TradingOperationsPaused();
         _pullUsdc(to, amount);
     }
 
-    /// @inheritdoc IAlphaGridVault
+    /// @inheritdoc IMandateVault
     function pullTokenForTrade(address token, address to, uint256 amount) external onlyRole(TRADE_ROUTER_ROLE) {
         if (tradingPaused) revert TradingOperationsPaused();
         _pullToken(token, to, amount);
     }
 
-    /// @inheritdoc IAlphaGridVault
+    /// @inheritdoc IMandateVault
     function pullTokenForForceClose(address token, address to, uint256 amount) external onlyRole(TRADE_ROUTER_ROLE) {
         _pullToken(token, to, amount);
     }

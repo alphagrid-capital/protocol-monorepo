@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import { BaseTest } from "../helpers/BaseTest.sol";
 import { AgentRegistry } from "../../src/core/AgentRegistry.sol";
 import { FeeManager } from "../../src/core/FeeManager.sol";
-import { TrackConfig } from "../../src/core/TrackConfig.sol";
+import { VaultTrackRegistry } from "../../src/core/VaultTrackRegistry.sol";
 import { IAgentRegistry } from "../../src/interfaces/IAgentRegistry.sol";
-import { ITrackConfig } from "../../src/interfaces/ITrackConfig.sol";
+import { IVaultTrackRegistry } from "../../src/interfaces/IVaultTrackRegistry.sol";
+import { BaseTest } from "../helpers/BaseTest.sol";
 
 /// @notice End-to-end wiring for agent registration, fees, and track config.
 contract AgentRegistrationIntegrationTest is BaseTest {
     AgentRegistry internal registry;
     FeeManager internal feeManager;
-    TrackConfig internal trackConfig;
+    VaultTrackRegistry internal vaultTrackRegistry;
 
     address internal treasury;
     address internal operator;
@@ -32,11 +32,11 @@ contract AgentRegistrationIntegrationTest is BaseTest {
 
         vm.startPrank(deployer);
         feeManager = new FeeManager(deployer, treasury, address(usdc));
-        trackConfig = new TrackConfig(deployer);
+        vaultTrackRegistry = new VaultTrackRegistry(deployer);
         registry = new AgentRegistry(deployer, feeManager);
 
         feeManager.setAgentRegistry(address(registry));
-        registry.setTrackConfig(trackConfig);
+        registry.setVaultTrackRegistry(vaultTrackRegistry);
 
         registry.grantRole(registry.OPERATOR_ROLE(), operator);
         registry.grantRole(registry.REGISTRAR_ROLE(), operator);
@@ -50,7 +50,7 @@ contract AgentRegistrationIntegrationTest is BaseTest {
         usdc.mint(operator, 10_000e6);
     }
 
-    function test_RegisterWithTrackConfigApproval() public {
+    function test_RegisterWithVaultTrackRegistryApproval() public {
         vm.startPrank(operator);
         usdc.approve(address(feeManager), REGISTRATION_FEE);
         uint256 agentId = registry.registerAgent(alice, vault, "Alpha Bot", "ipfs://alpha", alice);
@@ -79,10 +79,10 @@ contract AgentRegistrationIntegrationTest is BaseTest {
     }
 
     function _setVaultChallengeConfig(address vault_, bool active) internal {
-        trackConfig.setVaultTrackConfig(
+        vaultTrackRegistry.setVaultTrackConfig(
             vault_,
             0,
-            ITrackConfig.VaultTrackConfig({
+            IVaultTrackRegistry.VaultTrackConfig({
                 vault: vault_,
                 trackId: 0,
                 initialAllocation: 10_000e6,

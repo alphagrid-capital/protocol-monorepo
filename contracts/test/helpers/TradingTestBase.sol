@@ -1,22 +1,24 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import { BaseTest } from "./BaseTest.sol";
-import { AgentRegistry } from "../../src/core/AgentRegistry.sol";
-import { FeeManager } from "../../src/core/FeeManager.sol";
-import { TrackConfig } from "../../src/core/TrackConfig.sol";
-import { AllocationManager } from "../../src/core/AllocationManager.sol";
-import { TokenRegistry } from "../../src/core/TokenRegistry.sol";
-import { PositionManager } from "../../src/core/PositionManager.sol";
-import { TradeRouter } from "../../src/core/TradeRouter.sol";
-import { MockSwapAdapter } from "../../src/adapters/MockSwapAdapter.sol";
-import { AlphaGridVault } from "../../src/vaults/AlphaGridVault.sol";
-import { ITrackConfig } from "../../src/interfaces/ITrackConfig.sol";
-import { IPositionTypes } from "../../src/interfaces/IPositionTypes.sol";
-import { MessageHashUtils } from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { MessageHashUtils } from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
+import { MockSwapAdapter } from "../../src/adapters/MockSwapAdapter.sol";
+import { AgentRegistry } from "../../src/core/AgentRegistry.sol";
+import { AllocationManager } from "../../src/core/AllocationManager.sol";
+import { FeeManager } from "../../src/core/FeeManager.sol";
+import { PositionManager } from "../../src/core/PositionManager.sol";
+import { TokenRegistry } from "../../src/core/TokenRegistry.sol";
+import { TradeRouter } from "../../src/core/TradeRouter.sol";
+import { VaultTrackRegistry } from "../../src/core/VaultTrackRegistry.sol";
+import { IPositionTypes } from "../../src/interfaces/IPositionTypes.sol";
+import { IVaultTrackRegistry } from "../../src/interfaces/IVaultTrackRegistry.sol";
 import { MockERC20 } from "../../src/mocks/MockERC20.sol";
+import { MandateVault } from "../../src/vaults/MandateVault.sol";
+import { MandateVaultFactory } from "../../src/vaults/MandateVaultFactory.sol";
 import { MockPriceFeed } from "../mocks/MockPriceFeed.sol";
+import { BaseTest } from "./BaseTest.sol";
+import { VaultTestLib } from "./VaultTestLib.sol";
 
 /// @notice Shared fixture: full on-chain stack through TradeRouter with MockSwapAdapter.
 abstract contract TradingTestBase is BaseTest {
@@ -28,13 +30,14 @@ abstract contract TradingTestBase is BaseTest {
 
     AgentRegistry internal registry;
     FeeManager internal feeManager;
-    TrackConfig internal trackConfig;
+    VaultTrackRegistry internal vaultTrackRegistry;
     AllocationManager internal allocationManager;
     TokenRegistry internal tokenRegistry;
     PositionManager internal positionManager;
     TradeRouter internal tradeRouter;
     MockSwapAdapter internal swapAdapter;
-    AlphaGridVault internal vault;
+    MandateVaultFactory internal vaultFactory;
+    MandateVault internal vault;
 
     MockERC20 internal nvda;
     MockPriceFeed internal nvdaFeed;
@@ -57,23 +60,32 @@ abstract contract TradingTestBase is BaseTest {
 
         vm.startPrank(deployer);
         feeManager = new FeeManager(deployer, treasury, address(usdc));
-        trackConfig = new TrackConfig(deployer);
+        vaultTrackRegistry = new VaultTrackRegistry(deployer);
         tokenRegistry = new TokenRegistry(deployer);
         registry = new AgentRegistry(deployer, feeManager);
-        allocationManager = new AllocationManager(deployer, trackConfig);
+        allocationManager = new AllocationManager(deployer, vaultTrackRegistry);
         positionManager = new PositionManager(deployer);
 
-        vault = new AlphaGridVault(
-            IERC20(address(usdc)), "AlphaGrid Tech Vault", "agTECH", VAULT_MANDATE, tokenRegistry, deployer
+        (vaultFactory,) = VaultTestLib.deployFactory(IERC20(address(usdc)));
+        vault = VaultTestLib.deployVault(
+            vaultFactory,
+            IERC20(address(usdc)),
+            "AlphaGrid Tech Vault",
+            "agTECH",
+            VAULT_MANDATE,
+            tokenRegistry,
+            deployer,
+            treasury
         );
         vaultAddr = address(vault);
 
         swapAdapter = new MockSwapAdapter(address(0));
-        tradeRouter = new TradeRouter(deployer, registry, allocationManager, positionManager, swapAdapter, trackConfig);
+        tradeRouter =
+            new TradeRouter(deployer, registry, allocationManager, positionManager, swapAdapter, vaultTrackRegistry);
         swapAdapter.setTradeRouter(address(tradeRouter));
 
         feeManager.setAgentRegistry(address(registry));
-        registry.setTrackConfig(trackConfig);
+        registry.setVaultTrackRegistry(vaultTrackRegistry);
         registry.setAllocationManager(allocationManager);
         allocationManager.setAgentRegistry(address(registry));
         positionManager.setTradeRouter(address(tradeRouter));
@@ -86,7 +98,6 @@ abstract contract TradingTestBase is BaseTest {
         vault.grantRole(vault.TRADE_ROUTER_ROLE(), address(tradeRouter));
         allocationManager.grantRole(allocationManager.TRADE_ROUTER_ROLE(), address(tradeRouter));
 
-        vault.setFeeRecipient(treasury);
         vault.setMaxPriceAge(1 hours);
         tradeRouter.setKeeperBounty(50, 100e6);
 
@@ -95,7 +106,7 @@ abstract contract TradingTestBase is BaseTest {
         tokenRegistry.registerToken(address(nvda), address(nvdaFeed));
         vault.enableToken(address(nvda));
 
-        _setTrackConfig(vaultAddr, 0, CHALLENGE_CAP, 200_000e6);
+        _setVaultTrackConfig(vaultAddr, 0, CHALLENGE_CAP, 200_000e6);
 
         usdc.mint(lp, LP_USDC);
         vm.stopPrank();
@@ -183,13 +194,13 @@ abstract contract TradingTestBase is BaseTest {
         );
     }
 
-    function _setTrackConfig(address vault_, uint256 trackId, uint256 initialAllocation, uint256 maxAllocation)
+    function _setVaultTrackConfig(address vault_, uint256 trackId, uint256 initialAllocation, uint256 maxAllocation)
         internal
     {
-        trackConfig.setVaultTrackConfig(
+        vaultTrackRegistry.setVaultTrackConfig(
             vault_,
             trackId,
-            ITrackConfig.VaultTrackConfig({
+            IVaultTrackRegistry.VaultTrackConfig({
                 vault: vault_,
                 trackId: trackId,
                 initialAllocation: initialAllocation,

@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import { BaseTest } from "../helpers/BaseTest.sol";
-import { AgentRegistry } from "../../src/core/AgentRegistry.sol";
-import { TrackConfig } from "../../src/core/TrackConfig.sol";
-import { IAgentRegistry } from "../../src/interfaces/IAgentRegistry.sol";
-import { ITrackConfig } from "../../src/interfaces/ITrackConfig.sol";
-import { MockFeeManager } from "../mocks/MockFeeManager.sol";
-import { MessageHashUtils } from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import { IAccessControl } from "@openzeppelin/contracts/access/IAccessControl.sol";
 import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
+import { MessageHashUtils } from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
+import { AgentRegistry } from "../../src/core/AgentRegistry.sol";
+import { VaultTrackRegistry } from "../../src/core/VaultTrackRegistry.sol";
+import { IAgentRegistry } from "../../src/interfaces/IAgentRegistry.sol";
+import { IVaultTrackRegistry } from "../../src/interfaces/IVaultTrackRegistry.sol";
+import { BaseTest } from "../helpers/BaseTest.sol";
+import { MockFeeManager } from "../mocks/MockFeeManager.sol";
 
 contract AgentRegistryTest is BaseTest {
     AgentRegistry internal registry;
     MockFeeManager internal feeManager;
-    TrackConfig internal trackConfig;
+    VaultTrackRegistry internal vaultTrackRegistry;
 
     address internal operator;
     address internal vault;
@@ -39,9 +39,9 @@ contract AgentRegistryTest is BaseTest {
         feeManager = new MockFeeManager();
 
         vm.startPrank(deployer);
-        trackConfig = new TrackConfig(deployer);
+        vaultTrackRegistry = new VaultTrackRegistry(deployer);
         registry = new AgentRegistry(deployer, feeManager);
-        registry.setTrackConfig(trackConfig);
+        registry.setVaultTrackRegistry(vaultTrackRegistry);
         registry.grantRole(registry.OPERATOR_ROLE(), operator);
         registry.grantRole(registry.REGISTRAR_ROLE(), operator);
         _setVaultChallengeConfig(vault, true);
@@ -224,7 +224,7 @@ contract AgentRegistryTest is BaseTest {
         registry.registerAgent(agentOwner, unapprovedVault, AGENT_NAME, METADATA_URI, agentSigner);
     }
 
-    function test_RevertWhen_TrackConfigNotSet() public {
+    function test_RevertWhen_VaultTrackRegistryNotSet() public {
         AgentRegistry freshRegistry = new AgentRegistry(deployer, feeManager);
 
         vm.startPrank(deployer);
@@ -232,7 +232,7 @@ contract AgentRegistryTest is BaseTest {
         vm.stopPrank();
 
         vm.prank(operator);
-        vm.expectRevert(AgentRegistry.TrackConfigNotSet.selector);
+        vm.expectRevert(AgentRegistry.VaultTrackRegistryNotSet.selector);
         freshRegistry.registerAgent(agentOwner, vault, AGENT_NAME, METADATA_URI, agentSigner);
     }
 
@@ -356,10 +356,10 @@ contract AgentRegistryTest is BaseTest {
     }
 
     function _setVaultChallengeConfig(address vault_, bool active) internal {
-        trackConfig.setVaultTrackConfig(
+        vaultTrackRegistry.setVaultTrackConfig(
             vault_,
             0,
-            ITrackConfig.VaultTrackConfig({
+            IVaultTrackRegistry.VaultTrackConfig({
                 vault: vault_,
                 trackId: 0,
                 initialAllocation: 10_000e6,

@@ -17,6 +17,6 @@ contract DeployAgentRegistry is Script {
         console2.log("AgentRegistry:", address(registry));
         console2.log("Admin:", admin);
         console2.log("FeeManager:", address(feeManager));
-        console2.log("Note: call setTrackConfig and configure vault CHALLENGE tracks before registration");
+        console2.log("Note: call setVaultTrackRegistry and configure vault CHALLENGE tracks before registration");
     }
 }

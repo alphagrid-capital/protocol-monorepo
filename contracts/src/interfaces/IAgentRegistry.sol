@@ -60,7 +60,7 @@ interface IAgentRegistry {
 
     event FeeManagerUpdated(address indexed feeManager);
 
-    event TrackConfigUpdated(address indexed trackConfig);
+    event VaultTrackRegistryUpdated(address indexed vaultTrackRegistry);
 
     event AllocationManagerUpdated(address indexed allocationManager);
 

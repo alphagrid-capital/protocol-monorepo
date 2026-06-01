@@ -57,7 +57,7 @@ Should AlphaGrid adopt a **2/20-style portfolio fee** for vault capital (classic
 | --- | --- |
 | Homepage / landing PRD | Not emphasized; profit split examples only |
 | `FeeManager` | Registration + promotion fees only |
-| `AlphaGridVault` | `setFeeRecipient`; no mgmt/performance fee logic |
+| `MandateVault` | `setFeeRecipient`; no mgmt/performance fee logic |
 
 #### Next steps (suggested)
 
@@ -434,7 +434,7 @@ AlphaGrid needed a clear model for capital pools, agent lifecycle, and fees.
 ### Consequences
 
 - Replace track-level vault model with vault-scoped lifecycle.
-- Contracts: `AlphaGridVault` (4626), `FeeManager`, `VaultTrackConfig` in `TrackConfig`.
+- Contracts: `MandateVault` (4626), `FeeManager`, `VaultTrackConfig` in `TrackConfig`.
 - Update functional, technical, tokenomics, flows, and MVP docs accordingly.
 
 ---

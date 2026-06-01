@@ -116,7 +116,7 @@ Tokenized Stock Venue Adapter
 The MVP contract stack is implemented in Foundry. Deploy in order:
 
 1. `DeployAgentCore` — `FeeManager`, `TrackConfig`, `AgentRegistry`
-2. `DeployVaultInfrastructure` — greenfield: agent core + `TokenRegistry` + four `AlphaGridVault` instances + `AllocationManager`
+2. `DeployVaultInfrastructure` — greenfield: agent core + `TokenRegistry` + four `MandateVault` instances + `AllocationManager`
 3. `DeployTrading` — `PositionManager`, `TradeRouter`, swap adapter; wire roles to existing vault stack
 
 See `contracts/README.md` and `contracts/docs/position-intent-eip712.md` for deployment env vars and the `OpenPosition` signing schema.
@@ -128,7 +128,7 @@ See `contracts/README.md` and `contracts/docs/position-intent-eip712.md` for dep
 | `FeeManager` | Implemented | Registration + promotion fees (USDC; amount may be zero) |
 | `TokenRegistry` | Implemented | Tradable token + price feed registration |
 | `AllocationManager` | Implemented | Simulated Challenge + real Funded/Prime allocations |
-| `AlphaGridVault` | Implemented | ERC-4626; liquidity pause + trading pause; router-only pulls |
+| `MandateVault` | Implemented | ERC-4626; liquidity pause + trading pause; router-only pulls |
 | `PositionManager` | Implemented | Per-agent token ledger and position storage; router-only mutations |
 | `TradeRouter` | Implemented | Sole settlement path: `openPosition`, `executeExit`, `forceClose` |
 | `ISwapAdapter` | Implemented | `MockSwapAdapter` (dev/tests), `InventorySwapAdapter` (pre-funded inventory) |
@@ -151,7 +151,7 @@ Recommended contracts:
 
 1. `AgentRegistry`
 2. `TrackConfig` *(implemented; PRD concept: TrackRegistry)*
-3. `AlphaGridVault` (ERC-4626 instances)
+3. `MandateVault` (ERC-4626 instances)
 4. `TokenRegistry`
 5. `AllocationManager`
 6. `PositionManager`
@@ -259,7 +259,7 @@ struct VaultTrackConfig {
 
 ---
 
-## 5.4 AlphaGridVault (ERC-4626)
+## 5.4 MandateVault (ERC-4626)
 
 ### Purpose
 
@@ -515,7 +515,7 @@ forceClose(uint256 positionId) external                                // OPERAT
 ### Related contracts
 
 - `PositionManager` — stores positions and per-agent token ledger; only `TradeRouter` may mutate.
-- `AlphaGridVault` — `TRADE_ROUTER_ROLE` for `pullUsdcForTrade` / `pullTokenForTrade` / force-close pulls.
+- `MandateVault` — `TRADE_ROUTER_ROLE` for `pullUsdcForTrade` / `pullTokenForTrade` / force-close pulls.
 - `AllocationManager` — `TRADE_ROUTER_ROLE` for allocation usage updates on open.
 
 ---
@@ -568,7 +568,7 @@ Stores risk rules and can pause or restrict agents.
 - `TrackConfig` — `maxTradeSizeBps`, `maxDailyTurnoverBps`, track caps
 - `TradeRouter` — enforces trade size and daily turnover on open
 - `AgentRegistry` — agent status, global pause (opens only)
-- `AlphaGridVault` — `liquidityPaused` / `tradingPaused`, token allowlist
+- `MandateVault` — `liquidityPaused` / `tradingPaused`, token allowlist
 
 Drawdown breach, Alpha Score graduation, and automated fail/promote actions remain **off-chain** (performance + risk engines) with operator execution on-chain in MVP.
 
@@ -1296,7 +1296,7 @@ Recommended MVP infrastructure:
 
 1. Agent registry (`AgentRegistry`) — self-register + operator register
 2. Track configuration (`TrackConfig`) — track types + `VaultTrackConfig`
-3. Four ERC-4626 `AlphaGridVault` instances (greenfield deploy script)
+3. Four ERC-4626 `MandateVault` instances (greenfield deploy script)
 4. `FeeManager` (registration + promotion fees)
 5. `TokenRegistry` + vault token allowlist
 6. `AllocationManager`
