@@ -12,7 +12,9 @@ import { IAllocationManager } from "../../src/interfaces/IAllocationManager.sol"
 import { IVaultTrackRegistry } from "../../src/interfaces/IVaultTrackRegistry.sol";
 import { MandateVault } from "../../src/vaults/MandateVault.sol";
 import { MandateVaultFactory } from "../../src/vaults/MandateVaultFactory.sol";
+import { AgentTestLib } from "../helpers/AgentTestLib.sol";
 import { BaseTest } from "../helpers/BaseTest.sol";
+import { MockERC8004IdentityRegistry } from "../mocks/MockERC8004IdentityRegistry.sol";
 import { VaultTestLib } from "../helpers/VaultTestLib.sol";
 
 contract AllocationManagerTest is BaseTest {
@@ -21,6 +23,7 @@ contract AllocationManagerTest is BaseTest {
     FeeManager internal feeManager;
     VaultTrackRegistry internal vaultTrackRegistry;
     MandateVault internal vault;
+    MockERC8004IdentityRegistry internal identityRegistry;
 
     address internal operator;
     address internal treasury;
@@ -37,7 +40,8 @@ contract AllocationManagerTest is BaseTest {
         vm.startPrank(deployer);
         feeManager = new FeeManager(deployer, treasury, address(usdc));
         vaultTrackRegistry = new VaultTrackRegistry(deployer);
-        registry = new AgentRegistry(deployer, feeManager);
+        identityRegistry = AgentTestLib.deployERC8004IdentityRegistry();
+        registry = new AgentRegistry(deployer, feeManager, address(identityRegistry), block.chainid);
         allocationManager = new AllocationManager(deployer, vaultTrackRegistry);
 
         TokenRegistry tokenRegistry = new TokenRegistry(deployer);
@@ -68,9 +72,18 @@ contract AllocationManagerTest is BaseTest {
         vm.stopPrank();
     }
 
+    function _registerAgent(address owner, string memory name, string memory metadataURI)
+        internal
+        returns (uint256 agentId)
+    {
+        uint256 erc8004Id = AgentTestLib.mintERC8004(identityRegistry, owner);
+        agentId = registry.registerAgent(owner, address(vault), name, metadataURI, owner, true, erc8004Id);
+    }
+
     function test_OnAgentRegisteredCreatesAllocation() public {
-        vm.prank(operator);
-        uint256 agentId = registry.registerAgent(alice, address(vault), "Bot", "ipfs://bot", alice);
+        vm.startPrank(operator);
+        uint256 agentId = _registerAgent(alice, "Bot", "ipfs://bot");
+        vm.stopPrank();
 
         IAllocationManager.Allocation memory allocation = allocationManager.getAllocation(agentId);
         assertEq(allocation.agentId, agentId);
@@ -84,7 +97,7 @@ contract AllocationManagerTest is BaseTest {
 
     function test_OnAgentPromotedUpdatesCap() public {
         vm.startPrank(operator);
-        uint256 agentId = registry.registerAgent(alice, address(vault), "Bot", "ipfs://bot", alice);
+        uint256 agentId = _registerAgent(alice, "Bot", "ipfs://bot");
         registry.promoteAgent(agentId, IAgentRegistry.Track.FUNDED);
         vm.stopPrank();
 
@@ -102,7 +115,7 @@ contract AllocationManagerTest is BaseTest {
 
     function test_RevertWhen_PromoteVaultMismatch() public {
         vm.startPrank(operator);
-        uint256 agentId = registry.registerAgent(alice, address(vault), "Bot", "ipfs://bot", alice);
+        uint256 agentId = _registerAgent(alice, "Bot", "ipfs://bot");
         vm.stopPrank();
 
         address wrongVault = makeAddr("wrongVault");
@@ -116,7 +129,7 @@ contract AllocationManagerTest is BaseTest {
 
     function test_RevertWhen_PromoteTrackMismatch() public {
         vm.startPrank(operator);
-        uint256 agentId = registry.registerAgent(alice, address(vault), "Bot", "ipfs://bot", alice);
+        uint256 agentId = _registerAgent(alice, "Bot", "ipfs://bot");
         vm.stopPrank();
 
         vm.expectRevert(abi.encodeWithSelector(AllocationManager.TrackMismatch.selector, agentId, 0, 1));
@@ -126,7 +139,7 @@ contract AllocationManagerTest is BaseTest {
 
     function test_SetAllocationUsed_UpdatesUsed() public {
         vm.startPrank(operator);
-        uint256 agentId = registry.registerAgent(alice, address(vault), "Bot", "ipfs://bot", alice);
+        uint256 agentId = _registerAgent(alice, "Bot", "ipfs://bot");
         allocationManager.setAllocationUsed(agentId, 5_000e6);
         vm.stopPrank();
 
@@ -135,7 +148,7 @@ contract AllocationManagerTest is BaseTest {
 
     function test_RevertWhen_UsedExceedsCap() public {
         vm.startPrank(operator);
-        uint256 agentId = registry.registerAgent(alice, address(vault), "Bot", "ipfs://bot", alice);
+        uint256 agentId = _registerAgent(alice, "Bot", "ipfs://bot");
 
         vm.expectRevert(
             abi.encodeWithSelector(AllocationManager.UsedExceedsCap.selector, agentId, CHALLENGE_CAP + 1, CHALLENGE_CAP)
@@ -145,8 +158,9 @@ contract AllocationManagerTest is BaseTest {
     }
 
     function test_RevertWhen_SetUsedWithoutOperator() public {
-        vm.prank(operator);
-        uint256 agentId = registry.registerAgent(alice, address(vault), "Bot", "ipfs://bot", alice);
+        vm.startPrank(operator);
+        uint256 agentId = _registerAgent(alice, "Bot", "ipfs://bot");
+        vm.stopPrank();
 
         vm.expectRevert();
         vm.prank(alice);
@@ -155,7 +169,7 @@ contract AllocationManagerTest is BaseTest {
 
     function test_SetAllocationStatus_UpdatesStatus() public {
         vm.startPrank(operator);
-        uint256 agentId = registry.registerAgent(alice, address(vault), "Bot", "ipfs://bot", alice);
+        uint256 agentId = _registerAgent(alice, "Bot", "ipfs://bot");
         allocationManager.setAllocationStatus(agentId, IAllocationManager.AllocationStatus.Paused);
         vm.stopPrank();
 
@@ -165,7 +179,7 @@ contract AllocationManagerTest is BaseTest {
 
     function test_RevertWhen_AllocationExists() public {
         vm.startPrank(operator);
-        uint256 agentId = registry.registerAgent(alice, address(vault), "Bot", "ipfs://bot", alice);
+        uint256 agentId = _registerAgent(alice, "Bot", "ipfs://bot");
         vm.stopPrank();
 
         vm.expectRevert(abi.encodeWithSelector(AllocationManager.AllocationExists.selector, agentId));
@@ -180,8 +194,8 @@ contract AllocationManagerTest is BaseTest {
 
     function test_TotalAgentCaps_SumsMultipleAgents() public {
         vm.startPrank(operator);
-        registry.registerAgent(alice, address(vault), "Bot A", "ipfs://a", alice);
-        registry.registerAgent(bob, address(vault), "Bot B", "ipfs://b", bob);
+        _registerAgent(alice, "Bot A", "ipfs://a");
+        _registerAgent(bob, "Bot B", "ipfs://b");
         vm.stopPrank();
 
         assertEq(allocationManager.totalAgentCaps(address(vault)), CHALLENGE_CAP * 2);

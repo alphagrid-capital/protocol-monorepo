@@ -21,7 +21,9 @@ contract DeployAgentCore is Script {
 
         feeManager = new FeeManager(admin, treasury, usdc);
         vaultTrackRegistry = new VaultTrackRegistry(admin);
-        registry = new AgentRegistry(admin, feeManager);
+        address erc8004IdentityRegistry = vm.envAddress("ERC8004_IDENTITY_REGISTRY");
+        uint256 erc8004ChainId = vm.envOr("ERC8004_CHAIN_ID", block.chainid);
+        registry = new AgentRegistry(admin, feeManager, erc8004IdentityRegistry, erc8004ChainId);
 
         feeManager.setAgentRegistry(address(registry));
         registry.setVaultTrackRegistry(vaultTrackRegistry);

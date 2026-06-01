@@ -11,7 +11,9 @@ import { IAgentRegistry } from "../../src/interfaces/IAgentRegistry.sol";
 import { IVaultTrackRegistry } from "../../src/interfaces/IVaultTrackRegistry.sol";
 import { MandateVault } from "../../src/vaults/MandateVault.sol";
 import { MandateVaultFactory } from "../../src/vaults/MandateVaultFactory.sol";
+import { AgentTestLib } from "../helpers/AgentTestLib.sol";
 import { BaseTest } from "../helpers/BaseTest.sol";
+import { MockERC8004IdentityRegistry } from "../mocks/MockERC8004IdentityRegistry.sol";
 import { VaultTestLib } from "../helpers/VaultTestLib.sol";
 
 /// @notice End-to-end wiring for vault deposits, allocations, and agent funding.
@@ -21,6 +23,7 @@ contract VaultAndAllocationIntegrationTest is BaseTest {
     VaultTrackRegistry internal vaultTrackRegistry;
     AllocationManager internal allocationManager;
     MandateVault internal techVault;
+    MockERC8004IdentityRegistry internal identityRegistry;
 
     address internal treasury;
     address internal operator;
@@ -39,7 +42,8 @@ contract VaultAndAllocationIntegrationTest is BaseTest {
         vm.startPrank(deployer);
         feeManager = new FeeManager(deployer, treasury, address(usdc));
         vaultTrackRegistry = new VaultTrackRegistry(deployer);
-        registry = new AgentRegistry(deployer, feeManager);
+        identityRegistry = AgentTestLib.deployERC8004IdentityRegistry();
+        registry = new AgentRegistry(deployer, feeManager, address(identityRegistry), block.chainid);
         allocationManager = new AllocationManager(deployer, vaultTrackRegistry);
         TokenRegistry tokenRegistry = new TokenRegistry(deployer);
         MandateVaultFactory vaultFactory;
@@ -65,7 +69,6 @@ contract VaultAndAllocationIntegrationTest is BaseTest {
 
         _setVaultTrackConfig(address(techVault), 0, CHALLENGE_CAP, 25_000e6);
         _setVaultTrackConfig(address(techVault), 1, 50_000e6, 100_000e6);
-
         usdc.mint(lp, SEED_DEPOSIT);
         vm.stopPrank();
 
@@ -75,9 +78,15 @@ contract VaultAndAllocationIntegrationTest is BaseTest {
         vm.stopPrank();
     }
 
+    function _registerAlice() internal returns (uint256 agentId) {
+        uint256 erc8004Id = AgentTestLib.mintERC8004(identityRegistry, alice);
+        agentId = registry.registerAgent(alice, address(techVault), "Alpha Bot", "ipfs://alpha", alice, true, erc8004Id);
+    }
+
     function test_RegisterAgentCreatesAllocationAgainstRealVault() public {
-        vm.prank(operator);
-        uint256 agentId = registry.registerAgent(alice, address(techVault), "Alpha Bot", "ipfs://alpha", alice);
+        vm.startPrank(operator);
+        uint256 agentId = _registerAlice();
+        vm.stopPrank();
 
         assertEq(allocationManager.allocationCap(agentId), CHALLENGE_CAP);
         assertEq(techVault.totalAssets(), SEED_DEPOSIT);
@@ -85,7 +94,7 @@ contract VaultAndAllocationIntegrationTest is BaseTest {
 
     function test_PromoteUpdatesAllocationCap() public {
         vm.startPrank(operator);
-        uint256 agentId = registry.registerAgent(alice, address(techVault), "Alpha Bot", "ipfs://alpha", alice);
+        uint256 agentId = _registerAlice();
         registry.promoteAgent(agentId, IAgentRegistry.Track.FUNDED);
         vm.stopPrank();
 

@@ -6,13 +6,16 @@ import { FeeManager } from "../../src/core/FeeManager.sol";
 import { VaultTrackRegistry } from "../../src/core/VaultTrackRegistry.sol";
 import { IAgentRegistry } from "../../src/interfaces/IAgentRegistry.sol";
 import { IVaultTrackRegistry } from "../../src/interfaces/IVaultTrackRegistry.sol";
+import { AgentTestLib } from "../helpers/AgentTestLib.sol";
 import { BaseTest } from "../helpers/BaseTest.sol";
+import { MockERC8004IdentityRegistry } from "../mocks/MockERC8004IdentityRegistry.sol";
 
 /// @notice End-to-end wiring for agent registration, fees, and track config.
 contract AgentRegistrationIntegrationTest is BaseTest {
     AgentRegistry internal registry;
     FeeManager internal feeManager;
     VaultTrackRegistry internal vaultTrackRegistry;
+    MockERC8004IdentityRegistry internal identityRegistry;
 
     address internal treasury;
     address internal operator;
@@ -33,7 +36,8 @@ contract AgentRegistrationIntegrationTest is BaseTest {
         vm.startPrank(deployer);
         feeManager = new FeeManager(deployer, treasury, address(usdc));
         vaultTrackRegistry = new VaultTrackRegistry(deployer);
-        registry = new AgentRegistry(deployer, feeManager);
+        identityRegistry = AgentTestLib.deployERC8004IdentityRegistry();
+        registry = new AgentRegistry(deployer, feeManager, address(identityRegistry), block.chainid);
 
         feeManager.setAgentRegistry(address(registry));
         registry.setVaultTrackRegistry(vaultTrackRegistry);
@@ -50,10 +54,15 @@ contract AgentRegistrationIntegrationTest is BaseTest {
         usdc.mint(operator, 10_000e6);
     }
 
+    function _registerAlice() internal returns (uint256 agentId) {
+        uint256 erc8004Id = AgentTestLib.mintERC8004(identityRegistry, alice);
+        agentId = registry.registerAgent(alice, vault, "Alpha Bot", "ipfs://alpha", alice, true, erc8004Id);
+    }
+
     function test_RegisterWithVaultTrackRegistryApproval() public {
         vm.startPrank(operator);
         usdc.approve(address(feeManager), REGISTRATION_FEE);
-        uint256 agentId = registry.registerAgent(alice, vault, "Alpha Bot", "ipfs://alpha", alice);
+        uint256 agentId = _registerAlice();
         vm.stopPrank();
 
         assertEq(agentId, 1);
@@ -62,15 +71,16 @@ contract AgentRegistrationIntegrationTest is BaseTest {
     }
 
     function test_RevertWhen_VaultMissingChallengeConfig() public {
+        uint256 erc8004Id = AgentTestLib.mintERC8004(identityRegistry, alice);
         vm.prank(operator);
         vm.expectRevert(abi.encodeWithSelector(AgentRegistry.VaultNotApproved.selector, unconfiguredVault));
-        registry.registerAgent(alice, unconfiguredVault, "Alpha Bot", "ipfs://alpha", alice);
+        registry.registerAgent(alice, unconfiguredVault, "Alpha Bot", "ipfs://alpha", alice, false, 0);
     }
 
     function test_PromotionCollectsFeeFromOperator() public {
         vm.startPrank(operator);
         usdc.approve(address(feeManager), REGISTRATION_FEE + CHALLENGE_TO_FUNDED_FEE);
-        uint256 agentId = registry.registerAgent(alice, vault, "Alpha Bot", "ipfs://alpha", alice);
+        uint256 agentId = _registerAlice();
         registry.promoteAgent(agentId, IAgentRegistry.Track.FUNDED);
         vm.stopPrank();
 

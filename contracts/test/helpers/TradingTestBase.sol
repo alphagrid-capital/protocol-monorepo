@@ -17,7 +17,9 @@ import { MockERC20 } from "../../src/mocks/MockERC20.sol";
 import { MandateVault } from "../../src/vaults/MandateVault.sol";
 import { MandateVaultFactory } from "../../src/vaults/MandateVaultFactory.sol";
 import { MockPriceFeed } from "../mocks/MockPriceFeed.sol";
+import { AgentTestLib } from "./AgentTestLib.sol";
 import { BaseTest } from "./BaseTest.sol";
+import { MockERC8004IdentityRegistry } from "../mocks/MockERC8004IdentityRegistry.sol";
 import { VaultTestLib } from "./VaultTestLib.sol";
 
 /// @notice Shared fixture: full on-chain stack through TradeRouter with MockSwapAdapter.
@@ -38,6 +40,7 @@ abstract contract TradingTestBase is BaseTest {
     MockSwapAdapter internal swapAdapter;
     MandateVaultFactory internal vaultFactory;
     MandateVault internal vault;
+    MockERC8004IdentityRegistry internal identityRegistry;
 
     MockERC20 internal nvda;
     MockPriceFeed internal nvdaFeed;
@@ -62,7 +65,8 @@ abstract contract TradingTestBase is BaseTest {
         feeManager = new FeeManager(deployer, treasury, address(usdc));
         vaultTrackRegistry = new VaultTrackRegistry(deployer);
         tokenRegistry = new TokenRegistry(deployer);
-        registry = new AgentRegistry(deployer, feeManager);
+        identityRegistry = AgentTestLib.deployERC8004IdentityRegistry();
+        registry = new AgentRegistry(deployer, feeManager, address(identityRegistry), block.chainid);
         allocationManager = new AllocationManager(deployer, vaultTrackRegistry);
         positionManager = new PositionManager(deployer);
 
@@ -118,8 +122,9 @@ abstract contract TradingTestBase is BaseTest {
     }
 
     function _registerAgent() internal returns (uint256 agentId) {
+        uint256 erc8004Id = AgentTestLib.mintERC8004(identityRegistry, agentOwner);
         vm.prank(operator);
-        agentId = registry.registerAgent(agentOwner, vaultAddr, "Bot", "ipfs://bot", agentSigner);
+        agentId = registry.registerAgent(agentOwner, vaultAddr, "Bot", "ipfs://bot", agentSigner, true, erc8004Id);
     }
 
     function _singleStopIntent(uint256 agentId, uint256 usdcAmount, int256 stopBps)

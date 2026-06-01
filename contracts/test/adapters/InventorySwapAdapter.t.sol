@@ -12,6 +12,7 @@ import { TradeRouter } from "../../src/core/TradeRouter.sol";
 import { VaultTrackRegistry } from "../../src/core/VaultTrackRegistry.sol";
 import { IPositionTypes } from "../../src/interfaces/IPositionTypes.sol";
 import { MockERC20 } from "../../src/mocks/MockERC20.sol";
+import { AgentTestLib } from "../helpers/AgentTestLib.sol";
 import { TradingTestBase } from "../helpers/TradingTestBase.sol";
 import { VaultTestLib } from "../helpers/VaultTestLib.sol";
 import { MockPriceFeed } from "../mocks/MockPriceFeed.sol";
@@ -36,7 +37,8 @@ contract InventorySwapAdapterTest is TradingTestBase {
         feeManager = new FeeManager(deployer, treasury, address(usdc));
         vaultTrackRegistry = new VaultTrackRegistry(deployer);
         tokenRegistry = new TokenRegistry(deployer);
-        registry = new AgentRegistry(deployer, feeManager);
+        identityRegistry = AgentTestLib.deployERC8004IdentityRegistry();
+        registry = new AgentRegistry(deployer, feeManager, address(identityRegistry), block.chainid);
         allocationManager = new AllocationManager(deployer, vaultTrackRegistry);
         positionManager = new PositionManager(deployer);
 

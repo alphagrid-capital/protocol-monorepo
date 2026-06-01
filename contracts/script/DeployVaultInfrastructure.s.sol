@@ -14,6 +14,26 @@ import { MandateVaultFactory } from "../src/vaults/MandateVaultFactory.sol";
 
 /// @notice Greenfield deploy: agent core, token registry, four vault clones, and AllocationManager wiring.
 contract DeployVaultInfrastructure is Script {
+    bytes32 private constant MANDATE_FOUNDATION = "FOUNDATION";
+    bytes32 private constant MANDATE_TECH = "TECH";
+    bytes32 private constant MANDATE_VOLATILITY = "VOLATILITY";
+    bytes32 private constant MANDATE_MACRO = "MACRO";
+    struct AgentCore {
+        FeeManager feeManager;
+        VaultTrackRegistry vaultTrackRegistry;
+        TokenRegistry tokenRegistry;
+        AgentRegistry registry;
+        AllocationManager allocationManager;
+    }
+
+    struct VaultSet {
+        MandateVaultFactory factory;
+        MandateVault foundationVault;
+        MandateVault techVault;
+        MandateVault volatilityVault;
+        MandateVault macroVault;
+    }
+
     function run()
         external
         returns (
@@ -32,86 +52,117 @@ contract DeployVaultInfrastructure is Script {
         address admin = vm.envAddress("ADMIN");
         address treasury = vm.envAddress("TREASURY");
         address usdc = vm.envAddress("USDC");
+
         vm.startBroadcast();
-
-        feeManager = new FeeManager(admin, treasury, usdc);
-        vaultTrackRegistry = new VaultTrackRegistry(admin);
-        tokenRegistry = new TokenRegistry(admin);
-        registry = new AgentRegistry(admin, feeManager);
-        allocationManager = new AllocationManager(admin, vaultTrackRegistry);
-
-        vaultFactory = new MandateVaultFactory(address(0), IERC20(usdc));
-
-        foundationVault = MandateVault(
-            vaultFactory.deployVault(
-                IMandateVaultFactory.VaultDeploymentConfig({
-                    asset: IERC20(usdc),
-                    shareName: "AlphaGrid Foundation Vault",
-                    shareSymbol: "agFND",
-                    mandate: "FOUNDATION",
-                    tokenRegistry: tokenRegistry,
-                    admin: admin,
-                    feeRecipient: treasury
-                })
-            )
-        );
-        techVault = MandateVault(
-            vaultFactory.deployVault(
-                IMandateVaultFactory.VaultDeploymentConfig({
-                    asset: IERC20(usdc),
-                    shareName: "AlphaGrid Tech Vault",
-                    shareSymbol: "agTECH",
-                    mandate: "TECH",
-                    tokenRegistry: tokenRegistry,
-                    admin: admin,
-                    feeRecipient: treasury
-                })
-            )
-        );
-        volatilityVault = MandateVault(
-            vaultFactory.deployVault(
-                IMandateVaultFactory.VaultDeploymentConfig({
-                    asset: IERC20(usdc),
-                    shareName: "AlphaGrid Volatility Vault",
-                    shareSymbol: "agVOL",
-                    mandate: "VOLATILITY",
-                    tokenRegistry: tokenRegistry,
-                    admin: admin,
-                    feeRecipient: treasury
-                })
-            )
-        );
-        macroVault = MandateVault(
-            vaultFactory.deployVault(
-                IMandateVaultFactory.VaultDeploymentConfig({
-                    asset: IERC20(usdc),
-                    shareName: "AlphaGrid Macro Vault",
-                    shareSymbol: "agMAC",
-                    mandate: "MACRO",
-                    tokenRegistry: tokenRegistry,
-                    admin: admin,
-                    feeRecipient: treasury
-                })
-            )
-        );
-
-        feeManager.setAgentRegistry(address(registry));
-        registry.setVaultTrackRegistry(vaultTrackRegistry);
-        registry.setAllocationManager(allocationManager);
-        allocationManager.setAgentRegistry(address(registry));
-
+        AgentCore memory core = _deployAgentCore(admin, treasury, usdc);
+        VaultSet memory vaults = _deployVaults(usdc, core.tokenRegistry, admin, treasury);
+        _wire(core);
         vm.stopBroadcast();
 
-        console2.log("FeeManager:", address(feeManager));
-        console2.log("VaultTrackRegistry:", address(vaultTrackRegistry));
-        console2.log("TokenRegistry:", address(tokenRegistry));
-        console2.log("AgentRegistry:", address(registry));
-        console2.log("AllocationManager:", address(allocationManager));
-        console2.log("VaultFactory:", address(vaultFactory));
-        console2.log("VaultImplementation:", vaultFactory.implementation());
-        console2.log("FoundationVault:", address(foundationVault));
-        console2.log("TechVault:", address(techVault));
-        console2.log("VolatilityVault:", address(volatilityVault));
-        console2.log("MacroVault:", address(macroVault));
+        feeManager = core.feeManager;
+        vaultTrackRegistry = core.vaultTrackRegistry;
+        tokenRegistry = core.tokenRegistry;
+        registry = core.registry;
+        allocationManager = core.allocationManager;
+        vaultFactory = vaults.factory;
+        foundationVault = vaults.foundationVault;
+        techVault = vaults.techVault;
+        volatilityVault = vaults.volatilityVault;
+        macroVault = vaults.macroVault;
+
+        _log(core, vaults);
+    }
+
+    function _deployAgentCore(address admin, address treasury, address usdc)
+        private
+        returns (AgentCore memory core)
+    {
+        core.feeManager = new FeeManager(admin, treasury, usdc);
+        core.vaultTrackRegistry = new VaultTrackRegistry(admin);
+        core.tokenRegistry = new TokenRegistry(admin);
+        address erc8004IdentityRegistry = vm.envAddress("ERC8004_IDENTITY_REGISTRY");
+        uint256 erc8004ChainId = vm.envOr("ERC8004_CHAIN_ID", block.chainid);
+        core.registry = new AgentRegistry(admin, core.feeManager, erc8004IdentityRegistry, erc8004ChainId);
+        core.allocationManager = new AllocationManager(admin, core.vaultTrackRegistry);
+    }
+
+    function _deployVaults(address usdc, TokenRegistry tokenRegistry_, address admin, address treasury)
+        private
+        returns (VaultSet memory vaults)
+    {
+        IERC20 asset = IERC20(usdc);
+        vaults.factory = new MandateVaultFactory(address(0), asset);
+        vaults.foundationVault = _deployVault(
+            vaults.factory,
+            asset,
+            tokenRegistry_,
+            admin,
+            treasury,
+            "AlphaGrid Foundation Vault",
+            "agFND",
+            MANDATE_FOUNDATION
+        );
+        vaults.techVault = _deployVault(
+            vaults.factory, asset, tokenRegistry_, admin, treasury, "AlphaGrid Tech Vault", "agTECH", MANDATE_TECH
+        );
+        vaults.volatilityVault = _deployVault(
+            vaults.factory,
+            asset,
+            tokenRegistry_,
+            admin,
+            treasury,
+            "AlphaGrid Volatility Vault",
+            "agVOL",
+            MANDATE_VOLATILITY
+        );
+        vaults.macroVault = _deployVault(
+            vaults.factory, asset, tokenRegistry_, admin, treasury, "AlphaGrid Macro Vault", "agMAC", MANDATE_MACRO
+        );
+    }
+
+    function _wire(AgentCore memory core) private {
+        core.feeManager.setAgentRegistry(address(core.registry));
+        core.registry.setVaultTrackRegistry(core.vaultTrackRegistry);
+        core.registry.setAllocationManager(core.allocationManager);
+        core.allocationManager.setAgentRegistry(address(core.registry));
+    }
+
+    function _log(AgentCore memory core, VaultSet memory vaults) private view {
+        console2.log("FeeManager:", address(core.feeManager));
+        console2.log("VaultTrackRegistry:", address(core.vaultTrackRegistry));
+        console2.log("TokenRegistry:", address(core.tokenRegistry));
+        console2.log("AgentRegistry:", address(core.registry));
+        console2.log("AllocationManager:", address(core.allocationManager));
+        console2.log("VaultFactory:", address(vaults.factory));
+        console2.log("VaultImplementation:", vaults.factory.implementation());
+        console2.log("FoundationVault:", address(vaults.foundationVault));
+        console2.log("TechVault:", address(vaults.techVault));
+        console2.log("VolatilityVault:", address(vaults.volatilityVault));
+        console2.log("MacroVault:", address(vaults.macroVault));
+    }
+
+    function _deployVault(
+        MandateVaultFactory factory,
+        IERC20 asset,
+        TokenRegistry tokenRegistry_,
+        address admin,
+        address treasury,
+        string memory shareName,
+        string memory shareSymbol,
+        bytes32 mandate
+    ) private returns (MandateVault vault) {
+        vault = MandateVault(
+            factory.deployVault(
+                IMandateVaultFactory.VaultDeploymentConfig({
+                    asset: asset,
+                    shareName: shareName,
+                    shareSymbol: shareSymbol,
+                    mandate: mandate,
+                    tokenRegistry: tokenRegistry_,
+                    admin: admin,
+                    feeRecipient: treasury
+                })
+            )
+        );
     }
 }

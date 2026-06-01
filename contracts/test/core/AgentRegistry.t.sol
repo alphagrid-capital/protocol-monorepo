@@ -8,13 +8,16 @@ import { AgentRegistry } from "../../src/core/AgentRegistry.sol";
 import { VaultTrackRegistry } from "../../src/core/VaultTrackRegistry.sol";
 import { IAgentRegistry } from "../../src/interfaces/IAgentRegistry.sol";
 import { IVaultTrackRegistry } from "../../src/interfaces/IVaultTrackRegistry.sol";
+import { AgentTestLib } from "../helpers/AgentTestLib.sol";
 import { BaseTest } from "../helpers/BaseTest.sol";
+import { MockERC8004IdentityRegistry } from "../mocks/MockERC8004IdentityRegistry.sol";
 import { MockFeeManager } from "../mocks/MockFeeManager.sol";
 
 contract AgentRegistryTest is BaseTest {
     AgentRegistry internal registry;
     MockFeeManager internal feeManager;
     VaultTrackRegistry internal vaultTrackRegistry;
+    MockERC8004IdentityRegistry internal identityRegistry;
 
     address internal operator;
     address internal vault;
@@ -40,7 +43,8 @@ contract AgentRegistryTest is BaseTest {
 
         vm.startPrank(deployer);
         vaultTrackRegistry = new VaultTrackRegistry(deployer);
-        registry = new AgentRegistry(deployer, feeManager);
+        identityRegistry = AgentTestLib.deployERC8004IdentityRegistry();
+        registry = new AgentRegistry(deployer, feeManager, address(identityRegistry), block.chainid);
         registry.setVaultTrackRegistry(vaultTrackRegistry);
         registry.grantRole(registry.OPERATOR_ROLE(), operator);
         registry.grantRole(registry.REGISTRAR_ROLE(), operator);
@@ -49,8 +53,10 @@ contract AgentRegistryTest is BaseTest {
     }
 
     function test_RegisterAgent_PaysFeeAndStoresState() public {
+        uint256 erc8004Id = AgentTestLib.mintERC8004(identityRegistry, agentOwner);
+
         vm.prank(operator);
-        uint256 agentId = registry.registerAgent(agentOwner, vault, AGENT_NAME, METADATA_URI, agentSigner);
+        uint256 agentId = registry.registerAgent(agentOwner, vault, AGENT_NAME, METADATA_URI, agentSigner, true, erc8004Id);
 
         assertEq(agentId, 1);
         assertEq(feeManager.paymentCount(), 1);
@@ -62,12 +68,20 @@ contract AgentRegistryTest is BaseTest {
         IAgentRegistry.Agent memory agent = registry.getAgent(agentId);
         assertEq(agent.owner, agentOwner);
         assertEq(agent.signer, agentSigner);
+        assertEq(agent.payoutRecipient, agentOwner);
         assertEq(agent.vault, vault);
         assertEq(uint256(agent.track), uint256(IAgentRegistry.Track.CHALLENGE));
         assertEq(uint256(agent.status), uint256(IAgentRegistry.AgentStatus.Active));
         assertEq(agent.name, AGENT_NAME);
         assertEq(agent.metadataURI, METADATA_URI);
         assertGt(agent.createdAt, 0);
+        assertTrue(agent.hasERC8004Identity);
+        assertEq(agent.erc8004AgentId, erc8004Id);
+        assertTrue(registry.hasERC8004Identity(agentId));
+        assertTrue(registry.isERC8004OwnerCurrent(agentId));
+        assertEq(registry.agentIdByERC8004(erc8004Id), agentId);
+        assertEq(registry.payoutRecipientOf(agentId), agentOwner);
+        assertFalse(registry.isPayoutEligible(agentId));
 
         assertEq(registry.ownerOf(agentId), agentOwner);
         assertEq(registry.vaultOf(agentId), vault);
@@ -78,11 +92,15 @@ contract AgentRegistryTest is BaseTest {
     }
 
     function test_SelfRegisterAgent_WithValidSignature() public {
+        uint256 erc8004Id = AgentTestLib.mintERC8004(identityRegistry, agentSigner);
         uint256 deadline = block.timestamp + 1 hours;
-        bytes memory signature = _signSelfRegister(vault, AGENT_NAME, METADATA_URI, agentSigner, 0, deadline);
+        bytes memory signature =
+            _signSelfRegister(vault, AGENT_NAME, METADATA_URI, agentSigner, true, erc8004Id, 0, deadline);
 
         vm.prank(agentSigner);
-        uint256 agentId = registry.selfRegisterAgent(vault, AGENT_NAME, METADATA_URI, agentSigner, deadline, signature);
+        uint256 agentId = registry.selfRegisterAgent(
+            vault, AGENT_NAME, METADATA_URI, agentSigner, true, erc8004Id, deadline, signature
+        );
 
         assertEq(agentId, 1);
         assertEq(registry.ownerOf(agentId), agentSigner);
@@ -93,19 +111,184 @@ contract AgentRegistryTest is BaseTest {
     }
 
     function test_RevertWhen_SelfRegisterBadSignature() public {
+        uint256 erc8004Id = AgentTestLib.mintERC8004(identityRegistry, agentSigner);
         uint256 deadline = block.timestamp + 1 hours;
-        bytes memory signature = _signSelfRegister(vault, AGENT_NAME, METADATA_URI, agentSigner, 0, deadline);
+        bytes memory signature =
+            _signSelfRegister(vault, AGENT_NAME, METADATA_URI, agentSigner, false, erc8004Id, 0, deadline);
 
         vm.expectRevert(AgentRegistry.InvalidSignature.selector);
-        registry.selfRegisterAgent(vault, AGENT_NAME, METADATA_URI, bob, deadline, signature);
+        registry.selfRegisterAgent(vault, AGENT_NAME, METADATA_URI, bob, false, erc8004Id, deadline, signature);
     }
 
     function test_RevertWhen_SelfRegisterExpiredDeadline() public {
+        uint256 erc8004Id = AgentTestLib.mintERC8004(identityRegistry, agentSigner);
         uint256 deadline = block.timestamp - 1;
-        bytes memory signature = _signSelfRegister(vault, AGENT_NAME, METADATA_URI, agentSigner, 0, deadline);
+        bytes memory signature =
+            _signSelfRegister(vault, AGENT_NAME, METADATA_URI, agentSigner, false, erc8004Id, 0, deadline);
 
         vm.expectRevert(AgentRegistry.ExpiredDeadline.selector);
-        registry.selfRegisterAgent(vault, AGENT_NAME, METADATA_URI, agentSigner, deadline, signature);
+        registry.selfRegisterAgent(vault, AGENT_NAME, METADATA_URI, agentSigner, false, erc8004Id, deadline, signature);
+    }
+
+    function test_ERC8004ChainId_IsImmutableFromConstructor() public view {
+        assertEq(registry.erc8004ChainId(), block.chainid);
+    }
+
+    function test_RegisterEmitsERC8004IdentityLinked() public {
+        uint256 erc8004Id = AgentTestLib.mintERC8004(identityRegistry, agentOwner);
+
+        vm.expectEmit(true, true, false, true);
+        emit IAgentRegistry.ERC8004IdentityLinked(1, address(identityRegistry), block.chainid, erc8004Id, agentOwner);
+
+        vm.prank(operator);
+        registry.registerAgent(agentOwner, vault, AGENT_NAME, METADATA_URI, agentSigner, true, erc8004Id);
+    }
+
+    function test_RevertWhen_InvalidERC8004Config() public {
+        vm.expectRevert(AgentRegistry.InvalidERC8004Config.selector);
+        new AgentRegistry(deployer, feeManager, address(0), 0);
+
+        vm.expectRevert(AgentRegistry.InvalidERC8004Config.selector);
+        new AgentRegistry(deployer, feeManager, address(identityRegistry), 0);
+
+        vm.expectRevert(AgentRegistry.InvalidERC8004Config.selector);
+        new AgentRegistry(deployer, feeManager, address(0), block.chainid);
+    }
+
+    function test_RevertWhen_ERC8004AlreadyRegistered() public {
+        uint256 erc8004Id = AgentTestLib.mintERC8004(identityRegistry, agentOwner);
+        _registerAgentWithErc8004(erc8004Id);
+
+        vm.prank(operator);
+        vm.expectRevert(abi.encodeWithSelector(AgentRegistry.ERC8004AlreadyRegistered.selector, erc8004Id));
+        registry.registerAgent(agentOwner, vault, "Other", METADATA_URI, agentSigner, true, erc8004Id);
+    }
+
+    function test_RevertWhen_NotERC8004OwnerOnRegister() public {
+        uint256 erc8004Id = AgentTestLib.mintERC8004(identityRegistry, bob);
+
+        vm.prank(operator);
+        vm.expectRevert(abi.encodeWithSelector(AgentRegistry.NotERC8004Owner.selector, erc8004Id, agentOwner));
+        registry.registerAgent(agentOwner, vault, AGENT_NAME, METADATA_URI, agentSigner, true, erc8004Id);
+    }
+
+    function test_RegisterWithoutERC8004Link() public {
+        vm.prank(operator);
+        uint256 agentId = registry.registerAgent(agentOwner, vault, AGENT_NAME, METADATA_URI, agentSigner, false, 0);
+
+        assertFalse(registry.hasERC8004Identity(agentId));
+        assertEq(registry.getAgent(agentId).erc8004AgentId, 0);
+    }
+
+    function test_LinkERC8004IdentityAfterRegister() public {
+        uint256 agentId = _registerAgentWithoutErc8004();
+        uint256 erc8004Id = AgentTestLib.mintERC8004(identityRegistry, agentOwner);
+
+        vm.prank(agentOwner);
+        registry.linkERC8004Identity(agentId, erc8004Id);
+
+        assertTrue(registry.hasERC8004Identity(agentId));
+        assertEq(registry.getAgent(agentId).erc8004AgentId, erc8004Id);
+        assertTrue(registry.isERC8004OwnerCurrent(agentId));
+    }
+
+    function test_IsERC8004OwnerCurrent_FalseWhenNotLinked() public {
+        uint256 agentId = _registerAgentWithoutErc8004();
+        assertFalse(registry.isERC8004OwnerCurrent(agentId));
+    }
+
+    function test_IsERC8004OwnerCurrent_FalseAfterNftTransfer() public {
+        uint256 agentId = _registerAgent();
+        uint256 erc8004Id = registry.getAgent(agentId).erc8004AgentId;
+
+        vm.prank(agentOwner);
+        identityRegistry.transferFrom(agentOwner, bob, erc8004Id);
+
+        assertFalse(registry.isERC8004OwnerCurrent(agentId));
+    }
+
+    function test_RevertWhen_NonOwnerLinksERC8004() public {
+        uint256 agentId = _registerAgentWithoutErc8004();
+        uint256 erc8004Id = AgentTestLib.mintERC8004(identityRegistry, bob);
+
+        vm.prank(bob);
+        vm.expectRevert(abi.encodeWithSelector(AgentRegistry.NotAgentOwner.selector, agentId, bob));
+        registry.linkERC8004Identity(agentId, erc8004Id);
+    }
+
+    function test_RevertWhen_MandateOwnerLinksWithoutHoldingNFT() public {
+        uint256 agentId = _registerAgentWithoutErc8004();
+        uint256 erc8004Id = AgentTestLib.mintERC8004(identityRegistry, bob);
+
+        vm.prank(agentOwner);
+        vm.expectRevert(abi.encodeWithSelector(AgentRegistry.NotERC8004Owner.selector, erc8004Id, agentOwner));
+        registry.linkERC8004Identity(agentId, erc8004Id);
+    }
+
+    function test_LinkERC8004WithZeroAgentId() public {
+        uint256 agentId = _registerAgentWithoutErc8004();
+        identityRegistry.mintWithId(agentOwner, 0);
+
+        vm.prank(agentOwner);
+        registry.linkERC8004Identity(agentId, 0);
+
+        assertTrue(registry.hasERC8004Identity(agentId));
+        assertEq(registry.getAgent(agentId).erc8004AgentId, 0);
+        assertTrue(registry.isERC8004OwnerCurrent(agentId));
+    }
+
+    function test_RevertWhen_ERC8004AlreadyLinkedOnSecondLink() public {
+        uint256 agentId = _registerAgent();
+        uint256 otherId = AgentTestLib.mintERC8004(identityRegistry, agentOwner);
+
+        vm.prank(agentOwner);
+        vm.expectRevert(abi.encodeWithSelector(AgentRegistry.ERC8004AlreadyLinked.selector, agentId));
+        registry.linkERC8004Identity(agentId, otherId);
+    }
+
+    function test_TransferAgentOwnership() public {
+        uint256 agentId = _registerAgent();
+        address newOwner = makeAddr("newOwner");
+
+        vm.prank(agentOwner);
+        registry.transferAgentOwnership(agentId, newOwner);
+
+        assertEq(registry.ownerOf(agentId), newOwner);
+        assertEq(registry.payoutRecipientOf(agentId), agentOwner);
+    }
+
+    function test_OwnerSetsPayoutRecipient() public {
+        uint256 agentId = _registerAgent();
+        address payee = makeAddr("payee");
+
+        vm.prank(agentOwner);
+        registry.setPayoutRecipient(agentId, payee);
+
+        assertEq(registry.payoutRecipientOf(agentId), payee);
+    }
+
+    function test_IsPayoutEligible_OnFundedAndPrime() public {
+        uint256 agentId = _registerAgent();
+        assertFalse(registry.isPayoutEligible(agentId));
+
+        vm.startPrank(operator);
+        registry.promoteAgent(agentId, IAgentRegistry.Track.FUNDED);
+        assertTrue(registry.isPayoutEligible(agentId));
+
+        registry.promoteAgent(agentId, IAgentRegistry.Track.PRIME);
+        assertTrue(registry.isPayoutEligible(agentId));
+        vm.stopPrank();
+    }
+
+    function test_IsPayoutEligible_FalseWhenSuspended() public {
+        uint256 agentId = _registerAgent();
+
+        vm.startPrank(operator);
+        registry.promoteAgent(agentId, IAgentRegistry.Track.FUNDED);
+        registry.setAgentStatus(agentId, IAgentRegistry.AgentStatus.Suspended);
+        vm.stopPrank();
+
+        assertFalse(registry.isPayoutEligible(agentId));
     }
 
     function test_OwnerUpdatesMetadata() public {
@@ -221,11 +404,13 @@ contract AgentRegistryTest is BaseTest {
     function test_RevertWhen_UnapprovedVault() public {
         vm.prank(operator);
         vm.expectRevert(abi.encodeWithSelector(AgentRegistry.VaultNotApproved.selector, unapprovedVault));
-        registry.registerAgent(agentOwner, unapprovedVault, AGENT_NAME, METADATA_URI, agentSigner);
+        registry.registerAgent(agentOwner, unapprovedVault, AGENT_NAME, METADATA_URI, agentSigner, false, 0);
     }
 
     function test_RevertWhen_VaultTrackRegistryNotSet() public {
-        AgentRegistry freshRegistry = new AgentRegistry(deployer, feeManager);
+        AgentRegistry freshRegistry =
+            new AgentRegistry(deployer, feeManager, address(identityRegistry), block.chainid);
+        uint256 erc8004Id = AgentTestLib.mintERC8004(identityRegistry, agentOwner);
 
         vm.startPrank(deployer);
         freshRegistry.grantRole(freshRegistry.REGISTRAR_ROLE(), operator);
@@ -233,26 +418,30 @@ contract AgentRegistryTest is BaseTest {
 
         vm.prank(operator);
         vm.expectRevert(AgentRegistry.VaultTrackRegistryNotSet.selector);
-        freshRegistry.registerAgent(agentOwner, vault, AGENT_NAME, METADATA_URI, agentSigner);
+        freshRegistry.registerAgent(agentOwner, vault, AGENT_NAME, METADATA_URI, agentSigner, true, erc8004Id);
     }
 
     function test_RevertWhen_ZeroAddressRegistration() public {
+        uint256 erc8004Id = AgentTestLib.mintERC8004(identityRegistry, agentOwner);
+
         vm.startPrank(operator);
         vm.expectRevert(AgentRegistry.ZeroAddress.selector);
-        registry.registerAgent(address(0), vault, AGENT_NAME, METADATA_URI, agentSigner);
+        registry.registerAgent(address(0), vault, AGENT_NAME, METADATA_URI, agentSigner, true, erc8004Id);
 
         vm.expectRevert(AgentRegistry.ZeroAddress.selector);
-        registry.registerAgent(agentOwner, address(0), AGENT_NAME, METADATA_URI, agentSigner);
+        registry.registerAgent(agentOwner, address(0), AGENT_NAME, METADATA_URI, agentSigner, true, erc8004Id);
 
         vm.expectRevert(AgentRegistry.ZeroAddress.selector);
-        registry.registerAgent(agentOwner, vault, AGENT_NAME, METADATA_URI, address(0));
+        registry.registerAgent(agentOwner, vault, AGENT_NAME, METADATA_URI, address(0), true, erc8004Id);
         vm.stopPrank();
     }
 
     function test_RevertWhen_EmptyName() public {
+        uint256 erc8004Id = AgentTestLib.mintERC8004(identityRegistry, agentOwner);
+
         vm.prank(operator);
         vm.expectRevert(AgentRegistry.EmptyName.selector);
-        registry.registerAgent(agentOwner, vault, "", METADATA_URI, agentSigner);
+        registry.registerAgent(agentOwner, vault, "", METADATA_URI, agentSigner, true, erc8004Id);
     }
 
     function test_RevertWhen_AgentNotFound() public {
@@ -267,7 +456,7 @@ contract AgentRegistryTest is BaseTest {
             )
         );
         vm.prank(bob);
-        registry.registerAgent(agentOwner, vault, AGENT_NAME, METADATA_URI, agentSigner);
+        registry.registerAgent(agentOwner, vault, AGENT_NAME, METADATA_URI, agentSigner, false, 0);
     }
 
     function test_AdminSetsFeeManager() public {
@@ -280,19 +469,25 @@ contract AgentRegistryTest is BaseTest {
     }
 
     function test_Pause_BlocksRegistration() public {
+        uint256 erc8004Id = AgentTestLib.mintERC8004(identityRegistry, agentOwner);
+
         vm.prank(operator);
         registry.pause();
 
         vm.prank(operator);
         vm.expectRevert(Pausable.EnforcedPause.selector);
-        registry.registerAgent(agentOwner, vault, AGENT_NAME, METADATA_URI, agentSigner);
+        registry.registerAgent(agentOwner, vault, AGENT_NAME, METADATA_URI, agentSigner, true, erc8004Id);
 
+        uint256 selfErc8004Id = AgentTestLib.mintERC8004(identityRegistry, agentSigner);
         uint256 deadline = block.timestamp + 1 hours;
-        bytes memory signature = _signSelfRegister(vault, AGENT_NAME, METADATA_URI, agentSigner, 0, deadline);
+        bytes memory signature =
+            _signSelfRegister(vault, AGENT_NAME, METADATA_URI, agentSigner, false, selfErc8004Id, 0, deadline);
 
         vm.prank(agentSigner);
         vm.expectRevert(Pausable.EnforcedPause.selector);
-        registry.selfRegisterAgent(vault, AGENT_NAME, METADATA_URI, agentSigner, deadline, signature);
+        registry.selfRegisterAgent(
+            vault, AGENT_NAME, METADATA_URI, agentSigner, false, selfErc8004Id, deadline, signature
+        );
     }
 
     function test_Pause_UnpauseByOperator() public {
@@ -332,7 +527,9 @@ contract AgentRegistryTest is BaseTest {
         vm.startPrank(operator);
         registry.pause();
         registry.unpause();
-        uint256 agentId = registry.registerAgent(agentOwner, vault, AGENT_NAME, METADATA_URI, agentSigner);
+        uint256 erc8004Id = AgentTestLib.mintERC8004(identityRegistry, agentOwner);
+        uint256 agentId =
+            registry.registerAgent(agentOwner, vault, AGENT_NAME, METADATA_URI, agentSigner, true, erc8004Id);
         vm.stopPrank();
 
         assertEq(agentId, 1);
@@ -340,9 +537,14 @@ contract AgentRegistryTest is BaseTest {
     }
 
     function test_MultipleAgentsIncrementIds() public {
+        uint256 erc8004One = AgentTestLib.mintERC8004(identityRegistry, agentOwner);
+        uint256 erc8004Two = AgentTestLib.mintERC8004(identityRegistry, bob);
+
         vm.startPrank(operator);
-        uint256 first = registry.registerAgent(agentOwner, vault, "Agent One", METADATA_URI, agentSigner);
-        uint256 second = registry.registerAgent(bob, vault, "Agent Two", METADATA_URI, makeAddr("signerTwo"));
+        uint256 first =
+            registry.registerAgent(agentOwner, vault, "Agent One", METADATA_URI, agentSigner, true, erc8004One);
+        uint256 second =
+            registry.registerAgent(bob, vault, "Agent Two", METADATA_URI, makeAddr("signerTwo"), true, erc8004Two);
         vm.stopPrank();
 
         assertEq(first, 1);
@@ -351,8 +553,18 @@ contract AgentRegistryTest is BaseTest {
     }
 
     function _registerAgent() internal returns (uint256 agentId) {
+        uint256 erc8004Id = AgentTestLib.mintERC8004(identityRegistry, agentOwner);
+        return _registerAgentWithErc8004(erc8004Id);
+    }
+
+    function _registerAgentWithErc8004(uint256 erc8004Id) internal returns (uint256 agentId) {
         vm.prank(operator);
-        agentId = registry.registerAgent(agentOwner, vault, AGENT_NAME, METADATA_URI, agentSigner);
+        agentId = registry.registerAgent(agentOwner, vault, AGENT_NAME, METADATA_URI, agentSigner, true, erc8004Id);
+    }
+
+    function _registerAgentWithoutErc8004() internal returns (uint256 agentId) {
+        vm.prank(operator);
+        agentId = registry.registerAgent(agentOwner, vault, AGENT_NAME, METADATA_URI, agentSigner, false, 0);
     }
 
     function _setVaultChallengeConfig(address vault_, bool active) internal {
@@ -380,6 +592,8 @@ contract AgentRegistryTest is BaseTest {
         string memory name,
         string memory metadataURI,
         address signer,
+        bool linkERC8004,
+        uint256 erc8004AgentId,
         uint256 nonce,
         uint256 deadline
     ) internal view returns (bytes memory signature) {
@@ -390,6 +604,8 @@ contract AgentRegistryTest is BaseTest {
                 keccak256(bytes(name)),
                 keccak256(bytes(metadataURI)),
                 signer,
+                linkERC8004,
+                erc8004AgentId,
                 nonce,
                 deadline
             )

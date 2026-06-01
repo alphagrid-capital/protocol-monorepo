@@ -8,12 +8,15 @@ import { VaultTrackRegistry } from "../../src/core/VaultTrackRegistry.sol";
 import { IAgentRegistry } from "../../src/interfaces/IAgentRegistry.sol";
 import { IFeeManager } from "../../src/interfaces/IFeeManager.sol";
 import { IVaultTrackRegistry } from "../../src/interfaces/IVaultTrackRegistry.sol";
+import { AgentTestLib } from "../helpers/AgentTestLib.sol";
 import { BaseTest } from "../helpers/BaseTest.sol";
+import { MockERC8004IdentityRegistry } from "../mocks/MockERC8004IdentityRegistry.sol";
 
 contract FeeManagerTest is BaseTest {
     FeeManager internal feeManager;
     AgentRegistry internal registry;
     VaultTrackRegistry internal vaultTrackRegistry;
+    MockERC8004IdentityRegistry internal identityRegistry;
 
     address internal treasury;
     address internal operator;
@@ -32,7 +35,8 @@ contract FeeManagerTest is BaseTest {
         vm.startPrank(deployer);
         feeManager = new FeeManager(deployer, treasury, address(usdc));
         vaultTrackRegistry = new VaultTrackRegistry(deployer);
-        registry = new AgentRegistry(deployer, feeManager);
+        identityRegistry = AgentTestLib.deployERC8004IdentityRegistry();
+        registry = new AgentRegistry(deployer, feeManager, address(identityRegistry), block.chainid);
         feeManager.setAgentRegistry(address(registry));
         registry.setVaultTrackRegistry(vaultTrackRegistry);
         registry.grantRole(registry.OPERATOR_ROLE(), operator);
@@ -45,8 +49,14 @@ contract FeeManagerTest is BaseTest {
         usdc.mint(operator, 10_000e6);
     }
 
+    function _registerAlice() internal returns (uint256 agentId) {
+        uint256 erc8004Id = AgentTestLib.mintERC8004(identityRegistry, alice);
+        agentId = registry.registerAgent(alice, vault, "Bot", "ipfs://bot", alice, true, erc8004Id);
+    }
+
     function test_SetAgentRegistry_EmitsEvent() public {
-        AgentRegistry newRegistry = new AgentRegistry(deployer, feeManager);
+        AgentRegistry newRegistry =
+            new AgentRegistry(deployer, feeManager, address(identityRegistry), block.chainid);
 
         vm.expectEmit(true, false, false, false, address(feeManager));
         emit IFeeManager.AgentRegistryUpdated(address(newRegistry));
@@ -70,7 +80,7 @@ contract FeeManagerTest is BaseTest {
     function test_PayRegistrationFee_TransfersToTreasury() public {
         vm.startPrank(operator);
         usdc.approve(address(feeManager), REGISTRATION_FEE);
-        uint256 agentId = registry.registerAgent(alice, vault, "Bot", "ipfs://bot", alice);
+        uint256 agentId = _registerAlice();
         vm.stopPrank();
 
         assertEq(usdc.balanceOf(treasury), REGISTRATION_FEE);
@@ -81,7 +91,7 @@ contract FeeManagerTest is BaseTest {
     function test_PayPromotionFee_TransfersToTreasury() public {
         vm.startPrank(operator);
         usdc.approve(address(feeManager), REGISTRATION_FEE + PROMOTION_FEE);
-        uint256 agentId = registry.registerAgent(alice, vault, "Bot", "ipfs://bot", alice);
+        uint256 agentId = _registerAlice();
         registry.promoteAgent(agentId, IAgentRegistry.Track.FUNDED);
         vm.stopPrank();
 
@@ -92,8 +102,9 @@ contract FeeManagerTest is BaseTest {
         vm.prank(deployer);
         feeManager.setRegistrationFee(0);
 
-        vm.prank(operator);
-        registry.registerAgent(alice, vault, "Bot", "ipfs://bot", alice);
+        vm.startPrank(operator);
+        _registerAlice();
+        vm.stopPrank();
 
         assertEq(usdc.balanceOf(treasury), 0);
     }
@@ -104,7 +115,7 @@ contract FeeManagerTest is BaseTest {
 
         vm.startPrank(operator);
         usdc.approve(address(feeManager), REGISTRATION_FEE);
-        uint256 agentId = registry.registerAgent(alice, vault, "Bot", "ipfs://bot", alice);
+        uint256 agentId = _registerAlice();
         registry.promoteAgent(agentId, IAgentRegistry.Track.FUNDED);
         vm.stopPrank();
 
@@ -118,17 +129,19 @@ contract FeeManagerTest is BaseTest {
     }
 
     function test_RevertWhen_InsufficientAllowance() public {
-        vm.expectRevert();
+        uint256 erc8004Id = AgentTestLib.mintERC8004(identityRegistry, alice);
         vm.prank(operator);
-        registry.registerAgent(alice, vault, "Bot", "ipfs://bot", alice);
+        vm.expectRevert();
+        registry.registerAgent(alice, vault, "Bot", "ipfs://bot", alice, true, erc8004Id);
     }
 
     function test_RevertWhen_InsufficientBalance() public {
+        uint256 erc8004Id = AgentTestLib.mintERC8004(identityRegistry, alice);
         vm.startPrank(operator);
         usdc.approve(address(feeManager), REGISTRATION_FEE);
         usdc.burn(operator, usdc.balanceOf(operator));
         vm.expectRevert();
-        registry.registerAgent(alice, vault, "Bot", "ipfs://bot", alice);
+        registry.registerAgent(alice, vault, "Bot", "ipfs://bot", alice, true, erc8004Id);
         vm.stopPrank();
     }
 
