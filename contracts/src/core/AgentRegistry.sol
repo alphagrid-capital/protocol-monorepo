@@ -120,7 +120,8 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
                 linkERC8004: linkERC8004,
                 erc8004AgentId: erc8004AgentId,
                 payer: msg.sender
-            })
+            }),
+            false
         );
     }
 
@@ -381,11 +382,15 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
         input.linkERC8004 = linkERC8004;
         input.erc8004AgentId = erc8004AgentId;
         input.payer = msg.sender;
-        agentId = _registerAgent(input);
+        bool prepaidFee = msg.sender == feeManager.registrationFeeRelayer() && msg.sender != address(0);
+        agentId = _registerAgent(input, prepaidFee);
     }
 
     /// @dev Shared registration path after validation and fee collection.
-    function _registerAgent(AgentRegistrationInput memory input) private returns (uint256 agentId) {
+    function _registerAgent(AgentRegistrationInput memory input, bool prepaidRegistrationFee)
+        private
+        returns (uint256 agentId)
+    {
         if (input.owner == address(0) || input.vault == address(0) || input.signer == address(0)) {
             revert ZeroAddress();
         }
@@ -394,7 +399,11 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
 
         agentId = _nextAgentId++;
 
-        feeManager.payRegistrationFee(input.payer, agentId);
+        if (prepaidRegistrationFee) {
+            feeManager.payRegistrationFeePrepaid(agentId);
+        } else {
+            feeManager.payRegistrationFee(input.payer, agentId);
+        }
 
         _agents[agentId] = Agent({
             owner: input.owner,

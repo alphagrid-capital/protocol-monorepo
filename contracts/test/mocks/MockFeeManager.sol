@@ -22,6 +22,8 @@ contract MockFeeManager is IFeeManager {
     RegistrationPayment[] public registrationPayments;
     PromotionPayment[] public promotionPayments;
     bool public shouldRevert;
+    address public registrationFeeRelayer;
+    uint256 public prepaidRegistrationCount;
 
     function feeAsset() external pure returns (address) {
         return address(0);
@@ -30,6 +32,12 @@ contract MockFeeManager is IFeeManager {
     function payRegistrationFee(address payer, uint256 agentId) external {
         if (shouldRevert) revert("MockFeeManager: revert");
         registrationPayments.push(RegistrationPayment({ payer: payer, agentId: agentId }));
+    }
+
+    function payRegistrationFeePrepaid(uint256 agentId) external {
+        if (shouldRevert) revert("MockFeeManager: revert");
+        prepaidRegistrationCount++;
+        registrationPayments.push(RegistrationPayment({ payer: registrationFeeRelayer, agentId: agentId }));
     }
 
     function payPromotionFee(address payer, uint256 agentId, address vault, uint256 fromTrackId, uint256 toTrackId)
