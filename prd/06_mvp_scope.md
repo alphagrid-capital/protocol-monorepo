@@ -310,7 +310,7 @@ Build phases describe the **full MVP product** (contracts + off-chain + frontend
 
 - `AgentRegistry`, `FeeManager`, `TrackConfig`
 - `TokenRegistry`, `AllocationManager`
-- four `AlphaGridVault` (ERC-4626) instances
+- four `MandateVault` (ERC-4626) instances
 - deploy: `DeployAgentCore`, `DeployVaultInfrastructure`
 
 **Still needed:**

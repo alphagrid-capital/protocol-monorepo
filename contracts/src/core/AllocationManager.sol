@@ -3,7 +3,7 @@ pragma solidity ^0.8.30;
 
 import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
 import { IAllocationManager } from "../interfaces/IAllocationManager.sol";
-import { ITrackConfig } from "../interfaces/ITrackConfig.sol";
+import { IVaultTrackRegistry } from "../interfaces/IVaultTrackRegistry.sol";
 
 /// @title AllocationManager
 /// @notice Tracks per-agent USDC-equivalent exposure caps for vault capital.
@@ -21,7 +21,7 @@ contract AllocationManager is IAllocationManager, AccessControl {
     // -------------------------------------------------------------------------
 
     address public agentRegistry;
-    ITrackConfig public trackConfig;
+    IVaultTrackRegistry public vaultTrackRegistry;
 
     mapping(uint256 agentId => Allocation allocation) private _allocations;
     mapping(address vault => uint256 totalCap) private _totalAgentCaps;
@@ -38,18 +38,18 @@ contract AllocationManager is IAllocationManager, AccessControl {
     error TrackMismatch(uint256 agentId, uint256 expected, uint256 actual);
     error ExceedsMaxAllocation(uint256 agentId, uint256 cap, uint256 maxAllocation);
     error UsedExceedsCap(uint256 agentId, uint256 used, uint256 cap);
-    error TrackConfigNotSet();
+    error VaultTrackRegistryNotSet();
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
     /// @param admin Receives `DEFAULT_ADMIN_ROLE` and `OPERATOR_ROLE`.
-    /// @param trackConfig_ Per-vault track parameters.
-    constructor(address admin, ITrackConfig trackConfig_) {
-        if (admin == address(0) || address(trackConfig_) == address(0)) revert ZeroAddress();
+    /// @param vaultTrackRegistry_ Per-vault track parameters.
+    constructor(address admin, IVaultTrackRegistry vaultTrackRegistry_) {
+        if (admin == address(0) || address(vaultTrackRegistry_) == address(0)) revert ZeroAddress();
 
-        trackConfig = trackConfig_;
+        vaultTrackRegistry = vaultTrackRegistry_;
 
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(OPERATOR_ROLE, admin);
@@ -156,11 +156,11 @@ contract AllocationManager is IAllocationManager, AccessControl {
         emit AgentRegistryUpdated(agentRegistry_);
     }
 
-    /// @notice Update TrackConfig used for allocation caps.
-    function setTrackConfig(ITrackConfig trackConfig_) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (address(trackConfig_) == address(0)) revert ZeroAddress();
-        trackConfig = trackConfig_;
-        emit TrackConfigUpdated(address(trackConfig_));
+    /// @notice Update VaultTrackRegistry used for allocation caps.
+    function setVaultTrackRegistry(IVaultTrackRegistry vaultTrackRegistry_) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (address(vaultTrackRegistry_) == address(0)) revert ZeroAddress();
+        vaultTrackRegistry = vaultTrackRegistry_;
+        emit VaultTrackRegistryUpdated(address(vaultTrackRegistry_));
     }
 
     // -------------------------------------------------------------------------
@@ -168,9 +168,9 @@ contract AllocationManager is IAllocationManager, AccessControl {
     // -------------------------------------------------------------------------
 
     function _initialCap(address vault, uint256 trackId) private view returns (uint256) {
-        if (address(trackConfig) == address(0)) revert TrackConfigNotSet();
+        if (address(vaultTrackRegistry) == address(0)) revert VaultTrackRegistryNotSet();
 
-        ITrackConfig.VaultTrackConfig memory config = trackConfig.getVaultTrackConfig(vault, trackId);
+        IVaultTrackRegistry.VaultTrackConfig memory config = vaultTrackRegistry.getVaultTrackConfig(vault, trackId);
         if (config.initialAllocation > config.maxAllocation) {
             revert ExceedsMaxAllocation(0, config.initialAllocation, config.maxAllocation);
         }

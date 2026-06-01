@@ -1,19 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import { TradingTestBase } from "../helpers/TradingTestBase.sol";
-import { AgentRegistry } from "../../src/core/AgentRegistry.sol";
-import { FeeManager } from "../../src/core/FeeManager.sol";
-import { TrackConfig } from "../../src/core/TrackConfig.sol";
-import { AllocationManager } from "../../src/core/AllocationManager.sol";
-import { TokenRegistry } from "../../src/core/TokenRegistry.sol";
-import { PositionManager } from "../../src/core/PositionManager.sol";
-import { InventorySwapAdapter } from "../../src/adapters/InventorySwapAdapter.sol";
-import { TradeRouter } from "../../src/core/TradeRouter.sol";
-import { AlphaGridVault } from "../../src/vaults/AlphaGridVault.sol";
-import { IPositionTypes } from "../../src/interfaces/IPositionTypes.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { InventorySwapAdapter } from "../../src/adapters/InventorySwapAdapter.sol";
+import { AgentRegistry } from "../../src/core/AgentRegistry.sol";
+import { AllocationManager } from "../../src/core/AllocationManager.sol";
+import { FeeManager } from "../../src/core/FeeManager.sol";
+import { PositionManager } from "../../src/core/PositionManager.sol";
+import { TokenRegistry } from "../../src/core/TokenRegistry.sol";
+import { TradeRouter } from "../../src/core/TradeRouter.sol";
+import { VaultTrackRegistry } from "../../src/core/VaultTrackRegistry.sol";
+import { IPositionTypes } from "../../src/interfaces/IPositionTypes.sol";
 import { MockERC20 } from "../../src/mocks/MockERC20.sol";
+import { AgentTestLib } from "../helpers/AgentTestLib.sol";
+import { TradingTestBase } from "../helpers/TradingTestBase.sol";
+import { VaultTestLib } from "../helpers/VaultTestLib.sol";
 import { MockPriceFeed } from "../mocks/MockPriceFeed.sol";
 
 contract InventorySwapAdapterTest is TradingTestBase {
@@ -34,24 +35,34 @@ contract InventorySwapAdapterTest is TradingTestBase {
 
         vm.startPrank(deployer);
         feeManager = new FeeManager(deployer, treasury, address(usdc));
-        trackConfig = new TrackConfig(deployer);
+        vaultTrackRegistry = new VaultTrackRegistry(deployer);
         tokenRegistry = new TokenRegistry(deployer);
-        registry = new AgentRegistry(deployer, feeManager);
-        allocationManager = new AllocationManager(deployer, trackConfig);
+        identityRegistry = AgentTestLib.deployERC8004IdentityRegistry();
+        registry = new AgentRegistry(deployer, feeManager, address(identityRegistry), block.chainid);
+        allocationManager = new AllocationManager(deployer, vaultTrackRegistry);
         positionManager = new PositionManager(deployer);
 
-        vault = new AlphaGridVault(
-            IERC20(address(usdc)), "AlphaGrid Tech Vault", "agTECH", VAULT_MANDATE, tokenRegistry, deployer
+        (vaultFactory,) = VaultTestLib.deployFactory(IERC20(address(usdc)));
+        vault = VaultTestLib.deployVault(
+            vaultFactory,
+            IERC20(address(usdc)),
+            "AlphaGrid Tech Vault",
+            "agTECH",
+            VAULT_MANDATE,
+            tokenRegistry,
+            deployer,
+            treasury
         );
         vaultAddr = address(vault);
 
         inventoryAdapter = new InventorySwapAdapter(address(0));
-        tradeRouter =
-            new TradeRouter(deployer, registry, allocationManager, positionManager, inventoryAdapter, trackConfig);
+        tradeRouter = new TradeRouter(
+            deployer, registry, allocationManager, positionManager, inventoryAdapter, vaultTrackRegistry
+        );
         inventoryAdapter.setTradeRouter(address(tradeRouter));
 
         feeManager.setAgentRegistry(address(registry));
-        registry.setTrackConfig(trackConfig);
+        registry.setVaultTrackRegistry(vaultTrackRegistry);
         registry.setAllocationManager(allocationManager);
         allocationManager.setAgentRegistry(address(registry));
         positionManager.setTradeRouter(address(tradeRouter));
@@ -73,7 +84,7 @@ contract InventorySwapAdapterTest is TradingTestBase {
         tokenRegistry.registerToken(address(nvda), address(nvdaFeed));
         vault.enableToken(address(nvda));
 
-        _setTrackConfig(vaultAddr, 0, CHALLENGE_CAP, 200_000e6);
+        _setVaultTrackConfig(vaultAddr, 0, CHALLENGE_CAP, 200_000e6);
 
         usdc.mint(lp, LP_USDC);
         usdc.mint(address(inventoryAdapter), 500_000e6);

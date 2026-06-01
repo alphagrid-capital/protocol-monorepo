@@ -2,11 +2,11 @@
 pragma solidity ^0.8.30;
 
 import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
-import { ITrackConfig } from "../interfaces/ITrackConfig.sol";
+import { IVaultTrackRegistry } from "../interfaces/IVaultTrackRegistry.sol";
 
-/// @title TrackConfig
-/// @notice Stores global track types and per-vault track configuration.
-contract TrackConfig is ITrackConfig, AccessControl {
+/// @title VaultTrackRegistry
+/// @notice Vault allowlist and per-vault track policy (global track types + VaultTrackConfig).
+contract VaultTrackRegistry is IVaultTrackRegistry, AccessControl {
     // -------------------------------------------------------------------------
     // Constants
     // -------------------------------------------------------------------------
@@ -23,6 +23,9 @@ contract TrackConfig is ITrackConfig, AccessControl {
     // -------------------------------------------------------------------------
     // State
     // -------------------------------------------------------------------------
+
+    address[] private _vaults;
+    mapping(address => bool) private _isRegisteredVault;
 
     mapping(uint256 trackId => TrackType) private _trackTypes;
     mapping(address vault => mapping(uint256 trackId => VaultTrackConfig)) private _vaultTrackConfigs;
@@ -61,7 +64,7 @@ contract TrackConfig is ITrackConfig, AccessControl {
     // Admin
     // -------------------------------------------------------------------------
 
-    /// @inheritdoc ITrackConfig
+    /// @inheritdoc IVaultTrackRegistry
     function setVaultTrackConfig(address vault, uint256 trackId, VaultTrackConfig calldata config)
         external
         onlyRole(CONFIG_ADMIN_ROLE)
@@ -74,6 +77,8 @@ contract TrackConfig is ITrackConfig, AccessControl {
         if (config.initialAllocation > config.maxAllocation) {
             revert AllocationOutOfRange(config.initialAllocation, config.maxAllocation);
         }
+
+        _registerVaultIfNeeded(vault);
 
         VaultTrackConfig memory stored = VaultTrackConfig({
             vault: vault,
@@ -97,26 +102,41 @@ contract TrackConfig is ITrackConfig, AccessControl {
     // Views
     // -------------------------------------------------------------------------
 
-    /// @inheritdoc ITrackConfig
+    /// @inheritdoc IVaultTrackRegistry
+    function vaultCount() external view returns (uint256) {
+        return _vaults.length;
+    }
+
+    /// @inheritdoc IVaultTrackRegistry
+    function vaultAt(uint256 index) external view returns (address) {
+        return _vaults[index];
+    }
+
+    /// @inheritdoc IVaultTrackRegistry
+    function isRegisteredVault(address vault) external view returns (bool) {
+        return _isRegisteredVault[vault];
+    }
+
+    /// @inheritdoc IVaultTrackRegistry
     function getTrackType(uint256 trackId) external view returns (TrackType memory) {
         _validateTrackId(trackId);
         return _trackTypes[trackId];
     }
 
-    /// @inheritdoc ITrackConfig
+    /// @inheritdoc IVaultTrackRegistry
     function getVaultTrackConfig(address vault, uint256 trackId) external view returns (VaultTrackConfig memory) {
         _validateTrackId(trackId);
         return _vaultTrackConfigs[vault][trackId];
     }
 
-    /// @inheritdoc ITrackConfig
+    /// @inheritdoc IVaultTrackRegistry
     function isVaultTrackActive(address vault, uint256 trackId) external view returns (bool) {
         if (vault == address(0)) return false;
         if (trackId > MAX_TRACK_ID) return false;
         return _vaultTrackConfigs[vault][trackId].active;
     }
 
-    /// @inheritdoc ITrackConfig
+    /// @inheritdoc IVaultTrackRegistry
     function capitalModeOf(address vault, uint256 trackId) external view returns (CapitalMode) {
         vault;
         _validateTrackId(trackId);
@@ -126,6 +146,13 @@ contract TrackConfig is ITrackConfig, AccessControl {
     // -------------------------------------------------------------------------
     // Private Functions
     // -------------------------------------------------------------------------
+
+    function _registerVaultIfNeeded(address vault) private {
+        if (_isRegisteredVault[vault]) return;
+        _isRegisteredVault[vault] = true;
+        _vaults.push(vault);
+        emit VaultRegistered(vault);
+    }
 
     /// @dev Ensures `trackId` is within the MVP range.
     function _validateTrackId(uint256 trackId) private pure {

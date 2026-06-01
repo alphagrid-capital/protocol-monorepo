@@ -4,11 +4,14 @@ pragma solidity ^0.8.30;
 import { Script, console2 } from "forge-std/Script.sol";
 import { AgentRegistry } from "../src/core/AgentRegistry.sol";
 import { FeeManager } from "../src/core/FeeManager.sol";
-import { TrackConfig } from "../src/core/TrackConfig.sol";
+import { VaultTrackRegistry } from "../src/core/VaultTrackRegistry.sol";
 
-/// @notice Deploys agent onboarding core: FeeManager, TrackConfig, and AgentRegistry.
+/// @notice Deploys agent onboarding core: FeeManager, VaultTrackRegistry, and AgentRegistry.
 contract DeployAgentCore is Script {
-    function run() external returns (FeeManager feeManager, TrackConfig trackConfig, AgentRegistry registry) {
+    function run()
+        external
+        returns (FeeManager feeManager, VaultTrackRegistry vaultTrackRegistry, AgentRegistry registry)
+    {
         address admin = vm.envAddress("ADMIN");
         address treasury = vm.envAddress("TREASURY");
         address usdc = vm.envAddress("USDC");
@@ -17,11 +20,13 @@ contract DeployAgentCore is Script {
         vm.startBroadcast();
 
         feeManager = new FeeManager(admin, treasury, usdc);
-        trackConfig = new TrackConfig(admin);
-        registry = new AgentRegistry(admin, feeManager);
+        vaultTrackRegistry = new VaultTrackRegistry(admin);
+        address erc8004IdentityRegistry = vm.envAddress("ERC8004_IDENTITY_REGISTRY");
+        uint256 erc8004ChainId = vm.envOr("ERC8004_CHAIN_ID", block.chainid);
+        registry = new AgentRegistry(admin, feeManager, erc8004IdentityRegistry, erc8004ChainId);
 
         feeManager.setAgentRegistry(address(registry));
-        registry.setTrackConfig(trackConfig);
+        registry.setVaultTrackRegistry(vaultTrackRegistry);
 
         if (registrationFeeAmount > 0) {
             feeManager.setRegistrationFee(registrationFeeAmount);
@@ -30,7 +35,7 @@ contract DeployAgentCore is Script {
         vm.stopBroadcast();
 
         console2.log("FeeManager:", address(feeManager));
-        console2.log("TrackConfig:", address(trackConfig));
+        console2.log("VaultTrackRegistry:", address(vaultTrackRegistry));
         console2.log("AgentRegistry:", address(registry));
         console2.log("Admin:", admin);
         console2.log("Treasury:", treasury);

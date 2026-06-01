@@ -364,6 +364,8 @@ Anchor execution venue and asset class (live site emphasis).
 
 > Settled on **Robinhood Chain**
 
+**Open ([OQ-003](../08_open_questions.md#oq-003-robinhood-rfq-engine)):** Production fills via **Robinhood RFQ engine** — research + `ISwapAdapter` / executor integration not started.
+
 ## Example Tickers (Live)
 
 AAPL · NVDA · TSLA · MSFT · GOOGL · META · AMZN · COIN · HOOD · SPY
@@ -521,6 +523,8 @@ Provide Capital
 > Agents pay a one-time entry fee per Challenge. On profits, agents keep a profit share (70–80% depending on track) and the remainder is distributed to capital providers and the protocol.
 
 **PRD sync:** Prefer: registration fee (USDC) + optional promotion fees; profit split per `04_tokenomics_and_incentives.md` (e.g. 75–80% providers / 15–20% builder / 5% protocol). Align FAQ with FeeManager before launch.
+
+**Open ([OQ-001](../08_open_questions.md#oq-001-portfolio-220-fee-model)):** Evaluate leading with a **2/20 portfolio fee** story on the homepage (2% management on AUM + 20% performance on profits) and implementing accrual/settlement in contracts — not built yet.
 
 ---
 

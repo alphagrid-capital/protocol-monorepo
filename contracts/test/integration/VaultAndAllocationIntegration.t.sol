@@ -1,24 +1,29 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import { BaseTest } from "../helpers/BaseTest.sol";
-import { AgentRegistry } from "../../src/core/AgentRegistry.sol";
-import { FeeManager } from "../../src/core/FeeManager.sol";
-import { TrackConfig } from "../../src/core/TrackConfig.sol";
-import { AllocationManager } from "../../src/core/AllocationManager.sol";
-import { AlphaGridVault } from "../../src/vaults/AlphaGridVault.sol";
-import { TokenRegistry } from "../../src/core/TokenRegistry.sol";
-import { IAgentRegistry } from "../../src/interfaces/IAgentRegistry.sol";
-import { ITrackConfig } from "../../src/interfaces/ITrackConfig.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { AgentRegistry } from "../../src/core/AgentRegistry.sol";
+import { AllocationManager } from "../../src/core/AllocationManager.sol";
+import { FeeManager } from "../../src/core/FeeManager.sol";
+import { TokenRegistry } from "../../src/core/TokenRegistry.sol";
+import { VaultTrackRegistry } from "../../src/core/VaultTrackRegistry.sol";
+import { IAgentRegistry } from "../../src/interfaces/IAgentRegistry.sol";
+import { IVaultTrackRegistry } from "../../src/interfaces/IVaultTrackRegistry.sol";
+import { MandateVault } from "../../src/vaults/MandateVault.sol";
+import { MandateVaultFactory } from "../../src/vaults/MandateVaultFactory.sol";
+import { AgentTestLib } from "../helpers/AgentTestLib.sol";
+import { BaseTest } from "../helpers/BaseTest.sol";
+import { MockERC8004IdentityRegistry } from "../mocks/MockERC8004IdentityRegistry.sol";
+import { VaultTestLib } from "../helpers/VaultTestLib.sol";
 
 /// @notice End-to-end wiring for vault deposits, allocations, and agent funding.
 contract VaultAndAllocationIntegrationTest is BaseTest {
     AgentRegistry internal registry;
     FeeManager internal feeManager;
-    TrackConfig internal trackConfig;
+    VaultTrackRegistry internal vaultTrackRegistry;
     AllocationManager internal allocationManager;
-    AlphaGridVault internal techVault;
+    MandateVault internal techVault;
+    MockERC8004IdentityRegistry internal identityRegistry;
 
     address internal treasury;
     address internal operator;
@@ -36,16 +41,26 @@ contract VaultAndAllocationIntegrationTest is BaseTest {
 
         vm.startPrank(deployer);
         feeManager = new FeeManager(deployer, treasury, address(usdc));
-        trackConfig = new TrackConfig(deployer);
-        registry = new AgentRegistry(deployer, feeManager);
-        allocationManager = new AllocationManager(deployer, trackConfig);
+        vaultTrackRegistry = new VaultTrackRegistry(deployer);
+        identityRegistry = AgentTestLib.deployERC8004IdentityRegistry();
+        registry = new AgentRegistry(deployer, feeManager, address(identityRegistry), block.chainid);
+        allocationManager = new AllocationManager(deployer, vaultTrackRegistry);
         TokenRegistry tokenRegistry = new TokenRegistry(deployer);
-        techVault = new AlphaGridVault(
-            IERC20(address(usdc)), "AlphaGrid Tech Vault", "agTECH", "TECH", tokenRegistry, deployer
+        MandateVaultFactory vaultFactory;
+        (vaultFactory,) = VaultTestLib.deployFactory(IERC20(address(usdc)));
+        techVault = VaultTestLib.deployVault(
+            vaultFactory,
+            IERC20(address(usdc)),
+            "AlphaGrid Tech Vault",
+            "agTECH",
+            "TECH",
+            tokenRegistry,
+            deployer,
+            treasury
         );
 
         feeManager.setAgentRegistry(address(registry));
-        registry.setTrackConfig(trackConfig);
+        registry.setVaultTrackRegistry(vaultTrackRegistry);
         registry.setAllocationManager(allocationManager);
         allocationManager.setAgentRegistry(address(registry));
 
@@ -54,7 +69,6 @@ contract VaultAndAllocationIntegrationTest is BaseTest {
 
         _setVaultTrackConfig(address(techVault), 0, CHALLENGE_CAP, 25_000e6);
         _setVaultTrackConfig(address(techVault), 1, 50_000e6, 100_000e6);
-
         usdc.mint(lp, SEED_DEPOSIT);
         vm.stopPrank();
 
@@ -64,9 +78,15 @@ contract VaultAndAllocationIntegrationTest is BaseTest {
         vm.stopPrank();
     }
 
+    function _registerAlice() internal returns (uint256 agentId) {
+        uint256 erc8004Id = AgentTestLib.mintERC8004(identityRegistry, alice);
+        agentId = registry.registerAgent(alice, address(techVault), "Alpha Bot", "ipfs://alpha", alice, true, erc8004Id);
+    }
+
     function test_RegisterAgentCreatesAllocationAgainstRealVault() public {
-        vm.prank(operator);
-        uint256 agentId = registry.registerAgent(alice, address(techVault), "Alpha Bot", "ipfs://alpha", alice);
+        vm.startPrank(operator);
+        uint256 agentId = _registerAlice();
+        vm.stopPrank();
 
         assertEq(allocationManager.allocationCap(agentId), CHALLENGE_CAP);
         assertEq(techVault.totalAssets(), SEED_DEPOSIT);
@@ -74,7 +94,7 @@ contract VaultAndAllocationIntegrationTest is BaseTest {
 
     function test_PromoteUpdatesAllocationCap() public {
         vm.startPrank(operator);
-        uint256 agentId = registry.registerAgent(alice, address(techVault), "Alpha Bot", "ipfs://alpha", alice);
+        uint256 agentId = _registerAlice();
         registry.promoteAgent(agentId, IAgentRegistry.Track.FUNDED);
         vm.stopPrank();
 
@@ -85,10 +105,10 @@ contract VaultAndAllocationIntegrationTest is BaseTest {
     function _setVaultTrackConfig(address vault_, uint256 trackId, uint256 initialAllocation, uint256 maxAllocation)
         internal
     {
-        trackConfig.setVaultTrackConfig(
+        vaultTrackRegistry.setVaultTrackConfig(
             vault_,
             trackId,
-            ITrackConfig.VaultTrackConfig({
+            IVaultTrackRegistry.VaultTrackConfig({
                 vault: vault_,
                 trackId: trackId,
                 initialAllocation: initialAllocation,

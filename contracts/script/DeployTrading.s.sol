@@ -2,15 +2,15 @@
 pragma solidity ^0.8.30;
 
 import { Script, console2 } from "forge-std/Script.sol";
+import { InventorySwapAdapter } from "../src/adapters/InventorySwapAdapter.sol";
+import { MockSwapAdapter } from "../src/adapters/MockSwapAdapter.sol";
 import { AgentRegistry } from "../src/core/AgentRegistry.sol";
-import { TrackConfig } from "../src/core/TrackConfig.sol";
 import { AllocationManager } from "../src/core/AllocationManager.sol";
 import { PositionManager } from "../src/core/PositionManager.sol";
 import { TradeRouter } from "../src/core/TradeRouter.sol";
-import { MockSwapAdapter } from "../src/adapters/MockSwapAdapter.sol";
-import { InventorySwapAdapter } from "../src/adapters/InventorySwapAdapter.sol";
+import { VaultTrackRegistry } from "../src/core/VaultTrackRegistry.sol";
 import { ISwapAdapter } from "../src/interfaces/ISwapAdapter.sol";
-import { AlphaGridVault } from "../src/vaults/AlphaGridVault.sol";
+import { MandateVault } from "../src/vaults/MandateVault.sol";
 
 /// @notice Deploys PositionManager, TradeRouter, swap adapter; wires roles to existing vault stack.
 /// @dev Set DEPLOY_MOCK_SWAP_ADAPTER=true (default) for MockSwapAdapter, false for InventorySwapAdapter.
@@ -46,7 +46,7 @@ contract DeployTrading is Script {
             AllocationManager(allocationManager),
             positionManager,
             swapAdapter,
-            TrackConfig(trackConfig)
+            VaultTrackRegistry(trackConfig)
         );
 
         if (deployMock) {
@@ -59,7 +59,7 @@ contract DeployTrading is Script {
         tradeRouter.grantRole(tradeRouter.EXECUTOR_ROLE(), executor);
         tradeRouter.grantRole(tradeRouter.OPERATOR_ROLE(), operator);
 
-        AlphaGridVault(vault).grantRole(AlphaGridVault(vault).TRADE_ROUTER_ROLE(), address(tradeRouter));
+        MandateVault(vault).grantRole(MandateVault(vault).TRADE_ROUTER_ROLE(), address(tradeRouter));
         AllocationManager(allocationManager)
             .grantRole(AllocationManager(allocationManager).TRADE_ROUTER_ROLE(), address(tradeRouter));
 

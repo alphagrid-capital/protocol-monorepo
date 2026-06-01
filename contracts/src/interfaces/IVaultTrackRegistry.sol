@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-/// @title ITrackConfig
-/// @notice Global track types and per-vault track configuration for AlphaGrid.
-interface ITrackConfig {
+/// @title IVaultTrackRegistry
+/// @notice Vault allowlist and per-vault track policy for AlphaGrid.
+interface IVaultTrackRegistry {
     // -------------------------------------------------------------------------
     // Types
     // -------------------------------------------------------------------------
@@ -43,11 +43,22 @@ interface ITrackConfig {
 
     event TrackTypeUpdated(uint256 indexed trackId, bytes32 name, CapitalMode capitalMode, bool active);
 
+    event VaultRegistered(address indexed vault);
+
     event VaultTrackConfigUpdated(address indexed vault, uint256 indexed trackId, VaultTrackConfig config);
 
     // -------------------------------------------------------------------------
     // Views
     // -------------------------------------------------------------------------
+
+    /// @notice Returns the number of registered vaults.
+    function vaultCount() external view returns (uint256);
+
+    /// @notice Returns the vault address at `index` in registration order.
+    function vaultAt(uint256 index) external view returns (address);
+
+    /// @notice Returns whether `vault` has been registered via track configuration.
+    function isRegisteredVault(address vault) external view returns (bool);
 
     /// @notice Returns the global track type for `trackId`.
     function getTrackType(uint256 trackId) external view returns (TrackType memory);
@@ -65,6 +76,6 @@ interface ITrackConfig {
     // Admin
     // -------------------------------------------------------------------------
 
-    /// @notice Admin sets or updates vault track configuration.
+    /// @notice Admin sets or updates vault track configuration; auto-registers vault on first write.
     function setVaultTrackConfig(address vault, uint256 trackId, VaultTrackConfig calldata config) external;
 }

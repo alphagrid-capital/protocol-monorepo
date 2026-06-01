@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import { TradingTestBase } from "../helpers/TradingTestBase.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { TradeRouter } from "../../src/core/TradeRouter.sol";
 import { IAgentRegistry } from "../../src/interfaces/IAgentRegistry.sol";
-import { ITrackConfig } from "../../src/interfaces/ITrackConfig.sol";
 import { IPositionTypes } from "../../src/interfaces/IPositionTypes.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IVaultTrackRegistry } from "../../src/interfaces/IVaultTrackRegistry.sol";
+import { TradingTestBase } from "../helpers/TradingTestBase.sol";
 
 contract TradeRouterTest is TradingTestBase {
     function setUp() public override {
@@ -171,10 +171,10 @@ contract TradeRouterTest is TradingTestBase {
         uint256 agentId = _registerAgent();
 
         vm.prank(deployer);
-        trackConfig.setVaultTrackConfig(
+        vaultTrackRegistry.setVaultTrackConfig(
             vaultAddr,
             0,
-            ITrackConfig.VaultTrackConfig({
+            IVaultTrackRegistry.VaultTrackConfig({
                 vault: vaultAddr,
                 trackId: 0,
                 initialAllocation: CHALLENGE_CAP,
@@ -201,10 +201,10 @@ contract TradeRouterTest is TradingTestBase {
         uint256 agentId = _registerAgent();
 
         vm.prank(deployer);
-        trackConfig.setVaultTrackConfig(
+        vaultTrackRegistry.setVaultTrackConfig(
             vaultAddr,
             0,
-            ITrackConfig.VaultTrackConfig({
+            IVaultTrackRegistry.VaultTrackConfig({
                 vault: vaultAddr,
                 trackId: 0,
                 initialAllocation: CHALLENGE_CAP,

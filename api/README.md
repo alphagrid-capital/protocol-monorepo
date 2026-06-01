@@ -57,6 +57,8 @@ ChatGPT **browsing** only performs simple `GET` requests on **public** URLs. It 
 
 Connect MCP clients to `http://localhost:8787/mcp` in development (or your deployed Worker URL). Clients must send `Accept: application/json, text/event-stream` on MCP requests.
 
+**Cursor custom MCP:** use your deployed `https://<worker-host>/mcp` URL (Streamable HTTP). The server keeps one transport per `Mcp-Session-Id` so SSE reconnects do not hit `409 Conflict`. On Cloudflare Workers, sessions are in-memory per isolate; for production traffic across many instances, use Durable Objects for session affinity.
+
 ## Layout
 
 ```text

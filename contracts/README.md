@@ -44,10 +44,10 @@ contracts/
 ├── docs/
 │   └── position-intent-eip712.md   # Off-chain signing schema for opens
 ├── src/
-│   ├── core/                       # AgentRegistry, TrackConfig, FeeManager,
+│   ├── core/                       # AgentRegistry, VaultTrackRegistry, FeeManager,
 │   │                               # AllocationManager, TokenRegistry,
 │   │                               # PositionManager, TradeRouter
-│   ├── vaults/                     # AlphaGridVault (ERC-4626)
+│   ├── vaults/                     # MandateVault (ERC-4626), MandateVaultFactory
 │   ├── adapters/                   # MockSwapAdapter, InventorySwapAdapter
 │   ├── interfaces/
 │   ├── libraries/                  # OracleLib
@@ -86,6 +86,15 @@ forge script script/DeployTrading.s.sol:DeployTrading --rpc-url $RPC_URL --broad
 - `DEPLOY_MOCK_SWAP_ADAPTER=false` — `InventorySwapAdapter` (pre-funded ERC-20 inventory)
 
 Grant `TRADE_ROUTER_ROLE` on each vault and wire `OPERATOR` / `EXECUTOR` as needed.
+
+## Vault deployment
+
+Vaults deploy as **EIP-1167 minimal clones** via `MandateVaultFactory` (not centrally upgradeable):
+
+1. One `MandateVault` **implementation** is constructed with the shared ERC-4626 asset (USDC).
+2. Each `deployVault` call clones that implementation and runs `initialize` for mandate, share metadata, token registry, and admin roles.
+
+`VAULT_NAME` and `TOKEN_REGISTRY` live in clone storage (not constructor immutables). OpenZeppelin `ERC4626` still stores the underlying asset as an **implementation immutable**, so every clone shares the same asset address baked in at implementation deploy time (USDC for AlphaGrid).
 
 ## Swap adapters
 

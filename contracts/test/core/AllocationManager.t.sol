@@ -1,24 +1,29 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import { BaseTest } from "../helpers/BaseTest.sol";
-import { AllocationManager } from "../../src/core/AllocationManager.sol";
-import { AgentRegistry } from "../../src/core/AgentRegistry.sol";
-import { TrackConfig } from "../../src/core/TrackConfig.sol";
-import { FeeManager } from "../../src/core/FeeManager.sol";
-import { AlphaGridVault } from "../../src/vaults/AlphaGridVault.sol";
-import { TokenRegistry } from "../../src/core/TokenRegistry.sol";
-import { IAllocationManager } from "../../src/interfaces/IAllocationManager.sol";
-import { ITrackConfig } from "../../src/interfaces/ITrackConfig.sol";
-import { IAgentRegistry } from "../../src/interfaces/IAgentRegistry.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { AgentRegistry } from "../../src/core/AgentRegistry.sol";
+import { AllocationManager } from "../../src/core/AllocationManager.sol";
+import { FeeManager } from "../../src/core/FeeManager.sol";
+import { TokenRegistry } from "../../src/core/TokenRegistry.sol";
+import { VaultTrackRegistry } from "../../src/core/VaultTrackRegistry.sol";
+import { IAgentRegistry } from "../../src/interfaces/IAgentRegistry.sol";
+import { IAllocationManager } from "../../src/interfaces/IAllocationManager.sol";
+import { IVaultTrackRegistry } from "../../src/interfaces/IVaultTrackRegistry.sol";
+import { MandateVault } from "../../src/vaults/MandateVault.sol";
+import { MandateVaultFactory } from "../../src/vaults/MandateVaultFactory.sol";
+import { AgentTestLib } from "../helpers/AgentTestLib.sol";
+import { BaseTest } from "../helpers/BaseTest.sol";
+import { MockERC8004IdentityRegistry } from "../mocks/MockERC8004IdentityRegistry.sol";
+import { VaultTestLib } from "../helpers/VaultTestLib.sol";
 
 contract AllocationManagerTest is BaseTest {
     AllocationManager internal allocationManager;
     AgentRegistry internal registry;
     FeeManager internal feeManager;
-    TrackConfig internal trackConfig;
-    AlphaGridVault internal vault;
+    VaultTrackRegistry internal vaultTrackRegistry;
+    MandateVault internal vault;
+    MockERC8004IdentityRegistry internal identityRegistry;
 
     address internal operator;
     address internal treasury;
@@ -34,17 +39,27 @@ contract AllocationManagerTest is BaseTest {
 
         vm.startPrank(deployer);
         feeManager = new FeeManager(deployer, treasury, address(usdc));
-        trackConfig = new TrackConfig(deployer);
-        registry = new AgentRegistry(deployer, feeManager);
-        allocationManager = new AllocationManager(deployer, trackConfig);
+        vaultTrackRegistry = new VaultTrackRegistry(deployer);
+        identityRegistry = AgentTestLib.deployERC8004IdentityRegistry();
+        registry = new AgentRegistry(deployer, feeManager, address(identityRegistry), block.chainid);
+        allocationManager = new AllocationManager(deployer, vaultTrackRegistry);
 
         TokenRegistry tokenRegistry = new TokenRegistry(deployer);
-        vault = new AlphaGridVault(
-            IERC20(address(usdc)), "AlphaGrid Tech Vault", "agTECH", "TECH", tokenRegistry, deployer
+        MandateVaultFactory vaultFactory;
+        (vaultFactory,) = VaultTestLib.deployFactory(IERC20(address(usdc)));
+        vault = VaultTestLib.deployVault(
+            vaultFactory,
+            IERC20(address(usdc)),
+            "AlphaGrid Tech Vault",
+            "agTECH",
+            "TECH",
+            tokenRegistry,
+            deployer,
+            address(0)
         );
 
         feeManager.setAgentRegistry(address(registry));
-        registry.setTrackConfig(trackConfig);
+        registry.setVaultTrackRegistry(vaultTrackRegistry);
         registry.setAllocationManager(allocationManager);
         allocationManager.setAgentRegistry(address(registry));
 
@@ -52,14 +67,23 @@ contract AllocationManagerTest is BaseTest {
         registry.grantRole(registry.REGISTRAR_ROLE(), operator);
         allocationManager.grantRole(allocationManager.OPERATOR_ROLE(), operator);
 
-        _setTrackConfig(address(vault), 0, CHALLENGE_CAP, 25_000e6);
-        _setTrackConfig(address(vault), 1, FUNDED_CAP, 100_000e6);
+        _setVaultTrackConfig(address(vault), 0, CHALLENGE_CAP, 25_000e6);
+        _setVaultTrackConfig(address(vault), 1, FUNDED_CAP, 100_000e6);
         vm.stopPrank();
     }
 
+    function _registerAgent(address owner, string memory name, string memory metadataURI)
+        internal
+        returns (uint256 agentId)
+    {
+        uint256 erc8004Id = AgentTestLib.mintERC8004(identityRegistry, owner);
+        agentId = registry.registerAgent(owner, address(vault), name, metadataURI, owner, true, erc8004Id);
+    }
+
     function test_OnAgentRegisteredCreatesAllocation() public {
-        vm.prank(operator);
-        uint256 agentId = registry.registerAgent(alice, address(vault), "Bot", "ipfs://bot", alice);
+        vm.startPrank(operator);
+        uint256 agentId = _registerAgent(alice, "Bot", "ipfs://bot");
+        vm.stopPrank();
 
         IAllocationManager.Allocation memory allocation = allocationManager.getAllocation(agentId);
         assertEq(allocation.agentId, agentId);
@@ -73,7 +97,7 @@ contract AllocationManagerTest is BaseTest {
 
     function test_OnAgentPromotedUpdatesCap() public {
         vm.startPrank(operator);
-        uint256 agentId = registry.registerAgent(alice, address(vault), "Bot", "ipfs://bot", alice);
+        uint256 agentId = _registerAgent(alice, "Bot", "ipfs://bot");
         registry.promoteAgent(agentId, IAgentRegistry.Track.FUNDED);
         vm.stopPrank();
 
@@ -91,7 +115,7 @@ contract AllocationManagerTest is BaseTest {
 
     function test_RevertWhen_PromoteVaultMismatch() public {
         vm.startPrank(operator);
-        uint256 agentId = registry.registerAgent(alice, address(vault), "Bot", "ipfs://bot", alice);
+        uint256 agentId = _registerAgent(alice, "Bot", "ipfs://bot");
         vm.stopPrank();
 
         address wrongVault = makeAddr("wrongVault");
@@ -105,7 +129,7 @@ contract AllocationManagerTest is BaseTest {
 
     function test_RevertWhen_PromoteTrackMismatch() public {
         vm.startPrank(operator);
-        uint256 agentId = registry.registerAgent(alice, address(vault), "Bot", "ipfs://bot", alice);
+        uint256 agentId = _registerAgent(alice, "Bot", "ipfs://bot");
         vm.stopPrank();
 
         vm.expectRevert(abi.encodeWithSelector(AllocationManager.TrackMismatch.selector, agentId, 0, 1));
@@ -115,7 +139,7 @@ contract AllocationManagerTest is BaseTest {
 
     function test_SetAllocationUsed_UpdatesUsed() public {
         vm.startPrank(operator);
-        uint256 agentId = registry.registerAgent(alice, address(vault), "Bot", "ipfs://bot", alice);
+        uint256 agentId = _registerAgent(alice, "Bot", "ipfs://bot");
         allocationManager.setAllocationUsed(agentId, 5_000e6);
         vm.stopPrank();
 
@@ -124,7 +148,7 @@ contract AllocationManagerTest is BaseTest {
 
     function test_RevertWhen_UsedExceedsCap() public {
         vm.startPrank(operator);
-        uint256 agentId = registry.registerAgent(alice, address(vault), "Bot", "ipfs://bot", alice);
+        uint256 agentId = _registerAgent(alice, "Bot", "ipfs://bot");
 
         vm.expectRevert(
             abi.encodeWithSelector(AllocationManager.UsedExceedsCap.selector, agentId, CHALLENGE_CAP + 1, CHALLENGE_CAP)
@@ -134,8 +158,9 @@ contract AllocationManagerTest is BaseTest {
     }
 
     function test_RevertWhen_SetUsedWithoutOperator() public {
-        vm.prank(operator);
-        uint256 agentId = registry.registerAgent(alice, address(vault), "Bot", "ipfs://bot", alice);
+        vm.startPrank(operator);
+        uint256 agentId = _registerAgent(alice, "Bot", "ipfs://bot");
+        vm.stopPrank();
 
         vm.expectRevert();
         vm.prank(alice);
@@ -144,7 +169,7 @@ contract AllocationManagerTest is BaseTest {
 
     function test_SetAllocationStatus_UpdatesStatus() public {
         vm.startPrank(operator);
-        uint256 agentId = registry.registerAgent(alice, address(vault), "Bot", "ipfs://bot", alice);
+        uint256 agentId = _registerAgent(alice, "Bot", "ipfs://bot");
         allocationManager.setAllocationStatus(agentId, IAllocationManager.AllocationStatus.Paused);
         vm.stopPrank();
 
@@ -154,7 +179,7 @@ contract AllocationManagerTest is BaseTest {
 
     function test_RevertWhen_AllocationExists() public {
         vm.startPrank(operator);
-        uint256 agentId = registry.registerAgent(alice, address(vault), "Bot", "ipfs://bot", alice);
+        uint256 agentId = _registerAgent(alice, "Bot", "ipfs://bot");
         vm.stopPrank();
 
         vm.expectRevert(abi.encodeWithSelector(AllocationManager.AllocationExists.selector, agentId));
@@ -169,8 +194,8 @@ contract AllocationManagerTest is BaseTest {
 
     function test_TotalAgentCaps_SumsMultipleAgents() public {
         vm.startPrank(operator);
-        registry.registerAgent(alice, address(vault), "Bot A", "ipfs://a", alice);
-        registry.registerAgent(bob, address(vault), "Bot B", "ipfs://b", bob);
+        _registerAgent(alice, "Bot A", "ipfs://a");
+        _registerAgent(bob, "Bot B", "ipfs://b");
         vm.stopPrank();
 
         assertEq(allocationManager.totalAgentCaps(address(vault)), CHALLENGE_CAP * 2);
@@ -187,24 +212,24 @@ contract AllocationManagerTest is BaseTest {
         assertEq(allocationManager.agentRegistry(), newRegistry);
     }
 
-    function test_SetTrackConfig_EmitsEvent() public {
-        TrackConfig newTrackConfig = new TrackConfig(deployer);
+    function test_SetVaultTrackRegistry_EmitsEvent() public {
+        VaultTrackRegistry newVaultTrackRegistry = new VaultTrackRegistry(deployer);
 
         vm.expectEmit(true, false, false, false);
-        emit IAllocationManager.TrackConfigUpdated(address(newTrackConfig));
+        emit IAllocationManager.VaultTrackRegistryUpdated(address(newVaultTrackRegistry));
         vm.prank(deployer);
-        allocationManager.setTrackConfig(newTrackConfig);
+        allocationManager.setVaultTrackRegistry(newVaultTrackRegistry);
 
-        assertEq(address(allocationManager.trackConfig()), address(newTrackConfig));
+        assertEq(address(allocationManager.vaultTrackRegistry()), address(newVaultTrackRegistry));
     }
 
-    function _setTrackConfig(address vault_, uint256 trackId, uint256 initialAllocation, uint256 maxAllocation)
+    function _setVaultTrackConfig(address vault_, uint256 trackId, uint256 initialAllocation, uint256 maxAllocation)
         internal
     {
-        trackConfig.setVaultTrackConfig(
+        vaultTrackRegistry.setVaultTrackConfig(
             vault_,
             trackId,
-            ITrackConfig.VaultTrackConfig({
+            IVaultTrackRegistry.VaultTrackConfig({
                 vault: vault_,
                 trackId: trackId,
                 initialAllocation: initialAllocation,

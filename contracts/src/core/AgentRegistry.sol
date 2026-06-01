@@ -2,17 +2,19 @@
 pragma solidity ^0.8.30;
 
 import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
-import { EIP712 } from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
-import { ECDSA } from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import { Nonces } from "@openzeppelin/contracts/utils/Nonces.sol";
 import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
+import { ECDSA } from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import { EIP712 } from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import { IAgentRegistry } from "../interfaces/IAgentRegistry.sol";
-import { IFeeManager } from "../interfaces/IFeeManager.sol";
-import { ITrackConfig } from "../interfaces/ITrackConfig.sol";
 import { IAllocationManager } from "../interfaces/IAllocationManager.sol";
+import { IFeeManager } from "../interfaces/IFeeManager.sol";
+import { IVaultTrackRegistry } from "../interfaces/IVaultTrackRegistry.sol";
 
 /// @title AgentRegistry
 /// @notice Stores canonical agent identities, vault bindings, and track lifecycle state.
+/// @dev `owner` controls the AlphaGrid agent and must own the ERC-8004 NFT when linked.
 contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausable {
     // -------------------------------------------------------------------------
     // Constants
@@ -22,7 +24,7 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
     bytes32 public constant REGISTRAR_ROLE = keccak256("REGISTRAR_ROLE");
 
     bytes32 public constant SELF_REGISTER_TYPEHASH = keccak256(
-        "SelfRegister(address vault,string name,string metadataURI,address signer,uint256 nonce,uint256 deadline)"
+        "SelfRegister(address vault,string name,string metadataURI,address signer,bool linkERC8004,uint256 erc8004AgentId,uint256 nonce,uint256 deadline)"
     );
 
     // -------------------------------------------------------------------------
@@ -30,19 +32,34 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
     // -------------------------------------------------------------------------
 
     IFeeManager public feeManager;
-    ITrackConfig public trackConfig;
+    IVaultTrackRegistry public vaultTrackRegistry;
     IAllocationManager public allocationManager;
+
+    address private immutable ERC8004_IDENTITY_REGISTRY;
+    uint256 private immutable ERC8004_CHAIN_ID;
 
     uint256 private _nextAgentId = 1;
 
     mapping(uint256 agentId => Agent agent) private _agents;
+    mapping(uint256 erc8004AgentId => uint256 agentId) private _agentIdByErc8004;
+
+    struct AgentRegistrationInput {
+        address owner;
+        address vault;
+        string name;
+        string metadataURI;
+        address signer;
+        bool linkERC8004;
+        uint256 erc8004AgentId;
+        address payer;
+    }
 
     // -------------------------------------------------------------------------
     // Errors
     // -------------------------------------------------------------------------
 
     error ZeroAddress();
-    error TrackConfigNotSet();
+    error VaultTrackRegistryNotSet();
     error VaultNotApproved(address vault);
     error AgentNotFound(uint256 agentId);
     error NotAgentOwner(uint256 agentId, address caller);
@@ -51,6 +68,10 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
     error MetadataUpdateNotAllowed(uint256 agentId);
     error ExpiredDeadline();
     error EmptyName();
+    error InvalidERC8004Config();
+    error NotERC8004Owner(uint256 erc8004AgentId, address caller);
+    error ERC8004AlreadyLinked(uint256 agentId);
+    error ERC8004AlreadyRegistered(uint256 erc8004AgentId);
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -58,10 +79,17 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
 
     /// @param admin Receives `DEFAULT_ADMIN_ROLE`.
     /// @param feeManager_ Fee collector invoked during registration.
-    constructor(address admin, IFeeManager feeManager_) EIP712("AlphaGrid AgentRegistry", "1") {
+    /// @param erc8004IdentityRegistry_ ERC-8004 Identity Registry (ERC-721).
+    /// @param erc8004ChainId_ Chain id for linked ERC-8004 identities.
+    constructor(address admin, IFeeManager feeManager_, address erc8004IdentityRegistry_, uint256 erc8004ChainId_)
+        EIP712("AlphaGrid AgentRegistry", "1")
+    {
         if (admin == address(0) || address(feeManager_) == address(0)) revert ZeroAddress();
+        if (erc8004IdentityRegistry_ == address(0) || erc8004ChainId_ == 0) revert InvalidERC8004Config();
 
         feeManager = feeManager_;
+        ERC8004_IDENTITY_REGISTRY = erc8004IdentityRegistry_;
+        ERC8004_CHAIN_ID = erc8004ChainId_;
 
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(OPERATOR_ROLE, admin);
@@ -78,9 +106,22 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
         address vault,
         string calldata name,
         string calldata metadataURI,
-        address signer
+        address signer,
+        bool linkERC8004,
+        uint256 erc8004AgentId
     ) external onlyRole(REGISTRAR_ROLE) whenNotPaused returns (uint256 agentId) {
-        agentId = _registerAgent(owner, vault, name, metadataURI, signer, msg.sender);
+        agentId = _registerAgent(
+            AgentRegistrationInput({
+                owner: owner,
+                vault: vault,
+                name: name,
+                metadataURI: metadataURI,
+                signer: signer,
+                linkERC8004: linkERC8004,
+                erc8004AgentId: erc8004AgentId,
+                payer: msg.sender
+            })
+        );
     }
 
     /// @inheritdoc IAgentRegistry
@@ -89,36 +130,34 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
         string calldata name,
         string calldata metadataURI,
         address signer,
+        bool linkERC8004,
+        uint256 erc8004AgentId,
         uint256 deadline,
         bytes calldata signature
     ) external whenNotPaused returns (uint256 agentId) {
-        if (signer == address(0)) revert ZeroAddress();
-        if (block.timestamp > deadline) revert ExpiredDeadline();
-
-        bytes32 structHash = keccak256(
-            abi.encode(
-                SELF_REGISTER_TYPEHASH,
-                vault,
-                keccak256(bytes(name)),
-                keccak256(bytes(metadataURI)),
-                signer,
-                nonces(signer),
-                deadline
-            )
-        );
-
-        bytes32 digest = _hashTypedDataV4(structHash);
-        address recovered = ECDSA.recover(digest, signature);
-        if (recovered != signer) revert InvalidSignature();
-
-        _useCheckedNonce(signer, nonces(signer));
-
-        agentId = _registerAgent(signer, vault, name, metadataURI, signer, msg.sender);
+        agentId = _selfRegisterAgent(vault, name, metadataURI, signer, linkERC8004, erc8004AgentId, deadline, signature);
     }
 
     // -------------------------------------------------------------------------
     // Agent Management
     // -------------------------------------------------------------------------
+
+    /// @inheritdoc IAgentRegistry
+    function linkERC8004Identity(uint256 agentId, uint256 erc8004AgentId) external whenNotPaused {
+        Agent storage agent = _requireAgent(agentId);
+        if (msg.sender != agent.owner) revert NotAgentOwner(agentId, msg.sender);
+        _applyErc8004Link(agentId, erc8004AgentId);
+    }
+
+    /// @inheritdoc IAgentRegistry
+    function erc8004IdentityRegistry() external view returns (address) {
+        return ERC8004_IDENTITY_REGISTRY;
+    }
+
+    /// @inheritdoc IAgentRegistry
+    function erc8004ChainId() external view returns (uint256) {
+        return ERC8004_CHAIN_ID;
+    }
 
     /// @inheritdoc IAgentRegistry
     function updateAgentMetadata(uint256 agentId, string calldata metadataURI) external whenNotPaused {
@@ -139,6 +178,29 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
 
         agent.signer = signer;
         emit AgentSignerUpdated(agentId, signer);
+    }
+
+    /// @inheritdoc IAgentRegistry
+    function transferAgentOwnership(uint256 agentId, address newOwner) external whenNotPaused {
+        if (newOwner == address(0)) revert ZeroAddress();
+
+        Agent storage agent = _requireAgent(agentId);
+        address from = agent.owner;
+        if (msg.sender != from) revert NotAgentOwner(agentId, msg.sender);
+
+        agent.owner = newOwner;
+        emit AgentOwnershipTransferred(agentId, from, newOwner);
+    }
+
+    /// @inheritdoc IAgentRegistry
+    function setPayoutRecipient(uint256 agentId, address payoutRecipient) external whenNotPaused {
+        if (payoutRecipient == address(0)) revert ZeroAddress();
+
+        Agent storage agent = _requireAgent(agentId);
+        if (msg.sender != agent.owner) revert NotAgentOwner(agentId, msg.sender);
+
+        agent.payoutRecipient = payoutRecipient;
+        emit PayoutRecipientUpdated(agentId, payoutRecipient);
     }
 
     /// @inheritdoc IAgentRegistry
@@ -198,6 +260,35 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
     }
 
     /// @inheritdoc IAgentRegistry
+    function payoutRecipientOf(uint256 agentId) external view returns (address) {
+        return _requireAgent(agentId).payoutRecipient;
+    }
+
+    /// @inheritdoc IAgentRegistry
+    function hasERC8004Identity(uint256 agentId) external view returns (bool) {
+        return _requireAgent(agentId).hasERC8004Identity;
+    }
+
+    /// @inheritdoc IAgentRegistry
+    function agentIdByERC8004(uint256 erc8004AgentId) external view returns (uint256 agentId) {
+        return _agentIdByErc8004[erc8004AgentId];
+    }
+
+    /// @inheritdoc IAgentRegistry
+    function isERC8004OwnerCurrent(uint256 agentId) external view returns (bool) {
+        Agent storage agent = _requireAgent(agentId);
+        if (!agent.hasERC8004Identity) return false;
+        return IERC721(ERC8004_IDENTITY_REGISTRY).ownerOf(agent.erc8004AgentId) == agent.owner;
+    }
+
+    /// @inheritdoc IAgentRegistry
+    function isPayoutEligible(uint256 agentId) external view returns (bool) {
+        Agent storage agent = _requireAgent(agentId);
+        if (agent.status != AgentStatus.Active) return false;
+        return agent.track == Track.FUNDED || agent.track == Track.PRIME;
+    }
+
+    /// @inheritdoc IAgentRegistry
     function getAgent(uint256 agentId) external view returns (Agent memory) {
         return _requireAgent(agentId);
     }
@@ -218,10 +309,10 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
         emit FeeManagerUpdated(address(feeManager_));
     }
 
-    /// @notice Set TrackConfig for vault approval checks. Required before agent registration.
-    function setTrackConfig(ITrackConfig trackConfig_) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        trackConfig = trackConfig_;
-        emit TrackConfigUpdated(address(trackConfig_));
+    /// @notice Set VaultTrackRegistry for vault approval checks. Required before agent registration.
+    function setVaultTrackRegistry(IVaultTrackRegistry vaultTrackRegistry_) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        vaultTrackRegistry = vaultTrackRegistry_;
+        emit VaultTrackRegistryUpdated(address(vaultTrackRegistry_));
     }
 
     /// @notice Wire AllocationManager for automatic allocation on register and promote.
@@ -248,41 +339,107 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
     // Private Functions
     // -------------------------------------------------------------------------
 
-    /// @dev Shared registration path after validation and fee collection.
-    function _registerAgent(
-        address owner,
+    function _selfRegisterAgent(
         address vault,
         string calldata name,
         string calldata metadataURI,
         address signer,
-        address payer
+        bool linkERC8004,
+        uint256 erc8004AgentId,
+        uint256 deadline,
+        bytes calldata signature
     ) private returns (uint256 agentId) {
-        if (owner == address(0) || vault == address(0) || signer == address(0)) {
+        if (signer == address(0)) revert ZeroAddress();
+        if (block.timestamp > deadline) revert ExpiredDeadline();
+
+        bytes32 structHash = keccak256(
+            abi.encode(
+                SELF_REGISTER_TYPEHASH,
+                vault,
+                keccak256(bytes(name)),
+                keccak256(bytes(metadataURI)),
+                signer,
+                linkERC8004,
+                erc8004AgentId,
+                nonces(signer),
+                deadline
+            )
+        );
+
+        bytes32 digest = _hashTypedDataV4(structHash);
+        address recovered = ECDSA.recover(digest, signature);
+        if (recovered != signer) revert InvalidSignature();
+
+        _useCheckedNonce(signer, nonces(signer));
+
+        AgentRegistrationInput memory input;
+        input.owner = signer;
+        input.vault = vault;
+        input.name = name;
+        input.metadataURI = metadataURI;
+        input.signer = signer;
+        input.linkERC8004 = linkERC8004;
+        input.erc8004AgentId = erc8004AgentId;
+        input.payer = msg.sender;
+        agentId = _registerAgent(input);
+    }
+
+    /// @dev Shared registration path after validation and fee collection.
+    function _registerAgent(AgentRegistrationInput memory input) private returns (uint256 agentId) {
+        if (input.owner == address(0) || input.vault == address(0) || input.signer == address(0)) {
             revert ZeroAddress();
         }
-        if (bytes(name).length == 0) revert EmptyName();
-        if (!_isVaultApproved(vault)) revert VaultNotApproved(vault);
+        if (bytes(input.name).length == 0) revert EmptyName();
+        if (!_isVaultApproved(input.vault)) revert VaultNotApproved(input.vault);
 
         agentId = _nextAgentId++;
 
-        feeManager.payRegistrationFee(payer, agentId);
+        feeManager.payRegistrationFee(input.payer, agentId);
 
         _agents[agentId] = Agent({
-            owner: owner,
-            signer: signer,
-            vault: vault,
+            owner: input.owner,
+            signer: input.signer,
+            payoutRecipient: input.owner,
+            vault: input.vault,
             track: Track.CHALLENGE,
             status: AgentStatus.Active,
-            name: name,
-            metadataURI: metadataURI,
-            createdAt: uint64(block.timestamp)
+            name: input.name,
+            metadataURI: input.metadataURI,
+            createdAt: uint64(block.timestamp),
+            hasERC8004Identity: false,
+            erc8004AgentId: 0
         });
 
-        emit AgentRegistered(agentId, vault, owner, signer, metadataURI, Track.CHALLENGE);
+        emit AgentRegistered(
+            agentId, input.vault, input.owner, input.signer, input.metadataURI, Track.CHALLENGE
+        );
+
+        if (input.linkERC8004) {
+            _applyErc8004Link(agentId, input.erc8004AgentId);
+        }
 
         if (address(allocationManager) != address(0)) {
-            allocationManager.onAgentRegistered(agentId, vault, uint256(Track.CHALLENGE));
+            allocationManager.onAgentRegistered(agentId, input.vault, uint256(Track.CHALLENGE));
         }
+    }
+
+    function _applyErc8004Link(uint256 agentId, uint256 erc8004AgentId) private {
+        Agent storage agent = _requireAgent(agentId);
+        if (agent.hasERC8004Identity) revert ERC8004AlreadyLinked(agentId);
+
+        address owner = agent.owner;
+        if (IERC721(ERC8004_IDENTITY_REGISTRY).ownerOf(erc8004AgentId) != owner) {
+            revert NotERC8004Owner(erc8004AgentId, owner);
+        }
+
+        uint256 existingAgentId = _agentIdByErc8004[erc8004AgentId];
+        if (existingAgentId != 0 && existingAgentId != agentId) revert ERC8004AlreadyRegistered(erc8004AgentId);
+
+        _agentIdByErc8004[erc8004AgentId] = agentId;
+        agent.hasERC8004Identity = true;
+        agent.erc8004AgentId = erc8004AgentId;
+
+        emit ERC8004IdentityLinked(agentId, ERC8004_IDENTITY_REGISTRY, ERC8004_CHAIN_ID, erc8004AgentId, owner);
     }
 
     /// @dev Returns the agent record or reverts if it does not exist.
@@ -291,9 +448,9 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
         if (agent.owner == address(0)) revert AgentNotFound(agentId);
     }
 
-    /// @dev A vault is approved when CHALLENGE track config is active in TrackConfig.
+    /// @dev A vault is approved when CHALLENGE track config is active in VaultTrackRegistry.
     function _isVaultApproved(address vault) private view returns (bool) {
-        if (address(trackConfig) == address(0)) revert TrackConfigNotSet();
-        return trackConfig.isVaultTrackActive(vault, uint256(Track.CHALLENGE));
+        if (address(vaultTrackRegistry) == address(0)) revert VaultTrackRegistryNotSet();
+        return vaultTrackRegistry.isVaultTrackActive(vault, uint256(Track.CHALLENGE));
     }
 }

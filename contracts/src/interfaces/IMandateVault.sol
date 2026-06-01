@@ -4,9 +4,9 @@ pragma solidity ^0.8.30;
 import { IERC4626 } from "@openzeppelin/contracts/interfaces/IERC4626.sol";
 import { ITokenRegistry } from "./ITokenRegistry.sol";
 
-/// @title IAlphaGridVault
+/// @title IMandateVault
 /// @notice ERC-4626 vault with USDC deposits and oracle-based NAV for mandate-allowed holdings.
-interface IAlphaGridVault is IERC4626 {
+interface IMandateVault is IERC4626 {
     // -------------------------------------------------------------------------
     // Events
     // -------------------------------------------------------------------------

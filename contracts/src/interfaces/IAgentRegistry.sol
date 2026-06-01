@@ -3,6 +3,10 @@ pragma solidity ^0.8.30;
 
 /// @title IAgentRegistry
 /// @notice Canonical agent identity registry for AlphaGrid.
+/// @dev Role model (may be the same wallet or distinct addresses):
+///      - `owner` — controls the AlphaGrid mandate (metadata, signer, payout recipient, ownership transfer).
+///      - `signer` — runtime execution key (e.g. trade intents / EIP-712); not used for mandate admin.
+///      - `payoutRecipient` — receives builder profit share from protocol payout modules.
 interface IAgentRegistry {
     // -------------------------------------------------------------------------
     // Types
@@ -27,14 +31,22 @@ interface IAgentRegistry {
 
     /// @notice On-chain agent record.
     struct Agent {
+        /// @notice Controls this AlphaGrid agent account (mandate admin).
         address owner;
+        /// @notice Runtime / execution signer for trading flows.
         address signer;
+        /// @notice Receives builder performance-fee payouts.
+        address payoutRecipient;
         address vault;
         Track track;
         AgentStatus status;
         string name;
         string metadataURI;
         uint64 createdAt;
+        /// @notice Whether a portable ERC-8004 identity is linked (id may be 0 per implementation).
+        bool hasERC8004Identity;
+        /// @notice ERC-8004 identity token id when `hasERC8004Identity` is true.
+        uint256 erc8004AgentId;
     }
 
     // -------------------------------------------------------------------------
@@ -56,11 +68,23 @@ interface IAgentRegistry {
 
     event AgentSignerUpdated(uint256 indexed agentId, address signer);
 
+    event AgentOwnershipTransferred(uint256 indexed agentId, address indexed from, address indexed to);
+
+    event PayoutRecipientUpdated(uint256 indexed agentId, address indexed payoutRecipient);
+
     event AgentPromoted(uint256 indexed agentId, address indexed vault, Track fromTrack, Track toTrack);
+
+    event ERC8004IdentityLinked(
+        uint256 indexed agentId,
+        address indexed erc8004IdentityRegistry,
+        uint256 erc8004ChainId,
+        uint256 erc8004AgentId,
+        address indexed owner
+    );
 
     event FeeManagerUpdated(address indexed feeManager);
 
-    event TrackConfigUpdated(address indexed trackConfig);
+    event VaultTrackRegistryUpdated(address indexed vaultTrackRegistry);
 
     event AllocationManagerUpdated(address indexed allocationManager);
 
@@ -69,12 +93,15 @@ interface IAgentRegistry {
     // -------------------------------------------------------------------------
 
     /// @notice Register an agent on behalf of `owner`.
+    /// @param linkERC8004 When true, links `erc8004AgentId` (may be 0); requires configured Identity Registry.
     function registerAgent(
         address owner,
         address vault,
         string calldata name,
         string calldata metadataURI,
-        address signer
+        address signer,
+        bool linkERC8004,
+        uint256 erc8004AgentId
     ) external returns (uint256 agentId);
 
     /// @notice Self-register an agent using an EIP-712 signature from `signer`.
@@ -83,6 +110,8 @@ interface IAgentRegistry {
         string calldata name,
         string calldata metadataURI,
         address signer,
+        bool linkERC8004,
+        uint256 erc8004AgentId,
         uint256 deadline,
         bytes calldata signature
     ) external returns (uint256 agentId);
@@ -94,8 +123,17 @@ interface IAgentRegistry {
     /// @notice Update agent metadata. Callable by the agent owner when not suspended.
     function updateAgentMetadata(uint256 agentId, string calldata metadataURI) external;
 
+    /// @notice Link a portable ERC-8004 identity to an agent. Callable once by the mandate owner, who must hold the NFT.
+    function linkERC8004Identity(uint256 agentId, uint256 erc8004AgentId) external;
+
     /// @notice Update the agent signer. Callable by the agent owner.
     function setAgentSigner(uint256 agentId, address signer) external;
+
+    /// @notice Transfer mandate ownership. Callable by the current owner.
+    function transferAgentOwnership(uint256 agentId, address newOwner) external;
+
+    /// @notice Set the address that receives builder performance fees. Callable by the agent owner.
+    function setPayoutRecipient(uint256 agentId, address payoutRecipient) external;
 
     /// @notice Set agent status. Callable by operators.
     function setAgentStatus(uint256 agentId, AgentStatus status) external;
@@ -117,5 +155,21 @@ interface IAgentRegistry {
 
     function signerOf(uint256 agentId) external view returns (address);
 
+    function payoutRecipientOf(uint256 agentId) external view returns (address);
+
+    function agentIdByERC8004(uint256 erc8004AgentId) external view returns (uint256 agentId);
+
+    function hasERC8004Identity(uint256 agentId) external view returns (bool);
+
+    /// @notice True when the agent owner currently holds the linked ERC-8004 identity NFT.
+    function isERC8004OwnerCurrent(uint256 agentId) external view returns (bool);
+
+    /// @notice True when agent may accrue builder performance fees (Active on Funded or Prime).
+    function isPayoutEligible(uint256 agentId) external view returns (bool);
+
     function getAgent(uint256 agentId) external view returns (Agent memory);
+
+    function erc8004IdentityRegistry() external view returns (address);
+
+    function erc8004ChainId() external view returns (uint256);
 }
