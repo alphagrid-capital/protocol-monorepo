@@ -4,6 +4,7 @@ import {
   WebStandardStreamableHTTPServerTransport,
 } from "@modelcontextprotocol/server";
 import { createAlpagridMcpServer } from "./server.js";
+import { runWithMcpRequest } from "./request-context.js";
 
 type McpSession = {
   server: McpServer;
@@ -45,7 +46,6 @@ async function createSession(): Promise<McpSession> {
 
   const transport = new WebStandardStreamableHTTPServerTransport({
     sessionIdGenerator: () => crypto.randomUUID(),
-    // Cursor expects SSE (POST stream + optional GET); JSON-only mode breaks reconnect.
     enableJsonResponse: false,
     onsessioninitialized: (sessionId) => {
       sessions.set(sessionId, { server, transport });
@@ -66,45 +66,42 @@ function jsonRpcError(status: number, code: number, message: string): Response {
   );
 }
 
-/**
- * Streamable HTTP MCP handler with one transport per session.
- * Avoids 409 Conflict from reusing a single global transport across clients/requests.
- */
 export async function handleMcpRequest(
   request: Request,
   parsedBody?: unknown,
 ): Promise<Response> {
-  const sessionHeader = request.headers.get("mcp-session-id");
+  return runWithMcpRequest(request, async () => {
+    const sessionHeader = request.headers.get("mcp-session-id");
 
-  if (request.method === "POST" && isInitializationBody(parsedBody)) {
-    const session = await createSession();
-    const response = await session.transport.handleRequest(request, {
-      parsedBody,
-    });
-    const sessionId = session.transport.sessionId;
-    if (sessionId && !sessions.has(sessionId)) {
-      sessions.set(sessionId, session);
+    if (request.method === "POST" && isInitializationBody(parsedBody)) {
+      const session = await createSession();
+      const response = await session.transport.handleRequest(request, {
+        parsedBody,
+      });
+      const sessionId = session.transport.sessionId;
+      if (sessionId && !sessions.has(sessionId)) {
+        sessions.set(sessionId, session);
+      }
+      return response;
     }
-    return response;
-  }
 
-  if (!sessionHeader) {
-    return jsonRpcError(
-      400,
-      -32_000,
-      "Bad Request: Mcp-Session-Id header is required",
-    );
-  }
+    if (!sessionHeader) {
+      return jsonRpcError(
+        400,
+        -32_000,
+        "Bad Request: Mcp-Session-Id header is required",
+      );
+    }
 
-  const session = sessions.get(sessionHeader);
-  if (!session) {
-    return jsonRpcError(404, -32_001, "Session not found");
-  }
+    const session = sessions.get(sessionHeader);
+    if (!session) {
+      return jsonRpcError(404, -32_001, "Session not found");
+    }
 
-  // Cursor may open a new GET SSE stream on reconnect; close the previous one first.
-  if (request.method === "GET") {
-    session.transport.closeStandaloneSSEStream();
-  }
+    if (request.method === "GET") {
+      session.transport.closeStandaloneSSEStream();
+    }
 
-  return session.transport.handleRequest(request, { parsedBody });
+    return session.transport.handleRequest(request, { parsedBody });
+  });
 }

@@ -12,6 +12,7 @@ export const OPENAPI_DOCUMENT_CONFIG = {
   tags: [
     { name: "System", description: "Health, discovery, and operational endpoints" },
     { name: "Vaults", description: "Thematic ERC-4626 vault catalog" },
+    { name: "Agents", description: "Agent registration via x402 and AgentRegistry" },
   ],
 };
 

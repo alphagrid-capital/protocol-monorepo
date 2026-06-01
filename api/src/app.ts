@@ -4,6 +4,7 @@ import { cors } from "hono/cors";
 import { handleMcpRequest } from "./mcp/handler.js";
 import { openApiJsonResponse } from "./openapi.js";
 import { registerDiscoveryRoutes } from "./routes/discovery.js";
+import { agentRoutes } from "./routes/agents.js";
 import { healthRoutes } from "./routes/health.js";
 import { vaultRoutes } from "./routes/vaults.js";
 
@@ -22,13 +23,23 @@ export function createApp(): OpenAPIHono {
         "Mcp-Session-Id",
         "mcp-session-id",
         "Last-Event-ID",
+        "X-PAYMENT",
+        "PAYMENT-SIGNATURE",
+        "payment-signature",
       ],
-      exposeHeaders: ["Mcp-Session-Id", "mcp-session-id", "MCP-Protocol-Version"],
+      exposeHeaders: [
+        "Mcp-Session-Id",
+        "mcp-session-id",
+        "MCP-Protocol-Version",
+        "X-PAYMENT-RESPONSE",
+        "payment-required",
+      ],
     }),
   );
 
   app.route("/", healthRoutes);
   app.route("/", vaultRoutes);
+  app.route("/", agentRoutes);
 
   registerDiscoveryRoutes(app);
 

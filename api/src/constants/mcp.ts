@@ -5,7 +5,11 @@ export function mcpDiscovery(requestUrl: string): McpDiscovery {
   return {
     method: "POST",
     url: absoluteUrl(requestUrl, "/mcp"),
-    note: "Streamable HTTP MCP (not in OpenAPI). Use an MCP client; mirrors vault list via alphagrid_list_vaults.",
-    tools: ["alphagrid_list_vaults"],
+    note: "Streamable HTTP MCP (not in OpenAPI). Agent registration uses x402 on POST /agents/register.",
+    tools: [
+      "alphagrid_list_vaults",
+      "alphagrid_get_agent_registration_quote",
+      "alphagrid_register_agent",
+    ],
   };
 }
