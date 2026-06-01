@@ -57,8 +57,7 @@ contract FeeManagerTest is BaseTest {
     }
 
     function test_SetAgentRegistry_EmitsEvent() public {
-        AgentRegistry newRegistry =
-            new AgentRegistry(deployer, feeManager, address(identityRegistry), block.chainid);
+        AgentRegistry newRegistry = new AgentRegistry(deployer, feeManager, address(identityRegistry), block.chainid);
 
         vm.expectEmit(true, false, false, false, address(feeManager));
         emit IFeeManager.AgentRegistryUpdated(address(newRegistry));
@@ -180,7 +179,6 @@ contract FeeManagerTest is BaseTest {
         feeManager.setTreasury(makeAddr("newTreasury"));
     }
 
-
     function test_PayRegistrationFeePrepaid_RelayerSelfRegisterSkipsTransfer() public {
         address relayer = makeAddr("relayer");
         address agentSigner = vm.addr(AGENT_SIGNER_PRIVATE_KEY);
@@ -192,9 +190,11 @@ contract FeeManagerTest is BaseTest {
         uint256 deadline = block.timestamp + 1 hours;
         bytes memory signature = _signSelfRegister(agentSigner, erc8004Id, deadline);
 
+        bytes32 paymentId = keccak256("x402-payment-relayer");
+
         vm.prank(relayer);
         uint256 agentId = registry.selfRegisterAgent(
-            vault, "Bot", "ipfs://bot", agentSigner, true, erc8004Id, deadline, signature
+            vault, "Bot", "ipfs://bot", agentSigner, true, erc8004Id, deadline, signature, paymentId
         );
 
         assertEq(agentId, 1);
@@ -270,5 +270,19 @@ contract FeeManagerTest is BaseTest {
                 active: active
             })
         );
+    }
+
+    function test_X402PaymentId_ReplayReverts() public {
+        bytes32 paymentId = keccak256("x402-payment-replay");
+
+        vm.prank(deployer);
+        feeManager.setRegistrationFeeRelayer(makeAddr("relayer"));
+
+        vm.prank(address(registry));
+        feeManager.payRegistrationFeePrepaid(1, paymentId);
+
+        vm.prank(address(registry));
+        vm.expectRevert(abi.encodeWithSelector(FeeManager.X402PaymentAlreadyConsumed.selector, paymentId));
+        feeManager.payRegistrationFeePrepaid(2, paymentId);
     }
 }

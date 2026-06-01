@@ -56,6 +56,7 @@ export const AgentRegistrationQuoteSchema = z.object({
 export const AgentRegistrationResponseSchema = z.object({
   mode: z.enum(["mock", "live"]),
   agentId: z.string().nullable(),
+  transactionHash: hexSchema.nullable(),
   transaction: z
     .object({
       to: addressSchema,

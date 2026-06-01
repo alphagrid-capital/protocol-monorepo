@@ -1,4 +1,3 @@
-import { paymentMiddlewareFromConfig } from "@x402/hono";
 import { HTTPFacilitatorClient, x402HTTPResourceServer, x402ResourceServer } from "@x402/core/server";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
 import type { HTTPAdapter, HTTPProcessResult, RoutesConfig } from "@x402/core/server";
@@ -8,13 +7,18 @@ import {
   type AgentRegistrationConfig,
   loadAgentRegistrationConfig,
 } from "../config/agent-registration.js";
+import { fetchRegistrationFeeUsd } from "./registration-fee.js";
+import { deriveX402PaymentId } from "./registration-payment-id.js";
+import {
+  clearRegistrationPaymentId,
+  setRegistrationPaymentId,
+} from "./registration-request-context.js";
+import { getWorkerEnv } from "./worker-env.js";
 import { FetchRequestAdapter } from "./fetch-request-adapter.js";
 
 const REGISTER_ROUTE = "POST /agents/register";
 
-let cachedHttpServer: x402HTTPResourceServer | null | undefined;
-
-function buildRoutes(config: AgentRegistrationConfig): RoutesConfig {
+function buildRoutes(config: AgentRegistrationConfig, priceUsd: string): RoutesConfig {
   if (!config.x402.payTo) {
     return {};
   }
@@ -24,7 +28,7 @@ function buildRoutes(config: AgentRegistrationConfig): RoutesConfig {
       accepts: [
         {
           scheme: "exact",
-          price: config.registrationFeeUsd,
+          price: priceUsd,
           network: config.x402.network as Network,
           payTo: config.x402.payTo,
         },
@@ -35,7 +39,10 @@ function buildRoutes(config: AgentRegistrationConfig): RoutesConfig {
   };
 }
 
-function buildHttpServer(config: AgentRegistrationConfig): x402HTTPResourceServer | null {
+async function buildHttpServer(
+  config: AgentRegistrationConfig,
+  priceUsd: string,
+): Promise<x402HTTPResourceServer | null> {
   if (!config.x402.enabled || !config.x402.payTo) return null;
 
   const facilitator = new HTTPFacilitatorClient({ url: config.x402.facilitatorUrl });
@@ -44,40 +51,21 @@ function buildHttpServer(config: AgentRegistrationConfig): x402HTTPResourceServe
     new ExactEvmScheme(),
   );
 
-  return new x402HTTPResourceServer(resourceServer, buildRoutes(config));
-}
-
-export function getRegistrationX402HttpServer(): x402HTTPResourceServer | null {
-  if (cachedHttpServer !== undefined) return cachedHttpServer;
-  const config = loadAgentRegistrationConfig();
-  cachedHttpServer = buildHttpServer(config);
-  return cachedHttpServer;
-}
-
-export function createRegistrationPaymentMiddleware(): MiddlewareHandler | null {
-  const config = loadAgentRegistrationConfig();
-  if (!config.x402.enabled || !config.x402.payTo) return null;
-
-  const routes = buildRoutes(config);
-  if (Object.keys(routes).length === 0) return null;
-
-  return paymentMiddlewareFromConfig(
-    routes,
-    new HTTPFacilitatorClient({ url: config.x402.facilitatorUrl }),
-    [{ network: config.x402.network as Network, server: new ExactEvmScheme() }],
-  );
+  return new x402HTTPResourceServer(resourceServer, buildRoutes(config, priceUsd));
 }
 
 export async function verifyRegistrationPayment(
   request: Request,
   parsedBody?: unknown,
+  env: Record<string, string | undefined> = getWorkerEnv(),
 ): Promise<{ ok: true } | { ok: false; response: Response }> {
-  const config = loadAgentRegistrationConfig();
+  const config = loadAgentRegistrationConfig(env);
   if (!config.x402.enabled || !config.x402.payTo) {
     return { ok: true };
   }
 
-  const httpServer = getRegistrationX402HttpServer();
+  const priceUsd = await fetchRegistrationFeeUsd(config);
+  const httpServer = await buildHttpServer(config, priceUsd);
   if (!httpServer) return { ok: true };
 
   const adapter: HTTPAdapter = new FetchRequestAdapter(
@@ -105,5 +93,42 @@ export async function verifyRegistrationPayment(
     };
   }
 
+  try {
+    setRegistrationPaymentId(deriveX402PaymentId(request));
+  } catch {
+    return {
+      ok: false,
+      response: Response.json(
+        { error: "x402 payment verified but payment id could not be derived" },
+        { status: 500 },
+      ),
+    };
+  }
+
   return { ok: true };
+}
+
+export function createRegistrationPaymentMiddleware(): MiddlewareHandler | null {
+  return async (c, next) => {
+    const config = loadAgentRegistrationConfig(getWorkerEnv());
+    if (!config.x402.enabled || !config.x402.payTo) {
+      return next();
+    }
+
+    let parsedBody: unknown;
+    if (c.req.header("content-type")?.includes("application/json")) {
+      parsedBody = await c.req.json().catch(() => undefined);
+    }
+
+    const payment = await verifyRegistrationPayment(c.req.raw, parsedBody, getWorkerEnv());
+    if (!payment.ok) {
+      return payment.response;
+    }
+
+    try {
+      await next();
+    } finally {
+      clearRegistrationPaymentId();
+    }
+  };
 }

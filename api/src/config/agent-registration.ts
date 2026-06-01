@@ -11,6 +11,8 @@ export type AgentRegistrationConfig = {
   treasury: `0x${string}` | null;
   registrationFeeAtomic: bigint;
   registrationFeeUsd: string;
+  registrationFeeRelayer: `0x${string}` | null;
+  relayerPrivateKey: `0x${string}` | null;
   x402: {
     enabled: boolean;
     payTo: `0x${string}` | null;
@@ -24,7 +26,14 @@ function parseAddress(value: string | undefined): `0x${string}` | null {
   return value as `0x${string}`;
 }
 
-function parseUsdFromAtomic(amount: bigint, decimals = 6): string {
+function parsePrivateKey(value: string | undefined): `0x${string}` | null {
+  if (!value) return null;
+  const normalized = value.startsWith("0x") ? value : `0x${value}`;
+  if (!/^0x[a-fA-F0-9]{64}$/.test(normalized)) return null;
+  return normalized as `0x${string}`;
+}
+
+export function atomicUsdcToUsdString(amount: bigint, decimals = 6): string {
   const whole = amount / 10n ** BigInt(decimals);
   const frac = amount % 10n ** BigInt(decimals);
   if (frac === 0n) return `$${whole}`;
@@ -52,7 +61,9 @@ export function loadAgentRegistrationConfig(
     rpcUrl: env.RPC_URL ?? null,
     treasury,
     registrationFeeAtomic: feeAtomic,
-    registrationFeeUsd: env.REGISTRATION_FEE_USD ?? parseUsdFromAtomic(feeAtomic),
+    registrationFeeUsd: env.REGISTRATION_FEE_USD ?? atomicUsdcToUsdString(feeAtomic),
+    registrationFeeRelayer: parseAddress(env.REGISTRATION_FEE_RELAYER_ADDRESS),
+    relayerPrivateKey: parsePrivateKey(env.RELAYER_PRIVATE_KEY),
     x402: {
       enabled: Boolean(payTo && env.X402_ENABLED !== "false"),
       payTo,

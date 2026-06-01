@@ -10,6 +10,7 @@ import {
   registerAgent,
 } from "../services/agent-registration.js";
 import { createRegistrationPaymentMiddleware } from "../lib/x402-agent-registration.js";
+import { getWorkerEnv } from "../lib/worker-env.js";
 
 const quoteRoute = createRoute({
   method: "get",
@@ -67,14 +68,14 @@ if (paymentMiddleware) {
 
 agentRoutes.openapi(quoteRoute, async (c) => {
   const signer = c.req.query("signer") as `0x${string}` | undefined;
-  const quote = await getAgentRegistrationQuote(signer);
+  const quote = await getAgentRegistrationQuote(signer, getWorkerEnv());
   return c.json(quote, 200);
 });
 
 agentRoutes.openapi(registerRoute, async (c) => {
   try {
     const body = c.req.valid("json");
-    const result = await registerAgent(body);
+    const result = await registerAgent(body, getWorkerEnv());
     return c.json(result, 200);
   } catch (error) {
     if (error instanceof AgentRegistrationError) {

@@ -56,7 +56,8 @@ contract AgentRegistryTest is BaseTest {
         uint256 erc8004Id = AgentTestLib.mintERC8004(identityRegistry, agentOwner);
 
         vm.prank(operator);
-        uint256 agentId = registry.registerAgent(agentOwner, vault, AGENT_NAME, METADATA_URI, agentSigner, true, erc8004Id);
+        uint256 agentId =
+            registry.registerAgent(agentOwner, vault, AGENT_NAME, METADATA_URI, agentSigner, true, erc8004Id);
 
         assertEq(agentId, 1);
         assertEq(feeManager.paymentCount(), 1);
@@ -99,7 +100,7 @@ contract AgentRegistryTest is BaseTest {
 
         vm.prank(agentSigner);
         uint256 agentId = registry.selfRegisterAgent(
-            vault, AGENT_NAME, METADATA_URI, agentSigner, true, erc8004Id, deadline, signature
+            vault, AGENT_NAME, METADATA_URI, agentSigner, true, erc8004Id, deadline, signature, bytes32(0)
         );
 
         assertEq(agentId, 1);
@@ -117,7 +118,9 @@ contract AgentRegistryTest is BaseTest {
             _signSelfRegister(vault, AGENT_NAME, METADATA_URI, agentSigner, false, erc8004Id, 0, deadline);
 
         vm.expectRevert(AgentRegistry.InvalidSignature.selector);
-        registry.selfRegisterAgent(vault, AGENT_NAME, METADATA_URI, bob, false, erc8004Id, deadline, signature);
+        registry.selfRegisterAgent(
+            vault, AGENT_NAME, METADATA_URI, bob, false, erc8004Id, deadline, signature, bytes32(0)
+        );
     }
 
     function test_RevertWhen_SelfRegisterExpiredDeadline() public {
@@ -127,7 +130,9 @@ contract AgentRegistryTest is BaseTest {
             _signSelfRegister(vault, AGENT_NAME, METADATA_URI, agentSigner, false, erc8004Id, 0, deadline);
 
         vm.expectRevert(AgentRegistry.ExpiredDeadline.selector);
-        registry.selfRegisterAgent(vault, AGENT_NAME, METADATA_URI, agentSigner, false, erc8004Id, deadline, signature);
+        registry.selfRegisterAgent(
+            vault, AGENT_NAME, METADATA_URI, agentSigner, false, erc8004Id, deadline, signature, bytes32(0)
+        );
     }
 
     function test_ERC8004ChainId_IsImmutableFromConstructor() public view {
@@ -408,8 +413,7 @@ contract AgentRegistryTest is BaseTest {
     }
 
     function test_RevertWhen_VaultTrackRegistryNotSet() public {
-        AgentRegistry freshRegistry =
-            new AgentRegistry(deployer, feeManager, address(identityRegistry), block.chainid);
+        AgentRegistry freshRegistry = new AgentRegistry(deployer, feeManager, address(identityRegistry), block.chainid);
         uint256 erc8004Id = AgentTestLib.mintERC8004(identityRegistry, agentOwner);
 
         vm.startPrank(deployer);
@@ -486,7 +490,7 @@ contract AgentRegistryTest is BaseTest {
         vm.prank(agentSigner);
         vm.expectRevert(Pausable.EnforcedPause.selector);
         registry.selfRegisterAgent(
-            vault, AGENT_NAME, METADATA_URI, agentSigner, false, selfErc8004Id, deadline, signature
+            vault, AGENT_NAME, METADATA_URI, agentSigner, false, selfErc8004Id, deadline, signature, bytes32(0)
         );
     }
 

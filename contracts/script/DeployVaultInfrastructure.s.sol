@@ -18,6 +18,7 @@ contract DeployVaultInfrastructure is Script {
     bytes32 private constant MANDATE_TECH = "TECH";
     bytes32 private constant MANDATE_VOLATILITY = "VOLATILITY";
     bytes32 private constant MANDATE_MACRO = "MACRO";
+
     struct AgentCore {
         FeeManager feeManager;
         VaultTrackRegistry vaultTrackRegistry;
@@ -73,10 +74,7 @@ contract DeployVaultInfrastructure is Script {
         _log(core, vaults);
     }
 
-    function _deployAgentCore(address admin, address treasury, address usdc)
-        private
-        returns (AgentCore memory core)
-    {
+    function _deployAgentCore(address admin, address treasury, address usdc) private returns (AgentCore memory core) {
         core.feeManager = new FeeManager(admin, treasury, usdc);
         core.vaultTrackRegistry = new VaultTrackRegistry(admin);
         core.tokenRegistry = new TokenRegistry(admin);

@@ -32,8 +32,8 @@ yarn deploy      # Deploy to Cloudflare (requires account auth)
 | `GET` | `/llms.txt` | LLM-oriented index ([llms.txt spec](https://llmstxt.org/)) |
 | `GET` | `/health` | Liveness probe |
 | `GET` | `/vaults` | Mock vault catalog (`?format=md` for markdown) |
-| `GET` | `/agents/register/quote` | Registration fee, EIP-712, and x402 payment terms |
-| `POST` | `/agents/register` | Self-register on AgentRegistry (x402-gated when configured) |
+| `GET` | `/agents/register/quote` | EIP-712 + x402 registration quote (fee read from chain when configured) |
+| `POST` | `/agents/register` | x402 payment + relayer submits `selfRegisterAgent` atomically |
 | `GET` | `/docs` | Swagger UI (humans; poor fit for URL paste in chat) |
 | `GET` | `/openapi.json` | OpenAPI 3.1 (Custom GPT Actions) |
 | `POST` | `/mcp` | MCP Streamable HTTP (stateless JSON) |

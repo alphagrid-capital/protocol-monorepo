@@ -14,6 +14,7 @@ import {
 import { listVaults } from "../services/vaults.js";
 import { ListVaultsResponseSchema } from "../schemas/vault.js";
 import { getActiveMcpRequest } from "./request-context.js";
+import { getWorkerEnv } from "../lib/worker-env.js";
 
 const MCP_SERVER_NAME = "alphagrid-mcp-server";
 const MCP_SERVER_VERSION = "0.2.0";
@@ -69,7 +70,7 @@ export function createAlpagridMcpServer(): McpServer {
       },
     },
     async ({ signer }) => {
-      const output = await getAgentRegistrationQuote(signer as `0x${string}` | undefined);
+      const output = await getAgentRegistrationQuote(signer as `0x${string}` | undefined, getWorkerEnv());
       return {
         content: [{ type: "text", text: JSON.stringify(output, null, 2) }],
         structuredContent: output as unknown as Record<string, unknown>,
@@ -95,7 +96,7 @@ export function createAlpagridMcpServer(): McpServer {
     async (input) => {
       const mcpRequest = getActiveMcpRequest();
       if (mcpRequest) {
-        const payment = await verifyRegistrationPayment(mcpRequest, input);
+        const payment = await verifyRegistrationPayment(mcpRequest, input, getWorkerEnv());
         if (!payment.ok) {
           const body = await payment.response.text();
           return {
@@ -111,7 +112,7 @@ export function createAlpagridMcpServer(): McpServer {
       }
 
       try {
-        const output = await registerAgent(input);
+        const output = await registerAgent(input, getWorkerEnv());
         return {
           content: [{ type: "text", text: JSON.stringify(output, null, 2) }],
           structuredContent: output as unknown as Record<string, unknown>,

@@ -1,15 +1,20 @@
 import {
   type Address,
   type Hex,
-  encodeFunctionData,
   createPublicClient,
+  createWalletClient,
+  decodeEventLog,
   http,
 } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
 import { loadAgentRegistrationConfig } from "../config/agent-registration.js";
 import {
   verifySelfRegisterSignature,
   type SelfRegisterTypedData,
 } from "../lib/eip712-agent-registration.js";
+import { fetchRegistrationFeeAtomic, fetchRegistrationFeeUsd } from "../lib/registration-fee.js";
+import { getRegistrationPaymentId } from "../lib/registration-request-context.js";
+import { getWorkerEnv } from "../lib/worker-env.js";
 import type {
   AgentRegistrationQuote,
   AgentRegistrationRequest,
@@ -30,6 +35,7 @@ const agentRegistryAbi = [
       { name: "erc8004AgentId", type: "uint256" },
       { name: "deadline", type: "uint256" },
       { name: "signature", type: "bytes" },
+      { name: "x402PaymentId", type: "bytes32" },
     ],
     outputs: [{ name: "agentId", type: "uint256" }],
   },
@@ -39,6 +45,28 @@ const agentRegistryAbi = [
     stateMutability: "view",
     inputs: [{ name: "owner", type: "address" }],
     outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    type: "event",
+    name: "AgentRegistered",
+    inputs: [
+      { name: "agentId", type: "uint256", indexed: true },
+      { name: "owner", type: "address", indexed: true },
+      { name: "vault", type: "address", indexed: true },
+      { name: "signer", type: "address", indexed: false },
+      { name: "name", type: "string", indexed: false },
+      { name: "metadataURI", type: "string", indexed: false },
+    ],
+  },
+] as const;
+
+const feeManagerRelayerAbi = [
+  {
+    type: "function",
+    name: "registrationFeeRelayer",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "address" }],
   },
 ] as const;
 
@@ -72,6 +100,18 @@ function parseRequest(body: AgentRegistrationRequest): SelfRegisterTypedData & {
   };
 }
 
+function chainConfig(config: ReturnType<typeof loadAgentRegistrationConfig>) {
+  if (!config.rpcUrl) {
+    throw new AgentRegistrationError("RPC_URL is not configured", 503);
+  }
+  return {
+    id: config.chainId,
+    name: "alphagrid",
+    nativeCurrency: { decimals: 18, name: "ETH", symbol: "ETH" },
+    rpcUrls: { default: { http: [config.rpcUrl] } },
+  } as const;
+}
+
 async function readSignerNonce(
   registry: Address,
   rpcUrl: string,
@@ -79,7 +119,12 @@ async function readSignerNonce(
   signer: Address,
 ): Promise<bigint> {
   const client = createPublicClient({
-    chain: { id: chainId, name: "alphagrid", nativeCurrency: { decimals: 18, name: "ETH", symbol: "ETH" }, rpcUrls: { default: { http: [rpcUrl] } } },
+    chain: {
+      id: chainId,
+      name: "alphagrid",
+      nativeCurrency: { decimals: 18, name: "ETH", symbol: "ETH" },
+      rpcUrls: { default: { http: [rpcUrl] } },
+    },
     transport: http(rpcUrl),
   });
 
@@ -91,18 +136,114 @@ async function readSignerNonce(
   });
 }
 
+async function assertRelayerConfigured(
+  config: ReturnType<typeof loadAgentRegistrationConfig>,
+  relayerAddress: Address,
+): Promise<void> {
+  if (!config.feeManager || !config.rpcUrl) {
+    throw new AgentRegistrationError("FEE_MANAGER_ADDRESS or RPC_URL is not configured", 503);
+  }
+
+  const client = createPublicClient({
+    chain: chainConfig(config),
+    transport: http(config.rpcUrl),
+  });
+
+  const onChainRelayer = await client.readContract({
+    address: config.feeManager,
+    abi: feeManagerRelayerAbi,
+    functionName: "registrationFeeRelayer",
+  });
+
+  if (onChainRelayer.toLowerCase() !== relayerAddress.toLowerCase()) {
+    throw new AgentRegistrationError(
+      "Relayer wallet does not match FeeManager.registrationFeeRelayer",
+      503,
+    );
+  }
+}
+
+async function submitRelayerRegistration(params: {
+  config: ReturnType<typeof loadAgentRegistrationConfig>;
+  parsed: SelfRegisterTypedData & { signature: Hex };
+  x402PaymentId: Hex;
+}): Promise<{ agentId: string; transactionHash: Hex }> {
+  const { config, parsed, x402PaymentId } = params;
+  if (!config.agentRegistry || !config.relayerPrivateKey) {
+    throw new AgentRegistrationError("Relayer is not configured", 503);
+  }
+
+  const account = privateKeyToAccount(config.relayerPrivateKey);
+  await assertRelayerConfigured(config, account.address);
+
+  const chain = chainConfig(config);
+  const publicClient = createPublicClient({
+    chain,
+    transport: http(config.rpcUrl!),
+  });
+  const walletClient = createWalletClient({
+    account,
+    chain,
+    transport: http(config.rpcUrl!),
+  });
+
+  const hash = await walletClient.writeContract({
+    address: config.agentRegistry,
+    abi: agentRegistryAbi,
+    functionName: "selfRegisterAgent",
+    args: [
+      parsed.vault,
+      parsed.name,
+      parsed.metadataURI,
+      parsed.signer,
+      parsed.linkERC8004,
+      parsed.erc8004AgentId,
+      parsed.deadline,
+      parsed.signature,
+      x402PaymentId,
+    ],
+  });
+
+  const receipt = await publicClient.waitForTransactionReceipt({ hash });
+  if (receipt.status !== "success") {
+    throw new AgentRegistrationError("On-chain registration transaction reverted", 502);
+  }
+
+  let agentId: bigint | null = null;
+  for (const log of receipt.logs) {
+    try {
+      const decoded = decodeEventLog({
+        abi: agentRegistryAbi,
+        data: log.data,
+        topics: log.topics,
+      });
+      if (decoded.eventName === "AgentRegistered") {
+        agentId = decoded.args.agentId;
+        break;
+      }
+    } catch {
+      // unrelated log
+    }
+  }
+
+  if (agentId === null) {
+    throw new AgentRegistrationError("AgentRegistered event not found in receipt", 502);
+  }
+
+  return { agentId: agentId.toString(), transactionHash: hash };
+}
+
 export async function getAgentRegistrationQuote(
   signer?: Address,
+  env: Record<string, string | undefined> = getWorkerEnv(),
 ): Promise<AgentRegistrationQuote> {
-  const config = loadAgentRegistrationConfig();
+  const config = loadAgentRegistrationConfig(env);
+  const feeAtomic = await fetchRegistrationFeeAtomic(config);
+  const feeUsd = await fetchRegistrationFeeUsd(config);
+
   let signerNonce: string | null = null;
 
-  if (
-    signer &&
-    config.mode === "live" &&
-    config.agentRegistry &&
-    config.rpcUrl
-  ) {
+  if (signer && config.mode === "live" && config.agentRegistry && config.rpcUrl) {
     const nonce = await readSignerNonce(
       config.agentRegistry,
       config.rpcUrl,
@@ -117,10 +258,10 @@ export async function getAgentRegistrationQuote(
   return {
     mode: config.mode,
     registrationFee: {
-      amount: config.registrationFeeAtomic.toString(),
+      amount: feeAtomic.toString(),
       assetSymbol: "USDC",
       decimals: 6,
-      displayUsd: config.registrationFeeUsd,
+      displayUsd: feeUsd,
     },
     x402: {
       enabled: config.x402.enabled && config.x402.payTo !== null,
@@ -145,8 +286,9 @@ export async function getAgentRegistrationQuote(
 
 export async function registerAgent(
   body: AgentRegistrationRequest,
+  env: Record<string, string | undefined> = getWorkerEnv(),
 ): Promise<AgentRegistrationResponse> {
-  const config = loadAgentRegistrationConfig();
+  const config = loadAgentRegistrationConfig(env);
   const parsed = parseRequest(body);
 
   if (config.mode === "live" && config.agentRegistry && config.rpcUrl) {
@@ -174,9 +316,10 @@ export async function registerAgent(
     return {
       mode: "mock",
       agentId: "1",
+      transactionHash: null,
       transaction: null,
       message:
-        "Mock registration accepted (signature check skipped). Configure AGENT_REGISTRY_ADDRESS and RPC_URL for live calldata.",
+        "Mock registration accepted (signature check skipped). Configure AGENT_REGISTRY_ADDRESS and RPC_URL for live registration.",
     };
   }
 
@@ -184,32 +327,48 @@ export async function registerAgent(
     throw new AgentRegistrationError("AGENT_REGISTRY_ADDRESS is not configured", 503);
   }
 
-  const data = encodeFunctionData({
-    abi: agentRegistryAbi,
-    functionName: "selfRegisterAgent",
-    args: [
-      parsed.vault,
-      parsed.name,
-      parsed.metadataURI,
-      parsed.signer,
-      parsed.linkERC8004,
-      parsed.erc8004AgentId,
-      parsed.deadline,
-      parsed.signature,
-    ],
-  });
+  const x402PaymentId = getRegistrationPaymentId();
+  const relayerSubmit =
+    config.x402.enabled &&
+    config.relayerPrivateKey !== null &&
+    x402PaymentId !== null;
+
+  if (config.x402.enabled && !x402PaymentId) {
+    throw new AgentRegistrationError(
+      "x402 payment is required before registration (missing payment proof)",
+      402,
+    );
+  }
+
+  if (relayerSubmit) {
+    const { agentId, transactionHash } = await submitRelayerRegistration({
+      config,
+      parsed,
+      x402PaymentId: x402PaymentId!,
+    });
+
+    return {
+      mode: "live",
+      agentId,
+      transactionHash,
+      transaction: null,
+      message: "Agent registered on-chain by relayer after x402 fee settlement.",
+    };
+  }
+
+  if (config.x402.enabled) {
+    throw new AgentRegistrationError(
+      "RELAYER_PRIVATE_KEY is not configured; cannot submit registration after x402 payment",
+      503,
+    );
+  }
 
   return {
     mode: "live",
     agentId: null,
-    transaction: {
-      to: config.agentRegistry,
-      data,
-      chainId: config.chainId,
-      description:
-        "Submit via relayer or agent wallet. When using x402, set FeeManager.registrationFeeRelayer to the relayer and fund treasury via x402 first.",
-    },
+    transactionHash: null,
+    transaction: null,
     message:
-      "Registration calldata ready. Submit on-chain (relayer recommended after x402 fee settlement).",
+      "x402 is disabled. Enable x402 and configure RELAYER_PRIVATE_KEY for atomic registration.",
   };
 }

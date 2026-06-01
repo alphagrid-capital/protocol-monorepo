@@ -7,6 +7,7 @@ import { registerDiscoveryRoutes } from "./routes/discovery.js";
 import { agentRoutes } from "./routes/agents.js";
 import { healthRoutes } from "./routes/health.js";
 import { vaultRoutes } from "./routes/vaults.js";
+import type { WorkerEnv } from "./types/worker-env.js";
 
 export function createApp(): OpenAPIHono {
   const app = new OpenAPIHono();
@@ -62,7 +63,7 @@ export function createApp(): OpenAPIHono {
     if (contentType.includes("application/json")) {
       parsedBody = await c.req.json().catch(() => undefined);
     }
-    return handleMcpRequest(c.req.raw, parsedBody);
+    return handleMcpRequest(c.req.raw, parsedBody, c.env as WorkerEnv);
   });
 
   app.notFound((c) =>

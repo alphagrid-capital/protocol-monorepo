@@ -15,4 +15,17 @@ head_sampling_rate = 1
 enabled = true
 head_sampling_rate = 1
 
+# Agent registration (vars; set secrets in dashboard / `wrangler secret put`)
+[vars]
+# AGENT_REGISTRY_ADDRESS = "0x..."
+# FEE_MANAGER_ADDRESS = "0x..."
+# TREASURY_ADDRESS = "0x..."
+# RPC_URL = "https://..."
+# CHAIN_ID = "84532"
+# REGISTRATION_FEE_RELAYER_ADDRESS = "0x..."
+# X402_PAY_TO = "0x..."
+# X402_NETWORK = "eip155:84532"
+# X402_FACILITATOR_URL = "https://x402.org/facilitator"
+# RELAYER_PRIVATE_KEY — use `wrangler secret put RELAYER_PRIVATE_KEY` (never commit)
+
 # Routes, bindings (KV, D1, secrets), and environments are added when needed.

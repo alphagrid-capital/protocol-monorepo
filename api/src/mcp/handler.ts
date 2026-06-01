@@ -5,6 +5,8 @@ import {
 } from "@modelcontextprotocol/server";
 import { createAlpagridMcpServer } from "./server.js";
 import { runWithMcpRequest } from "./request-context.js";
+import { runWithWorkerEnv } from "../lib/worker-env.js";
+import type { WorkerEnv } from "../types/worker-env.js";
 
 type McpSession = {
   server: McpServer;
@@ -69,8 +71,9 @@ function jsonRpcError(status: number, code: number, message: string): Response {
 export async function handleMcpRequest(
   request: Request,
   parsedBody?: unknown,
+  env: WorkerEnv = {},
 ): Promise<Response> {
-  return runWithMcpRequest(request, async () => {
+  return runWithWorkerEnv(env, () => runWithMcpRequest(request, async () => {
     const sessionHeader = request.headers.get("mcp-session-id");
 
     if (request.method === "POST" && isInitializationBody(parsedBody)) {
@@ -103,5 +106,5 @@ export async function handleMcpRequest(
     }
 
     return session.transport.handleRequest(request, { parsedBody });
-  });
+  }));
 }

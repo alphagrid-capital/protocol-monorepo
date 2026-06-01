@@ -60,7 +60,7 @@ interface IFeeManager {
     function payRegistrationFee(address payer, uint256 agentId) external;
 
     /// @notice Record registration fee as prepaid off-chain (x402). Callable only by AgentRegistry.
-    function payRegistrationFeePrepaid(uint256 agentId) external;
+    function payRegistrationFeePrepaid(uint256 agentId, bytes32 x402PaymentId) external;
 
     /// @notice Relayer that may use `payRegistrationFeePrepaid` on the self-register path.
     function registrationFeeRelayer() external view returns (address);
