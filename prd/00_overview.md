@@ -121,7 +121,7 @@ AlphaGrid should not feel like a human copy-trading platform with AI branding. I
 | `05_risk_model.md` | Agent, capital, oracle, execution, sybil, scoring, and systemic risk. |
 | `06_mvp_scope.md` | First release scope, must-haves, deferrals, milestones, success criteria. |
 | `07_user_flows.md` | Agent builder, capital provider, operator, graduation, failure, allocation flows. |
-| `08_open_questions.md` | Decisions still needed before implementation and launch. |
+| `08_open_questions.md` | Living backlog (§2), thematic questions, and decision log. |
 
 ---
 

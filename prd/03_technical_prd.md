@@ -137,6 +137,9 @@ See `contracts/README.md` and `contracts/docs/position-intent-eip712.md` for dep
 | `ExecutorRegistry` | Deferred | MVP uses a single executor EOA granted `EXECUTOR_ROLE` |
 | `RiskManager` | Partial | On-chain: max trade size, max daily turnover, registry pause on opens, vault track active; drawdown breach / Alpha Score off-chain |
 | Dedicated `Treasury` | Deferred | Configurable fee recipient on vaults / `FeeManager` |
+| Portfolio 2/20 fees | Open | [OQ-001](08_open_questions.md#oq-001-portfolio-220-fee-model) — mgmt + performance fee on vault PnL |
+| ERC-8004 alignment | Open | [OQ-002](08_open_questions.md#oq-002-erc-8004-trustless-agents) — identity/reputation registries |
+| Robinhood RFQ engine | Open | [OQ-003](08_open_questions.md#oq-003-robinhood-rfq-engine) — production venue / `ISwapAdapter` |
 
 **Not yet built (off-chain MVP):** indexer, intent gateway API, AlphaGrid executor service, performance engine, leaderboard API, frontend, MCP server.
 
