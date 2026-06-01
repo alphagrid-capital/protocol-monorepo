@@ -7,16 +7,19 @@ import {
   type AgentRegistrationConfig,
   loadAgentRegistrationConfig,
 } from "../config/agent-registration.js";
-import { fetchRegistrationFeeUsd } from "./registration-fee.js";
+import { fetchRegistrationFeeAtomic, fetchRegistrationFeeUsd } from "./registration-fee.js";
 import { deriveX402PaymentId } from "./registration-payment-id.js";
 import {
-  clearRegistrationPaymentId,
+  clearRegistrationRequestState,
   setRegistrationPaymentId,
+  stashRegistrationBody,
 } from "./registration-request-context.js";
 import { getWorkerEnv } from "./worker-env.js";
 import { FetchRequestAdapter } from "./fetch-request-adapter.js";
 
 const REGISTER_ROUTE = "POST /agents/register";
+export const ZERO_X402_PAYMENT_ID =
+  "0x0000000000000000000000000000000000000000000000000000000000000000" as const;
 
 function buildRoutes(config: AgentRegistrationConfig, priceUsd: string): RoutesConfig {
   if (!config.x402.payTo) {
@@ -64,6 +67,12 @@ export async function verifyRegistrationPayment(
     return { ok: true };
   }
 
+  const feeAtomic = await fetchRegistrationFeeAtomic(config);
+  if (feeAtomic === 0n) {
+    setRegistrationPaymentId(ZERO_X402_PAYMENT_ID);
+    return { ok: true };
+  }
+
   const priceUsd = await fetchRegistrationFeeUsd(config);
   const httpServer = await buildHttpServer(config, priceUsd);
   if (!httpServer) return { ok: true };
@@ -108,7 +117,7 @@ export async function verifyRegistrationPayment(
   return { ok: true };
 }
 
-export function createRegistrationPaymentMiddleware(): MiddlewareHandler | null {
+export function createRegistrationPaymentMiddleware(): MiddlewareHandler {
   return async (c, next) => {
     const config = loadAgentRegistrationConfig(getWorkerEnv());
     if (!config.x402.enabled || !config.x402.payTo) {
@@ -118,17 +127,19 @@ export function createRegistrationPaymentMiddleware(): MiddlewareHandler | null 
     let parsedBody: unknown;
     if (c.req.header("content-type")?.includes("application/json")) {
       parsedBody = await c.req.json().catch(() => undefined);
+      stashRegistrationBody(parsedBody);
     }
 
     const payment = await verifyRegistrationPayment(c.req.raw, parsedBody, getWorkerEnv());
     if (!payment.ok) {
+      clearRegistrationRequestState();
       return payment.response;
     }
 
     try {
       await next();
     } finally {
-      clearRegistrationPaymentId();
+      clearRegistrationRequestState();
     }
   };
 }

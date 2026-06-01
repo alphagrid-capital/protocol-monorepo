@@ -6,6 +6,7 @@ import {
   AgentRegistrationResponseSchema,
 } from "../schemas/agent.js";
 import { verifyRegistrationPayment } from "../lib/x402-agent-registration.js";
+import { clearRegistrationRequestState } from "../lib/registration-request-context.js";
 import {
   AgentRegistrationError,
   getAgentRegistrationQuote,
@@ -95,23 +96,23 @@ export function createAlpagridMcpServer(): McpServer {
     },
     async (input) => {
       const mcpRequest = getActiveMcpRequest();
-      if (mcpRequest) {
-        const payment = await verifyRegistrationPayment(mcpRequest, input, getWorkerEnv());
-        if (!payment.ok) {
-          const body = await payment.response.text();
-          return {
-            content: [
-              {
-                type: "text",
-                text: `x402 payment required.\n\n${body}`,
-              },
-            ],
-            isError: true,
-          };
-        }
-      }
-
       try {
+        if (mcpRequest) {
+          const payment = await verifyRegistrationPayment(mcpRequest, input, getWorkerEnv());
+          if (!payment.ok) {
+            const body = await payment.response.text();
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: `x402 payment required.\n\n${body}`,
+                },
+              ],
+              isError: true,
+            };
+          }
+        }
+
         const output = await registerAgent(input, getWorkerEnv());
         return {
           content: [{ type: "text", text: JSON.stringify(output, null, 2) }],
@@ -128,6 +129,8 @@ export function createAlpagridMcpServer(): McpServer {
           content: [{ type: "text", text: message }],
           isError: true,
         };
+      } finally {
+        clearRegistrationRequestState();
       }
     },
   );

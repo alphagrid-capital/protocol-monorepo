@@ -32,8 +32,6 @@ yarn deploy      # Deploy to Cloudflare (requires account auth)
 | `GET` | `/llms.txt` | LLM-oriented index ([llms.txt spec](https://llmstxt.org/)) |
 | `GET` | `/health` | Liveness probe |
 | `GET` | `/vaults` | Mock vault catalog (`?format=md` for markdown) |
-| `GET` | `/agents/register/quote` | EIP-712 + x402 registration quote (fee read from chain when configured) |
-| `POST` | `/agents/register` | x402 payment + relayer submits `selfRegisterAgent` atomically |
 | `GET` | `/docs` | Swagger UI (humans; poor fit for URL paste in chat) |
 | `GET` | `/openapi.json` | OpenAPI 3.1 (Custom GPT Actions) |
 | `POST` | `/mcp` | MCP Streamable HTTP (stateless JSON) |
@@ -76,6 +74,21 @@ api/
   wrangler.toml
   package.json
 ```
+
+## Agent registration (x402)
+
+When `AGENT_REGISTRY_ADDRESS`, `FEE_MANAGER_ADDRESS`, `RPC_URL`, and `X402_PAY_TO` are set, registration uses HTTP 402 (x402) for the USDC fee (amount from on-chain `getRegistrationFee()`), then the API relayer broadcasts `selfRegisterAgent` with a unique `x402PaymentId` (replay-protected on-chain).
+
+| Variable | Role |
+|----------|------|
+| `AGENT_REGISTRY_ADDRESS` | `AgentRegistry` contract |
+| `FEE_MANAGER_ADDRESS` | Fee source + relayer check |
+| `REGISTRATION_FEE_RELAYER_ADDRESS` | Must match `FeeManager.registrationFeeRelayer` |
+| `RELAYER_PRIVATE_KEY` | Secret (`wrangler secret put`); signs the registration tx |
+| `RPC_URL` / `CHAIN_ID` | Chain access |
+| `X402_PAY_TO` / `TREASURY_ADDRESS` | x402 payee (treasury) |
+
+Without these, `POST /agents/register` runs in mock mode (no chain submit).
 
 ## CI deployment
 

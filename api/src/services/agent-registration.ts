@@ -14,6 +14,7 @@ import {
 } from "../lib/eip712-agent-registration.js";
 import { fetchRegistrationFeeAtomic, fetchRegistrationFeeUsd } from "../lib/registration-fee.js";
 import { getRegistrationPaymentId } from "../lib/registration-request-context.js";
+import { ZERO_X402_PAYMENT_ID } from "../lib/x402-agent-registration.js";
 import { getWorkerEnv } from "../lib/worker-env.js";
 import type {
   AgentRegistrationQuote,
@@ -51,11 +52,11 @@ const agentRegistryAbi = [
     name: "AgentRegistered",
     inputs: [
       { name: "agentId", type: "uint256", indexed: true },
-      { name: "owner", type: "address", indexed: true },
       { name: "vault", type: "address", indexed: true },
+      { name: "owner", type: "address", indexed: true },
       { name: "signer", type: "address", indexed: false },
-      { name: "name", type: "string", indexed: false },
       { name: "metadataURI", type: "string", indexed: false },
+      { name: "track", type: "uint8", indexed: false },
     ],
   },
 ] as const;
@@ -161,6 +162,16 @@ async function assertRelayerConfigured(
       503,
     );
   }
+
+  if (
+    config.registrationFeeRelayer &&
+    config.registrationFeeRelayer.toLowerCase() !== relayerAddress.toLowerCase()
+  ) {
+    throw new AgentRegistrationError(
+      "RELAYER_PRIVATE_KEY does not match REGISTRATION_FEE_RELAYER_ADDRESS",
+      503,
+    );
+  }
 }
 
 async function submitRelayerRegistration(params: {
@@ -211,6 +222,7 @@ async function submitRelayerRegistration(params: {
 
   let agentId: bigint | null = null;
   for (const log of receipt.logs) {
+    if (log.address.toLowerCase() !== config.agentRegistry!.toLowerCase()) continue;
     try {
       const decoded = decodeEventLog({
         abi: agentRegistryAbi,
@@ -327,24 +339,34 @@ export async function registerAgent(
     throw new AgentRegistrationError("AGENT_REGISTRY_ADDRESS is not configured", 503);
   }
 
-  const x402PaymentId = getRegistrationPaymentId();
-  const relayerSubmit =
-    config.x402.enabled &&
-    config.relayerPrivateKey !== null &&
-    x402PaymentId !== null;
+  const feeAtomic = await fetchRegistrationFeeAtomic(config);
+  const paymentIdFromRequest = getRegistrationPaymentId();
+  const requiresPaidX402 =
+    config.x402.enabled && config.x402.payTo !== null && feeAtomic > 0n;
 
-  if (config.x402.enabled && !x402PaymentId) {
-    throw new AgentRegistrationError(
-      "x402 payment is required before registration (missing payment proof)",
-      402,
-    );
+  if (feeAtomic > 0n) {
+    if (!config.x402.enabled || !config.x402.payTo) {
+      throw new AgentRegistrationError(
+        "x402 must be enabled when registration fee is non-zero",
+        503,
+      );
+    }
+    if (!paymentIdFromRequest) {
+      throw new AgentRegistrationError(
+        "x402 payment is required before registration (missing payment proof)",
+        402,
+      );
+    }
   }
 
-  if (relayerSubmit) {
+  const x402PaymentId: Hex =
+    feeAtomic > 0n ? paymentIdFromRequest! : ZERO_X402_PAYMENT_ID;
+
+  if (config.relayerPrivateKey) {
     const { agentId, transactionHash } = await submitRelayerRegistration({
       config,
       parsed,
-      x402PaymentId: x402PaymentId!,
+      x402PaymentId,
     });
 
     return {
@@ -352,11 +374,14 @@ export async function registerAgent(
       agentId,
       transactionHash,
       transaction: null,
-      message: "Agent registered on-chain by relayer after x402 fee settlement.",
+      message:
+        feeAtomic > 0n
+          ? "Agent registered on-chain by relayer after x402 fee settlement."
+          : "Agent registered on-chain by relayer (zero registration fee).",
     };
   }
 
-  if (config.x402.enabled) {
+  if (requiresPaidX402) {
     throw new AgentRegistrationError(
       "RELAYER_PRIVATE_KEY is not configured; cannot submit registration after x402 payment",
       503,
@@ -369,6 +394,6 @@ export async function registerAgent(
     transactionHash: null,
     transaction: null,
     message:
-      "x402 is disabled. Enable x402 and configure RELAYER_PRIVATE_KEY for atomic registration.",
+      "Configure RELAYER_PRIVATE_KEY for on-chain registration, or call selfRegisterAgent directly when x402 is off.",
   };
 }

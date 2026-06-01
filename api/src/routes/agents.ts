@@ -11,6 +11,7 @@ import {
 } from "../services/agent-registration.js";
 import { createRegistrationPaymentMiddleware } from "../lib/x402-agent-registration.js";
 import { getWorkerEnv } from "../lib/worker-env.js";
+import { takeRegistrationBody } from "../lib/registration-request-context.js";
 
 const quoteRoute = createRoute({
   method: "get",
@@ -43,7 +44,7 @@ const registerRoute = createRoute({
   summary: "Register agent (x402 + AgentRegistry)",
   description:
     "Self-register an agent on AgentRegistry. Requires a valid EIP-712 SelfRegister signature. " +
-    "When x402 is enabled, the registration fee is collected via HTTP 402 (USDC on Base) before calldata is returned.",
+    "When x402 is enabled, the registration fee is collected via HTTP 402 (USDC) and the relayer submits selfRegisterAgent in the same request.",
   request: {
     body: {
       content: { "application/json": { schema: AgentRegistrationRequestSchema } },
@@ -56,15 +57,14 @@ const registerRoute = createRoute({
     },
     400: { description: "Invalid request or signature" },
     402: { description: "x402 payment required" },
+    502: { description: "On-chain registration failed" },
+    503: { description: "Server or relayer configuration error" },
   },
 });
 
 export const agentRoutes = new OpenAPIHono();
 
-const paymentMiddleware = createRegistrationPaymentMiddleware();
-if (paymentMiddleware) {
-  agentRoutes.use("/agents/register", paymentMiddleware);
-}
+agentRoutes.use("/agents/register", createRegistrationPaymentMiddleware());
 
 agentRoutes.openapi(quoteRoute, async (c) => {
   const signer = c.req.query("signer") as `0x${string}` | undefined;
@@ -74,12 +74,20 @@ agentRoutes.openapi(quoteRoute, async (c) => {
 
 agentRoutes.openapi(registerRoute, async (c) => {
   try {
-    const body = c.req.valid("json");
+    const stashed = takeRegistrationBody();
+    const body =
+      stashed !== undefined
+        ? AgentRegistrationRequestSchema.parse(stashed)
+        : c.req.valid("json");
     const result = await registerAgent(body, getWorkerEnv());
     return c.json(result, 200);
   } catch (error) {
     if (error instanceof AgentRegistrationError) {
-      return c.json({ error: error.message }, error.status as 400);
+      const status =
+        error.status === 400 || error.status === 402 || error.status === 502 || error.status === 503
+          ? error.status
+          : 500;
+      return c.json({ error: error.message }, status);
     }
     throw error;
   }

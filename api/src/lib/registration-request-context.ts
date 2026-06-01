@@ -1,6 +1,7 @@
 import type { Hex } from "viem";
 
 let activePaymentId: Hex | null = null;
+let stashedRegistrationBody: unknown | undefined;
 
 export function setRegistrationPaymentId(id: Hex): void {
   activePaymentId = id;
@@ -14,15 +15,17 @@ export function clearRegistrationPaymentId(): void {
   activePaymentId = null;
 }
 
-export async function runWithRegistrationPayment<T>(
-  paymentId: Hex | null,
-  fn: () => Promise<T>,
-): Promise<T> {
-  const previous = activePaymentId;
-  activePaymentId = paymentId;
-  try {
-    return await fn();
-  } finally {
-    activePaymentId = previous;
-  }
+export function stashRegistrationBody(body: unknown): void {
+  stashedRegistrationBody = body;
+}
+
+export function takeRegistrationBody(): unknown | undefined {
+  const body = stashedRegistrationBody;
+  stashedRegistrationBody = undefined;
+  return body;
+}
+
+export function clearRegistrationRequestState(): void {
+  clearRegistrationPaymentId();
+  stashedRegistrationBody = undefined;
 }
