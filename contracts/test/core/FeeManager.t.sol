@@ -2,6 +2,7 @@
 pragma solidity ^0.8.30;
 
 import { IAccessControl } from "@openzeppelin/contracts/access/IAccessControl.sol";
+import { MessageHashUtils } from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import { AgentRegistry } from "../../src/core/AgentRegistry.sol";
 import { FeeManager } from "../../src/core/FeeManager.sol";
 import { VaultTrackRegistry } from "../../src/core/VaultTrackRegistry.sol";
@@ -177,6 +178,78 @@ contract FeeManagerTest is BaseTest {
         );
         vm.prank(bob);
         feeManager.setTreasury(makeAddr("newTreasury"));
+    }
+
+
+    function test_PayRegistrationFeePrepaid_RelayerSelfRegisterSkipsTransfer() public {
+        address relayer = makeAddr("relayer");
+        address agentSigner = vm.addr(AGENT_SIGNER_PRIVATE_KEY);
+
+        vm.prank(deployer);
+        feeManager.setRegistrationFeeRelayer(relayer);
+
+        uint256 erc8004Id = AgentTestLib.mintERC8004(identityRegistry, agentSigner);
+        uint256 deadline = block.timestamp + 1 hours;
+        bytes memory signature = _signSelfRegister(agentSigner, erc8004Id, deadline);
+
+        vm.prank(relayer);
+        uint256 agentId = registry.selfRegisterAgent(
+            vault, "Bot", "ipfs://bot", agentSigner, true, erc8004Id, deadline, signature
+        );
+
+        assertEq(agentId, 1);
+        assertEq(usdc.balanceOf(treasury), 0);
+    }
+
+    function test_RegisterAgent_RegistrarStillPaysWhenRelayerConfigured() public {
+        address relayer = makeAddr("relayer");
+
+        vm.prank(deployer);
+        feeManager.setRegistrationFeeRelayer(relayer);
+
+        uint256 erc8004Id = AgentTestLib.mintERC8004(identityRegistry, alice);
+        vm.startPrank(operator);
+        usdc.approve(address(feeManager), REGISTRATION_FEE);
+        registry.registerAgent(alice, vault, "Bot", "ipfs://bot", alice, true, erc8004Id);
+        vm.stopPrank();
+
+        assertEq(usdc.balanceOf(treasury), REGISTRATION_FEE);
+    }
+
+    function _signSelfRegister(address signer, uint256 erc8004Id, uint256 deadline)
+        internal
+        view
+        returns (bytes memory signature)
+    {
+        bytes32 structHash = keccak256(
+            abi.encode(
+                registry.SELF_REGISTER_TYPEHASH(),
+                vault,
+                keccak256(bytes("Bot")),
+                keccak256(bytes("ipfs://bot")),
+                signer,
+                true,
+                erc8004Id,
+                registry.nonces(signer),
+                deadline
+            )
+        );
+        bytes32 digest = MessageHashUtils.toTypedDataHash(_domainSeparator(), structHash);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(AGENT_SIGNER_PRIVATE_KEY, digest);
+        signature = abi.encodePacked(r, s, v);
+    }
+
+    function _domainSeparator() internal view returns (bytes32) {
+        (,, string memory version, uint256 chainId, address verifyingContract,,) = registry.eip712Domain();
+        return keccak256(
+            abi.encode(
+                keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
+                keccak256(bytes("AlphaGrid AgentRegistry")),
+                keccak256(bytes(version)),
+                chainId,
+                verifyingContract
+            )
+        );
     }
 
     function _setVaultChallengeConfig(address vault_, bool active) internal {
