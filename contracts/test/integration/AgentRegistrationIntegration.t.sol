@@ -71,7 +71,7 @@ contract AgentRegistrationIntegrationTest is BaseTest {
     }
 
     function test_RevertWhen_VaultMissingChallengeConfig() public {
-        uint256 erc8004Id = AgentTestLib.mintERC8004(identityRegistry, alice);
+        AgentTestLib.mintERC8004(identityRegistry, alice);
         vm.prank(operator);
         vm.expectRevert(abi.encodeWithSelector(AgentRegistry.VaultNotApproved.selector, unconfiguredVault));
         registry.registerAgent(alice, unconfiguredVault, "Alpha Bot", "ipfs://alpha", alice, false, 0);
