@@ -1,4 +1,6 @@
-import { absoluteUrl } from "./base-url.js";
+import { ROUTE_PATHS } from "../constants/routes.js";
+import { SOURCE_REPOSITORY_URL } from "../constants/project.js";
+import { absoluteUrl } from "./url-utils.js";
 
 const HTTP_METHODS = [
   "get",
@@ -11,7 +13,10 @@ const HTTP_METHODS = [
 ] as const;
 
 /** Paths that are metadata, not primary data fetches for URL paste tools. */
-const NON_FETCHABLE_GET_PATHS = new Set(["/", "/docs/swagger.json"]);
+const NON_FETCHABLE_GET_PATHS = new Set<string>([
+  ROUTE_PATHS.discovery,
+  ROUTE_PATHS.swaggerJson,
+]);
 
 type PathItem = Partial<Record<(typeof HTTP_METHODS)[number], OperationObject>>;
 type OperationObject = Record<string, unknown>;
@@ -55,10 +60,6 @@ export interface ApiDiscoveryPayload {
   };
 }
 
-function joinUrl(base: string, path: string): string {
-  return new URL(path, base.endsWith("/") ? base : `${base}/`).href;
-}
-
 function contentTypesFromOperation(operation: OperationObject): string[] {
   const responses = operation.responses as
     | Record<string, { content?: Record<string, unknown> }>
@@ -88,12 +89,10 @@ export function listOperationsFromOpenApi(
       operations.push({
         method: method.toUpperCase(),
         path,
-        url: joinUrl(serverUrl, path),
+        url: absoluteUrl(serverUrl, path),
         summary: String(operation.summary ?? path),
         description: String(operation.description ?? operation.summary ?? ""),
-        tags: Array.isArray(operation.tags)
-          ? operation.tags.map(String)
-          : [],
+        tags: Array.isArray(operation.tags) ? operation.tags.map(String) : [],
         formats: contentTypesFromOperation(operation),
       });
     }
@@ -116,26 +115,30 @@ export function buildDiscoveryFromOpenApi(
     | undefined;
   const serverUrl =
     (doc.servers as { url: string }[] | undefined)?.[0]?.url ??
-    absoluteUrl(requestUrl, "/");
+    absoluteUrl(requestUrl, ROUTE_PATHS.discovery);
 
   const operations = listOperationsFromOpenApi(doc, serverUrl);
   const fetchableEndpoints = operations.filter(
     (op) => op.method === "GET" && !NON_FETCHABLE_GET_PATHS.has(op.path),
   );
 
-  const vaults = fetchableEndpoints.find((op) => op.path === "/vaults");
-  const vaultsMd = vaults ? `${vaults.url}?format=md` : joinUrl(serverUrl, "/vaults?format=md");
-  const openapiUrl = absoluteUrl(requestUrl, "/docs/swagger.json");
+  const vaults = fetchableEndpoints.find(
+    (op) => op.path === ROUTE_PATHS.vaults,
+  );
+  const vaultsMd = vaults
+    ? `${vaults.url}?format=md`
+    : absoluteUrl(serverUrl, `${ROUTE_PATHS.vaults}?format=md`);
+  const openapiUrl = absoluteUrl(requestUrl, ROUTE_PATHS.swaggerJson);
 
   return {
-    name: String(info?.title ?? "AlphaGrid API"),
-    version: String(info?.version ?? "0.0.0"),
+    name: String(info?.title ?? ""),
+    version: String(info?.version ?? ""),
     description: String(info?.description ?? ""),
     baseUrl: serverUrl,
     documentation: {
       openapi: openapiUrl,
-      swaggerUi: absoluteUrl(requestUrl, "/docs"),
-      llmsTxt: absoluteUrl(requestUrl, "/llms.txt"),
+      swaggerUi: absoluteUrl(requestUrl, ROUTE_PATHS.docs),
+      llmsTxt: absoluteUrl(requestUrl, ROUTE_PATHS.llmsTxt),
     },
     operations,
     fetchableEndpoints,
@@ -155,15 +158,13 @@ export function buildLlmsTxtFromOpenApi(
   requestUrl: string,
   mcp: McpDiscovery,
 ): string {
-  const info = doc.info as
-    | { title?: string; description?: string }
-    | undefined;
+  const info = doc.info as { title?: string; description?: string } | undefined;
   const serverUrl =
     (doc.servers as { url: string }[] | undefined)?.[0]?.url ??
-    absoluteUrl(requestUrl, "/");
+    absoluteUrl(requestUrl, ROUTE_PATHS.discovery);
 
   const operations = listOperationsFromOpenApi(doc, serverUrl);
-  const title = String(info?.title ?? "AlphaGrid API");
+  const title = String(info?.title ?? "");
   const description = String(info?.description ?? "");
 
   const lines = [
@@ -181,7 +182,7 @@ export function buildLlmsTxtFromOpenApi(
     if (op.method !== "GET" || NON_FETCHABLE_GET_PATHS.has(op.path)) continue;
     const detail = op.description || op.summary;
     lines.push(`- [${op.summary}](${op.url}): ${op.method} — ${detail}`);
-    if (op.path === "/vaults") {
+    if (op.path === ROUTE_PATHS.vaults) {
       lines.push(
         `- [${op.summary} (Markdown)](${op.url}?format=md): GET — same data as plain markdown`,
       );
@@ -190,7 +191,7 @@ export function buildLlmsTxtFromOpenApi(
 
   lines.push("", "## API (from OpenAPI)", "");
   for (const op of operations) {
-    if (op.method === "GET" && op.path === "/") continue;
+    if (op.method === "GET" && op.path === ROUTE_PATHS.discovery) continue;
     const detail = op.description || op.summary;
     lines.push(`- [${op.method} ${op.path}](${op.url}): ${detail}`);
   }
@@ -199,9 +200,9 @@ export function buildLlmsTxtFromOpenApi(
     "",
     "## Documentation",
     "",
-    `- [OpenAPI 3.1](${absoluteUrl(requestUrl, "/docs/swagger.json")}): Machine-readable spec (source of truth)`,
-    `- [Swagger UI](${absoluteUrl(requestUrl, "/docs")}): Interactive docs (HTML, not for URL paste)`,
-    `- [Discovery JSON](${absoluteUrl(requestUrl, "/")}): Index derived from OpenAPI`,
+    `- [OpenAPI 3.1](${absoluteUrl(requestUrl, ROUTE_PATHS.swaggerJson)}): Machine-readable spec (source of truth)`,
+    `- [Swagger UI](${absoluteUrl(requestUrl, ROUTE_PATHS.docs)}): Interactive docs (HTML, not for URL paste)`,
+    `- [Discovery JSON](${absoluteUrl(requestUrl, ROUTE_PATHS.discovery)}): Index derived from OpenAPI`,
     "",
     "## MCP",
     "",
@@ -210,7 +211,7 @@ export function buildLlmsTxtFromOpenApi(
     "",
     "## Optional",
     "",
-    "- [Source repository](https://github.com/alphagrid-prop/contracts/tree/main/api)",
+    `- [Source repository](${SOURCE_REPOSITORY_URL})`,
   );
 
   return lines.join("\n").trimEnd();

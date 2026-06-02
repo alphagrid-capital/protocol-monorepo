@@ -5,9 +5,8 @@ import {
   AgentRegistrationResponseSchema,
 } from "../schemas/agent.js";
 import {
+  AgentRegistrationService,
   AgentRegistrationError,
-  getAgentRegistrationQuote,
-  registerAgent,
 } from "../services/agent-registration.js";
 import { createRegistrationPaymentMiddleware } from "../lib/x402-agent-registration.js";
 import { getWorkerEnv } from "../lib/worker-env.js";
@@ -75,14 +74,14 @@ function statusFromError(error: AppError): 400 | 402 | 502 | 503 {
 
 agentRoutes.openapi(quoteRoute, async (c) => {
   const signer = c.req.query("signer") as `0x${string}` | undefined;
-  const quote = await getAgentRegistrationQuote(signer, getWorkerEnv());
+  const quote = await AgentRegistrationService.fromEnv(getWorkerEnv()).getQuote(signer);
   return c.json(quote, 200);
 });
 
 agentRoutes.openapi(registerRoute, async (c) => {
   try {
     const body = c.req.valid("json");
-    const result = await registerAgent(body, getWorkerEnv());
+    const result = await AgentRegistrationService.fromEnv(getWorkerEnv()).register(body);
     return c.json(result, 200);
   } catch (error) {
     if (error instanceof AppError || error instanceof AgentRegistrationError) {

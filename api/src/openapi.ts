@@ -1,5 +1,5 @@
 import type { OpenAPIHono } from "@hono/zod-openapi";
-import { absoluteUrl } from "./lib/base-url.js";
+import { absoluteUrl } from "./lib/url-utils.js";
 
 export const OPENAPI_DOCUMENT_CONFIG = {
   openapi: "3.1.0" as const,

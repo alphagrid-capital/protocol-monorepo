@@ -6,6 +6,12 @@ const addressSchema = z
 
 const hexSchema = z.string().regex(/^0x[a-fA-F0-9]*$/, "Expected 0x-prefixed hex");
 
+export const AgentRegistrationQuoteInputSchema = z
+  .object({
+    signer: addressSchema.optional(),
+  })
+  .strict();
+
 export const AgentRegistrationRequestSchema = z
   .object({
     vault: addressSchema.openapi({ example: "0x0000000000000000000000000000000000000001" }),

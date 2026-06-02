@@ -53,14 +53,7 @@ function registerHttpRoutes(app: OpenAPIHono): void {
 }
 
 function registerMcpRoutes(app: OpenAPIHono): void {
-  app.all("/mcp", async (c) => {
-    const contentType = c.req.header("content-type") ?? "";
-    let parsedBody: unknown;
-    if (contentType.includes("application/json")) {
-      parsedBody = await c.req.json().catch(() => undefined);
-    }
-    return handleMcpRequest(c.req.raw, parsedBody, c.env as WorkerEnv);
-  });
+  app.all("/mcp", (c) => handleMcpRequest(c.req.raw, c.env as WorkerEnv));
 }
 
 export function createApp(): OpenAPIHono {

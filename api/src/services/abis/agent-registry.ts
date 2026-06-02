@@ -1,0 +1,51 @@
+export const agentRegistryAbi = [
+  {
+    type: "function",
+    name: "registerAgent",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "owner", type: "address" },
+      { name: "vault", type: "address" },
+      { name: "name", type: "string" },
+      { name: "metadataURI", type: "string" },
+      { name: "signer", type: "address" },
+      { name: "linkERC8004", type: "bool" },
+      { name: "erc8004AgentId", type: "uint256" },
+    ],
+    outputs: [{ name: "agentId", type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "nonces",
+    stateMutability: "view",
+    inputs: [{ name: "owner", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "eip712Domain",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [
+      { name: "fields", type: "bytes1" },
+      { name: "name", type: "string" },
+      { name: "version", type: "string" },
+      { name: "chainId", type: "uint256" },
+      { name: "verifyingContract", type: "address" },
+      { name: "salt", type: "bytes32" },
+      { name: "extensions", type: "uint256[]" },
+    ],
+  },
+  {
+    type: "event",
+    name: "AgentRegistered",
+    inputs: [
+      { name: "agentId", type: "uint256", indexed: true },
+      { name: "vault", type: "address", indexed: true },
+      { name: "owner", type: "address", indexed: true },
+      { name: "signer", type: "address", indexed: false },
+      { name: "metadataURI", type: "string", indexed: false },
+      { name: "track", type: "uint8", indexed: false },
+    ],
+  },
+] as const;

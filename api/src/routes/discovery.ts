@@ -1,10 +1,11 @@
 import { createRoute, type OpenAPIHono, z } from "@hono/zod-openapi";
-import { mcpDiscovery } from "../constants/mcp.js";
+import { mcpDiscovery } from "../mcp/discovery.js";
 import {
   buildDiscoveryFromOpenApi,
   buildLlmsTxtFromOpenApi,
 } from "../lib/discovery-from-openapi.js";
-import { absoluteUrl } from "../lib/base-url.js";
+import { ROUTE_PATHS } from "../constants/routes.js";
+import { absoluteUrl } from "../lib/url-utils.js";
 import { openApiJsonResponse } from "../openapi.js";
 
 const DiscoverySchema = z
@@ -102,9 +103,9 @@ export function registerDiscoveryRoutes(app: OpenAPIHono) {
       "Allow: /",
       "Allow: /vaults",
       "Allow: /llms.txt",
-      "Allow: /docs/swagger.json",
+      `Allow: ${ROUTE_PATHS.swaggerJson}`,
       "",
-      `# LLM discovery: ${absoluteUrl(c.req.url, "/llms.txt")}`,
+      `# LLM discovery: ${absoluteUrl(c.req.url, ROUTE_PATHS.llmsTxt)}`,
     ];
     return c.text(lines.join("\n"), 200, {
       "Content-Type": "text/plain; charset=utf-8",

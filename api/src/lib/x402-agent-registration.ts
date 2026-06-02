@@ -7,7 +7,7 @@ import {
   type AgentRegistrationConfig,
   loadAgentRegistrationConfig,
 } from "../config/agent-registration.js";
-import { fetchRegistrationFeeDetails } from "./registration-fee.js";
+import { RegistrationFeeService } from "../services/fee-manager.service.js";
 import { getWorkerEnv } from "./worker-env.js";
 import { FetchRequestAdapter } from "./fetch-request-adapter.js";
 
@@ -61,7 +61,7 @@ export async function verifyRegistrationPayment(
   feeState?: { amount: bigint; treasury: `0x${string}` | null; displayUsd: string },
 ): Promise<{ ok: true } | { ok: false; response: Response }> {
   const config = loadAgentRegistrationConfig(env);
-  const registrationFeeState = feeState ?? (await fetchRegistrationFeeDetails(config));
+  const registrationFeeState = feeState ?? (await new RegistrationFeeService(config).getDetails());
   if (registrationFeeState.amount === 0n) {
     return { ok: true };
   }
@@ -114,7 +114,7 @@ export async function verifyRegistrationPayment(
 export function createRegistrationPaymentMiddleware(): MiddlewareHandler {
   return async (c, next) => {
     const config = loadAgentRegistrationConfig(getWorkerEnv());
-    const feeState = await fetchRegistrationFeeDetails(config);
+    const feeState = await new RegistrationFeeService(config).getDetails();
     if (feeState.amount === 0n) {
       return next();
     }
