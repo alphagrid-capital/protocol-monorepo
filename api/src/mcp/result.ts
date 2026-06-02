@@ -1,5 +1,5 @@
 import { AppError } from "../errors.js";
-import { AgentRegistrationError } from "../services/agent-registration.js";
+import { AgentRegistrationError } from "../services/agent-registration.service.js";
 
 type ToolTextContent = { type: "text"; text: string };
 

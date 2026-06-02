@@ -10,8 +10,8 @@ import {
 } from "../schemas/agent.js";
 import {
   AgentRegistrationService,
-} from "../services/agent-registration.js";
-import { listVaults } from "../services/vaults.js";
+} from "../services/agent-registration.service.js";
+import { vaultsService } from "../services/vaults.service.js";
 import { ListVaultsResponseSchema } from "../schemas/vault.js";
 import {
   MCP_TOOL_NAMES,
@@ -46,7 +46,7 @@ export function registerMcpTools(server: McpServer): void {
       outputSchema: ListVaultsResponseSchema,
       annotations: READ_ONLY_TOOL_ANNOTATIONS,
     },
-    async () => mcpToolSuccess(listVaults()),
+    async () => mcpToolSuccess(vaultsService.listVaults()),
   );
 
   server.registerTool(

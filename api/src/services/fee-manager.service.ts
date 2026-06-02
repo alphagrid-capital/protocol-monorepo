@@ -1,5 +1,6 @@
 import type { Address } from "viem";
-import { atomicUsdcToUsdString, type AgentRegistrationConfig } from "../config/agent-registration.js";
+import type { AgentRegistrationConfig } from "../lib/agent-registration-config.js";
+import { atomicUsdcToUsdString } from "../lib/token-utils.js";
 import { feeManagerAbi } from "./abis/fee-manager.js";
 import { ProviderService } from "./provider.service.js";
 

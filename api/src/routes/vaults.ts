@@ -1,7 +1,6 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { ListVaultsResponseSchema } from "../schemas/vault.js";
-import { formatVaultsMarkdown } from "../services/vaults-format.js";
-import { listVaults } from "../services/vaults.js";
+import { vaultsService } from "../services/vaults.service.js";
 
 const listVaultsRoute = createRoute({
   method: "get",
@@ -40,12 +39,12 @@ const listVaultsRoute = createRoute({
 export const vaultRoutes = new OpenAPIHono();
 
 vaultRoutes.openapi(listVaultsRoute, (c) => {
-  const data = listVaults();
+  const data = vaultsService.listVaults();
   const format = c.req.query("format");
   const accept = c.req.header("accept") ?? "";
 
   if (format === "md" || accept.includes("text/markdown")) {
-    return c.text(formatVaultsMarkdown(data), 200, {
+    return c.text(vaultsService.formatVaultsMarkdown(data), 200, {
       "Content-Type": "text/markdown; charset=utf-8",
       "Cache-Control": "public, max-age=60",
     });

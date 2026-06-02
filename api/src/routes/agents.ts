@@ -7,7 +7,7 @@ import {
 import {
   AgentRegistrationService,
   AgentRegistrationError,
-} from "../services/agent-registration.js";
+} from "../services/agent-registration.service.js";
 import { createRegistrationPaymentMiddleware } from "../lib/x402-agent-registration.js";
 import { getWorkerEnv } from "../lib/worker-env.js";
 import { AppError } from "../errors.js";

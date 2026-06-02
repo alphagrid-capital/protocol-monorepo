@@ -60,10 +60,41 @@ const MOCK_VAULTS: VaultSummary[] = [
   },
 ];
 
-/** Returns the mocked vault list with basic on-chain-style stats. */
-export function listVaults(): ListVaultsResult {
-  return {
-    vaults: MOCK_VAULTS,
-    total: MOCK_VAULTS.length,
-  };
+export class VaultsService {
+  /** Returns the mocked vault list with basic on-chain-style stats. */
+  listVaults(): ListVaultsResult {
+    return {
+      vaults: MOCK_VAULTS,
+      total: MOCK_VAULTS.length,
+    };
+  }
+
+  /** Human-readable markdown for LLMs and chat tools that prefer plain text. */
+  formatVaultsMarkdown(data: ListVaultsResult): string {
+    const lines = [
+      "# AlphaGrid vaults",
+      "",
+      `Total: ${data.total}`,
+      "",
+    ];
+
+    for (const vault of data.vaults) {
+      lines.push(`## ${vault.name} (\`${vault.id}\`)`);
+      lines.push("");
+      lines.push(`- **Tagline:** ${vault.tagline}`);
+      lines.push(`- **TVL (USD):** $${vault.tvlUsd.toLocaleString("en-US")}`);
+      lines.push(`- **TVL 24h change:** ${vault.tvlChange24hPct}%`);
+      lines.push(`- **Agents:** ${vault.agentCount}`);
+      lines.push(`- **Return YTD:** ${vault.returnYtdPct}%`);
+      lines.push(`- **Chain ID:** ${vault.chainId}`);
+      lines.push(`- **Contract:** \`${vault.contractAddress}\``);
+      lines.push("");
+      lines.push(vault.description);
+      lines.push("");
+    }
+
+    return lines.join("\n").trimEnd();
+  }
 }
+
+export const vaultsService = new VaultsService();

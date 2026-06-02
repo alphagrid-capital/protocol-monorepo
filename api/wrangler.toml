@@ -1,6 +1,7 @@
 name = "alphagrid-api"
 main = "src/index.ts"
 compatibility_date = "2025-05-31"
+compatibility_flags = ["nodejs_compat"]
 
 # Workers Logs + tracing in the Cloudflare dashboard (Observability).
 [observability]

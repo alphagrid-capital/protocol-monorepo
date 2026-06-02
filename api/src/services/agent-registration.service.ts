@@ -5,7 +5,7 @@ import {
 import {
   loadAgentRegistrationConfig,
   type AgentRegistrationConfig,
-} from "../config/agent-registration.js";
+} from "../lib/agent-registration-config.js";
 import {
   AGENT_REGISTRY_EIP712_DOMAIN,
   verifySelfRegisterSignature,
