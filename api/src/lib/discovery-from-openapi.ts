@@ -11,7 +11,7 @@ const HTTP_METHODS = [
 ] as const;
 
 /** Paths that are metadata, not primary data fetches for URL paste tools. */
-const NON_FETCHABLE_GET_PATHS = new Set(["/", "/openapi.json"]);
+const NON_FETCHABLE_GET_PATHS = new Set(["/", "/docs/swagger.json"]);
 
 type PathItem = Partial<Record<(typeof HTTP_METHODS)[number], OperationObject>>;
 type OperationObject = Record<string, unknown>;
@@ -125,7 +125,7 @@ export function buildDiscoveryFromOpenApi(
 
   const vaults = fetchableEndpoints.find((op) => op.path === "/vaults");
   const vaultsMd = vaults ? `${vaults.url}?format=md` : joinUrl(serverUrl, "/vaults?format=md");
-  const openapiUrl = absoluteUrl(requestUrl, "/openapi.json");
+  const openapiUrl = absoluteUrl(requestUrl, "/docs/swagger.json");
 
   return {
     name: String(info?.title ?? "AlphaGrid API"),
@@ -199,7 +199,7 @@ export function buildLlmsTxtFromOpenApi(
     "",
     "## Documentation",
     "",
-    `- [OpenAPI 3.1](${absoluteUrl(requestUrl, "/openapi.json")}): Machine-readable spec (source of truth)`,
+    `- [OpenAPI 3.1](${absoluteUrl(requestUrl, "/docs/swagger.json")}): Machine-readable spec (source of truth)`,
     `- [Swagger UI](${absoluteUrl(requestUrl, "/docs")}): Interactive docs (HTML, not for URL paste)`,
     `- [Discovery JSON](${absoluteUrl(requestUrl, "/")}): Index derived from OpenAPI`,
     "",

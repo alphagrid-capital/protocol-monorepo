@@ -24,11 +24,8 @@ contract FeeManager is IFeeManager, AccessControl {
     address public immutable FEE_ASSET;
     address public agentRegistry;
     address public treasury;
-    /// @notice API relayer that may call `selfRegisterAgent` after x402 fee settlement to `treasury`.
-    address public registrationFeeRelayer;
 
     uint256 private _registrationFeeAmount;
-    mapping(bytes32 x402PaymentId => bool consumed) private _consumedX402PaymentIds;
     mapping(address vault => mapping(uint256 fromTrackId => mapping(uint256 toTrackId => uint256))) private
         _promotionFeeAmounts;
 
@@ -38,12 +35,6 @@ contract FeeManager is IFeeManager, AccessControl {
 
     error ZeroAddress();
     error NotAgentRegistry(address caller);
-    error RegistrationFeeRelayerNotSet();
-    error X402PaymentIdRequired();
-    error UnexpectedX402PaymentId();
-    error X402PaymentAlreadyConsumed(bytes32 x402PaymentId);
-
-    event RegistrationFeeRelayerUpdated(address indexed registrationFeeRelayer);
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -103,12 +94,6 @@ contract FeeManager is IFeeManager, AccessControl {
         emit TreasuryUpdated(treasury_);
     }
 
-    /// @notice Relayer wallet allowed to use `payRegistrationFeePrepaid` via `selfRegisterAgent` only.
-    function setRegistrationFeeRelayer(address registrationFeeRelayer_) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        registrationFeeRelayer = registrationFeeRelayer_;
-        emit RegistrationFeeRelayerUpdated(registrationFeeRelayer_);
-    }
-
     /// @inheritdoc IFeeManager
     function setRegistrationFee(uint256 amount) external onlyRole(FEE_ADMIN_ROLE) {
         _registrationFeeAmount = amount;
@@ -138,28 +123,6 @@ contract FeeManager is IFeeManager, AccessControl {
 
         IERC20(FEE_ASSET).safeTransferFrom(payer, treasury, amount);
         emit RegistrationFeePaid(agentId, payer, FEE_ASSET, amount);
-    }
-
-    /// @inheritdoc IFeeManager
-    /// @dev Records fee as prepaid (x402 to treasury). AgentRegistry must only call this on `selfRegisterAgent`
-    ///      when `msg.sender == registrationFeeRelayer`.
-    function payRegistrationFeePrepaid(uint256 agentId, bytes32 x402PaymentId) external {
-        _onlyAgentRegistry();
-
-        address relayer = registrationFeeRelayer;
-        if (relayer == address(0)) revert RegistrationFeeRelayerNotSet();
-
-        uint256 amount = _registrationFeeAmount;
-        if (amount == 0) {
-            if (x402PaymentId != bytes32(0)) revert UnexpectedX402PaymentId();
-            return;
-        }
-
-        if (x402PaymentId == bytes32(0)) revert X402PaymentIdRequired();
-        if (_consumedX402PaymentIds[x402PaymentId]) revert X402PaymentAlreadyConsumed(x402PaymentId);
-
-        _consumedX402PaymentIds[x402PaymentId] = true;
-        emit RegistrationFeePaid(agentId, relayer, FEE_ASSET, amount);
     }
 
     /// @inheritdoc IFeeManager

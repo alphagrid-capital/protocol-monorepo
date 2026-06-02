@@ -9,9 +9,15 @@ import { healthRoutes } from "./routes/health.js";
 import { vaultRoutes } from "./routes/vaults.js";
 import type { WorkerEnv } from "./types/worker-env.js";
 
-export function createApp(): OpenAPIHono {
-  const app = new OpenAPIHono();
+function isSwaggerEnabled(env: WorkerEnv): boolean {
+  const raw = env.ENABLE_SWAGGER as string | boolean | undefined;
+  if (raw === true) return true;
+  if (raw === false) return false;
+  const value = String(raw ?? "true").toLowerCase();
+  return value === "1" || value === "true" || value === "yes" || value === "on";
+}
 
+function registerGlobalMiddleware(app: OpenAPIHono): void {
   app.use(
     "*",
     cors({
@@ -37,26 +43,16 @@ export function createApp(): OpenAPIHono {
       ],
     }),
   );
+}
 
+function registerHttpRoutes(app: OpenAPIHono): void {
   app.route("/", healthRoutes);
   app.route("/", vaultRoutes);
   app.route("/", agentRoutes);
-
   registerDiscoveryRoutes(app);
+}
 
-  app.get("/openapi.json", (c) =>
-    c.json(openApiJsonResponse(app, c.req.url), 200, {
-      "Cache-Control": "public, max-age=300",
-    }),
-  );
-
-  app.get(
-    "/docs",
-    swaggerUI({
-      url: "/openapi.json",
-    }),
-  );
-
+function registerMcpRoutes(app: OpenAPIHono): void {
   app.all("/mcp", async (c) => {
     const contentType = c.req.header("content-type") ?? "";
     let parsedBody: unknown;
@@ -65,6 +61,31 @@ export function createApp(): OpenAPIHono {
     }
     return handleMcpRequest(c.req.raw, parsedBody, c.env as WorkerEnv);
   });
+}
+
+export function createApp(): OpenAPIHono {
+  const app = new OpenAPIHono();
+
+  registerGlobalMiddleware(app);
+  registerHttpRoutes(app);
+  registerMcpRoutes(app);
+
+  app.get("/docs/swagger.json", (c) =>
+    c.json(openApiJsonResponse(app, c.req.url), 200, {
+      "Cache-Control": "public, max-age=300",
+    }),
+  );
+
+  app.get(
+    "/docs",
+    (c, next) => {
+      if (!isSwaggerEnabled(c.env as WorkerEnv)) {
+        return c.text("Swagger is disabled", 404);
+      }
+      return next();
+    },
+    swaggerUI({ url: "/docs/swagger.json" }),
+  );
 
   app.notFound((c) =>
     c.json({ error: "Not found", path: new URL(c.req.url).pathname }, 404),

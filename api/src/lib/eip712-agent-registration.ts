@@ -1,7 +1,9 @@
 import {
   type Address,
   type Hex,
+  createPublicClient,
   encodeAbiParameters,
+  http,
   keccak256,
   parseAbiParameters,
   toBytes,
@@ -14,6 +16,24 @@ export const AGENT_REGISTRY_EIP712_DOMAIN = {
   version: "1",
 } as const;
 
+const agentRegistryDomainAbi = [
+  {
+    type: "function",
+    name: "eip712Domain",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [
+      { name: "fields", type: "bytes1" },
+      { name: "name", type: "string" },
+      { name: "version", type: "string" },
+      { name: "chainId", type: "uint256" },
+      { name: "verifyingContract", type: "address" },
+      { name: "salt", type: "bytes32" },
+      { name: "extensions", type: "uint256[]" },
+    ],
+  },
+] as const;
+
 export type SelfRegisterTypedData = {
   vault: Address;
   name: string;
@@ -24,6 +44,30 @@ export type SelfRegisterTypedData = {
   nonce: bigint;
   deadline: bigint;
 };
+
+export async function readAgentRegistryEip712Domain(params: {
+  rpcUrl: string;
+  chainId: number;
+  agentRegistry: Address;
+}): Promise<{ name: string; version: string }> {
+  const client = createPublicClient({
+    chain: {
+      id: params.chainId,
+      name: "alphagrid",
+      nativeCurrency: { decimals: 18, name: "ETH", symbol: "ETH" },
+      rpcUrls: { default: { http: [params.rpcUrl] } },
+    },
+    transport: http(params.rpcUrl),
+  });
+
+  const [, name, version] = await client.readContract({
+    address: params.agentRegistry,
+    abi: agentRegistryDomainAbi,
+    functionName: "eip712Domain",
+  });
+
+  return { name, version };
+}
 
 export function hashSelfRegisterStruct(data: SelfRegisterTypedData): Hex {
   return keccak256(
@@ -47,16 +91,19 @@ export function hashSelfRegisterStruct(data: SelfRegisterTypedData): Hex {
 }
 
 export async function verifySelfRegisterSignature(params: {
+  domainName: string;
+  domainVersion: string;
   chainId: number;
   verifyingContract: Address;
   data: SelfRegisterTypedData;
   signature: Hex;
 }): Promise<boolean> {
-  const { chainId, verifyingContract, data, signature } = params;
+  const { domainName, domainVersion, chainId, verifyingContract, data, signature } = params;
   return verifyTypedData({
     address: data.signer,
     domain: {
-      ...AGENT_REGISTRY_EIP712_DOMAIN,
+      name: domainName,
+      version: domainVersion,
       chainId,
       verifyingContract,
     },

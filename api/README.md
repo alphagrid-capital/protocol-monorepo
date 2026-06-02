@@ -33,7 +33,7 @@ yarn deploy      # Deploy to Cloudflare (requires account auth)
 | `GET` | `/health` | Liveness probe |
 | `GET` | `/vaults` | Mock vault catalog (`?format=md` for markdown) |
 | `GET` | `/docs` | Swagger UI (humans; poor fit for URL paste in chat) |
-| `GET` | `/openapi.json` | OpenAPI 3.1 (Custom GPT Actions) |
+| `GET` | `/docs/swagger.json` | OpenAPI 3.1 (Custom GPT Actions) |
 | `POST` | `/mcp` | MCP Streamable HTTP (stateless JSON) |
 
 ## Using with ChatGPT and other LLMs
@@ -43,8 +43,8 @@ ChatGPT **browsing** only performs simple `GET` requests on **public** URLs. It 
 | Goal | What to use |
 |------|-------------|
 | Paste a URL in chat and get vault data | Deployed `GET /vaults` or `GET /vaults?format=md` |
-| Let ChatGPT discover endpoints | Deployed `GET /` or `GET /llms.txt` (both derived from `/openapi.json`) |
-| Custom GPT with structured actions | Import `GET /openapi.json` when creating Actions |
+| Let ChatGPT discover endpoints | Deployed `GET /` or `GET /llms.txt` (both derived from `/docs/swagger.json`) |
+| Custom GPT with structured actions | Import `GET /docs/swagger.json` when creating Actions |
 | Claude / Cursor / MCP-native clients | `POST /mcp` and tool `alphagrid_list_vaults` |
 
 **Do not paste** `/docs` if you want JSON—the UI is HTML. Paste the **data URL**, e.g. `https://<your-worker>.workers.dev/vaults?format=md`.
@@ -77,16 +77,15 @@ api/
 
 ## Agent registration (x402)
 
-When `AGENT_REGISTRY_ADDRESS`, `FEE_MANAGER_ADDRESS`, `RPC_URL`, and `X402_PAY_TO` are set, registration uses HTTP 402 (x402) for the USDC fee (amount from on-chain `getRegistrationFee()`), then the API relayer broadcasts `selfRegisterAgent` with a unique `x402PaymentId` (replay-protected on-chain).
+When `AGENT_REGISTRY_ADDRESS`, `FEE_MANAGER_ADDRESS`, `RPC_URL`, and `RELAYER_PRIVATE_KEY` are set, registration uses HTTP 402 (x402) for the USDC fee (amount + treasury read on-chain from `FeeManager`), then the API relayer broadcasts `registerAgent` via `REGISTRAR_ROLE`.
 
 | Variable | Role |
 |----------|------|
 | `AGENT_REGISTRY_ADDRESS` | `AgentRegistry` contract |
-| `FEE_MANAGER_ADDRESS` | Fee source + relayer check |
-| `REGISTRATION_FEE_RELAYER_ADDRESS` | Must match `FeeManager.registrationFeeRelayer` |
+| `FEE_MANAGER_ADDRESS` | Fee amount + treasury source |
 | `RELAYER_PRIVATE_KEY` | Secret (`wrangler secret put`); signs the registration tx |
 | `RPC_URL` / `CHAIN_ID` | Chain access |
-| `X402_PAY_TO` / `TREASURY_ADDRESS` | x402 payee (treasury) |
+| `X402_NETWORK` / `X402_FACILITATOR_URL` | x402 network/facilitator settings |
 
 Without these, `POST /agents/register` runs in mock mode (no chain submit).
 
@@ -113,6 +112,8 @@ Add these under **Settings → Secrets and variables → Actions → Repository 
 ## Environment
 
 Copy `.env.example` to `.env` for local development when bindings and secrets are added. For local deploy, export the same `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` values (or run `wrangler login`).
+
+Set `ENABLE_SWAGGER=false` to disable `GET /docs` (returns 404). This is useful for deployments where only machine-readable discovery (`/docs/swagger.json`, `/llms.txt`) should remain exposed.
 
 ## Health check
 

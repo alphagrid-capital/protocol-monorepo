@@ -11,7 +11,7 @@ import {
 } from "../services/agent-registration.js";
 import { createRegistrationPaymentMiddleware } from "../lib/x402-agent-registration.js";
 import { getWorkerEnv } from "../lib/worker-env.js";
-import { takeRegistrationBody } from "../lib/registration-request-context.js";
+import { AppError } from "../errors.js";
 
 const quoteRoute = createRoute({
   method: "get",
@@ -19,7 +19,7 @@ const quoteRoute = createRoute({
   tags: ["Agents"],
   summary: "Agent registration quote",
   description:
-    "Returns EIP-712 domain data, registration fee, and x402 payment requirements for `selfRegisterAgent` on AgentRegistry.",
+    "Returns EIP-712 domain data, registration fee, and x402 payment requirements for backend-mediated registration on AgentRegistry.",
   request: {
     query: z.object({
       signer: z
@@ -43,8 +43,8 @@ const registerRoute = createRoute({
   tags: ["Agents"],
   summary: "Register agent (x402 + AgentRegistry)",
   description:
-    "Self-register an agent on AgentRegistry. Requires a valid EIP-712 SelfRegister signature. " +
-    "When x402 is enabled, the registration fee is collected via HTTP 402 (USDC) and the relayer submits selfRegisterAgent in the same request.",
+    "Register an agent on AgentRegistry through the backend registrar. Requires a valid EIP-712 SelfRegister signature. " +
+    "When x402 is enabled, the registration fee is collected via HTTP 402 (USDC) and the relayer submits registerAgent in the same request.",
   request: {
     body: {
       content: { "application/json": { schema: AgentRegistrationRequestSchema } },
@@ -66,6 +66,13 @@ export const agentRoutes = new OpenAPIHono();
 
 agentRoutes.use("/agents/register", createRegistrationPaymentMiddleware());
 
+function statusFromError(error: AppError): 400 | 402 | 502 | 503 {
+  if (error.status === 400 || error.status === 402 || error.status === 502 || error.status === 503) {
+    return error.status;
+  }
+  return 503;
+}
+
 agentRoutes.openapi(quoteRoute, async (c) => {
   const signer = c.req.query("signer") as `0x${string}` | undefined;
   const quote = await getAgentRegistrationQuote(signer, getWorkerEnv());
@@ -74,20 +81,12 @@ agentRoutes.openapi(quoteRoute, async (c) => {
 
 agentRoutes.openapi(registerRoute, async (c) => {
   try {
-    const stashed = takeRegistrationBody();
-    const body =
-      stashed !== undefined
-        ? AgentRegistrationRequestSchema.parse(stashed)
-        : c.req.valid("json");
+    const body = c.req.valid("json");
     const result = await registerAgent(body, getWorkerEnv());
     return c.json(result, 200);
   } catch (error) {
-    if (error instanceof AgentRegistrationError) {
-      const status =
-        error.status === 400 || error.status === 402 || error.status === 502 || error.status === 503
-          ? error.status
-          : 500;
-      return c.json({ error: error.message }, status);
+    if (error instanceof AppError || error instanceof AgentRegistrationError) {
+      return c.json({ error: error.message }, statusFromError(error));
     }
     throw error;
   }

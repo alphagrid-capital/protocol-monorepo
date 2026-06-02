@@ -12,17 +12,17 @@ const DiscoverySchema = z
     name: z.string(),
     version: z.string(),
     description: z.string(),
-    baseUrl: z.string().url(),
+    baseUrl: z.url(),
     documentation: z.object({
-      openapi: z.string().url(),
-      swaggerUi: z.string().url(),
-      llmsTxt: z.string().url(),
+      openapi: z.url(),
+      swaggerUi: z.url(),
+      llmsTxt: z.url(),
     }),
     operations: z.array(
       z.object({
         method: z.string(),
         path: z.string(),
-        url: z.string().url(),
+        url: z.url(),
         summary: z.string(),
         description: z.string(),
         tags: z.array(z.string()),
@@ -33,7 +33,7 @@ const DiscoverySchema = z
       z.object({
         method: z.string(),
         path: z.string(),
-        url: z.string().url(),
+        url: z.url(),
         summary: z.string(),
         description: z.string(),
         tags: z.array(z.string()),
@@ -42,7 +42,7 @@ const DiscoverySchema = z
     ),
     mcp: z.object({
       method: z.string(),
-      url: z.string().url(),
+      url: z.url(),
       note: z.string(),
       tools: z.array(z.string()),
     }),
@@ -60,7 +60,7 @@ export const discoveryRoute = createRoute({
   tags: ["System"],
   summary: "API discovery",
   description:
-    "Index derived from the auto-generated OpenAPI spec. See /openapi.json for the full Swagger document.",
+    "Index derived from the auto-generated OpenAPI spec. See /docs/swagger.json for the full Swagger document.",
   responses: {
     200: {
       description: "API index (generated from OpenAPI)",
@@ -102,7 +102,7 @@ export function registerDiscoveryRoutes(app: OpenAPIHono) {
       "Allow: /",
       "Allow: /vaults",
       "Allow: /llms.txt",
-      "Allow: /openapi.json",
+      "Allow: /docs/swagger.json",
       "",
       `# LLM discovery: ${absoluteUrl(c.req.url, "/llms.txt")}`,
     ];

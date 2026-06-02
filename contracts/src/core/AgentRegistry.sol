@@ -72,8 +72,6 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
     error NotERC8004Owner(uint256 erc8004AgentId, address caller);
     error ERC8004AlreadyLinked(uint256 agentId);
     error ERC8004AlreadyRegistered(uint256 erc8004AgentId);
-    error UnexpectedX402PaymentId();
-    error X402PaymentIdRequired();
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -123,8 +121,7 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
                 erc8004AgentId: erc8004AgentId,
                 payer: msg.sender
             }),
-            false,
-            bytes32(0)
+            true
         );
     }
 
@@ -137,12 +134,9 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
         bool linkERC8004,
         uint256 erc8004AgentId,
         uint256 deadline,
-        bytes calldata signature,
-        bytes32 x402PaymentId
+        bytes calldata signature
     ) external whenNotPaused returns (uint256 agentId) {
-        agentId = _selfRegisterAgent(
-            vault, name, metadataURI, signer, linkERC8004, erc8004AgentId, deadline, signature, x402PaymentId
-        );
+        agentId = _selfRegisterAgent(vault, name, metadataURI, signer, linkERC8004, erc8004AgentId, deadline, signature);
     }
 
     // -------------------------------------------------------------------------
@@ -389,8 +383,7 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
         bool linkERC8004,
         uint256 erc8004AgentId,
         uint256 deadline,
-        bytes calldata signature,
-        bytes32 x402PaymentId
+        bytes calldata signature
     ) private returns (uint256 agentId) {
         _verifySelfRegisterSignature(vault, name, metadataURI, signer, linkERC8004, erc8004AgentId, deadline, signature);
 
@@ -403,19 +396,11 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
         input.linkERC8004 = linkERC8004;
         input.erc8004AgentId = erc8004AgentId;
         input.payer = msg.sender;
-        bool prepaidFee = msg.sender == feeManager.registrationFeeRelayer() && msg.sender != address(0);
-        if (prepaidFee) {
-            if (x402PaymentId == bytes32(0) && feeManager.getRegistrationFee() > 0) {
-                revert X402PaymentIdRequired();
-            }
-        } else if (x402PaymentId != bytes32(0)) {
-            revert UnexpectedX402PaymentId();
-        }
-        agentId = _registerAgent(input, prepaidFee, x402PaymentId);
+        agentId = _registerAgent(input, false);
     }
 
     /// @dev Shared registration path after validation and fee collection.
-    function _registerAgent(AgentRegistrationInput memory input, bool prepaidRegistrationFee, bytes32 x402PaymentId)
+    function _registerAgent(AgentRegistrationInput memory input, bool skipRegistrationFee)
         private
         returns (uint256 agentId)
     {
@@ -427,9 +412,7 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
 
         agentId = _nextAgentId++;
 
-        if (prepaidRegistrationFee) {
-            feeManager.payRegistrationFeePrepaid(agentId, x402PaymentId);
-        } else {
+        if (!skipRegistrationFee) {
             feeManager.payRegistrationFee(input.payer, agentId);
         }
 

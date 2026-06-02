@@ -6,7 +6,6 @@ import {
   AgentRegistrationResponseSchema,
 } from "../schemas/agent.js";
 import { verifyRegistrationPayment } from "../lib/x402-agent-registration.js";
-import { clearRegistrationRequestState } from "../lib/registration-request-context.js";
 import {
   AgentRegistrationError,
   getAgentRegistrationQuote,
@@ -16,6 +15,7 @@ import { listVaults } from "../services/vaults.js";
 import { ListVaultsResponseSchema } from "../schemas/vault.js";
 import { getActiveMcpRequest } from "./request-context.js";
 import { getWorkerEnv } from "../lib/worker-env.js";
+import { AppError } from "../errors.js";
 
 const MCP_SERVER_NAME = "alphagrid-mcp-server";
 const MCP_SERVER_VERSION = "0.2.0";
@@ -119,18 +119,15 @@ export function createAlpagridMcpServer(): McpServer {
           structuredContent: output as unknown as Record<string, unknown>,
         };
       } catch (error) {
-        const message =
-          error instanceof AgentRegistrationError
-            ? error.message
-            : error instanceof Error
-              ? error.message
-              : "Registration failed";
+        const message = error instanceof Error ? error.message : "Registration failed";
+        const code =
+          error instanceof AppError || error instanceof AgentRegistrationError
+            ? error.code
+            : "INTERNAL_SERVER_ERROR";
         return {
-          content: [{ type: "text", text: message }],
+          content: [{ type: "text", text: `${code}: ${message}` }],
           isError: true,
         };
-      } finally {
-        clearRegistrationRequestState();
       }
     },
   );

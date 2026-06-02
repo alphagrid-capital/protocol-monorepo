@@ -113,8 +113,7 @@ interface IAgentRegistry {
         bool linkERC8004,
         uint256 erc8004AgentId,
         uint256 deadline,
-        bytes calldata signature,
-        bytes32 x402PaymentId
+        bytes calldata signature
     ) external returns (uint256 agentId);
 
     // -------------------------------------------------------------------------

@@ -8,14 +8,8 @@ export type AgentRegistrationConfig = {
   feeManager: `0x${string}` | null;
   chainId: number;
   rpcUrl: string | null;
-  treasury: `0x${string}` | null;
-  registrationFeeAtomic: bigint;
-  registrationFeeUsd: string;
-  registrationFeeRelayer: `0x${string}` | null;
   relayerPrivateKey: `0x${string}` | null;
   x402: {
-    enabled: boolean;
-    payTo: `0x${string}` | null;
     network: string;
     facilitatorUrl: string;
   };
@@ -45,13 +39,8 @@ export function loadAgentRegistrationConfig(
   env: Record<string, string | undefined> = {},
 ): AgentRegistrationConfig {
   const agentRegistry = parseAddress(env.AGENT_REGISTRY_ADDRESS);
-  const treasury = parseAddress(env.TREASURY_ADDRESS ?? env.X402_PAY_TO);
-  const payTo = parseAddress(env.X402_PAY_TO ?? env.TREASURY_ADDRESS);
-  const feeAtomic = env.REGISTRATION_FEE_ATOMIC
-    ? BigInt(env.REGISTRATION_FEE_ATOMIC)
-    : 50_000_000n;
   const chainId = env.CHAIN_ID ? Number(env.CHAIN_ID) : 84532;
-  const live = Boolean(agentRegistry && treasury);
+  const live = Boolean(agentRegistry);
 
   return {
     mode: live ? "live" : "mock",
@@ -59,14 +48,8 @@ export function loadAgentRegistrationConfig(
     feeManager: parseAddress(env.FEE_MANAGER_ADDRESS),
     chainId,
     rpcUrl: env.RPC_URL ?? null,
-    treasury,
-    registrationFeeAtomic: feeAtomic,
-    registrationFeeUsd: env.REGISTRATION_FEE_USD ?? atomicUsdcToUsdString(feeAtomic),
-    registrationFeeRelayer: parseAddress(env.REGISTRATION_FEE_RELAYER_ADDRESS),
     relayerPrivateKey: parsePrivateKey(env.RELAYER_PRIVATE_KEY),
     x402: {
-      enabled: Boolean(payTo && env.X402_ENABLED !== "false"),
-      payTo,
       network: env.X402_NETWORK ?? "eip155:84532",
       facilitatorUrl: env.X402_FACILITATOR_URL ?? "https://x402.org/facilitator",
     },

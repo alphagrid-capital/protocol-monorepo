@@ -7,22 +7,18 @@ import {
   type AgentRegistrationConfig,
   loadAgentRegistrationConfig,
 } from "../config/agent-registration.js";
-import { fetchRegistrationFeeAtomic, fetchRegistrationFeeUsd } from "./registration-fee.js";
-import { deriveX402PaymentId } from "./registration-payment-id.js";
-import {
-  clearRegistrationRequestState,
-  setRegistrationPaymentId,
-  stashRegistrationBody,
-} from "./registration-request-context.js";
+import { fetchRegistrationFeeDetails } from "./registration-fee.js";
 import { getWorkerEnv } from "./worker-env.js";
 import { FetchRequestAdapter } from "./fetch-request-adapter.js";
 
 const REGISTER_ROUTE = "POST /agents/register";
-export const ZERO_X402_PAYMENT_ID =
-  "0x0000000000000000000000000000000000000000000000000000000000000000" as const;
 
-function buildRoutes(config: AgentRegistrationConfig, priceUsd: string): RoutesConfig {
-  if (!config.x402.payTo) {
+function buildRoutes(
+  config: AgentRegistrationConfig,
+  priceUsd: string,
+  payTo: `0x${string}` | null,
+): RoutesConfig {
+  if (!payTo) {
     return {};
   }
 
@@ -33,10 +29,10 @@ function buildRoutes(config: AgentRegistrationConfig, priceUsd: string): RoutesC
           scheme: "exact",
           price: priceUsd,
           network: config.x402.network as Network,
-          payTo: config.x402.payTo,
+          payTo,
         },
       ],
-      description: "Agent self-registration on AlphaGrid AgentRegistry",
+      description: "Agent registration on AlphaGrid AgentRegistry via backend registrar",
       mimeType: "application/json",
     },
   };
@@ -45,8 +41,9 @@ function buildRoutes(config: AgentRegistrationConfig, priceUsd: string): RoutesC
 async function buildHttpServer(
   config: AgentRegistrationConfig,
   priceUsd: string,
+  payTo: `0x${string}` | null,
 ): Promise<x402HTTPResourceServer | null> {
-  if (!config.x402.enabled || !config.x402.payTo) return null;
+  if (!payTo) return null;
 
   const facilitator = new HTTPFacilitatorClient({ url: config.x402.facilitatorUrl });
   const resourceServer = new x402ResourceServer(facilitator).register(
@@ -54,27 +51,36 @@ async function buildHttpServer(
     new ExactEvmScheme(),
   );
 
-  return new x402HTTPResourceServer(resourceServer, buildRoutes(config, priceUsd));
+  return new x402HTTPResourceServer(resourceServer, buildRoutes(config, priceUsd, payTo));
 }
 
 export async function verifyRegistrationPayment(
   request: Request,
   parsedBody?: unknown,
   env: Record<string, string | undefined> = getWorkerEnv(),
+  feeState?: { amount: bigint; treasury: `0x${string}` | null; displayUsd: string },
 ): Promise<{ ok: true } | { ok: false; response: Response }> {
   const config = loadAgentRegistrationConfig(env);
-  if (!config.x402.enabled || !config.x402.payTo) {
+  const registrationFeeState = feeState ?? (await fetchRegistrationFeeDetails(config));
+  if (registrationFeeState.amount === 0n) {
     return { ok: true };
   }
 
-  const feeAtomic = await fetchRegistrationFeeAtomic(config);
-  if (feeAtomic === 0n) {
-    setRegistrationPaymentId(ZERO_X402_PAYMENT_ID);
-    return { ok: true };
+  if (!registrationFeeState.treasury) {
+    return {
+      ok: false,
+      response: Response.json(
+        { error: "FeeManager.treasury is unavailable for registration fee collection" },
+        { status: 503 },
+      ),
+    };
   }
 
-  const priceUsd = await fetchRegistrationFeeUsd(config);
-  const httpServer = await buildHttpServer(config, priceUsd);
+  const httpServer = await buildHttpServer(
+    config,
+    registrationFeeState.displayUsd,
+    registrationFeeState.treasury,
+  );
   if (!httpServer) return { ok: true };
 
   const adapter: HTTPAdapter = new FetchRequestAdapter(
@@ -102,44 +108,26 @@ export async function verifyRegistrationPayment(
     };
   }
 
-  try {
-    setRegistrationPaymentId(deriveX402PaymentId(request));
-  } catch {
-    return {
-      ok: false,
-      response: Response.json(
-        { error: "x402 payment verified but payment id could not be derived" },
-        { status: 500 },
-      ),
-    };
-  }
-
   return { ok: true };
 }
 
 export function createRegistrationPaymentMiddleware(): MiddlewareHandler {
   return async (c, next) => {
     const config = loadAgentRegistrationConfig(getWorkerEnv());
-    if (!config.x402.enabled || !config.x402.payTo) {
+    const feeState = await fetchRegistrationFeeDetails(config);
+    if (feeState.amount === 0n) {
       return next();
     }
 
     let parsedBody: unknown;
     if (c.req.header("content-type")?.includes("application/json")) {
-      parsedBody = await c.req.json().catch(() => undefined);
-      stashRegistrationBody(parsedBody);
+      parsedBody = await c.req.raw.clone().json().catch(() => undefined);
     }
 
-    const payment = await verifyRegistrationPayment(c.req.raw, parsedBody, getWorkerEnv());
+    const payment = await verifyRegistrationPayment(c.req.raw, parsedBody, getWorkerEnv(), feeState);
     if (!payment.ok) {
-      clearRegistrationRequestState();
       return payment.response;
     }
-
-    try {
-      await next();
-    } finally {
-      clearRegistrationRequestState();
-    }
+    await next();
   };
 }

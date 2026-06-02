@@ -78,25 +78,24 @@ contract FeeManagerTest is BaseTest {
         assertEq(feeManager.getPromotionFee(vault, 0, 1), PROMOTION_FEE);
     }
 
-    function test_PayRegistrationFee_TransfersToTreasury() public {
+    function test_RegisterAgent_RegistrarSkipsRegistrationFee() public {
         vm.startPrank(operator);
-        usdc.approve(address(feeManager), REGISTRATION_FEE);
         uint256 agentId = _registerAlice();
         vm.stopPrank();
 
-        assertEq(usdc.balanceOf(treasury), REGISTRATION_FEE);
-        assertEq(usdc.balanceOf(operator), 10_000e6 - REGISTRATION_FEE);
+        assertEq(usdc.balanceOf(treasury), 0);
+        assertEq(usdc.balanceOf(operator), 10_000e6);
         assertEq(agentId, 1);
     }
 
     function test_PayPromotionFee_TransfersToTreasury() public {
         vm.startPrank(operator);
-        usdc.approve(address(feeManager), REGISTRATION_FEE + PROMOTION_FEE);
+        usdc.approve(address(feeManager), PROMOTION_FEE);
         uint256 agentId = _registerAlice();
         registry.promoteAgent(agentId, IAgentRegistry.Track.FUNDED);
         vm.stopPrank();
 
-        assertEq(usdc.balanceOf(treasury), REGISTRATION_FEE + PROMOTION_FEE);
+        assertEq(usdc.balanceOf(treasury), PROMOTION_FEE);
     }
 
     function test_ZeroRegistrationFeeSkipsTransfer() public {
@@ -115,12 +114,10 @@ contract FeeManagerTest is BaseTest {
         feeManager.setPromotionFee(vault, 0, 1, 0);
 
         vm.startPrank(operator);
-        usdc.approve(address(feeManager), REGISTRATION_FEE);
         uint256 agentId = _registerAlice();
         registry.promoteAgent(agentId, IAgentRegistry.Track.FUNDED);
         vm.stopPrank();
-
-        assertEq(usdc.balanceOf(treasury), REGISTRATION_FEE);
+        assertEq(usdc.balanceOf(treasury), 0);
     }
 
     function test_RevertWhen_NotAgentRegistryCaller() public {
@@ -130,19 +127,28 @@ contract FeeManagerTest is BaseTest {
     }
 
     function test_RevertWhen_InsufficientAllowance() public {
-        uint256 erc8004Id = AgentTestLib.mintERC8004(identityRegistry, alice);
-        vm.prank(operator);
+        address agentSigner = vm.addr(AGENT_SIGNER_PRIVATE_KEY);
+        uint256 erc8004Id = AgentTestLib.mintERC8004(identityRegistry, agentSigner);
+        uint256 deadline = block.timestamp + 1 hours;
+        bytes memory signature = _signSelfRegister(agentSigner, erc8004Id, deadline);
+        usdc.mint(agentSigner, REGISTRATION_FEE);
+
+        vm.prank(agentSigner);
         vm.expectRevert();
-        registry.registerAgent(alice, vault, "Bot", "ipfs://bot", alice, true, erc8004Id);
+        registry.selfRegisterAgent(vault, "Bot", "ipfs://bot", agentSigner, true, erc8004Id, deadline, signature);
     }
 
     function test_RevertWhen_InsufficientBalance() public {
-        uint256 erc8004Id = AgentTestLib.mintERC8004(identityRegistry, alice);
-        vm.startPrank(operator);
+        address agentSigner = vm.addr(AGENT_SIGNER_PRIVATE_KEY);
+        uint256 erc8004Id = AgentTestLib.mintERC8004(identityRegistry, agentSigner);
+        uint256 deadline = block.timestamp + 1 hours;
+        bytes memory signature = _signSelfRegister(agentSigner, erc8004Id, deadline);
+
+        vm.startPrank(agentSigner);
         usdc.approve(address(feeManager), REGISTRATION_FEE);
-        usdc.burn(operator, usdc.balanceOf(operator));
+        usdc.burn(agentSigner, usdc.balanceOf(agentSigner));
         vm.expectRevert();
-        registry.registerAgent(alice, vault, "Bot", "ipfs://bot", alice, true, erc8004Id);
+        registry.selfRegisterAgent(vault, "Bot", "ipfs://bot", agentSigner, true, erc8004Id, deadline, signature);
         vm.stopPrank();
     }
 
@@ -179,41 +185,29 @@ contract FeeManagerTest is BaseTest {
         feeManager.setTreasury(makeAddr("newTreasury"));
     }
 
-    function test_PayRegistrationFeePrepaid_RelayerSelfRegisterSkipsTransfer() public {
-        address relayer = makeAddr("relayer");
+    function test_SelfRegisterAgent_PaysRegistrationFeeToTreasury() public {
         address agentSigner = vm.addr(AGENT_SIGNER_PRIVATE_KEY);
-
-        vm.prank(deployer);
-        feeManager.setRegistrationFeeRelayer(relayer);
 
         uint256 erc8004Id = AgentTestLib.mintERC8004(identityRegistry, agentSigner);
         uint256 deadline = block.timestamp + 1 hours;
         bytes memory signature = _signSelfRegister(agentSigner, erc8004Id, deadline);
-
-        bytes32 paymentId = keccak256("x402-payment-relayer");
-
-        vm.prank(relayer);
-        uint256 agentId = registry.selfRegisterAgent(
-            vault, "Bot", "ipfs://bot", agentSigner, true, erc8004Id, deadline, signature, paymentId
-        );
+        usdc.mint(agentSigner, REGISTRATION_FEE);
+        vm.prank(agentSigner);
+        usdc.approve(address(feeManager), REGISTRATION_FEE);
+        vm.prank(agentSigner);
+        uint256 agentId =
+            registry.selfRegisterAgent(vault, "Bot", "ipfs://bot", agentSigner, true, erc8004Id, deadline, signature);
 
         assertEq(agentId, 1);
-        assertEq(usdc.balanceOf(treasury), 0);
+        assertEq(usdc.balanceOf(treasury), REGISTRATION_FEE);
     }
 
-    function test_RegisterAgent_RegistrarStillPaysWhenRelayerConfigured() public {
-        address relayer = makeAddr("relayer");
-
-        vm.prank(deployer);
-        feeManager.setRegistrationFeeRelayer(relayer);
-
+    function test_RegisterAgent_RegistrarSkipsFeeWhenSelfRegisterFeeConfigured() public {
         uint256 erc8004Id = AgentTestLib.mintERC8004(identityRegistry, alice);
-        vm.startPrank(operator);
-        usdc.approve(address(feeManager), REGISTRATION_FEE);
+        vm.prank(operator);
         registry.registerAgent(alice, vault, "Bot", "ipfs://bot", alice, true, erc8004Id);
-        vm.stopPrank();
 
-        assertEq(usdc.balanceOf(treasury), REGISTRATION_FEE);
+        assertEq(usdc.balanceOf(treasury), 0);
     }
 
     function _signSelfRegister(address signer, uint256 erc8004Id, uint256 deadline)
@@ -272,17 +266,4 @@ contract FeeManagerTest is BaseTest {
         );
     }
 
-    function test_X402PaymentId_ReplayReverts() public {
-        bytes32 paymentId = keccak256("x402-payment-replay");
-
-        vm.prank(deployer);
-        feeManager.setRegistrationFeeRelayer(makeAddr("relayer"));
-
-        vm.prank(address(registry));
-        feeManager.payRegistrationFeePrepaid(1, paymentId);
-
-        vm.prank(address(registry));
-        vm.expectRevert(abi.encodeWithSelector(FeeManager.X402PaymentAlreadyConsumed.selector, paymentId));
-        feeManager.payRegistrationFeePrepaid(2, paymentId);
-    }
 }
