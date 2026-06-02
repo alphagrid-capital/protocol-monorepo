@@ -1,26 +1,21 @@
-import {
-  createPublicClient,
-  createWalletClient,
-  http,
-  type Chain,
-  type Hex,
-} from "viem";
-import { privateKeyToAccount } from "viem/accounts";
-import * as viemChains from "viem/chains";
-import { robinhoodTestnet } from "../constants/chains/robinhoodTestnet.js";
-import type { AgentRegistrationConfig } from "../lib/agent-registration-config.js";
+import { createPublicClient, createWalletClient, http } from 'viem'
+import type { Chain, Hex } from 'viem'
+import { privateKeyToAccount } from 'viem/accounts'
+import * as viemChains from 'viem/chains'
+import { robinhoodTestnet } from '../constants/chains/robinhoodTestnet.js'
+import type { AgentRegistrationConfig } from '../lib/agent-registration-config.js'
 
 const SUPPORTED_CHAINS = [
   viemChains.baseSepolia,
   viemChains.arbitrum,
   viemChains.arbitrumSepolia,
   robinhoodTestnet,
-];
+]
 
 function resolveChain(chainId: number, rpcUrl: string): Chain {
-  const supportedChain = SUPPORTED_CHAINS.find((chain) => chain.id === chainId);
+  const supportedChain = SUPPORTED_CHAINS.find((chain) => chain.id === chainId)
   if (!supportedChain) {
-    throw new Error(`Unsupported chain ID: ${chainId}`);
+    throw new Error(`Unsupported chain ID: ${chainId}`)
   }
 
   return {
@@ -29,31 +24,31 @@ function resolveChain(chainId: number, rpcUrl: string): Chain {
       ...supportedChain.rpcUrls,
       default: { http: [rpcUrl] },
     },
-  };
+  }
 }
 
 export class ProviderService {
-  readonly chain: Chain;
+  readonly chain: Chain
 
   constructor(
     private readonly rpcUrl: string,
-    chainId: number,
+    chainId: number
   ) {
-    this.chain = resolveChain(chainId, rpcUrl);
+    this.chain = resolveChain(chainId, rpcUrl)
   }
 
   static fromConfig(config: AgentRegistrationConfig): ProviderService {
     if (!config.rpcUrl) {
-      throw new Error("RPC_URL is not configured");
+      throw new Error('RPC_URL is not configured')
     }
-    return new ProviderService(config.rpcUrl, config.chainId);
+    return new ProviderService(config.rpcUrl, config.chainId)
   }
 
   createPublicClient() {
     return createPublicClient({
       chain: this.chain,
       transport: http(this.rpcUrl),
-    });
+    })
   }
 
   createWalletClient(privateKey: Hex) {
@@ -61,6 +56,6 @@ export class ProviderService {
       account: privateKeyToAccount(privateKey),
       chain: this.chain,
       transport: http(this.rpcUrl),
-    });
+    })
   }
 }

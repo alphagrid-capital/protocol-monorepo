@@ -1,35 +1,34 @@
 import {
-  type Address,
-  type Hex,
   encodeAbiParameters,
   keccak256,
   parseAbiParameters,
   toBytes,
   verifyTypedData,
-} from "viem";
-import { SELF_REGISTER_TYPEHASH } from "../constants/agent-registration.js";
+} from 'viem'
+import type { Address, Hex } from 'viem'
+import { SELF_REGISTER_TYPEHASH } from '../constants/agent-registration.js'
 
 export const AGENT_REGISTRY_EIP712_DOMAIN = {
-  name: "AlphaGrid AgentRegistry",
-  version: "1",
-} as const;
+  name: 'AlphaGrid AgentRegistry',
+  version: '1',
+} as const
 
-export type SelfRegisterTypedData = {
-  vault: Address;
-  name: string;
-  metadataURI: string;
-  signer: Address;
-  linkERC8004: boolean;
-  erc8004AgentId: bigint;
-  nonce: bigint;
-  deadline: bigint;
-};
+export interface SelfRegisterTypedData {
+  vault: Address
+  name: string
+  metadataURI: string
+  signer: Address
+  linkERC8004: boolean
+  erc8004AgentId: bigint
+  nonce: bigint
+  deadline: bigint
+}
 
 export function hashSelfRegisterStruct(data: SelfRegisterTypedData): Hex {
   return keccak256(
     encodeAbiParameters(
       parseAbiParameters(
-        "bytes32, address, bytes32, bytes32, address, bool, uint256, uint256, uint256",
+        'bytes32, address, bytes32, bytes32, address, bool, uint256, uint256, uint256'
       ),
       [
         SELF_REGISTER_TYPEHASH,
@@ -41,20 +40,27 @@ export function hashSelfRegisterStruct(data: SelfRegisterTypedData): Hex {
         data.erc8004AgentId,
         data.nonce,
         data.deadline,
-      ],
-    ),
-  );
+      ]
+    )
+  )
 }
 
 export async function verifySelfRegisterSignature(params: {
-  domainName: string;
-  domainVersion: string;
-  chainId: number;
-  verifyingContract: Address;
-  data: SelfRegisterTypedData;
-  signature: Hex;
+  domainName: string
+  domainVersion: string
+  chainId: number
+  verifyingContract: Address
+  data: SelfRegisterTypedData
+  signature: Hex
 }): Promise<boolean> {
-  const { domainName, domainVersion, chainId, verifyingContract, data, signature } = params;
+  const {
+    domainName,
+    domainVersion,
+    chainId,
+    verifyingContract,
+    data,
+    signature,
+  } = params
   return verifyTypedData({
     address: data.signer,
     domain: {
@@ -65,17 +71,17 @@ export async function verifySelfRegisterSignature(params: {
     },
     types: {
       SelfRegister: [
-        { name: "vault", type: "address" },
-        { name: "name", type: "string" },
-        { name: "metadataURI", type: "string" },
-        { name: "signer", type: "address" },
-        { name: "linkERC8004", type: "bool" },
-        { name: "erc8004AgentId", type: "uint256" },
-        { name: "nonce", type: "uint256" },
-        { name: "deadline", type: "uint256" },
+        { name: 'vault', type: 'address' },
+        { name: 'name', type: 'string' },
+        { name: 'metadataURI', type: 'string' },
+        { name: 'signer', type: 'address' },
+        { name: 'linkERC8004', type: 'bool' },
+        { name: 'erc8004AgentId', type: 'uint256' },
+        { name: 'nonce', type: 'uint256' },
+        { name: 'deadline', type: 'uint256' },
       ],
     },
-    primaryType: "SelfRegister",
+    primaryType: 'SelfRegister',
     message: {
       vault: data.vault,
       name: data.name,
@@ -87,5 +93,5 @@ export async function verifySelfRegisterSignature(params: {
       deadline: data.deadline,
     },
     signature,
-  });
+  })
 }

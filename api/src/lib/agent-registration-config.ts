@@ -1,45 +1,45 @@
-import type { Network } from "@x402/core/types";
-import { contracts } from "../constants/contracts.js";
-import { parsePrivateKey } from "./evm-uilts.js";
+import type { Network } from '@x402/core/types'
+import { contracts } from '../constants/contracts.js'
+import { parsePrivateKey } from './evm-uilts.js'
 
-export type AgentRegistrationConfig = {
-  mode: "mock" | "live";
-  agentRegistry: `0x${string}` | null;
-  feeManager: `0x${string}` | null;
-  chainId: number;
-  rpcUrl: string | null;
-  relayerPrivateKey: `0x${string}` | null;
+export interface AgentRegistrationConfig {
+  mode: 'mock' | 'live'
+  agentRegistry: `0x${string}` | null
+  feeManager: `0x${string}` | null
+  chainId: number
+  rpcUrl: string | null
+  relayerPrivateKey: `0x${string}` | null
   x402: {
-    networkName: string;
-    network: Network;
-    facilitatorUrl: string;
-  };
-};
+    networkName: string
+    network: Network
+    facilitatorUrl: string
+  }
+}
 
 function requireEnv(
   env: Record<string, string | undefined>,
-  key: "CHAIN_ID" | "X402_NETWORK" | "X402_FACILITATOR_URL",
+  key: 'CHAIN_ID' | 'X402_NETWORK' | 'X402_FACILITATOR_URL'
 ): string {
-  const value = env[key];
+  const value = env[key]
   if (!value) {
-    throw new Error(`${key} is not configured`);
+    throw new Error(`${key} is not configured`)
   }
-  return value;
+  return value
 }
 
 export function loadAgentRegistrationConfig(
-  env: Record<string, string | undefined> = {},
+  env: Record<string, string | undefined> = {}
 ): AgentRegistrationConfig {
-  const chainId = Number(requireEnv(env, "CHAIN_ID"));
-  const chainContracts = contracts[chainId];
+  const chainId = Number(requireEnv(env, 'CHAIN_ID'))
+  const chainContracts = contracts[chainId]
   if (!chainContracts) {
-    throw new Error(`Unsupported CHAIN_ID: ${chainId}`);
+    throw new Error(`Unsupported CHAIN_ID: ${chainId}`)
   }
-  const agentRegistry = chainContracts.agentRegistry;
-  const live = Boolean(agentRegistry);
+  const agentRegistry = chainContracts.agentRegistry
+  const live = Boolean(agentRegistry)
 
   return {
-    mode: live ? "live" : "mock",
+    mode: live ? 'live' : 'mock',
     agentRegistry,
     feeManager: chainContracts.feeManager,
     chainId,
@@ -47,8 +47,8 @@ export function loadAgentRegistrationConfig(
     relayerPrivateKey: parsePrivateKey(env.RELAYER_PRIVATE_KEY),
     x402: {
       networkName: chainContracts.networkName,
-      network: requireEnv(env, "X402_NETWORK") as Network,
-      facilitatorUrl: requireEnv(env, "X402_FACILITATOR_URL"),
+      network: requireEnv(env, 'X402_NETWORK') as Network,
+      facilitatorUrl: requireEnv(env, 'X402_FACILITATOR_URL'),
     },
-  };
+  }
 }

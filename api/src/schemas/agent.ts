@@ -1,39 +1,48 @@
-import { z } from "@hono/zod-openapi";
+import { z } from '@hono/zod-openapi'
 
 const addressSchema = z
   .string()
-  .regex(/^0x[a-fA-F0-9]{40}$/, "Expected 0x-prefixed 20-byte address");
+  .regex(/^0x[a-fA-F0-9]{40}$/, 'Expected 0x-prefixed 20-byte address')
 
-const hexSchema = z.string().regex(/^0x[a-fA-F0-9]*$/, "Expected 0x-prefixed hex");
+const hexSchema = z
+  .string()
+  .regex(/^0x[a-fA-F0-9]*$/, 'Expected 0x-prefixed hex')
 
 export const AgentRegistrationQuoteInputSchema = z
   .object({
     signer: addressSchema.optional(),
   })
-  .strict();
+  .strict()
 
 export const AgentRegistrationRequestSchema = z
   .object({
-    vault: addressSchema.openapi({ example: "0x0000000000000000000000000000000000000001" }),
-    name: z.string().min(1).max(128).openapi({ example: "Alpha Bot" }),
-    metadataURI: z.string().min(1).max(2048).openapi({ example: "ipfs://alpha-bot" }),
+    vault: addressSchema.openapi({
+      example: '0x0000000000000000000000000000000000000001',
+    }),
+    name: z.string().min(1).max(128).openapi({ example: 'Alpha Bot' }),
+    metadataURI: z
+      .string()
+      .min(1)
+      .max(2048)
+      .openapi({ example: 'ipfs://alpha-bot' }),
     signer: addressSchema,
     linkERC8004: z.boolean().default(false),
     erc8004AgentId: z
       .string()
       .regex(/^\d+$/)
-      .default("0")
-      .openapi({ description: "ERC-8004 identity token id when linking" }),
-    deadline: z
-      .string()
-      .regex(/^\d+$/)
-      .openapi({ description: "Unix timestamp; EIP-712 SelfRegister deadline" }),
-    signature: hexSchema.openapi({ description: "EIP-712 signature from signer" }),
+      .default('0')
+      .openapi({ description: 'ERC-8004 identity token id when linking' }),
+    deadline: z.string().regex(/^\d+$/).openapi({
+      description: 'Unix timestamp; EIP-712 SelfRegister deadline',
+    }),
+    signature: hexSchema.openapi({
+      description: 'EIP-712 signature from signer',
+    }),
   })
-  .strict();
+  .strict()
 
 export const AgentRegistrationQuoteSchema = z.object({
-  mode: z.enum(["mock", "live"]),
+  mode: z.enum(['mock', 'live']),
   registrationFee: z.object({
     amount: z.string(),
     assetSymbol: z.string(),
@@ -52,15 +61,15 @@ export const AgentRegistrationQuoteSchema = z.object({
     domainVersion: z.string(),
     chainId: z.number(),
     verifyingContract: addressSchema.nullable(),
-    primaryType: z.literal("SelfRegister"),
+    primaryType: z.literal('SelfRegister'),
     selfRegisterTypehash: z.string(),
   }),
   agentRegistry: addressSchema.nullable(),
   signerNonce: z.string().nullable(),
-});
+})
 
 export const AgentRegistrationResponseSchema = z.object({
-  mode: z.enum(["mock", "live"]),
+  mode: z.enum(['mock', 'live']),
   agentId: z.string().nullable(),
   transactionHash: hexSchema.nullable(),
   transaction: z
@@ -72,8 +81,14 @@ export const AgentRegistrationResponseSchema = z.object({
     })
     .nullable(),
   message: z.string(),
-});
+})
 
-export type AgentRegistrationRequest = z.infer<typeof AgentRegistrationRequestSchema>;
-export type AgentRegistrationQuote = z.infer<typeof AgentRegistrationQuoteSchema>;
-export type AgentRegistrationResponse = z.infer<typeof AgentRegistrationResponseSchema>;
+export type AgentRegistrationRequest = z.infer<
+  typeof AgentRegistrationRequestSchema
+>
+export type AgentRegistrationQuote = z.infer<
+  typeof AgentRegistrationQuoteSchema
+>
+export type AgentRegistrationResponse = z.infer<
+  typeof AgentRegistrationResponseSchema
+>
