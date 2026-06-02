@@ -180,7 +180,7 @@ contract VaultTrackRegistryTest is BaseTest {
 
     function _sampleConfig(address vault_, uint256 trackId_, bool active)
         internal
-        view
+        pure
         returns (IVaultTrackRegistry.VaultTrackConfig memory)
     {
         return IVaultTrackRegistry.VaultTrackConfig({
