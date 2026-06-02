@@ -9,6 +9,7 @@
     "node": ">=24"
   },
   "scripts": {
+    "sync-abis": "node ../scripts/sync-contract-abis.mjs",
     "dev": "wrangler dev --install-skills=false",
     "deploy": "wrangler deploy",
     "type-check": "tsc --noEmit",

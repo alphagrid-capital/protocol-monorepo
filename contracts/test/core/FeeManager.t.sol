@@ -265,5 +265,4 @@ contract FeeManagerTest is BaseTest {
             })
         );
     }
-
 }

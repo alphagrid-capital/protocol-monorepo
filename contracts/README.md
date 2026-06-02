@@ -61,7 +61,6 @@ contracts/
     ├── DeployAgentCore.s.sol
     ├── DeployVaultInfrastructure.s.sol
     ├── DeployTrading.s.sol
-    ├── DeployAgentRegistry.s.sol
     └── DeployMockERC20.s.sol
 ```
 

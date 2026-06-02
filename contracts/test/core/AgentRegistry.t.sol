@@ -95,8 +95,9 @@ contract AgentRegistryTest is BaseTest {
             _signSelfRegister(vault, AGENT_NAME, METADATA_URI, agentSigner, true, erc8004Id, 0, deadline);
 
         vm.prank(agentSigner);
-        uint256 agentId =
-            registry.selfRegisterAgent(vault, AGENT_NAME, METADATA_URI, agentSigner, true, erc8004Id, deadline, signature);
+        uint256 agentId = registry.selfRegisterAgent(
+            vault, AGENT_NAME, METADATA_URI, agentSigner, true, erc8004Id, deadline, signature
+        );
 
         assertEq(agentId, 1);
         assertEq(registry.ownerOf(agentId), agentSigner);
@@ -480,7 +481,9 @@ contract AgentRegistryTest is BaseTest {
 
         vm.prank(agentSigner);
         vm.expectRevert(Pausable.EnforcedPause.selector);
-        registry.selfRegisterAgent(vault, AGENT_NAME, METADATA_URI, agentSigner, false, selfErc8004Id, deadline, signature);
+        registry.selfRegisterAgent(
+            vault, AGENT_NAME, METADATA_URI, agentSigner, false, selfErc8004Id, deadline, signature
+        );
     }
 
     function test_Pause_UnpauseByOperator() public {
