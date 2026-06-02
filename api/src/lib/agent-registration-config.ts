@@ -10,6 +10,7 @@ export type AgentRegistrationConfig = {
   rpcUrl: string | null;
   relayerPrivateKey: `0x${string}` | null;
   x402: {
+    networkName: string;
     network: Network;
     facilitatorUrl: string;
   };
@@ -30,7 +31,10 @@ export function loadAgentRegistrationConfig(
   env: Record<string, string | undefined> = {},
 ): AgentRegistrationConfig {
   const chainId = Number(requireEnv(env, "CHAIN_ID"));
-  const chainContracts = contracts[chainId] ?? { agentRegistry: null, feeManager: null };
+  const chainContracts = contracts[chainId];
+  if (!chainContracts) {
+    throw new Error(`Unsupported CHAIN_ID: ${chainId}`);
+  }
   const agentRegistry = chainContracts.agentRegistry;
   const live = Boolean(agentRegistry);
 
@@ -42,6 +46,7 @@ export function loadAgentRegistrationConfig(
     rpcUrl: env.RPC_URL ?? null,
     relayerPrivateKey: parsePrivateKey(env.RELAYER_PRIVATE_KEY),
     x402: {
+      networkName: chainContracts.networkName,
       network: requireEnv(env, "X402_NETWORK") as Network,
       facilitatorUrl: requireEnv(env, "X402_FACILITATOR_URL"),
     },

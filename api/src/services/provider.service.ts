@@ -7,9 +7,15 @@ import {
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import * as viemChains from "viem/chains";
+import { robinhoodTestnet } from "../constants/chains/robinhoodTestnet.js";
 import type { AgentRegistrationConfig } from "../lib/agent-registration-config.js";
 
-const SUPPORTED_CHAINS = [viemChains.mainnet];
+const SUPPORTED_CHAINS = [
+  viemChains.baseSepolia,
+  viemChains.arbitrum,
+  viemChains.arbitrumSepolia,
+  robinhoodTestnet,
+];
 
 function resolveChain(chainId: number, rpcUrl: string): Chain {
   const supportedChain = SUPPORTED_CHAINS.find((chain) => chain.id === chainId);
