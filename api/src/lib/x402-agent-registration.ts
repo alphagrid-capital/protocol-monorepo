@@ -2,7 +2,7 @@ import type { MiddlewareHandler } from 'hono'
 import { loadAgentRegistrationConfig } from './agent-registration-config.js'
 import { RegistrationFeeService } from '../services/fee-manager.service.js'
 import { getWorkerEnv } from './worker-env.js'
-import { createX402Middleware, verifyX402Payment } from './x402.js'
+import { verifyX402Payment } from './x402.js'
 import type { X402PaymentConfig } from './x402.js'
 
 const REGISTER_METHOD = 'POST'
@@ -79,9 +79,14 @@ export function createRegistrationPaymentMiddleware(): MiddlewareHandler {
       return missingTreasuryResponse()
     }
 
-    const middleware = await createX402Middleware(
-      buildRegistrationPaymentConfig(env, feeState)
-    )
-    return middleware(c, next)
+    const verification = await verifyX402Payment({
+      payment: buildRegistrationPaymentConfig(env, feeState),
+      request: c.req.raw,
+    })
+    if (!verification.ok) {
+      return verification.response
+    }
+
+    return next()
   }
 }

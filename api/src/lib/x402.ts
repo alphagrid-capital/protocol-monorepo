@@ -92,12 +92,12 @@ export async function verifyX402Payment(
   const requestAdapter =
     adapter ?? new FetchRequestAdapter(request, payment.path, parsedBody)
   const httpServer = await buildHttpServer(payment)
+  await httpServer.initialize()
   const result: HTTPProcessResult = await httpServer.processHTTPRequest({
     adapter: requestAdapter,
     path: payment.path,
     method: payment.method.toUpperCase(),
   })
-
   if (result.type === 'payment-error') {
     return { ok: false, response: paymentErrorToResponse(result) }
   }

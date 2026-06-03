@@ -19,8 +19,8 @@ export const contracts: Record<number, ChainContracts> = {
   84532: {
     networkName: 'Base Sepolia',
     network: 'eip155:84532',
-    agentRegistry: null,
-    feeManager: null,
+    agentRegistry: '0xa24cD816ea4543ba9c18d1d95554781A82Caa94C',
+    feeManager: '0xA502A7721ED2Dd1985B1c09d2A5Dda3b25E166C9',
     usdc: {
       address: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
       symbol: 'USDC',

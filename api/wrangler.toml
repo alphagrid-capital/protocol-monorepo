@@ -18,8 +18,6 @@ head_sampling_rate = 1
 
 # Agent registration (vars; set secrets in dashboard / `wrangler secret put`)
 [vars]
-# AGENT_REGISTRY_ADDRESS = "0x..."
-# FEE_MANAGER_ADDRESS = "0x..."
 # RPC_URL = "https://..."
 # CHAIN_ID = "84532"
 # X402_NETWORK = "eip155:84532"
