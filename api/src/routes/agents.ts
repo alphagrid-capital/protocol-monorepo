@@ -1,8 +1,11 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi'
 import {
+  agentIdParamSchema,
+  AgentNotFoundSchema,
   AgentRegistrationQuoteSchema,
   AgentRegistrationRequestSchema,
   AgentRegistrationResponseSchema,
+  GetAgentResponseSchema,
 } from '../schemas/agent.js'
 import {
   AgentRegistrationService,
@@ -11,6 +14,36 @@ import {
 import { createRegistrationPaymentMiddleware } from '../lib/x402-agent-registration.js'
 import { getWorkerEnv } from '../lib/worker-env.js'
 import { AppError } from '../errors.js'
+
+const getAgentRoute = createRoute({
+  method: 'get',
+  path: '/agents/{agentId}',
+  tags: ['Agents'],
+  summary: 'Get agent by id',
+  description:
+    'Reads the on-chain AgentRegistry record via `getAgent(uint256)`. Requires a deployed registry and RPC_URL.',
+  request: {
+    params: z.object({
+      agentId: agentIdParamSchema.openapi({
+        param: { name: 'agentId', in: 'path' },
+        example: '1',
+      }),
+    }),
+  },
+  responses: {
+    200: {
+      description: 'Agent record',
+      content: {
+        'application/json': { schema: GetAgentResponseSchema },
+      },
+    },
+    404: {
+      description: 'Agent not found',
+      content: { 'application/json': { schema: AgentNotFoundSchema } },
+    },
+    503: { description: 'Registry or RPC not configured' },
+  },
+})
 
 const quoteRoute = createRoute({
   method: 'get',
@@ -72,7 +105,10 @@ export const agentRoutes = new OpenAPIHono()
 
 agentRoutes.use('/agents/register', createRegistrationPaymentMiddleware())
 
-function statusFromError(error: AppError): 400 | 402 | 502 | 503 {
+function statusFromError(error: AppError): 400 | 402 | 404 | 502 | 503 {
+  if (error.status === 404) {
+    return 404
+  }
   if (
     error.status === 400 ||
     error.status === 402 ||
@@ -97,6 +133,22 @@ agentRoutes.openapi(registerRoute, async (c) => {
     const result =
       await AgentRegistrationService.fromEnv(getWorkerEnv()).register(body)
     return c.json(result, 200)
+  } catch (error) {
+    if (error instanceof AppError || error instanceof AgentRegistrationError) {
+      return c.json({ error: error.message }, statusFromError(error))
+    }
+    throw error
+  }
+})
+
+agentRoutes.openapi(getAgentRoute, async (c) => {
+  try {
+    const result = await AgentRegistrationService.fromEnv(
+      getWorkerEnv()
+    ).getAgent(c.req.param('agentId'))
+    return c.json(result, 200, {
+      'Cache-Control': 'public, max-age=15',
+    })
   } catch (error) {
     if (error instanceof AppError || error instanceof AgentRegistrationError) {
       return c.json({ error: error.message }, statusFromError(error))

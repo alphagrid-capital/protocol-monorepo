@@ -61,6 +61,17 @@ const MOCK_VAULTS: VaultSummary[] = [
 ]
 
 export class VaultsService {
+  /** Returns a single mocked vault by `id` or `slug`, or null if unknown. */
+  getVaultById(id: string): VaultSummary | null {
+    const key = id.toLowerCase()
+    return (
+      MOCK_VAULTS.find(
+        (vault) =>
+          vault.id.toLowerCase() === key || vault.slug.toLowerCase() === key
+      ) ?? null
+    )
+  }
+
   /** Returns the mocked vault list with basic on-chain-style stats. */
   listVaults(): ListVaultsResult {
     return {

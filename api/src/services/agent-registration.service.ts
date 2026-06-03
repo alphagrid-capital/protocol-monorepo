@@ -9,13 +9,24 @@ import type { SelfRegisterTypedData } from '../lib/eip712-agent-registration.js'
 import { getWorkerEnv } from '../lib/worker-env.js'
 import { AppError } from '../errors.js'
 import { ProviderService } from './provider.service.js'
-import { AgentRegistryService } from './agent-registry.service.js'
+import {
+  AgentNotFoundError,
+  AgentRegistryService,
+} from './agent-registry.service.js'
+import type { AgentRecord } from '../schemas/agent.js'
 import { RegistrationFeeService } from './fee-manager.service.js'
 import type {
   AgentRegistrationQuote,
   AgentRegistrationRequest,
   AgentRegistrationResponse,
 } from '../schemas/agent.js'
+
+export type GetAgentResult = {
+  mode: 'mock' | 'live'
+  agentId: string
+  agent: AgentRecord
+  agentRegistry: `0x${string}` | null
+}
 
 export class AgentRegistrationError extends AppError {
   constructor(
@@ -191,6 +202,30 @@ export class AgentRegistrationService {
       transaction: null,
       message:
         'Configure RELAYER_PRIVATE_KEY for on-chain registrar registration.',
+    }
+  }
+
+  async getAgent(agentId: string): Promise<GetAgentResult> {
+    if (this.config.mode !== 'live' || !this.config.agentRegistry) {
+      throw new AgentRegistrationError(
+        'Agent lookup requires a deployed AgentRegistry and RPC_URL',
+        503
+      )
+    }
+
+    try {
+      const agent = await this.agentRegistryService().getAgent(BigInt(agentId))
+      return {
+        mode: 'live',
+        agentId,
+        agent,
+        agentRegistry: this.config.agentRegistry,
+      }
+    } catch (error) {
+      if (error instanceof AgentNotFoundError) {
+        throw new AgentRegistrationError(error.message, 404)
+      }
+      throw error
     }
   }
 

@@ -1,5 +1,5 @@
 export const MCP_SERVER_NAME = 'alphagrid-mcp-server'
-export const MCP_SERVER_VERSION = '0.2.0'
+export const MCP_SERVER_VERSION = '0.1.0'
 
 /** Single source of truth for MCP tool names (discovery + server registration). */
 export const MCP_TOOL_NAMES = {

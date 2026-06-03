@@ -92,3 +92,50 @@ export type AgentRegistrationQuote = z.infer<
 export type AgentRegistrationResponse = z.infer<
   typeof AgentRegistrationResponseSchema
 >
+
+const agentIdParamSchema = z
+  .string()
+  .regex(/^[1-9]\d*$/, 'Expected a positive integer agent id')
+
+export const AgentRecordSchema = z
+  .object({
+    owner: addressSchema,
+    signer: addressSchema,
+    payoutRecipient: addressSchema,
+    vault: addressSchema,
+    track: z.number().int().openapi({
+      description:
+        'IAgentRegistry.Track (uint8): 0=CHALLENGE, 1=FUNDED, 2=PRIME',
+      example: 0,
+    }),
+    status: z.number().int().openapi({
+      description:
+        'IAgentRegistry.AgentStatus (uint8): 0=Draft, 1=Active, 2=Suspended, 3=Failed, 4=Graduated, 5=Exited',
+      example: 1,
+    }),
+    name: z.string(),
+    metadataURI: z.string(),
+    createdAt: z.string().openapi({ description: 'Unix timestamp (seconds)' }),
+    hasERC8004Identity: z.boolean(),
+    erc8004AgentId: z.string(),
+  })
+  .openapi('AgentRecord')
+
+export type AgentRecord = z.infer<typeof AgentRecordSchema>
+
+export const GetAgentResponseSchema = z
+  .object({
+    mode: z.enum(['mock', 'live']),
+    agentId: agentIdParamSchema,
+    agent: AgentRecordSchema,
+    agentRegistry: addressSchema.nullable(),
+  })
+  .openapi('GetAgentResponse')
+
+export const AgentNotFoundSchema = z
+  .object({
+    error: z.string(),
+  })
+  .openapi('AgentNotFound')
+
+export { agentIdParamSchema }

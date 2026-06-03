@@ -77,6 +77,10 @@ contract AgentRegistryTest is BaseTest {
         assertTrue(registry.hasERC8004Identity(agentId));
         assertTrue(registry.isERC8004OwnerCurrent(agentId));
         assertEq(registry.agentIdByERC8004(erc8004Id), agentId);
+        IAgentRegistry.Agent memory byErc8004 = registry.getAgentByERC8004(erc8004Id);
+        assertEq(byErc8004.owner, agent.owner);
+        assertEq(byErc8004.vault, agent.vault);
+        assertEq(byErc8004.erc8004AgentId, erc8004Id);
         assertEq(registry.payoutRecipientOf(agentId), agentOwner);
         assertFalse(registry.isPayoutEligible(agentId));
 
@@ -443,6 +447,11 @@ contract AgentRegistryTest is BaseTest {
     function test_RevertWhen_AgentNotFound() public {
         vm.expectRevert(abi.encodeWithSelector(AgentRegistry.AgentNotFound.selector, 99));
         registry.ownerOf(99);
+    }
+
+    function test_RevertWhen_GetAgentByERC8004NotRegistered() public {
+        vm.expectRevert(abi.encodeWithSelector(AgentRegistry.ERC8004NotRegistered.selector, 42));
+        registry.getAgentByERC8004(42);
     }
 
     function test_RevertWhen_RegisterWithoutRegistrarRole() public {

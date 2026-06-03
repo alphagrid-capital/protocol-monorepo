@@ -271,6 +271,82 @@ export const agentRegistryAbi = [
   },
   {
     "type": "function",
+    "name": "getAgentByERC8004",
+    "inputs": [
+      {
+        "name": "erc8004AgentId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct IAgentRegistry.Agent",
+        "components": [
+          {
+            "name": "owner",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "signer",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "payoutRecipient",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "vault",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "track",
+            "type": "uint8",
+            "internalType": "enum IAgentRegistry.Track"
+          },
+          {
+            "name": "status",
+            "type": "uint8",
+            "internalType": "enum IAgentRegistry.AgentStatus"
+          },
+          {
+            "name": "name",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "metadataURI",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "createdAt",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "hasERC8004Identity",
+            "type": "bool",
+            "internalType": "bool"
+          },
+          {
+            "name": "erc8004AgentId",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "getRoleAdmin",
     "inputs": [
       {
@@ -1333,6 +1409,17 @@ export const agentRegistryAbi = [
   {
     "type": "error",
     "name": "ERC8004AlreadyRegistered",
+    "inputs": [
+      {
+        "name": "erc8004AgentId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ERC8004NotRegistered",
     "inputs": [
       {
         "name": "erc8004AgentId",

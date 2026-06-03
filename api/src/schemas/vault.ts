@@ -24,3 +24,15 @@ export const ListVaultsResponseSchema = z
     total: z.number().int(),
   })
   .openapi('ListVaultsResponse')
+
+export const GetVaultResponseSchema = z
+  .object({
+    vault: VaultSummarySchema,
+  })
+  .openapi('GetVaultResponse')
+
+export const VaultNotFoundSchema = z
+  .object({
+    error: z.string(),
+  })
+  .openapi('VaultNotFound')

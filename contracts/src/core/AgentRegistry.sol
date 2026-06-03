@@ -72,6 +72,7 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
     error NotERC8004Owner(uint256 erc8004AgentId, address caller);
     error ERC8004AlreadyLinked(uint256 agentId);
     error ERC8004AlreadyRegistered(uint256 erc8004AgentId);
+    error ERC8004NotRegistered(uint256 erc8004AgentId);
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -273,6 +274,13 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
     /// @inheritdoc IAgentRegistry
     function agentIdByERC8004(uint256 erc8004AgentId) external view returns (uint256 agentId) {
         return _agentIdByErc8004[erc8004AgentId];
+    }
+
+    /// @inheritdoc IAgentRegistry
+    function getAgentByERC8004(uint256 erc8004AgentId) external view returns (Agent memory) {
+        uint256 agentId = _agentIdByErc8004[erc8004AgentId];
+        if (agentId == 0) revert ERC8004NotRegistered(erc8004AgentId);
+        return _requireAgent(agentId);
     }
 
     /// @inheritdoc IAgentRegistry

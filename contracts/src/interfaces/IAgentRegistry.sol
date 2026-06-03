@@ -157,7 +157,11 @@ interface IAgentRegistry {
 
     function payoutRecipientOf(uint256 agentId) external view returns (address);
 
+    /// @notice Reverse lookup: ERC-8004 identity token id → AlphaGrid agent id (0 if not linked).
     function agentIdByERC8004(uint256 erc8004AgentId) external view returns (uint256 agentId);
+
+    /// @notice Reverse lookup: ERC-8004 identity token id → full agent record.
+    function getAgentByERC8004(uint256 erc8004AgentId) external view returns (Agent memory);
 
     function hasERC8004Identity(uint256 agentId) external view returns (bool);
 
