@@ -16,10 +16,17 @@ async function main() {
 
   const { tools, toolHandler } = await getMcpTools(agentKit);
 
-  const server = new Server({
-    name: "agentkit",
-    version: "0.1.0",
-  });
+  const server = new Server(
+    {
+      name: "agentkit",
+      version: "0.1.0",
+    },
+    {
+      capabilities: {
+        tools: {},
+      },
+    },
+  );
 
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     return {

@@ -13,6 +13,7 @@ import { MandateVault } from "../src/vaults/MandateVault.sol";
 import { MandateVaultFactory } from "../src/vaults/MandateVaultFactory.sol";
 
 /// @notice Greenfield deploy: agent core, token registry, four vault clones, and AllocationManager wiring.
+/// @dev Pipeline: deploy → wire → setRoles
 contract DeployVaultInfrastructure is Script {
     bytes32 private constant MANDATE_FOUNDATION = "FOUNDATION";
     bytes32 private constant MANDATE_TECH = "TECH";
@@ -55,9 +56,11 @@ contract DeployVaultInfrastructure is Script {
         address usdc = vm.envAddress("USDC");
 
         vm.startBroadcast();
-        AgentCore memory core = _deployAgentCore(admin, treasury, usdc);
-        VaultSet memory vaults = _deployVaults(usdc, core.tokenRegistry, admin, treasury);
+        AgentCore memory core;
+        VaultSet memory vaults;
+        (core, vaults) = _deploy(admin, treasury, usdc);
         _wire(core);
+        _setRoles(core.registry);
         vm.stopBroadcast();
 
         feeManager = core.feeManager;
@@ -74,10 +77,19 @@ contract DeployVaultInfrastructure is Script {
         _log(core, vaults);
     }
 
+    function _deploy(address admin, address treasury, address usdc)
+        private
+        returns (AgentCore memory core, VaultSet memory vaults)
+    {
+        core = _deployAgentCore(admin, treasury, usdc);
+        vaults = _deployVaults(usdc, core.tokenRegistry, admin, treasury);
+    }
+
     function _deployAgentCore(address admin, address treasury, address usdc) private returns (AgentCore memory core) {
         core.feeManager = new FeeManager(admin, treasury, usdc);
         core.vaultTrackRegistry = new VaultTrackRegistry(admin);
         core.tokenRegistry = new TokenRegistry(admin);
+
         address erc8004IdentityRegistry = vm.envAddress("ERC8004_IDENTITY_REGISTRY");
         uint256 erc8004ChainId = vm.envOr("ERC8004_CHAIN_ID", block.chainid);
         core.registry = new AgentRegistry(admin, core.feeManager, erc8004IdentityRegistry, erc8004ChainId);
@@ -90,7 +102,7 @@ contract DeployVaultInfrastructure is Script {
     {
         IERC20 asset = IERC20(usdc);
         vaults.factory = new MandateVaultFactory(address(0), asset);
-        vaults.foundationVault = _deployVault(
+        vaults.foundationVault = _deployVaultClone(
             vaults.factory,
             asset,
             tokenRegistry_,
@@ -100,10 +112,10 @@ contract DeployVaultInfrastructure is Script {
             "agFND",
             MANDATE_FOUNDATION
         );
-        vaults.techVault = _deployVault(
+        vaults.techVault = _deployVaultClone(
             vaults.factory, asset, tokenRegistry_, admin, treasury, "AlphaGrid Tech Vault", "agTECH", MANDATE_TECH
         );
-        vaults.volatilityVault = _deployVault(
+        vaults.volatilityVault = _deployVaultClone(
             vaults.factory,
             asset,
             tokenRegistry_,
@@ -113,7 +125,7 @@ contract DeployVaultInfrastructure is Script {
             "agVOL",
             MANDATE_VOLATILITY
         );
-        vaults.macroVault = _deployVault(
+        vaults.macroVault = _deployVaultClone(
             vaults.factory, asset, tokenRegistry_, admin, treasury, "AlphaGrid Macro Vault", "agMAC", MANDATE_MACRO
         );
     }
@@ -125,21 +137,13 @@ contract DeployVaultInfrastructure is Script {
         core.allocationManager.setAgentRegistry(address(core.registry));
     }
 
-    function _log(AgentCore memory core, VaultSet memory vaults) private view {
-        console2.log("FeeManager:", address(core.feeManager));
-        console2.log("VaultTrackRegistry:", address(core.vaultTrackRegistry));
-        console2.log("TokenRegistry:", address(core.tokenRegistry));
-        console2.log("AgentRegistry:", address(core.registry));
-        console2.log("AllocationManager:", address(core.allocationManager));
-        console2.log("VaultFactory:", address(vaults.factory));
-        console2.log("VaultImplementation:", vaults.factory.implementation());
-        console2.log("FoundationVault:", address(vaults.foundationVault));
-        console2.log("TechVault:", address(vaults.techVault));
-        console2.log("VolatilityVault:", address(vaults.volatilityVault));
-        console2.log("MacroVault:", address(vaults.macroVault));
+    function _setRoles(AgentRegistry registry) private {
+        address backendRelayer = vm.envAddress("BACKEND_RELAYER");
+        registry.grantRole(registry.REGISTRAR_ROLE(), backendRelayer);
+        console2.log("REGISTRAR_ROLE granted to BACKEND_RELAYER:", backendRelayer);
     }
 
-    function _deployVault(
+    function _deployVaultClone(
         MandateVaultFactory factory,
         IERC20 asset,
         TokenRegistry tokenRegistry_,
@@ -162,5 +166,19 @@ contract DeployVaultInfrastructure is Script {
                 })
             )
         );
+    }
+
+    function _log(AgentCore memory core, VaultSet memory vaults) private view {
+        console2.log("FeeManager:", address(core.feeManager));
+        console2.log("VaultTrackRegistry:", address(core.vaultTrackRegistry));
+        console2.log("TokenRegistry:", address(core.tokenRegistry));
+        console2.log("AgentRegistry:", address(core.registry));
+        console2.log("AllocationManager:", address(core.allocationManager));
+        console2.log("VaultFactory:", address(vaults.factory));
+        console2.log("VaultImplementation:", vaults.factory.implementation());
+        console2.log("FoundationVault:", address(vaults.foundationVault));
+        console2.log("TechVault:", address(vaults.techVault));
+        console2.log("VolatilityVault:", address(vaults.volatilityVault));
+        console2.log("MacroVault:", address(vaults.macroVault));
     }
 }

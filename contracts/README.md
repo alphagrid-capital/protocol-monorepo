@@ -66,6 +66,16 @@ contracts/
 
 ## Deployment
 
+Deploy scripts share a **deploy → wire → setRoles** pipeline inside `run()`:
+
+| Step | Purpose |
+|------|---------|
+| `_deploy` | `new` contracts only |
+| `_wire` | Cross-contract setters (registry links, adapter/router, fees) |
+| `_setRoles` | `grantRole` on deployed or existing contracts |
+
+`DeployMockERC20` is deploy-only. `DeployAgentCore` and `DeployVaultInfrastructure` grant `REGISTRAR_ROLE` to `BACKEND_RELAYER` in `setRoles`.
+
 Copy `.env.example` to `.env` and fill values. Deploy in order:
 
 ```bash
@@ -84,7 +94,7 @@ forge script script/DeployTrading.s.sol:DeployTrading --rpc-url $RPC_URL --broad
 - `DEPLOY_MOCK_SWAP_ADAPTER=true` — test/dev adapter (mints mock tokens)
 - `DEPLOY_MOCK_SWAP_ADAPTER=false` — `InventorySwapAdapter` (pre-funded ERC-20 inventory)
 
-Grant `TRADE_ROUTER_ROLE` on each vault and wire `OPERATOR` / `EXECUTOR` as needed.
+`DeployTrading` `setRoles` grants `EXECUTOR` / `OPERATOR` on `TradeRouter` and `TRADE_ROUTER_ROLE` on the env `VAULT` and `AllocationManager`. Repeat `DeployTrading` with a different `VAULT` for additional vaults.
 
 ## Vault deployment
 

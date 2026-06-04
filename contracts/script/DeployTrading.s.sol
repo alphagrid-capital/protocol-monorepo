@@ -13,63 +13,109 @@ import { ISwapAdapter } from "../src/interfaces/ISwapAdapter.sol";
 import { MandateVault } from "../src/vaults/MandateVault.sol";
 
 /// @notice Deploys PositionManager, TradeRouter, swap adapter; wires roles to existing vault stack.
-/// @dev Set DEPLOY_MOCK_SWAP_ADAPTER=true (default) for MockSwapAdapter, false for InventorySwapAdapter.
+/// @dev Pipeline: deploy → wire → setRoles. Set DEPLOY_MOCK_SWAP_ADAPTER=true (default) for MockSwapAdapter.
 contract DeployTrading is Script {
+    struct Deployed {
+        PositionManager positionManager;
+        TradeRouter tradeRouter;
+        ISwapAdapter swapAdapter;
+        bool deployMock;
+    }
+
+    struct WireConfig {
+        address registry;
+        address allocationManager;
+        address trackConfig;
+    }
+
+    struct RoleConfig {
+        address executor;
+        address operator;
+        address vault;
+        address allocationManager;
+    }
+
     function run()
         external
         returns (PositionManager positionManager, TradeRouter tradeRouter, ISwapAdapter swapAdapter)
     {
         address admin = vm.envAddress("ADMIN");
-        address executor = vm.envAddress("EXECUTOR");
-        address operator = vm.envOr("OPERATOR", admin);
-        address registry = vm.envAddress("AGENT_REGISTRY");
-        address allocationManager = vm.envAddress("ALLOCATION_MANAGER");
-        address trackConfig = vm.envAddress("TRACK_CONFIG");
-        address vault = vm.envAddress("VAULT");
         bool deployMock = vm.envOr("DEPLOY_MOCK_SWAP_ADAPTER", true);
 
+        WireConfig memory wireConfig = WireConfig({
+            registry: vm.envAddress("AGENT_REGISTRY"),
+            allocationManager: vm.envAddress("ALLOCATION_MANAGER"),
+            trackConfig: vm.envAddress("TRACK_CONFIG")
+        });
+        RoleConfig memory roleConfig = RoleConfig({
+            executor: vm.envAddress("EXECUTOR"),
+            operator: vm.envOr("OPERATOR", admin),
+            vault: vm.envAddress("VAULT"),
+            allocationManager: wireConfig.allocationManager
+        });
+
         vm.startBroadcast();
-
-        positionManager = new PositionManager(admin);
-
-        if (deployMock) {
-            MockSwapAdapter mock = new MockSwapAdapter(address(0));
-            swapAdapter = ISwapAdapter(address(mock));
-        } else {
-            InventorySwapAdapter inventory = new InventorySwapAdapter(address(0));
-            swapAdapter = ISwapAdapter(address(inventory));
-        }
-
-        tradeRouter = new TradeRouter(
-            admin,
-            AgentRegistry(registry),
-            AllocationManager(allocationManager),
-            positionManager,
-            swapAdapter,
-            VaultTrackRegistry(trackConfig)
-        );
-
-        if (deployMock) {
-            MockSwapAdapter(address(swapAdapter)).setTradeRouter(address(tradeRouter));
-        } else {
-            InventorySwapAdapter(address(swapAdapter)).setTradeRouter(address(tradeRouter));
-        }
-
-        positionManager.setTradeRouter(address(tradeRouter));
-        tradeRouter.grantRole(tradeRouter.EXECUTOR_ROLE(), executor);
-        tradeRouter.grantRole(tradeRouter.OPERATOR_ROLE(), operator);
-
-        MandateVault(vault).grantRole(MandateVault(vault).TRADE_ROUTER_ROLE(), address(tradeRouter));
-        AllocationManager(allocationManager)
-            .grantRole(AllocationManager(allocationManager).TRADE_ROUTER_ROLE(), address(tradeRouter));
-
+        Deployed memory deployed = _deploy(admin, wireConfig, deployMock);
+        _wire(deployed);
+        _setRoles(deployed, roleConfig);
         vm.stopBroadcast();
 
-        console2.log("PositionManager:", address(positionManager));
-        console2.log("TradeRouter:", address(tradeRouter));
-        console2.log("SwapAdapter:", address(swapAdapter));
-        console2.log("MockAdapter:", deployMock);
-        console2.log("Vault:", vault);
-        console2.log("Operator:", operator);
+        positionManager = deployed.positionManager;
+        tradeRouter = deployed.tradeRouter;
+        swapAdapter = deployed.swapAdapter;
+
+        _log(deployed, roleConfig);
+    }
+
+    function _deploy(address admin, WireConfig memory wireConfig, bool deployMock)
+        private
+        returns (Deployed memory deployed)
+    {
+        deployed.deployMock = deployMock;
+        deployed.positionManager = new PositionManager(admin);
+
+        if (deployMock) {
+            deployed.swapAdapter = ISwapAdapter(address(new MockSwapAdapter(address(0))));
+        } else {
+            deployed.swapAdapter = ISwapAdapter(address(new InventorySwapAdapter(address(0))));
+        }
+
+        deployed.tradeRouter = new TradeRouter(
+            admin,
+            AgentRegistry(wireConfig.registry),
+            AllocationManager(wireConfig.allocationManager),
+            deployed.positionManager,
+            deployed.swapAdapter,
+            VaultTrackRegistry(wireConfig.trackConfig)
+        );
+    }
+
+    function _wire(Deployed memory deployed) private {
+        if (deployed.deployMock) {
+            MockSwapAdapter(address(deployed.swapAdapter)).setTradeRouter(address(deployed.tradeRouter));
+        } else {
+            InventorySwapAdapter(address(deployed.swapAdapter)).setTradeRouter(address(deployed.tradeRouter));
+        }
+
+        deployed.positionManager.setTradeRouter(address(deployed.tradeRouter));
+    }
+
+    function _setRoles(Deployed memory deployed, RoleConfig memory roleConfig) private {
+        deployed.tradeRouter.grantRole(deployed.tradeRouter.EXECUTOR_ROLE(), roleConfig.executor);
+        deployed.tradeRouter.grantRole(deployed.tradeRouter.OPERATOR_ROLE(), roleConfig.operator);
+
+        MandateVault(roleConfig.vault)
+            .grantRole(MandateVault(roleConfig.vault).TRADE_ROUTER_ROLE(), address(deployed.tradeRouter));
+        AllocationManager(roleConfig.allocationManager)
+            .grantRole(AllocationManager(roleConfig.allocationManager).TRADE_ROUTER_ROLE(), address(deployed.tradeRouter));
+    }
+
+    function _log(Deployed memory deployed, RoleConfig memory roleConfig) private pure {
+        console2.log("PositionManager:", address(deployed.positionManager));
+        console2.log("TradeRouter:", address(deployed.tradeRouter));
+        console2.log("SwapAdapter:", address(deployed.swapAdapter));
+        console2.log("MockAdapter:", deployed.deployMock);
+        console2.log("Vault:", roleConfig.vault);
+        console2.log("Operator:", roleConfig.operator);
     }
 }

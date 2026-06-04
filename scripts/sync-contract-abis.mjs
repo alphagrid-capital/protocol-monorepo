@@ -21,6 +21,31 @@ const contracts = [
     out: 'api/src/services/abis/agent-registry.ts',
     exportName: 'agentRegistryAbi',
   },
+  {
+    artifact: 'contracts/out/AllocationManager.sol/AllocationManager.json',
+    out: 'api/src/services/abis/allocation-manager.ts',
+    exportName: 'allocationManagerAbi',
+  },
+  {
+    artifact: 'contracts/out/PositionManager.sol/PositionManager.json',
+    out: 'api/src/services/abis/position-manager.ts',
+    exportName: 'positionManagerAbi',
+  },
+  {
+    artifact: 'contracts/out/TokenRegistry.sol/TokenRegistry.json',
+    out: 'api/src/services/abis/token-registry.ts',
+    exportName: 'tokenRegistryAbi',
+  },
+  {
+    artifact: 'contracts/out/TradeRouter.sol/TradeRouter.json',
+    out: 'api/src/services/abis/trade-router.ts',
+    exportName: 'tradeRouterAbi',
+  },
+  {
+    artifact: 'contracts/out/VaultTrackRegistry.sol/VaultTrackRegistry.json',
+    out: 'api/src/services/abis/vault-track-registry.ts',
+    exportName: 'vaultTrackRegistryAbi',
+  },
 ]
 
 for (const { artifact, out, exportName } of contracts) {
