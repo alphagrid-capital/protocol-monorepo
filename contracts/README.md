@@ -61,6 +61,8 @@ contracts/
     ├── DeployAgentCore.s.sol
     ├── DeployVaultInfrastructure.s.sol
     ├── DeployTrading.s.sol
+    ├── ConfigureVaultTracks.s.sol
+    ├── SetRegistrationFee.s.sol
     └── DeployMockERC20.s.sol
 ```
 
@@ -85,6 +87,12 @@ forge script script/DeployAgentCore.s.sol:DeployAgentCore --rpc-url $RPC_URL --b
 # Greenfield: agent core + four vaults + allocation (full base stack)
 forge script script/DeployVaultInfrastructure.s.sol:DeployVaultInfrastructure --rpc-url $RPC_URL --broadcast
 
+# Register vaults + CHALLENGE/FUNDED/PRIME track configs (after vault deploy)
+forge script script/ConfigureVaultTracks.s.sol:ConfigureVaultTracks --rpc-url $RPC_URL --broadcast
+
+# Set registration fee to 0.1 USDC on FeeManager
+forge script script/SetRegistrationFee.s.sol:SetRegistrationFee --rpc-url $RPC_URL --broadcast
+
 # Trading: position manager, trade router, swap adapter (on existing vault stack)
 forge script script/DeployTrading.s.sol:DeployTrading --rpc-url $RPC_URL --broadcast
 ```
@@ -94,7 +102,7 @@ forge script script/DeployTrading.s.sol:DeployTrading --rpc-url $RPC_URL --broad
 - `DEPLOY_MOCK_SWAP_ADAPTER=true` — test/dev adapter (mints mock tokens)
 - `DEPLOY_MOCK_SWAP_ADAPTER=false` — `InventorySwapAdapter` (pre-funded ERC-20 inventory)
 
-`DeployTrading` `setRoles` grants `EXECUTOR` / `OPERATOR` on `TradeRouter` and `TRADE_ROUTER_ROLE` on the env `VAULT` and `AllocationManager`. Repeat `DeployTrading` with a different `VAULT` for additional vaults.
+`DeployTrading` `setRoles` grants `EXECUTOR` / `OPERATOR` on `TradeRouter`, and grants `TRADE_ROUTER_ROLE` **to the TradeRouter contract** on each `VAULT` (MandateVault) and on `AllocationManager`. Env `VAULT` is the vault address; the role member is always `TradeRouter`. Repeat with each vault address for a full four-vault setup.
 
 ## Vault deployment
 
