@@ -54,9 +54,11 @@ ChatGPT **browsing** only performs simple `GET` requests on **public** URLs. It 
 | Tool                                       | HTTP equivalent                 |
 | ------------------------------------------ | ------------------------------- |
 | `alphagrid_list_vaults`                    | `GET /vaults`                   |
-| `alphagrid_get_agent`                      | `GET /agents/{agentId}`         |
-| `alphagrid_get_agent_registration_quote`   | `GET /agents/register/quote`    |
-| `alphagrid_register_agent`                 | `POST /agents/register`         |
+| `alphagrid_get_agent`                      | `GET /agents/{agentId}`                    |
+| `alphagrid_get_agent_by_erc8004`           | `GET /agents/by-erc8004/{erc8004AgentId}` |
+| `alphagrid_link_agent_erc8004`             | `POST /agents/{agentId}/erc8004/link`      |
+| `alphagrid_get_agent_registration_quote`   | `GET /agents/register/quote`               |
+| `alphagrid_register_agent`                 | `POST /agents/register`                    |
 
 Connect MCP clients to `http://localhost:8787/mcp` in development (or your deployed Worker URL). Clients must send `Accept: application/json, text/event-stream` on MCP requests.
 

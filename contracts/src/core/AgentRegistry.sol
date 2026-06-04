@@ -146,8 +146,8 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
 
     /// @inheritdoc IAgentRegistry
     function linkERC8004Identity(uint256 agentId, uint256 erc8004AgentId) external whenNotPaused {
-        Agent storage agent = _requireAgent(agentId);
-        if (msg.sender != agent.owner) revert NotAgentOwner(agentId, msg.sender);
+        _requireAgentExists(agentId);
+        _requireAgentOwnerOrRegistrar(agentId);
         _applyErc8004Link(agentId, erc8004AgentId);
     }
 
@@ -163,8 +163,8 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
 
     /// @inheritdoc IAgentRegistry
     function updateAgentMetadata(uint256 agentId, string calldata metadataURI) external whenNotPaused {
-        Agent storage agent = _requireAgent(agentId);
-        if (msg.sender != agent.owner) revert NotAgentOwner(agentId, msg.sender);
+        Agent storage agent = _requireAgentExists(agentId);
+        _requireAgentOwnerOrRegistrar(agentId);
         if (agent.status == AgentStatus.Suspended) revert MetadataUpdateNotAllowed(agentId);
 
         agent.metadataURI = metadataURI;
@@ -175,7 +175,7 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
     function setAgentSigner(uint256 agentId, address signer) external whenNotPaused {
         if (signer == address(0)) revert ZeroAddress();
 
-        Agent storage agent = _requireAgent(agentId);
+        Agent storage agent = _requireAgentExists(agentId);
         if (msg.sender != agent.owner) revert NotAgentOwner(agentId, msg.sender);
 
         agent.signer = signer;
@@ -186,7 +186,7 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
     function transferAgentOwnership(uint256 agentId, address newOwner) external whenNotPaused {
         if (newOwner == address(0)) revert ZeroAddress();
 
-        Agent storage agent = _requireAgent(agentId);
+        Agent storage agent = _requireAgentExists(agentId);
         address from = agent.owner;
         if (msg.sender != from) revert NotAgentOwner(agentId, msg.sender);
 
@@ -198,7 +198,7 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
     function setPayoutRecipient(uint256 agentId, address payoutRecipient) external whenNotPaused {
         if (payoutRecipient == address(0)) revert ZeroAddress();
 
-        Agent storage agent = _requireAgent(agentId);
+        Agent storage agent = _requireAgentExists(agentId);
         if (msg.sender != agent.owner) revert NotAgentOwner(agentId, msg.sender);
 
         agent.payoutRecipient = payoutRecipient;
@@ -207,7 +207,7 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
 
     /// @inheritdoc IAgentRegistry
     function setAgentStatus(uint256 agentId, AgentStatus status) external onlyRole(OPERATOR_ROLE) {
-        Agent storage agent = _requireAgent(agentId);
+        Agent storage agent = _requireAgentExists(agentId);
         AgentStatus oldStatus = agent.status;
         agent.status = status;
         emit AgentStatusChanged(agentId, oldStatus, status);
@@ -215,7 +215,7 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
 
     /// @inheritdoc IAgentRegistry
     function promoteAgent(uint256 agentId, Track targetTrack) external onlyRole(OPERATOR_ROLE) whenNotPaused {
-        Agent storage agent = _requireAgent(agentId);
+        Agent storage agent = _requireAgentExists(agentId);
 
         Track fromTrack = agent.track;
         if (uint256(targetTrack) != uint256(fromTrack) + 1 || uint256(targetTrack) > uint256(Track.PRIME)) {
@@ -238,37 +238,37 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
 
     /// @inheritdoc IAgentRegistry
     function ownerOf(uint256 agentId) external view returns (address) {
-        return _requireAgent(agentId).owner;
+        return _requireAgentExists(agentId).owner;
     }
 
     /// @inheritdoc IAgentRegistry
     function vaultOf(uint256 agentId) external view returns (address) {
-        return _requireAgent(agentId).vault;
+        return _requireAgentExists(agentId).vault;
     }
 
     /// @inheritdoc IAgentRegistry
     function trackOf(uint256 agentId) external view returns (Track) {
-        return _requireAgent(agentId).track;
+        return _requireAgentExists(agentId).track;
     }
 
     /// @inheritdoc IAgentRegistry
     function statusOf(uint256 agentId) external view returns (AgentStatus) {
-        return _requireAgent(agentId).status;
+        return _requireAgentExists(agentId).status;
     }
 
     /// @inheritdoc IAgentRegistry
     function signerOf(uint256 agentId) external view returns (address) {
-        return _requireAgent(agentId).signer;
+        return _requireAgentExists(agentId).signer;
     }
 
     /// @inheritdoc IAgentRegistry
     function payoutRecipientOf(uint256 agentId) external view returns (address) {
-        return _requireAgent(agentId).payoutRecipient;
+        return _requireAgentExists(agentId).payoutRecipient;
     }
 
     /// @inheritdoc IAgentRegistry
     function hasERC8004Identity(uint256 agentId) external view returns (bool) {
-        return _requireAgent(agentId).hasERC8004Identity;
+        return _requireAgentExists(agentId).hasERC8004Identity;
     }
 
     /// @inheritdoc IAgentRegistry
@@ -280,26 +280,26 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
     function getAgentByERC8004(uint256 erc8004AgentId) external view returns (Agent memory) {
         uint256 agentId = _agentIdByErc8004[erc8004AgentId];
         if (agentId == 0) revert ERC8004NotRegistered(erc8004AgentId);
-        return _requireAgent(agentId);
+        return _requireAgentExists(agentId);
     }
 
     /// @inheritdoc IAgentRegistry
     function isERC8004OwnerCurrent(uint256 agentId) external view returns (bool) {
-        Agent storage agent = _requireAgent(agentId);
+        Agent storage agent = _requireAgentExists(agentId);
         if (!agent.hasERC8004Identity) return false;
         return IERC721(ERC8004_IDENTITY_REGISTRY).ownerOf(agent.erc8004AgentId) == agent.owner;
     }
 
     /// @inheritdoc IAgentRegistry
     function isPayoutEligible(uint256 agentId) external view returns (bool) {
-        Agent storage agent = _requireAgent(agentId);
+        Agent storage agent = _requireAgentExists(agentId);
         if (agent.status != AgentStatus.Active) return false;
         return agent.track == Track.FUNDED || agent.track == Track.PRIME;
     }
 
     /// @inheritdoc IAgentRegistry
     function getAgent(uint256 agentId) external view returns (Agent memory) {
-        return _requireAgent(agentId);
+        return _requireAgentExists(agentId);
     }
 
     /// @notice Returns the next agent id that will be assigned.
@@ -450,7 +450,7 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
     }
 
     function _applyErc8004Link(uint256 agentId, uint256 erc8004AgentId) private {
-        Agent storage agent = _requireAgent(agentId);
+        Agent storage agent = _requireAgentExists(agentId);
         if (agent.hasERC8004Identity) revert ERC8004AlreadyLinked(agentId);
 
         address owner = agent.owner;
@@ -469,9 +469,17 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
     }
 
     /// @dev Returns the agent record or reverts if it does not exist.
-    function _requireAgent(uint256 agentId) private view returns (Agent storage agent) {
+    function _requireAgentExists(uint256 agentId) private view returns (Agent storage agent) {
         agent = _agents[agentId];
         if (agent.owner == address(0)) revert AgentNotFound(agentId);
+    }
+
+    /// @dev Mandate owner or registrar may link ERC-8004 and update metadata.
+    function _requireAgentOwnerOrRegistrar(uint256 agentId) private view {
+        Agent storage agent = _agents[agentId];
+        if (msg.sender != agent.owner && !hasRole(REGISTRAR_ROLE, msg.sender)) {
+            revert NotAgentOwner(agentId, msg.sender);
+        }
     }
 
     /// @dev A vault is approved when CHALLENGE track config is active in VaultTrackRegistry.

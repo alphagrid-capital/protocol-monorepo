@@ -5,7 +5,10 @@ import {
   AgentRegistrationQuoteSchema,
   AgentRegistrationRequestSchema,
   AgentRegistrationResponseSchema,
+  erc8004AgentIdParamSchema,
   GetAgentResponseSchema,
+  LinkErc8004RequestSchema,
+  LinkErc8004ResponseSchema,
 } from '../schemas/agent.js'
 import {
   AgentRegistrationService,
@@ -14,6 +17,70 @@ import {
 import { createRegistrationPaymentMiddleware } from '../lib/x402-agent-registration.js'
 import { getWorkerEnv } from '../lib/worker-env.js'
 import { AppError } from '../errors.js'
+
+const getAgentByErc8004Route = createRoute({
+  method: 'get',
+  path: '/agents/by-erc8004/{erc8004AgentId}',
+  tags: ['Agents'],
+  summary: 'Get agent by ERC-8004 identity',
+  description:
+    'Reads AgentRegistry via `getAgentByERC8004(uint256)`. Returns 404 when no agent is linked to the token id.',
+  request: {
+    params: z.object({
+      erc8004AgentId: erc8004AgentIdParamSchema.openapi({
+        param: { name: 'erc8004AgentId', in: 'path' },
+        example: '1',
+      }),
+    }),
+  },
+  responses: {
+    200: {
+      description: 'Agent record',
+      content: {
+        'application/json': { schema: GetAgentResponseSchema },
+      },
+    },
+    404: {
+      description: 'ERC-8004 identity not linked to any agent',
+      content: { 'application/json': { schema: AgentNotFoundSchema } },
+    },
+    503: { description: 'Registry or RPC not configured' },
+  },
+})
+
+const linkErc8004Route = createRoute({
+  method: 'post',
+  path: '/agents/{agentId}/erc8004/link',
+  tags: ['Agents'],
+  summary: 'Link ERC-8004 identity to agent',
+  description:
+    'Submits `linkERC8004Identity` via the registrar relayer. Agent owner must hold the ERC-8004 NFT on-chain.',
+  request: {
+    params: z.object({
+      agentId: agentIdParamSchema.openapi({
+        param: { name: 'agentId', in: 'path' },
+        example: '1',
+      }),
+    }),
+    body: {
+      content: {
+        'application/json': { schema: LinkErc8004RequestSchema },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: 'ERC-8004 identity linked',
+      content: {
+        'application/json': { schema: LinkErc8004ResponseSchema },
+      },
+    },
+    400: { description: 'Invalid link request or on-chain revert' },
+    404: { description: 'Agent not found' },
+    502: { description: 'On-chain link transaction failed' },
+    503: { description: 'Relayer or registry not configured' },
+  },
+})
 
 const getAgentRoute = createRoute({
   method: 'get',
@@ -140,6 +207,22 @@ agentRoutes.openapi(registerRoute, async (c) => {
   }
 })
 
+agentRoutes.openapi(getAgentByErc8004Route, async (c) => {
+  try {
+    const result = await AgentRegistrationService.fromEnv(
+      getWorkerEnv()
+    ).getAgentByErc8004(c.req.param('erc8004AgentId'))
+    return c.json(result, 200, {
+      'Cache-Control': 'public, max-age=15',
+    })
+  } catch (error) {
+    if (error instanceof AppError || error instanceof AgentRegistrationError) {
+      return c.json({ error: error.message }, statusFromError(error))
+    }
+    throw error
+  }
+})
+
 agentRoutes.openapi(getAgentRoute, async (c) => {
   try {
     const result = await AgentRegistrationService.fromEnv(
@@ -148,6 +231,21 @@ agentRoutes.openapi(getAgentRoute, async (c) => {
     return c.json(result, 200, {
       'Cache-Control': 'public, max-age=15',
     })
+  } catch (error) {
+    if (error instanceof AppError || error instanceof AgentRegistrationError) {
+      return c.json({ error: error.message }, statusFromError(error))
+    }
+    throw error
+  }
+})
+
+// TODO: rate-limit linkERC8004 requests per IP/signer/agentId (Cloudflare or in-worker)
+agentRoutes.openapi(linkErc8004Route, async (c) => {
+  try {
+    const result = await AgentRegistrationService.fromEnv(
+      getWorkerEnv()
+    ).linkErc8004(c.req.param('agentId'), c.req.valid('json'))
+    return c.json(result, 200)
   } catch (error) {
     if (error instanceof AppError || error instanceof AgentRegistrationError) {
       return c.json({ error: error.message }, statusFromError(error))

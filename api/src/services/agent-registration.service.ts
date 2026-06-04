@@ -9,10 +9,12 @@ import type { SelfRegisterTypedData } from '../lib/eip712-agent-registration.js'
 import { HTTP_ROUTES } from '../constants/routes.js'
 import { getWorkerEnv } from '../lib/worker-env.js'
 import { AppError } from '../errors.js'
+import { isContractRevert } from '../lib/viem-revert.js'
 import { ProviderService } from './provider.service.js'
 import {
   AgentNotFoundError,
   AgentRegistryService,
+  Erc8004NotRegisteredError,
 } from './agent-registry.service.js'
 import { FeeManagerService } from './fee-manager.service.js'
 import type {
@@ -20,6 +22,8 @@ import type {
   AgentRegistrationQuote,
   AgentRegistrationRequest,
   AgentRegistrationResponse,
+  LinkErc8004Request,
+  LinkErc8004Response,
 } from '../schemas/agent.js'
 
 export interface GetAgentResult {
@@ -158,6 +162,85 @@ export class AgentRegistrationService {
       }
       throw error
     }
+  }
+
+  async getAgentByErc8004(erc8004AgentId: string): Promise<GetAgentResult> {
+    try {
+      const result = await this.agentRegistryService().getAgentByErc8004(
+        BigInt(erc8004AgentId)
+      )
+      return {
+        agentId: result.agentId,
+        agent: result.agent,
+        agentRegistry: this.config.agentRegistryAddress,
+      }
+    } catch (error) {
+      if (error instanceof Erc8004NotRegisteredError) {
+        throw new AgentRegistrationError(error.message, 404)
+      }
+      throw error
+    }
+  }
+
+  async linkErc8004(
+    agentId: string,
+    body: LinkErc8004Request
+  ): Promise<LinkErc8004Response> {
+    if (!this.config.relayerPrivateKey) {
+      throw new AgentRegistrationError(
+        'RELAYER_PRIVATE_KEY is not configured',
+        503
+      )
+    }
+
+    try {
+      const { transactionHash, agent } =
+        await this.agentRegistryService().linkErc8004WithRelayer(
+          this.config.relayerPrivateKey,
+          BigInt(agentId),
+          BigInt(body.erc8004AgentId)
+        )
+      return {
+        agentId,
+        agent,
+        agentRegistry: this.config.agentRegistryAddress,
+        transactionHash,
+      }
+    } catch (error) {
+      throw this.mapLinkErc8004Error(error)
+    }
+  }
+
+  private mapLinkErc8004Error(error: unknown): AgentRegistrationError {
+    if (error instanceof AgentNotFoundError) {
+      return new AgentRegistrationError(error.message, 404)
+    }
+    if (error instanceof AgentRegistrationError) {
+      return error
+    }
+
+    const revertMessages: Record<string, string> = {
+      ERC8004AlreadyLinked: 'Agent already has an ERC-8004 identity linked',
+      NotERC8004Owner: 'Agent owner does not hold the ERC-8004 identity NFT',
+      NotAgentOwner: 'Caller is not authorized to link ERC-8004 for this agent',
+      ZeroAddress: 'Invalid zero address in link request',
+    }
+    for (const [name, message] of Object.entries(revertMessages)) {
+      if (isContractRevert(error, name)) {
+        return new AgentRegistrationError(message, 400)
+      }
+    }
+
+    if (isContractRevert(error, 'EnforcedPause')) {
+      return new AgentRegistrationError('AgentRegistry is paused', 503)
+    }
+
+    const message =
+      error instanceof Error ? error.message : 'On-chain ERC-8004 link failed'
+    if (message.includes('reverted')) {
+      return new AgentRegistrationError(message, 502)
+    }
+    return new AgentRegistrationError(message, 503)
   }
 
   private parseRequest(

@@ -7,8 +7,11 @@ import {
   AgentRegistrationQuoteSchema,
   AgentRegistrationRequestSchema,
   AgentRegistrationResponseSchema,
+  GetAgentByErc8004InputSchema,
   GetAgentInputSchema,
   GetAgentResponseSchema,
+  LinkErc8004InputSchema,
+  LinkErc8004ResponseSchema,
 } from '../schemas/agent.js'
 import { AgentRegistrationService } from '../services/agent-registration.service.js'
 import { VaultsService } from '../services/vaults.service.js'
@@ -57,6 +60,53 @@ export function registerMcpTools(server: McpServer): void {
         return mcpToolSuccess(output)
       } catch (error) {
         return mcpToolErrorFromUnknown(error, 'Failed to load agent')
+      }
+    }
+  )
+
+  server.registerTool(
+    MCP_TOOL_NAMES.getAgentByErc8004,
+    {
+      title: 'Get agent by ERC-8004 identity',
+      description:
+        'Mirrors GET /agents/by-erc8004/{erc8004AgentId}. Reads AgentRegistry.getAgentByERC8004 via RPC.',
+      inputSchema: GetAgentByErc8004InputSchema,
+      outputSchema: GetAgentResponseSchema,
+      annotations: READ_ONLY_TOOL_ANNOTATIONS,
+    },
+    async ({ erc8004AgentId }) => {
+      try {
+        const output = await AgentRegistrationService.fromEnv(
+          getWorkerEnv()
+        ).getAgentByErc8004(erc8004AgentId)
+        return mcpToolSuccess(output)
+      } catch (error) {
+        return mcpToolErrorFromUnknown(error, 'Failed to load agent by ERC-8004')
+      }
+    }
+  )
+
+  server.registerTool(
+    MCP_TOOL_NAMES.linkAgentErc8004,
+    {
+      title: 'Link ERC-8004 identity to agent',
+      description:
+        'Mirrors POST /agents/{agentId}/erc8004/link. Submits linkERC8004Identity via registrar relayer.',
+      inputSchema: LinkErc8004InputSchema,
+      outputSchema: LinkErc8004ResponseSchema,
+      annotations: WRITE_TOOL_ANNOTATIONS,
+    },
+    async (input) => {
+      try {
+        // TODO: rate-limit linkERC8004 requests per IP/signer/agentId (Cloudflare or in-worker)
+        const output = await AgentRegistrationService.fromEnv(
+          getWorkerEnv()
+        ).linkErc8004(input.agentId, {
+          erc8004AgentId: input.erc8004AgentId,
+        })
+        return mcpToolSuccess(output)
+      } catch (error) {
+        return mcpToolErrorFromUnknown(error, 'ERC-8004 link failed')
       }
     }
   )

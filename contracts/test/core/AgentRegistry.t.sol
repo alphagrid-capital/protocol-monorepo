@@ -193,6 +193,38 @@ contract AgentRegistryTest is BaseTest {
         assertTrue(registry.isERC8004OwnerCurrent(agentId));
     }
 
+    function test_RegistrarCanLinkERC8004WhenOwnerHoldsNFT() public {
+        uint256 agentId = _registerAgentWithoutErc8004();
+        uint256 erc8004Id = AgentTestLib.mintERC8004(identityRegistry, agentOwner);
+
+        vm.prank(operator);
+        registry.linkERC8004Identity(agentId, erc8004Id);
+
+        assertTrue(registry.hasERC8004Identity(agentId));
+        assertEq(registry.getAgent(agentId).erc8004AgentId, erc8004Id);
+    }
+
+    function test_RegistrarCanUpdateMetadata() public {
+        uint256 agentId = _registerAgent();
+        string memory updated = "ipfs://registrar-updated";
+
+        vm.prank(operator);
+        registry.updateAgentMetadata(agentId, updated);
+
+        assertEq(registry.getAgent(agentId).metadataURI, updated);
+    }
+
+    function test_RegistrarCannotUpdateMetadataWhenSuspended() public {
+        uint256 agentId = _registerAgent();
+
+        vm.prank(operator);
+        registry.setAgentStatus(agentId, IAgentRegistry.AgentStatus.Suspended);
+
+        vm.prank(operator);
+        vm.expectRevert(abi.encodeWithSelector(AgentRegistry.MetadataUpdateNotAllowed.selector, agentId));
+        registry.updateAgentMetadata(agentId, "ipfs://blocked");
+    }
+
     function test_IsERC8004OwnerCurrent_FalseWhenNotLinked() public {
         uint256 agentId = _registerAgentWithoutErc8004();
         assertFalse(registry.isERC8004OwnerCurrent(agentId));

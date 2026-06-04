@@ -120,10 +120,10 @@ interface IAgentRegistry {
     // Agent Management
     // -------------------------------------------------------------------------
 
-    /// @notice Update agent metadata. Callable by the agent owner when not suspended.
+    /// @notice Update agent metadata. Callable by the agent owner or `REGISTRAR_ROLE` when not suspended.
     function updateAgentMetadata(uint256 agentId, string calldata metadataURI) external;
 
-    /// @notice Link a portable ERC-8004 identity to an agent. Callable once by the mandate owner, who must hold the NFT.
+    /// @notice Link a portable ERC-8004 identity to an agent. Callable by the mandate owner or `REGISTRAR_ROLE`; owner must hold the NFT.
     function linkERC8004Identity(uint256 agentId, uint256 erc8004AgentId) external;
 
     /// @notice Update the agent signer. Callable by the agent owner.

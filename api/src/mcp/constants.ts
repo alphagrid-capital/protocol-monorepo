@@ -5,6 +5,8 @@ export const MCP_SERVER_VERSION = '0.1.0'
 export const MCP_TOOL_NAMES = {
   listVaults: 'alphagrid_list_vaults',
   getAgent: 'alphagrid_get_agent',
+  getAgentByErc8004: 'alphagrid_get_agent_by_erc8004',
+  linkAgentErc8004: 'alphagrid_link_agent_erc8004',
   getAgentRegistrationQuote: 'alphagrid_get_agent_registration_quote',
   registerAgent: 'alphagrid_register_agent',
 } as const

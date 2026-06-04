@@ -121,11 +121,48 @@ export const AgentRecordSchema = z
 
 export type AgentRecord = z.infer<typeof AgentRecordSchema>
 
+export const erc8004AgentIdParamSchema = z
+  .string()
+  .regex(/^\d+$/, 'Expected a non-negative integer ERC-8004 token id')
+
+export const GetAgentByErc8004InputSchema = z
+  .object({
+    erc8004AgentId: erc8004AgentIdParamSchema,
+  })
+  .strict()
+
 export const GetAgentInputSchema = z
   .object({
     agentId: agentIdParamSchema,
   })
   .strict()
+
+export const LinkErc8004RequestSchema = z
+  .object({
+    erc8004AgentId: erc8004AgentIdParamSchema.openapi({
+      description: 'ERC-8004 identity token id to link; agent owner must hold the NFT',
+    }),
+  })
+  .strict()
+
+export const LinkErc8004InputSchema = z
+  .object({
+    agentId: agentIdParamSchema,
+    erc8004AgentId: erc8004AgentIdParamSchema,
+  })
+  .strict()
+
+export const LinkErc8004ResponseSchema = z
+  .object({
+    agentId: agentIdParamSchema,
+    agent: AgentRecordSchema,
+    agentRegistry: addressSchema,
+    transactionHash: hexSchema,
+  })
+  .openapi('LinkErc8004Response')
+
+export type LinkErc8004Request = z.infer<typeof LinkErc8004RequestSchema>
+export type LinkErc8004Response = z.infer<typeof LinkErc8004ResponseSchema>
 
 export const GetAgentResponseSchema = z
   .object({

@@ -13,6 +13,13 @@ export class AgentNotFoundError extends Error {
   }
 }
 
+export class Erc8004NotRegisteredError extends Error {
+  constructor(readonly erc8004AgentId: string) {
+    super(`No agent linked to ERC-8004 identity: ${erc8004AgentId}`)
+    this.name = 'Erc8004NotRegisteredError'
+  }
+}
+
 export class AgentRegistryService {
   constructor(
     private readonly providerService: ProviderService,
@@ -38,24 +45,96 @@ export class AgentRegistryService {
         functionName: 'getAgent',
         args: [agentId],
       })
-      return {
-        owner: agent.owner,
-        signer: agent.signer,
-        payoutRecipient: agent.payoutRecipient,
-        vault: agent.vault,
-        track: agent.track,
-        status: agent.status,
-        name: agent.name,
-        metadataURI: agent.metadataURI,
-        createdAt: agent.createdAt.toString(),
-        hasERC8004Identity: agent.hasERC8004Identity,
-        erc8004AgentId: agent.erc8004AgentId.toString(),
-      }
+      return this.mapAgentRecord(agent)
     } catch (error) {
       if (isContractRevert(error, 'AgentNotFound')) {
         throw new AgentNotFoundError(agentId.toString())
       }
       throw error
+    }
+  }
+
+  async getAgentByErc8004(
+    erc8004AgentId: bigint
+  ): Promise<{ agentId: string; agent: AgentRecord }> {
+    const client = this.providerService.createPublicClient()
+    try {
+      const agent = await client.readContract({
+        address: this.registryAddress,
+        abi: agentRegistryAbi,
+        functionName: 'getAgentByERC8004',
+        args: [erc8004AgentId],
+      })
+      const agentId = await client.readContract({
+        address: this.registryAddress,
+        abi: agentRegistryAbi,
+        functionName: 'agentIdByERC8004',
+        args: [erc8004AgentId],
+      })
+      return {
+        agentId: agentId.toString(),
+        agent: this.mapAgentRecord(agent),
+      }
+    } catch (error) {
+      if (isContractRevert(error, 'ERC8004NotRegistered')) {
+        throw new Erc8004NotRegisteredError(erc8004AgentId.toString())
+      }
+      throw error
+    }
+  }
+
+  async linkErc8004WithRelayer(
+    relayerPrivateKey: Hex,
+    agentId: bigint,
+    erc8004AgentId: bigint
+  ): Promise<{ transactionHash: Hex; agent: AgentRecord }> {
+    const publicClient = this.providerService.createPublicClient()
+    const walletClient =
+      this.providerService.createWalletClient(relayerPrivateKey)
+
+    const transactionHash = await walletClient.writeContract({
+      address: this.registryAddress,
+      abi: agentRegistryAbi,
+      functionName: 'linkERC8004Identity',
+      args: [agentId, erc8004AgentId],
+    })
+
+    const receipt = await publicClient.waitForTransactionReceipt({
+      hash: transactionHash,
+    })
+    if (receipt.status !== 'success') {
+      throw new Error('On-chain ERC-8004 link transaction reverted')
+    }
+
+    const agent = await this.getAgent(agentId)
+    return { transactionHash, agent }
+  }
+
+  private mapAgentRecord(agent: {
+    owner: Address
+    signer: Address
+    payoutRecipient: Address
+    vault: Address
+    track: number
+    status: number
+    name: string
+    metadataURI: string
+    createdAt: bigint
+    hasERC8004Identity: boolean
+    erc8004AgentId: bigint
+  }): AgentRecord {
+    return {
+      owner: agent.owner,
+      signer: agent.signer,
+      payoutRecipient: agent.payoutRecipient,
+      vault: agent.vault,
+      track: agent.track,
+      status: agent.status,
+      name: agent.name,
+      metadataURI: agent.metadataURI,
+      createdAt: agent.createdAt.toString(),
+      hasERC8004Identity: agent.hasERC8004Identity,
+      erc8004AgentId: agent.erc8004AgentId.toString(),
     }
   }
 
