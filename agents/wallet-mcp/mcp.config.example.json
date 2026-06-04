@@ -1,0 +1,22 @@
+{
+  "mcpServers": {
+    "alphagrid-wallet-mcp": {
+      "command": "node",
+      "args": [
+        "/Users/rychnovsky/Documents/Web_projects/klienti/Artiffine/AlphaGrid/agents/wallet-mcp/build/index.js"
+      ],
+      "env": {
+        "WALLET_PROVIDER": "viem",
+        "CDP_API_KEY_ID": "",
+        "CDP_API_KEY_SECRET": "",
+        "CDP_WALLET_SECRET": "",
+        "NETWORK_ID": "base-sepolia",
+        "ADDRESS": "",
+        "OWNER_ADDRESS": "",
+        "PAYMASTER_URL": "",
+        "RPC_URL": "",
+        "IDEMPOTENCY_KEY": ""
+      }
+    }
+  }
+}
