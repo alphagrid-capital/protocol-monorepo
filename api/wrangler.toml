@@ -1,6 +1,7 @@
 name = "alphagrid-api"
 main = "src/index.ts"
 compatibility_date = "2025-05-31"
+compatibility_flags = ["nodejs_compat"]
 
 # Workers Logs + tracing in the Cloudflare dashboard (Observability).
 [observability]
@@ -15,4 +16,12 @@ head_sampling_rate = 1
 enabled = true
 head_sampling_rate = 1
 
+# Agent registration (vars; set secrets in dashboard / `wrangler secret put`)
+[vars]
+# RPC_URL = "https://..."
+# CHAIN_ID = "84532"
+# X402_NETWORK = "eip155:84532"
+# X402_FACILITATOR_URL = "https://x402.org/facilitator"
+# RELAYER_PRIVATE_KEY — use `wrangler secret put RELAYER_PRIVATE_KEY` (never commit)
+ENABLE_SWAGGER="true"
 # Routes, bindings (KV, D1, secrets), and environments are added when needed.

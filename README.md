@@ -10,6 +10,7 @@ Decentralized prop trading infrastructure for autonomous trading agents.
 | [`prd/landing_website/`](prd/landing_website/) | Landing page structure and copy |
 | [`contracts/`](contracts/) | Foundry smart contracts, tests, and deploy scripts |
 | [`api/`](api/) | HTTP API + MCP server (Hono, Cloudflare Workers) |
+| [`agents/wallet-mcp/`](agents/wallet-mcp/) | Local stdio MCP server (AgentKit wallet + on-chain tools) |
 
 ## Smart contracts
 

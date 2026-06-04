@@ -29,3 +29,7 @@ All make targets `cd` into `contracts/` automatically.
 - Submodules must be initialized before any `forge build` or `forge test` succeeds. If `contracts/lib/forge-std/` is empty, run `git submodule update --init --recursive`.
 - The `.env.example` in `contracts/` lists optional RPC/deploy keys. These are only needed for on-chain deployment scripts, not for local build/test.
 - `foundry.toml` targets Solidity `0.8.30` with EVM version `cancun`.
+
+### Wallet MCP
+
+Local AgentKit wallet server lives in `agents/wallet-mcp/`. Before using on-chain MCP tools (balances, transfers, faucet, Pyth, x402), read `.agents/skills/alphagrid-wallet-mcp/SKILL.md`.

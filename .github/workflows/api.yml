@@ -38,7 +38,7 @@ jobs:
         run: yarn install --frozen-lockfile
 
       - name: Typecheck
-        run: yarn typecheck
+        run: yarn type-check
 
   deploy:
     name: Deploy to Cloudflare

@@ -1,9 +1,13 @@
 CONTRACTS := contracts
 
-.PHONY: build test fmt fmt-check clean
+.PHONY: build sync-abis test fmt fmt-check clean
 
 build:
 	cd $(CONTRACTS) && forge build
+	node scripts/sync-contract-abis.mjs
+
+sync-abis:
+	node scripts/sync-contract-abis.mjs
 
 test:
 	cd $(CONTRACTS) && forge test

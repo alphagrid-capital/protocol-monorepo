@@ -1,0 +1,13 @@
+# .prettierignore
+node_modules/
+build/
+.next/
+.wrangler/
+yarn.lock
+package-lock.json
+public
+types
+artifacts/build-info
+artifacts
+out/
+dist/

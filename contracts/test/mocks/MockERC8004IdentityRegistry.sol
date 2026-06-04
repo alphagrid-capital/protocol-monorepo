@@ -7,7 +7,7 @@ import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 contract MockERC8004IdentityRegistry is ERC721 {
     uint256 private _nextTokenId = 1;
 
-    constructor() ERC721("MockERC8004", "M8004") {}
+    constructor() ERC721("MockERC8004", "M8004") { }
 
     function mint(address to) external returns (uint256 tokenId) {
         tokenId = _nextTokenId++;

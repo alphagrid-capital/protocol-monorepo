@@ -56,14 +56,11 @@ contract AgentRegistryTest is BaseTest {
         uint256 erc8004Id = AgentTestLib.mintERC8004(identityRegistry, agentOwner);
 
         vm.prank(operator);
-        uint256 agentId = registry.registerAgent(agentOwner, vault, AGENT_NAME, METADATA_URI, agentSigner, true, erc8004Id);
+        uint256 agentId =
+            registry.registerAgent(agentOwner, vault, AGENT_NAME, METADATA_URI, agentSigner, true, erc8004Id);
 
         assertEq(agentId, 1);
-        assertEq(feeManager.paymentCount(), 1);
-
-        (address payer, uint256 paidAgentId) = feeManager.registrationPayments(0);
-        assertEq(payer, operator);
-        assertEq(paidAgentId, agentId);
+        assertEq(feeManager.paymentCount(), 0);
 
         IAgentRegistry.Agent memory agent = registry.getAgent(agentId);
         assertEq(agent.owner, agentOwner);
@@ -80,6 +77,10 @@ contract AgentRegistryTest is BaseTest {
         assertTrue(registry.hasERC8004Identity(agentId));
         assertTrue(registry.isERC8004OwnerCurrent(agentId));
         assertEq(registry.agentIdByERC8004(erc8004Id), agentId);
+        IAgentRegistry.Agent memory byErc8004 = registry.getAgentByERC8004(erc8004Id);
+        assertEq(byErc8004.owner, agent.owner);
+        assertEq(byErc8004.vault, agent.vault);
+        assertEq(byErc8004.erc8004AgentId, erc8004Id);
         assertEq(registry.payoutRecipientOf(agentId), agentOwner);
         assertFalse(registry.isPayoutEligible(agentId));
 
@@ -408,8 +409,7 @@ contract AgentRegistryTest is BaseTest {
     }
 
     function test_RevertWhen_VaultTrackRegistryNotSet() public {
-        AgentRegistry freshRegistry =
-            new AgentRegistry(deployer, feeManager, address(identityRegistry), block.chainid);
+        AgentRegistry freshRegistry = new AgentRegistry(deployer, feeManager, address(identityRegistry), block.chainid);
         uint256 erc8004Id = AgentTestLib.mintERC8004(identityRegistry, agentOwner);
 
         vm.startPrank(deployer);
@@ -447,6 +447,11 @@ contract AgentRegistryTest is BaseTest {
     function test_RevertWhen_AgentNotFound() public {
         vm.expectRevert(abi.encodeWithSelector(AgentRegistry.AgentNotFound.selector, 99));
         registry.ownerOf(99);
+    }
+
+    function test_RevertWhen_GetAgentByERC8004NotRegistered() public {
+        vm.expectRevert(abi.encodeWithSelector(AgentRegistry.ERC8004NotRegistered.selector, 42));
+        registry.getAgentByERC8004(42);
     }
 
     function test_RevertWhen_RegisterWithoutRegistrarRole() public {
