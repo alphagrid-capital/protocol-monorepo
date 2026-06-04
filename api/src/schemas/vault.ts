@@ -2,7 +2,9 @@ import { z } from '@hono/zod-openapi'
 
 export const VaultTrackConfigSchema = z
   .object({
-    vault: z.string().openapi({ example: '0x98e47A7CF1Cc880aDA3CC51D39b136BDf0D962AA' }),
+    vault: z
+      .string()
+      .openapi({ example: '0x98e47A7CF1Cc880aDA3CC51D39b136BDf0D962AA' }),
     trackId: z.number().int().openapi({ example: 0 }),
     initialAllocation: z.string().openapi({ example: '10000000000' }),
     maxAllocation: z.string().openapi({ example: '25000000000' }),

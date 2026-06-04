@@ -103,7 +103,9 @@ export function loadVaultsConfig(
     throw new Error(`Unsupported CHAIN_ID: ${chainId}`)
   }
   if (!chainContracts.VaultTrackRegistry) {
-    throw new Error(`VaultTrackRegistry is not deployed for CHAIN_ID: ${chainId}`)
+    throw new Error(
+      `VaultTrackRegistry is not deployed for CHAIN_ID: ${chainId}`
+    )
   }
 
   return {
@@ -264,13 +266,19 @@ export class VaultsService {
       lines.push(vault.description)
       lines.push('')
       for (const track of vault.vaultTrackConfigs) {
-        lines.push(`### Track ${track.trackId}${track.active ? '' : ' (inactive)'}`)
+        lines.push(
+          `### Track ${track.trackId}${track.active ? '' : ' (inactive)'}`
+        )
         lines.push('')
-        lines.push(`- **Initial allocation (atomic):** ${track.initialAllocation}`)
+        lines.push(
+          `- **Initial allocation (atomic):** ${track.initialAllocation}`
+        )
         lines.push(`- **Max allocation (atomic):** ${track.maxAllocation}`)
         lines.push(`- **Max drawdown (bps):** ${track.maxDrawdownBps}`)
         lines.push(`- **Max trade size (bps):** ${track.maxTradeSizeBps}`)
-        lines.push(`- **Max daily turnover (bps):** ${track.maxDailyTurnoverBps}`)
+        lines.push(
+          `- **Max daily turnover (bps):** ${track.maxDailyTurnoverBps}`
+        )
         lines.push(`- **Evaluation period (s):** ${track.evaluationPeriod}`)
         lines.push(`- **Min trades:** ${track.minTrades}`)
         lines.push(`- **Promotion score:** ${track.promotionScore}`)

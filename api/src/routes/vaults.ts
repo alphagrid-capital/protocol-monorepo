@@ -50,10 +50,13 @@ const getVaultRoute = createRoute({
     'Returns a single thematic vault by `id`, `slug`, or contract address from VaultTrackRegistry.',
   request: {
     params: z.object({
-      id: z.string().min(1).openapi({
-        param: { name: 'id', in: 'path' },
-        example: 'foundation',
-      }),
+      id: z
+        .string()
+        .min(1)
+        .openapi({
+          param: { name: 'id', in: 'path' },
+          example: 'foundation',
+        }),
     }),
   },
   responses: {

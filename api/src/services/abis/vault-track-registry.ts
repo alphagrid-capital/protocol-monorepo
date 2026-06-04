@@ -2,748 +2,748 @@
 // Regenerate: make build  (or: node scripts/sync-contract-abis.mjs)
 export const vaultTrackRegistryAbi = [
   {
-    "type": "constructor",
-    "inputs": [
+    type: 'constructor',
+    inputs: [
       {
-        "name": "admin",
-        "type": "address",
-        "internalType": "address"
-      }
+        name: 'admin',
+        type: 'address',
+        internalType: 'address',
+      },
     ],
-    "stateMutability": "nonpayable"
+    stateMutability: 'nonpayable',
   },
   {
-    "type": "function",
-    "name": "CONFIG_ADMIN_ROLE",
-    "inputs": [],
-    "outputs": [
+    type: 'function',
+    name: 'CONFIG_ADMIN_ROLE',
+    inputs: [],
+    outputs: [
       {
-        "name": "",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
+        name: '',
+        type: 'bytes32',
+        internalType: 'bytes32',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "DEFAULT_ADMIN_ROLE",
-    "inputs": [],
-    "outputs": [
+    type: 'function',
+    name: 'DEFAULT_ADMIN_ROLE',
+    inputs: [],
+    outputs: [
       {
-        "name": "",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
+        name: '',
+        type: 'bytes32',
+        internalType: 'bytes32',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "MAX_BPS",
-    "inputs": [],
-    "outputs": [
+    type: 'function',
+    name: 'MAX_BPS',
+    inputs: [],
+    outputs: [
       {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: '',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "MAX_TRACK_ID",
-    "inputs": [],
-    "outputs": [
+    type: 'function',
+    name: 'MAX_TRACK_ID',
+    inputs: [],
+    outputs: [
       {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: '',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "capitalModeOf",
-    "inputs": [
+    type: 'function',
+    name: 'capitalModeOf',
+    inputs: [
       {
-        "name": "vault",
-        "type": "address",
-        "internalType": "address"
+        name: 'vault',
+        type: 'address',
+        internalType: 'address',
       },
       {
-        "name": "trackId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: 'trackId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
     ],
-    "outputs": [
+    outputs: [
       {
-        "name": "",
-        "type": "uint8",
-        "internalType": "enum IVaultTrackRegistry.CapitalMode"
-      }
+        name: '',
+        type: 'uint8',
+        internalType: 'enum IVaultTrackRegistry.CapitalMode',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "getRoleAdmin",
-    "inputs": [
+    type: 'function',
+    name: 'getRoleAdmin',
+    inputs: [
       {
-        "name": "role",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
+        name: 'role',
+        type: 'bytes32',
+        internalType: 'bytes32',
+      },
     ],
-    "outputs": [
+    outputs: [
       {
-        "name": "",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
+        name: '',
+        type: 'bytes32',
+        internalType: 'bytes32',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "getTrackType",
-    "inputs": [
+    type: 'function',
+    name: 'getTrackType',
+    inputs: [
       {
-        "name": "trackId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: 'trackId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
     ],
-    "outputs": [
+    outputs: [
       {
-        "name": "",
-        "type": "tuple",
-        "internalType": "struct IVaultTrackRegistry.TrackType",
-        "components": [
+        name: '',
+        type: 'tuple',
+        internalType: 'struct IVaultTrackRegistry.TrackType',
+        components: [
           {
-            "name": "trackId",
-            "type": "uint256",
-            "internalType": "uint256"
+            name: 'trackId',
+            type: 'uint256',
+            internalType: 'uint256',
           },
           {
-            "name": "name",
-            "type": "bytes32",
-            "internalType": "bytes32"
+            name: 'name',
+            type: 'bytes32',
+            internalType: 'bytes32',
           },
           {
-            "name": "capitalMode",
-            "type": "uint8",
-            "internalType": "enum IVaultTrackRegistry.CapitalMode"
+            name: 'capitalMode',
+            type: 'uint8',
+            internalType: 'enum IVaultTrackRegistry.CapitalMode',
           },
           {
-            "name": "active",
-            "type": "bool",
-            "internalType": "bool"
-          }
-        ]
-      }
+            name: 'active',
+            type: 'bool',
+            internalType: 'bool',
+          },
+        ],
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "getVaultTrackConfig",
-    "inputs": [
+    type: 'function',
+    name: 'getVaultTrackConfig',
+    inputs: [
       {
-        "name": "vault",
-        "type": "address",
-        "internalType": "address"
+        name: 'vault',
+        type: 'address',
+        internalType: 'address',
       },
       {
-        "name": "trackId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: 'trackId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
     ],
-    "outputs": [
+    outputs: [
       {
-        "name": "",
-        "type": "tuple",
-        "internalType": "struct IVaultTrackRegistry.VaultTrackConfig",
-        "components": [
+        name: '',
+        type: 'tuple',
+        internalType: 'struct IVaultTrackRegistry.VaultTrackConfig',
+        components: [
           {
-            "name": "vault",
-            "type": "address",
-            "internalType": "address"
+            name: 'vault',
+            type: 'address',
+            internalType: 'address',
           },
           {
-            "name": "trackId",
-            "type": "uint256",
-            "internalType": "uint256"
+            name: 'trackId',
+            type: 'uint256',
+            internalType: 'uint256',
           },
           {
-            "name": "initialAllocation",
-            "type": "uint256",
-            "internalType": "uint256"
+            name: 'initialAllocation',
+            type: 'uint256',
+            internalType: 'uint256',
           },
           {
-            "name": "maxAllocation",
-            "type": "uint256",
-            "internalType": "uint256"
+            name: 'maxAllocation',
+            type: 'uint256',
+            internalType: 'uint256',
           },
           {
-            "name": "maxDrawdownBps",
-            "type": "uint256",
-            "internalType": "uint256"
+            name: 'maxDrawdownBps',
+            type: 'uint256',
+            internalType: 'uint256',
           },
           {
-            "name": "maxTradeSizeBps",
-            "type": "uint256",
-            "internalType": "uint256"
+            name: 'maxTradeSizeBps',
+            type: 'uint256',
+            internalType: 'uint256',
           },
           {
-            "name": "maxDailyTurnoverBps",
-            "type": "uint256",
-            "internalType": "uint256"
+            name: 'maxDailyTurnoverBps',
+            type: 'uint256',
+            internalType: 'uint256',
           },
           {
-            "name": "evaluationPeriod",
-            "type": "uint256",
-            "internalType": "uint256"
+            name: 'evaluationPeriod',
+            type: 'uint256',
+            internalType: 'uint256',
           },
           {
-            "name": "minTrades",
-            "type": "uint256",
-            "internalType": "uint256"
+            name: 'minTrades',
+            type: 'uint256',
+            internalType: 'uint256',
           },
           {
-            "name": "promotionScore",
-            "type": "uint256",
-            "internalType": "uint256"
+            name: 'promotionScore',
+            type: 'uint256',
+            internalType: 'uint256',
           },
           {
-            "name": "active",
-            "type": "bool",
-            "internalType": "bool"
-          }
-        ]
-      }
+            name: 'active',
+            type: 'bool',
+            internalType: 'bool',
+          },
+        ],
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "grantRole",
-    "inputs": [
+    type: 'function',
+    name: 'grantRole',
+    inputs: [
       {
-        "name": "role",
-        "type": "bytes32",
-        "internalType": "bytes32"
+        name: 'role',
+        type: 'bytes32',
+        internalType: 'bytes32',
       },
       {
-        "name": "account",
-        "type": "address",
-        "internalType": "address"
-      }
+        name: 'account',
+        type: 'address',
+        internalType: 'address',
+      },
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
-    "type": "function",
-    "name": "hasRole",
-    "inputs": [
+    type: 'function',
+    name: 'hasRole',
+    inputs: [
       {
-        "name": "role",
-        "type": "bytes32",
-        "internalType": "bytes32"
+        name: 'role',
+        type: 'bytes32',
+        internalType: 'bytes32',
       },
       {
-        "name": "account",
-        "type": "address",
-        "internalType": "address"
-      }
+        name: 'account',
+        type: 'address',
+        internalType: 'address',
+      },
     ],
-    "outputs": [
+    outputs: [
       {
-        "name": "",
-        "type": "bool",
-        "internalType": "bool"
-      }
+        name: '',
+        type: 'bool',
+        internalType: 'bool',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "isRegisteredVault",
-    "inputs": [
+    type: 'function',
+    name: 'isRegisteredVault',
+    inputs: [
       {
-        "name": "vault",
-        "type": "address",
-        "internalType": "address"
-      }
+        name: 'vault',
+        type: 'address',
+        internalType: 'address',
+      },
     ],
-    "outputs": [
+    outputs: [
       {
-        "name": "",
-        "type": "bool",
-        "internalType": "bool"
-      }
+        name: '',
+        type: 'bool',
+        internalType: 'bool',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "isVaultTrackActive",
-    "inputs": [
+    type: 'function',
+    name: 'isVaultTrackActive',
+    inputs: [
       {
-        "name": "vault",
-        "type": "address",
-        "internalType": "address"
+        name: 'vault',
+        type: 'address',
+        internalType: 'address',
       },
       {
-        "name": "trackId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: 'trackId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
     ],
-    "outputs": [
+    outputs: [
       {
-        "name": "",
-        "type": "bool",
-        "internalType": "bool"
-      }
+        name: '',
+        type: 'bool',
+        internalType: 'bool',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "renounceRole",
-    "inputs": [
+    type: 'function',
+    name: 'renounceRole',
+    inputs: [
       {
-        "name": "role",
-        "type": "bytes32",
-        "internalType": "bytes32"
+        name: 'role',
+        type: 'bytes32',
+        internalType: 'bytes32',
       },
       {
-        "name": "callerConfirmation",
-        "type": "address",
-        "internalType": "address"
-      }
+        name: 'callerConfirmation',
+        type: 'address',
+        internalType: 'address',
+      },
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
-    "type": "function",
-    "name": "revokeRole",
-    "inputs": [
+    type: 'function',
+    name: 'revokeRole',
+    inputs: [
       {
-        "name": "role",
-        "type": "bytes32",
-        "internalType": "bytes32"
+        name: 'role',
+        type: 'bytes32',
+        internalType: 'bytes32',
       },
       {
-        "name": "account",
-        "type": "address",
-        "internalType": "address"
-      }
+        name: 'account',
+        type: 'address',
+        internalType: 'address',
+      },
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
-    "type": "function",
-    "name": "setVaultTrackConfig",
-    "inputs": [
+    type: 'function',
+    name: 'setVaultTrackConfig',
+    inputs: [
       {
-        "name": "vault",
-        "type": "address",
-        "internalType": "address"
+        name: 'vault',
+        type: 'address',
+        internalType: 'address',
       },
       {
-        "name": "trackId",
-        "type": "uint256",
-        "internalType": "uint256"
+        name: 'trackId',
+        type: 'uint256',
+        internalType: 'uint256',
       },
       {
-        "name": "config",
-        "type": "tuple",
-        "internalType": "struct IVaultTrackRegistry.VaultTrackConfig",
-        "components": [
+        name: 'config',
+        type: 'tuple',
+        internalType: 'struct IVaultTrackRegistry.VaultTrackConfig',
+        components: [
           {
-            "name": "vault",
-            "type": "address",
-            "internalType": "address"
+            name: 'vault',
+            type: 'address',
+            internalType: 'address',
           },
           {
-            "name": "trackId",
-            "type": "uint256",
-            "internalType": "uint256"
+            name: 'trackId',
+            type: 'uint256',
+            internalType: 'uint256',
           },
           {
-            "name": "initialAllocation",
-            "type": "uint256",
-            "internalType": "uint256"
+            name: 'initialAllocation',
+            type: 'uint256',
+            internalType: 'uint256',
           },
           {
-            "name": "maxAllocation",
-            "type": "uint256",
-            "internalType": "uint256"
+            name: 'maxAllocation',
+            type: 'uint256',
+            internalType: 'uint256',
           },
           {
-            "name": "maxDrawdownBps",
-            "type": "uint256",
-            "internalType": "uint256"
+            name: 'maxDrawdownBps',
+            type: 'uint256',
+            internalType: 'uint256',
           },
           {
-            "name": "maxTradeSizeBps",
-            "type": "uint256",
-            "internalType": "uint256"
+            name: 'maxTradeSizeBps',
+            type: 'uint256',
+            internalType: 'uint256',
           },
           {
-            "name": "maxDailyTurnoverBps",
-            "type": "uint256",
-            "internalType": "uint256"
+            name: 'maxDailyTurnoverBps',
+            type: 'uint256',
+            internalType: 'uint256',
           },
           {
-            "name": "evaluationPeriod",
-            "type": "uint256",
-            "internalType": "uint256"
+            name: 'evaluationPeriod',
+            type: 'uint256',
+            internalType: 'uint256',
           },
           {
-            "name": "minTrades",
-            "type": "uint256",
-            "internalType": "uint256"
+            name: 'minTrades',
+            type: 'uint256',
+            internalType: 'uint256',
           },
           {
-            "name": "promotionScore",
-            "type": "uint256",
-            "internalType": "uint256"
+            name: 'promotionScore',
+            type: 'uint256',
+            internalType: 'uint256',
           },
           {
-            "name": "active",
-            "type": "bool",
-            "internalType": "bool"
-          }
-        ]
-      }
+            name: 'active',
+            type: 'bool',
+            internalType: 'bool',
+          },
+        ],
+      },
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
-    "type": "function",
-    "name": "supportsInterface",
-    "inputs": [
+    type: 'function',
+    name: 'supportsInterface',
+    inputs: [
       {
-        "name": "interfaceId",
-        "type": "bytes4",
-        "internalType": "bytes4"
-      }
+        name: 'interfaceId',
+        type: 'bytes4',
+        internalType: 'bytes4',
+      },
     ],
-    "outputs": [
+    outputs: [
       {
-        "name": "",
-        "type": "bool",
-        "internalType": "bool"
-      }
+        name: '',
+        type: 'bool',
+        internalType: 'bool',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "vaultAt",
-    "inputs": [
+    type: 'function',
+    name: 'vaultAt',
+    inputs: [
       {
-        "name": "index",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: 'index',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
     ],
-    "outputs": [
+    outputs: [
       {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
+        name: '',
+        type: 'address',
+        internalType: 'address',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "vaultCount",
-    "inputs": [],
-    "outputs": [
+    type: 'function',
+    name: 'vaultCount',
+    inputs: [],
+    outputs: [
       {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: '',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "event",
-    "name": "RoleAdminChanged",
-    "inputs": [
+    type: 'event',
+    name: 'RoleAdminChanged',
+    inputs: [
       {
-        "name": "role",
-        "type": "bytes32",
-        "indexed": true,
-        "internalType": "bytes32"
+        name: 'role',
+        type: 'bytes32',
+        indexed: true,
+        internalType: 'bytes32',
       },
       {
-        "name": "previousAdminRole",
-        "type": "bytes32",
-        "indexed": true,
-        "internalType": "bytes32"
+        name: 'previousAdminRole',
+        type: 'bytes32',
+        indexed: true,
+        internalType: 'bytes32',
       },
       {
-        "name": "newAdminRole",
-        "type": "bytes32",
-        "indexed": true,
-        "internalType": "bytes32"
-      }
+        name: 'newAdminRole',
+        type: 'bytes32',
+        indexed: true,
+        internalType: 'bytes32',
+      },
     ],
-    "anonymous": false
+    anonymous: false,
   },
   {
-    "type": "event",
-    "name": "RoleGranted",
-    "inputs": [
+    type: 'event',
+    name: 'RoleGranted',
+    inputs: [
       {
-        "name": "role",
-        "type": "bytes32",
-        "indexed": true,
-        "internalType": "bytes32"
+        name: 'role',
+        type: 'bytes32',
+        indexed: true,
+        internalType: 'bytes32',
       },
       {
-        "name": "account",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
+        name: 'account',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
       },
       {
-        "name": "sender",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      }
+        name: 'sender',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
+      },
     ],
-    "anonymous": false
+    anonymous: false,
   },
   {
-    "type": "event",
-    "name": "RoleRevoked",
-    "inputs": [
+    type: 'event',
+    name: 'RoleRevoked',
+    inputs: [
       {
-        "name": "role",
-        "type": "bytes32",
-        "indexed": true,
-        "internalType": "bytes32"
+        name: 'role',
+        type: 'bytes32',
+        indexed: true,
+        internalType: 'bytes32',
       },
       {
-        "name": "account",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
+        name: 'account',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
       },
       {
-        "name": "sender",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      }
+        name: 'sender',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
+      },
     ],
-    "anonymous": false
+    anonymous: false,
   },
   {
-    "type": "event",
-    "name": "TrackTypeUpdated",
-    "inputs": [
+    type: 'event',
+    name: 'TrackTypeUpdated',
+    inputs: [
       {
-        "name": "trackId",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
+        name: 'trackId',
+        type: 'uint256',
+        indexed: true,
+        internalType: 'uint256',
       },
       {
-        "name": "name",
-        "type": "bytes32",
-        "indexed": false,
-        "internalType": "bytes32"
+        name: 'name',
+        type: 'bytes32',
+        indexed: false,
+        internalType: 'bytes32',
       },
       {
-        "name": "capitalMode",
-        "type": "uint8",
-        "indexed": false,
-        "internalType": "enum IVaultTrackRegistry.CapitalMode"
+        name: 'capitalMode',
+        type: 'uint8',
+        indexed: false,
+        internalType: 'enum IVaultTrackRegistry.CapitalMode',
       },
       {
-        "name": "active",
-        "type": "bool",
-        "indexed": false,
-        "internalType": "bool"
-      }
+        name: 'active',
+        type: 'bool',
+        indexed: false,
+        internalType: 'bool',
+      },
     ],
-    "anonymous": false
+    anonymous: false,
   },
   {
-    "type": "event",
-    "name": "VaultRegistered",
-    "inputs": [
+    type: 'event',
+    name: 'VaultRegistered',
+    inputs: [
       {
-        "name": "vault",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      }
+        name: 'vault',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
+      },
     ],
-    "anonymous": false
+    anonymous: false,
   },
   {
-    "type": "event",
-    "name": "VaultTrackConfigUpdated",
-    "inputs": [
+    type: 'event',
+    name: 'VaultTrackConfigUpdated',
+    inputs: [
       {
-        "name": "vault",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
+        name: 'vault',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
       },
       {
-        "name": "trackId",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
+        name: 'trackId',
+        type: 'uint256',
+        indexed: true,
+        internalType: 'uint256',
       },
       {
-        "name": "config",
-        "type": "tuple",
-        "indexed": false,
-        "internalType": "struct IVaultTrackRegistry.VaultTrackConfig",
-        "components": [
+        name: 'config',
+        type: 'tuple',
+        indexed: false,
+        internalType: 'struct IVaultTrackRegistry.VaultTrackConfig',
+        components: [
           {
-            "name": "vault",
-            "type": "address",
-            "internalType": "address"
+            name: 'vault',
+            type: 'address',
+            internalType: 'address',
           },
           {
-            "name": "trackId",
-            "type": "uint256",
-            "internalType": "uint256"
+            name: 'trackId',
+            type: 'uint256',
+            internalType: 'uint256',
           },
           {
-            "name": "initialAllocation",
-            "type": "uint256",
-            "internalType": "uint256"
+            name: 'initialAllocation',
+            type: 'uint256',
+            internalType: 'uint256',
           },
           {
-            "name": "maxAllocation",
-            "type": "uint256",
-            "internalType": "uint256"
+            name: 'maxAllocation',
+            type: 'uint256',
+            internalType: 'uint256',
           },
           {
-            "name": "maxDrawdownBps",
-            "type": "uint256",
-            "internalType": "uint256"
+            name: 'maxDrawdownBps',
+            type: 'uint256',
+            internalType: 'uint256',
           },
           {
-            "name": "maxTradeSizeBps",
-            "type": "uint256",
-            "internalType": "uint256"
+            name: 'maxTradeSizeBps',
+            type: 'uint256',
+            internalType: 'uint256',
           },
           {
-            "name": "maxDailyTurnoverBps",
-            "type": "uint256",
-            "internalType": "uint256"
+            name: 'maxDailyTurnoverBps',
+            type: 'uint256',
+            internalType: 'uint256',
           },
           {
-            "name": "evaluationPeriod",
-            "type": "uint256",
-            "internalType": "uint256"
+            name: 'evaluationPeriod',
+            type: 'uint256',
+            internalType: 'uint256',
           },
           {
-            "name": "minTrades",
-            "type": "uint256",
-            "internalType": "uint256"
+            name: 'minTrades',
+            type: 'uint256',
+            internalType: 'uint256',
           },
           {
-            "name": "promotionScore",
-            "type": "uint256",
-            "internalType": "uint256"
+            name: 'promotionScore',
+            type: 'uint256',
+            internalType: 'uint256',
           },
           {
-            "name": "active",
-            "type": "bool",
-            "internalType": "bool"
-          }
-        ]
-      }
+            name: 'active',
+            type: 'bool',
+            internalType: 'bool',
+          },
+        ],
+      },
     ],
-    "anonymous": false
+    anonymous: false,
   },
   {
-    "type": "error",
-    "name": "AccessControlBadConfirmation",
-    "inputs": []
+    type: 'error',
+    name: 'AccessControlBadConfirmation',
+    inputs: [],
   },
   {
-    "type": "error",
-    "name": "AccessControlUnauthorizedAccount",
-    "inputs": [
+    type: 'error',
+    name: 'AccessControlUnauthorizedAccount',
+    inputs: [
       {
-        "name": "account",
-        "type": "address",
-        "internalType": "address"
+        name: 'account',
+        type: 'address',
+        internalType: 'address',
       },
       {
-        "name": "neededRole",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
-    ]
+        name: 'neededRole',
+        type: 'bytes32',
+        internalType: 'bytes32',
+      },
+    ],
   },
   {
-    "type": "error",
-    "name": "AllocationOutOfRange",
-    "inputs": [
+    type: 'error',
+    name: 'AllocationOutOfRange',
+    inputs: [
       {
-        "name": "initialAllocation",
-        "type": "uint256",
-        "internalType": "uint256"
+        name: 'initialAllocation',
+        type: 'uint256',
+        internalType: 'uint256',
       },
       {
-        "name": "maxAllocation",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ]
+        name: 'maxAllocation',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
   },
   {
-    "type": "error",
-    "name": "BpsOutOfRange",
-    "inputs": [
+    type: 'error',
+    name: 'BpsOutOfRange',
+    inputs: [
       {
-        "name": "bps",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ]
+        name: 'bps',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
   },
   {
-    "type": "error",
-    "name": "InvalidTrackId",
-    "inputs": [
+    type: 'error',
+    name: 'InvalidTrackId',
+    inputs: [
       {
-        "name": "trackId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ]
+        name: 'trackId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
   },
   {
-    "type": "error",
-    "name": "ZeroAddress",
-    "inputs": []
-  }
+    type: 'error',
+    name: 'ZeroAddress',
+    inputs: [],
+  },
 ] as const

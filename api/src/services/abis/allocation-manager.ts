@@ -2,785 +2,785 @@
 // Regenerate: make build  (or: node scripts/sync-contract-abis.mjs)
 export const allocationManagerAbi = [
   {
-    "type": "constructor",
-    "inputs": [
+    type: 'constructor',
+    inputs: [
       {
-        "name": "admin",
-        "type": "address",
-        "internalType": "address"
+        name: 'admin',
+        type: 'address',
+        internalType: 'address',
       },
       {
-        "name": "vaultTrackRegistry_",
-        "type": "address",
-        "internalType": "contract IVaultTrackRegistry"
-      }
+        name: 'vaultTrackRegistry_',
+        type: 'address',
+        internalType: 'contract IVaultTrackRegistry',
+      },
     ],
-    "stateMutability": "nonpayable"
+    stateMutability: 'nonpayable',
   },
   {
-    "type": "function",
-    "name": "DEFAULT_ADMIN_ROLE",
-    "inputs": [],
-    "outputs": [
+    type: 'function',
+    name: 'DEFAULT_ADMIN_ROLE',
+    inputs: [],
+    outputs: [
       {
-        "name": "",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
+        name: '',
+        type: 'bytes32',
+        internalType: 'bytes32',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "OPERATOR_ROLE",
-    "inputs": [],
-    "outputs": [
+    type: 'function',
+    name: 'OPERATOR_ROLE',
+    inputs: [],
+    outputs: [
       {
-        "name": "",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
+        name: '',
+        type: 'bytes32',
+        internalType: 'bytes32',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "TRADE_ROUTER_ROLE",
-    "inputs": [],
-    "outputs": [
+    type: 'function',
+    name: 'TRADE_ROUTER_ROLE',
+    inputs: [],
+    outputs: [
       {
-        "name": "",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
+        name: '',
+        type: 'bytes32',
+        internalType: 'bytes32',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "agentRegistry",
-    "inputs": [],
-    "outputs": [
+    type: 'function',
+    name: 'agentRegistry',
+    inputs: [],
+    outputs: [
       {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
+        name: '',
+        type: 'address',
+        internalType: 'address',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "allocationCap",
-    "inputs": [
+    type: 'function',
+    name: 'allocationCap',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
     ],
-    "outputs": [
+    outputs: [
       {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: '',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "allocationUsed",
-    "inputs": [
+    type: 'function',
+    name: 'allocationUsed',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
     ],
-    "outputs": [
+    outputs: [
       {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: '',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "getAllocation",
-    "inputs": [
+    type: 'function',
+    name: 'getAllocation',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
     ],
-    "outputs": [
+    outputs: [
       {
-        "name": "",
-        "type": "tuple",
-        "internalType": "struct IAllocationManager.Allocation",
-        "components": [
+        name: '',
+        type: 'tuple',
+        internalType: 'struct IAllocationManager.Allocation',
+        components: [
           {
-            "name": "agentId",
-            "type": "uint256",
-            "internalType": "uint256"
+            name: 'agentId',
+            type: 'uint256',
+            internalType: 'uint256',
           },
           {
-            "name": "vault",
-            "type": "address",
-            "internalType": "address"
+            name: 'vault',
+            type: 'address',
+            internalType: 'address',
           },
           {
-            "name": "trackId",
-            "type": "uint256",
-            "internalType": "uint256"
+            name: 'trackId',
+            type: 'uint256',
+            internalType: 'uint256',
           },
           {
-            "name": "cap",
-            "type": "uint256",
-            "internalType": "uint256"
+            name: 'cap',
+            type: 'uint256',
+            internalType: 'uint256',
           },
           {
-            "name": "used",
-            "type": "uint256",
-            "internalType": "uint256"
+            name: 'used',
+            type: 'uint256',
+            internalType: 'uint256',
           },
           {
-            "name": "status",
-            "type": "uint8",
-            "internalType": "enum IAllocationManager.AllocationStatus"
+            name: 'status',
+            type: 'uint8',
+            internalType: 'enum IAllocationManager.AllocationStatus',
           },
           {
-            "name": "createdAt",
-            "type": "uint64",
-            "internalType": "uint64"
+            name: 'createdAt',
+            type: 'uint64',
+            internalType: 'uint64',
           },
           {
-            "name": "updatedAt",
-            "type": "uint64",
-            "internalType": "uint64"
-          }
-        ]
-      }
+            name: 'updatedAt',
+            type: 'uint64',
+            internalType: 'uint64',
+          },
+        ],
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "getRoleAdmin",
-    "inputs": [
+    type: 'function',
+    name: 'getRoleAdmin',
+    inputs: [
       {
-        "name": "role",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
+        name: 'role',
+        type: 'bytes32',
+        internalType: 'bytes32',
+      },
     ],
-    "outputs": [
+    outputs: [
       {
-        "name": "",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
+        name: '',
+        type: 'bytes32',
+        internalType: 'bytes32',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "grantRole",
-    "inputs": [
+    type: 'function',
+    name: 'grantRole',
+    inputs: [
       {
-        "name": "role",
-        "type": "bytes32",
-        "internalType": "bytes32"
+        name: 'role',
+        type: 'bytes32',
+        internalType: 'bytes32',
       },
       {
-        "name": "account",
-        "type": "address",
-        "internalType": "address"
-      }
+        name: 'account',
+        type: 'address',
+        internalType: 'address',
+      },
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
-    "type": "function",
-    "name": "hasRole",
-    "inputs": [
+    type: 'function',
+    name: 'hasRole',
+    inputs: [
       {
-        "name": "role",
-        "type": "bytes32",
-        "internalType": "bytes32"
+        name: 'role',
+        type: 'bytes32',
+        internalType: 'bytes32',
       },
       {
-        "name": "account",
-        "type": "address",
-        "internalType": "address"
-      }
+        name: 'account',
+        type: 'address',
+        internalType: 'address',
+      },
     ],
-    "outputs": [
+    outputs: [
       {
-        "name": "",
-        "type": "bool",
-        "internalType": "bool"
-      }
+        name: '',
+        type: 'bool',
+        internalType: 'bool',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "onAgentPromoted",
-    "inputs": [
+    type: 'function',
+    name: 'onAgentPromoted',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "internalType": "uint256"
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
       },
       {
-        "name": "vault",
-        "type": "address",
-        "internalType": "address"
+        name: 'vault',
+        type: 'address',
+        internalType: 'address',
       },
       {
-        "name": "fromTrackId",
-        "type": "uint256",
-        "internalType": "uint256"
+        name: 'fromTrackId',
+        type: 'uint256',
+        internalType: 'uint256',
       },
       {
-        "name": "toTrackId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: 'toTrackId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
-    "type": "function",
-    "name": "onAgentRegistered",
-    "inputs": [
+    type: 'function',
+    name: 'onAgentRegistered',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "internalType": "uint256"
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
       },
       {
-        "name": "vault",
-        "type": "address",
-        "internalType": "address"
+        name: 'vault',
+        type: 'address',
+        internalType: 'address',
       },
       {
-        "name": "trackId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: 'trackId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
-    "type": "function",
-    "name": "renounceRole",
-    "inputs": [
+    type: 'function',
+    name: 'renounceRole',
+    inputs: [
       {
-        "name": "role",
-        "type": "bytes32",
-        "internalType": "bytes32"
+        name: 'role',
+        type: 'bytes32',
+        internalType: 'bytes32',
       },
       {
-        "name": "callerConfirmation",
-        "type": "address",
-        "internalType": "address"
-      }
+        name: 'callerConfirmation',
+        type: 'address',
+        internalType: 'address',
+      },
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
-    "type": "function",
-    "name": "revokeRole",
-    "inputs": [
+    type: 'function',
+    name: 'revokeRole',
+    inputs: [
       {
-        "name": "role",
-        "type": "bytes32",
-        "internalType": "bytes32"
+        name: 'role',
+        type: 'bytes32',
+        internalType: 'bytes32',
       },
       {
-        "name": "account",
-        "type": "address",
-        "internalType": "address"
-      }
+        name: 'account',
+        type: 'address',
+        internalType: 'address',
+      },
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
-    "type": "function",
-    "name": "setAgentRegistry",
-    "inputs": [
+    type: 'function',
+    name: 'setAgentRegistry',
+    inputs: [
       {
-        "name": "agentRegistry_",
-        "type": "address",
-        "internalType": "address"
-      }
+        name: 'agentRegistry_',
+        type: 'address',
+        internalType: 'address',
+      },
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
-    "type": "function",
-    "name": "setAllocationStatus",
-    "inputs": [
+    type: 'function',
+    name: 'setAllocationStatus',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "internalType": "uint256"
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
       },
       {
-        "name": "status",
-        "type": "uint8",
-        "internalType": "enum IAllocationManager.AllocationStatus"
-      }
+        name: 'status',
+        type: 'uint8',
+        internalType: 'enum IAllocationManager.AllocationStatus',
+      },
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
-    "type": "function",
-    "name": "setAllocationUsed",
-    "inputs": [
+    type: 'function',
+    name: 'setAllocationUsed',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "internalType": "uint256"
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
       },
       {
-        "name": "used",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: 'used',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
-    "type": "function",
-    "name": "setAllocationUsedByRouter",
-    "inputs": [
+    type: 'function',
+    name: 'setAllocationUsedByRouter',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "internalType": "uint256"
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
       },
       {
-        "name": "used",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: 'used',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
-    "type": "function",
-    "name": "setVaultTrackRegistry",
-    "inputs": [
+    type: 'function',
+    name: 'setVaultTrackRegistry',
+    inputs: [
       {
-        "name": "vaultTrackRegistry_",
-        "type": "address",
-        "internalType": "contract IVaultTrackRegistry"
-      }
+        name: 'vaultTrackRegistry_',
+        type: 'address',
+        internalType: 'contract IVaultTrackRegistry',
+      },
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
-    "type": "function",
-    "name": "supportsInterface",
-    "inputs": [
+    type: 'function',
+    name: 'supportsInterface',
+    inputs: [
       {
-        "name": "interfaceId",
-        "type": "bytes4",
-        "internalType": "bytes4"
-      }
+        name: 'interfaceId',
+        type: 'bytes4',
+        internalType: 'bytes4',
+      },
     ],
-    "outputs": [
+    outputs: [
       {
-        "name": "",
-        "type": "bool",
-        "internalType": "bool"
-      }
+        name: '',
+        type: 'bool',
+        internalType: 'bool',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "totalAgentCaps",
-    "inputs": [
+    type: 'function',
+    name: 'totalAgentCaps',
+    inputs: [
       {
-        "name": "vault",
-        "type": "address",
-        "internalType": "address"
-      }
+        name: 'vault',
+        type: 'address',
+        internalType: 'address',
+      },
     ],
-    "outputs": [
+    outputs: [
       {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: '',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "vaultTrackRegistry",
-    "inputs": [],
-    "outputs": [
+    type: 'function',
+    name: 'vaultTrackRegistry',
+    inputs: [],
+    outputs: [
       {
-        "name": "",
-        "type": "address",
-        "internalType": "contract IVaultTrackRegistry"
-      }
+        name: '',
+        type: 'address',
+        internalType: 'contract IVaultTrackRegistry',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "event",
-    "name": "AgentRegistryUpdated",
-    "inputs": [
+    type: 'event',
+    name: 'AgentRegistryUpdated',
+    inputs: [
       {
-        "name": "newRegistry",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      }
+        name: 'newRegistry',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
+      },
     ],
-    "anonymous": false
+    anonymous: false,
   },
   {
-    "type": "event",
-    "name": "AllocationCreated",
-    "inputs": [
+    type: 'event',
+    name: 'AllocationCreated',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
+        name: 'agentId',
+        type: 'uint256',
+        indexed: true,
+        internalType: 'uint256',
       },
       {
-        "name": "vault",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
+        name: 'vault',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
       },
       {
-        "name": "trackId",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
+        name: 'trackId',
+        type: 'uint256',
+        indexed: false,
+        internalType: 'uint256',
       },
       {
-        "name": "cap",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      }
+        name: 'cap',
+        type: 'uint256',
+        indexed: false,
+        internalType: 'uint256',
+      },
     ],
-    "anonymous": false
+    anonymous: false,
   },
   {
-    "type": "event",
-    "name": "AllocationUpdated",
-    "inputs": [
+    type: 'event',
+    name: 'AllocationUpdated',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
+        name: 'agentId',
+        type: 'uint256',
+        indexed: true,
+        internalType: 'uint256',
       },
       {
-        "name": "vault",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
+        name: 'vault',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
       },
       {
-        "name": "trackId",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
+        name: 'trackId',
+        type: 'uint256',
+        indexed: false,
+        internalType: 'uint256',
       },
       {
-        "name": "cap",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
+        name: 'cap',
+        type: 'uint256',
+        indexed: false,
+        internalType: 'uint256',
       },
       {
-        "name": "status",
-        "type": "uint8",
-        "indexed": false,
-        "internalType": "enum IAllocationManager.AllocationStatus"
-      }
+        name: 'status',
+        type: 'uint8',
+        indexed: false,
+        internalType: 'enum IAllocationManager.AllocationStatus',
+      },
     ],
-    "anonymous": false
+    anonymous: false,
   },
   {
-    "type": "event",
-    "name": "AllocationUsedUpdated",
-    "inputs": [
+    type: 'event',
+    name: 'AllocationUsedUpdated',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
+        name: 'agentId',
+        type: 'uint256',
+        indexed: true,
+        internalType: 'uint256',
       },
       {
-        "name": "used",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      }
+        name: 'used',
+        type: 'uint256',
+        indexed: false,
+        internalType: 'uint256',
+      },
     ],
-    "anonymous": false
+    anonymous: false,
   },
   {
-    "type": "event",
-    "name": "RoleAdminChanged",
-    "inputs": [
+    type: 'event',
+    name: 'RoleAdminChanged',
+    inputs: [
       {
-        "name": "role",
-        "type": "bytes32",
-        "indexed": true,
-        "internalType": "bytes32"
+        name: 'role',
+        type: 'bytes32',
+        indexed: true,
+        internalType: 'bytes32',
       },
       {
-        "name": "previousAdminRole",
-        "type": "bytes32",
-        "indexed": true,
-        "internalType": "bytes32"
+        name: 'previousAdminRole',
+        type: 'bytes32',
+        indexed: true,
+        internalType: 'bytes32',
       },
       {
-        "name": "newAdminRole",
-        "type": "bytes32",
-        "indexed": true,
-        "internalType": "bytes32"
-      }
+        name: 'newAdminRole',
+        type: 'bytes32',
+        indexed: true,
+        internalType: 'bytes32',
+      },
     ],
-    "anonymous": false
+    anonymous: false,
   },
   {
-    "type": "event",
-    "name": "RoleGranted",
-    "inputs": [
+    type: 'event',
+    name: 'RoleGranted',
+    inputs: [
       {
-        "name": "role",
-        "type": "bytes32",
-        "indexed": true,
-        "internalType": "bytes32"
+        name: 'role',
+        type: 'bytes32',
+        indexed: true,
+        internalType: 'bytes32',
       },
       {
-        "name": "account",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
+        name: 'account',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
       },
       {
-        "name": "sender",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      }
+        name: 'sender',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
+      },
     ],
-    "anonymous": false
+    anonymous: false,
   },
   {
-    "type": "event",
-    "name": "RoleRevoked",
-    "inputs": [
+    type: 'event',
+    name: 'RoleRevoked',
+    inputs: [
       {
-        "name": "role",
-        "type": "bytes32",
-        "indexed": true,
-        "internalType": "bytes32"
+        name: 'role',
+        type: 'bytes32',
+        indexed: true,
+        internalType: 'bytes32',
       },
       {
-        "name": "account",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
+        name: 'account',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
       },
       {
-        "name": "sender",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      }
+        name: 'sender',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
+      },
     ],
-    "anonymous": false
+    anonymous: false,
   },
   {
-    "type": "event",
-    "name": "VaultTrackRegistryUpdated",
-    "inputs": [
+    type: 'event',
+    name: 'VaultTrackRegistryUpdated',
+    inputs: [
       {
-        "name": "vaultTrackRegistry",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      }
+        name: 'vaultTrackRegistry',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
+      },
     ],
-    "anonymous": false
+    anonymous: false,
   },
   {
-    "type": "error",
-    "name": "AccessControlBadConfirmation",
-    "inputs": []
+    type: 'error',
+    name: 'AccessControlBadConfirmation',
+    inputs: [],
   },
   {
-    "type": "error",
-    "name": "AccessControlUnauthorizedAccount",
-    "inputs": [
+    type: 'error',
+    name: 'AccessControlUnauthorizedAccount',
+    inputs: [
       {
-        "name": "account",
-        "type": "address",
-        "internalType": "address"
+        name: 'account',
+        type: 'address',
+        internalType: 'address',
       },
       {
-        "name": "neededRole",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
-    ]
+        name: 'neededRole',
+        type: 'bytes32',
+        internalType: 'bytes32',
+      },
+    ],
   },
   {
-    "type": "error",
-    "name": "AllocationExists",
-    "inputs": [
+    type: 'error',
+    name: 'AllocationExists',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ]
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
   },
   {
-    "type": "error",
-    "name": "AllocationNotFound",
-    "inputs": [
+    type: 'error',
+    name: 'AllocationNotFound',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ]
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
   },
   {
-    "type": "error",
-    "name": "ExceedsMaxAllocation",
-    "inputs": [
+    type: 'error',
+    name: 'ExceedsMaxAllocation',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "internalType": "uint256"
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
       },
       {
-        "name": "cap",
-        "type": "uint256",
-        "internalType": "uint256"
+        name: 'cap',
+        type: 'uint256',
+        internalType: 'uint256',
       },
       {
-        "name": "maxAllocation",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ]
+        name: 'maxAllocation',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
   },
   {
-    "type": "error",
-    "name": "NotAgentRegistry",
-    "inputs": [
+    type: 'error',
+    name: 'NotAgentRegistry',
+    inputs: [
       {
-        "name": "caller",
-        "type": "address",
-        "internalType": "address"
-      }
-    ]
+        name: 'caller',
+        type: 'address',
+        internalType: 'address',
+      },
+    ],
   },
   {
-    "type": "error",
-    "name": "TrackMismatch",
-    "inputs": [
+    type: 'error',
+    name: 'TrackMismatch',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "internalType": "uint256"
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
       },
       {
-        "name": "expected",
-        "type": "uint256",
-        "internalType": "uint256"
+        name: 'expected',
+        type: 'uint256',
+        internalType: 'uint256',
       },
       {
-        "name": "actual",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ]
+        name: 'actual',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
   },
   {
-    "type": "error",
-    "name": "UsedExceedsCap",
-    "inputs": [
+    type: 'error',
+    name: 'UsedExceedsCap',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "internalType": "uint256"
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
       },
       {
-        "name": "used",
-        "type": "uint256",
-        "internalType": "uint256"
+        name: 'used',
+        type: 'uint256',
+        internalType: 'uint256',
       },
       {
-        "name": "cap",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ]
+        name: 'cap',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
   },
   {
-    "type": "error",
-    "name": "VaultMismatch",
-    "inputs": [
+    type: 'error',
+    name: 'VaultMismatch',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "internalType": "uint256"
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
       },
       {
-        "name": "expected",
-        "type": "address",
-        "internalType": "address"
+        name: 'expected',
+        type: 'address',
+        internalType: 'address',
       },
       {
-        "name": "actual",
-        "type": "address",
-        "internalType": "address"
-      }
-    ]
+        name: 'actual',
+        type: 'address',
+        internalType: 'address',
+      },
+    ],
   },
   {
-    "type": "error",
-    "name": "VaultTrackRegistryNotSet",
-    "inputs": []
+    type: 'error',
+    name: 'VaultTrackRegistryNotSet',
+    inputs: [],
   },
   {
-    "type": "error",
-    "name": "ZeroAddress",
-    "inputs": []
-  }
+    type: 'error',
+    name: 'ZeroAddress',
+    inputs: [],
+  },
 ] as const

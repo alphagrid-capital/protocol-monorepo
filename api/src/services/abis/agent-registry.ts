@@ -2,1577 +2,1577 @@
 // Regenerate: make build  (or: node scripts/sync-contract-abis.mjs)
 export const agentRegistryAbi = [
   {
-    "type": "constructor",
-    "inputs": [
+    type: 'constructor',
+    inputs: [
       {
-        "name": "admin",
-        "type": "address",
-        "internalType": "address"
+        name: 'admin',
+        type: 'address',
+        internalType: 'address',
       },
       {
-        "name": "feeManager_",
-        "type": "address",
-        "internalType": "contract IFeeManager"
+        name: 'feeManager_',
+        type: 'address',
+        internalType: 'contract IFeeManager',
       },
       {
-        "name": "erc8004IdentityRegistry_",
-        "type": "address",
-        "internalType": "address"
+        name: 'erc8004IdentityRegistry_',
+        type: 'address',
+        internalType: 'address',
       },
       {
-        "name": "erc8004ChainId_",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: 'erc8004ChainId_',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
     ],
-    "stateMutability": "nonpayable"
+    stateMutability: 'nonpayable',
   },
   {
-    "type": "function",
-    "name": "DEFAULT_ADMIN_ROLE",
-    "inputs": [],
-    "outputs": [
+    type: 'function',
+    name: 'DEFAULT_ADMIN_ROLE',
+    inputs: [],
+    outputs: [
       {
-        "name": "",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
+        name: '',
+        type: 'bytes32',
+        internalType: 'bytes32',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "OPERATOR_ROLE",
-    "inputs": [],
-    "outputs": [
+    type: 'function',
+    name: 'OPERATOR_ROLE',
+    inputs: [],
+    outputs: [
       {
-        "name": "",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
+        name: '',
+        type: 'bytes32',
+        internalType: 'bytes32',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "REGISTRAR_ROLE",
-    "inputs": [],
-    "outputs": [
+    type: 'function',
+    name: 'REGISTRAR_ROLE',
+    inputs: [],
+    outputs: [
       {
-        "name": "",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
+        name: '',
+        type: 'bytes32',
+        internalType: 'bytes32',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "SELF_REGISTER_TYPEHASH",
-    "inputs": [],
-    "outputs": [
+    type: 'function',
+    name: 'SELF_REGISTER_TYPEHASH',
+    inputs: [],
+    outputs: [
       {
-        "name": "",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
+        name: '',
+        type: 'bytes32',
+        internalType: 'bytes32',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "agentIdByERC8004",
-    "inputs": [
+    type: 'function',
+    name: 'agentIdByERC8004',
+    inputs: [
       {
-        "name": "erc8004AgentId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: 'erc8004AgentId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
     ],
-    "outputs": [
+    outputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "allocationManager",
-    "inputs": [],
-    "outputs": [
+    type: 'function',
+    name: 'allocationManager',
+    inputs: [],
+    outputs: [
       {
-        "name": "",
-        "type": "address",
-        "internalType": "contract IAllocationManager"
-      }
+        name: '',
+        type: 'address',
+        internalType: 'contract IAllocationManager',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "eip712Domain",
-    "inputs": [],
-    "outputs": [
+    type: 'function',
+    name: 'eip712Domain',
+    inputs: [],
+    outputs: [
       {
-        "name": "fields",
-        "type": "bytes1",
-        "internalType": "bytes1"
+        name: 'fields',
+        type: 'bytes1',
+        internalType: 'bytes1',
       },
       {
-        "name": "name",
-        "type": "string",
-        "internalType": "string"
+        name: 'name',
+        type: 'string',
+        internalType: 'string',
       },
       {
-        "name": "version",
-        "type": "string",
-        "internalType": "string"
+        name: 'version',
+        type: 'string',
+        internalType: 'string',
       },
       {
-        "name": "chainId",
-        "type": "uint256",
-        "internalType": "uint256"
+        name: 'chainId',
+        type: 'uint256',
+        internalType: 'uint256',
       },
       {
-        "name": "verifyingContract",
-        "type": "address",
-        "internalType": "address"
+        name: 'verifyingContract',
+        type: 'address',
+        internalType: 'address',
       },
       {
-        "name": "salt",
-        "type": "bytes32",
-        "internalType": "bytes32"
+        name: 'salt',
+        type: 'bytes32',
+        internalType: 'bytes32',
       },
       {
-        "name": "extensions",
-        "type": "uint256[]",
-        "internalType": "uint256[]"
-      }
+        name: 'extensions',
+        type: 'uint256[]',
+        internalType: 'uint256[]',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "erc8004ChainId",
-    "inputs": [],
-    "outputs": [
+    type: 'function',
+    name: 'erc8004ChainId',
+    inputs: [],
+    outputs: [
       {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: '',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "erc8004IdentityRegistry",
-    "inputs": [],
-    "outputs": [
+    type: 'function',
+    name: 'erc8004IdentityRegistry',
+    inputs: [],
+    outputs: [
       {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
+        name: '',
+        type: 'address',
+        internalType: 'address',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "feeManager",
-    "inputs": [],
-    "outputs": [
+    type: 'function',
+    name: 'feeManager',
+    inputs: [],
+    outputs: [
       {
-        "name": "",
-        "type": "address",
-        "internalType": "contract IFeeManager"
-      }
+        name: '',
+        type: 'address',
+        internalType: 'contract IFeeManager',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "getAgent",
-    "inputs": [
+    type: 'function',
+    name: 'getAgent',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
     ],
-    "outputs": [
+    outputs: [
       {
-        "name": "",
-        "type": "tuple",
-        "internalType": "struct IAgentRegistry.Agent",
-        "components": [
+        name: '',
+        type: 'tuple',
+        internalType: 'struct IAgentRegistry.Agent',
+        components: [
           {
-            "name": "owner",
-            "type": "address",
-            "internalType": "address"
+            name: 'owner',
+            type: 'address',
+            internalType: 'address',
           },
           {
-            "name": "signer",
-            "type": "address",
-            "internalType": "address"
+            name: 'signer',
+            type: 'address',
+            internalType: 'address',
           },
           {
-            "name": "payoutRecipient",
-            "type": "address",
-            "internalType": "address"
+            name: 'payoutRecipient',
+            type: 'address',
+            internalType: 'address',
           },
           {
-            "name": "vault",
-            "type": "address",
-            "internalType": "address"
+            name: 'vault',
+            type: 'address',
+            internalType: 'address',
           },
           {
-            "name": "track",
-            "type": "uint8",
-            "internalType": "enum IAgentRegistry.Track"
+            name: 'track',
+            type: 'uint8',
+            internalType: 'enum IAgentRegistry.Track',
           },
           {
-            "name": "status",
-            "type": "uint8",
-            "internalType": "enum IAgentRegistry.AgentStatus"
+            name: 'status',
+            type: 'uint8',
+            internalType: 'enum IAgentRegistry.AgentStatus',
           },
           {
-            "name": "name",
-            "type": "string",
-            "internalType": "string"
+            name: 'name',
+            type: 'string',
+            internalType: 'string',
           },
           {
-            "name": "metadataURI",
-            "type": "string",
-            "internalType": "string"
+            name: 'metadataURI',
+            type: 'string',
+            internalType: 'string',
           },
           {
-            "name": "createdAt",
-            "type": "uint64",
-            "internalType": "uint64"
+            name: 'createdAt',
+            type: 'uint64',
+            internalType: 'uint64',
           },
           {
-            "name": "hasERC8004Identity",
-            "type": "bool",
-            "internalType": "bool"
+            name: 'hasERC8004Identity',
+            type: 'bool',
+            internalType: 'bool',
           },
           {
-            "name": "erc8004AgentId",
-            "type": "uint256",
-            "internalType": "uint256"
-          }
-        ]
-      }
+            name: 'erc8004AgentId',
+            type: 'uint256',
+            internalType: 'uint256',
+          },
+        ],
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "getAgentByERC8004",
-    "inputs": [
+    type: 'function',
+    name: 'getAgentByERC8004',
+    inputs: [
       {
-        "name": "erc8004AgentId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: 'erc8004AgentId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
     ],
-    "outputs": [
+    outputs: [
       {
-        "name": "",
-        "type": "tuple",
-        "internalType": "struct IAgentRegistry.Agent",
-        "components": [
+        name: '',
+        type: 'tuple',
+        internalType: 'struct IAgentRegistry.Agent',
+        components: [
           {
-            "name": "owner",
-            "type": "address",
-            "internalType": "address"
+            name: 'owner',
+            type: 'address',
+            internalType: 'address',
           },
           {
-            "name": "signer",
-            "type": "address",
-            "internalType": "address"
+            name: 'signer',
+            type: 'address',
+            internalType: 'address',
           },
           {
-            "name": "payoutRecipient",
-            "type": "address",
-            "internalType": "address"
+            name: 'payoutRecipient',
+            type: 'address',
+            internalType: 'address',
           },
           {
-            "name": "vault",
-            "type": "address",
-            "internalType": "address"
+            name: 'vault',
+            type: 'address',
+            internalType: 'address',
           },
           {
-            "name": "track",
-            "type": "uint8",
-            "internalType": "enum IAgentRegistry.Track"
+            name: 'track',
+            type: 'uint8',
+            internalType: 'enum IAgentRegistry.Track',
           },
           {
-            "name": "status",
-            "type": "uint8",
-            "internalType": "enum IAgentRegistry.AgentStatus"
+            name: 'status',
+            type: 'uint8',
+            internalType: 'enum IAgentRegistry.AgentStatus',
           },
           {
-            "name": "name",
-            "type": "string",
-            "internalType": "string"
+            name: 'name',
+            type: 'string',
+            internalType: 'string',
           },
           {
-            "name": "metadataURI",
-            "type": "string",
-            "internalType": "string"
+            name: 'metadataURI',
+            type: 'string',
+            internalType: 'string',
           },
           {
-            "name": "createdAt",
-            "type": "uint64",
-            "internalType": "uint64"
+            name: 'createdAt',
+            type: 'uint64',
+            internalType: 'uint64',
           },
           {
-            "name": "hasERC8004Identity",
-            "type": "bool",
-            "internalType": "bool"
+            name: 'hasERC8004Identity',
+            type: 'bool',
+            internalType: 'bool',
           },
           {
-            "name": "erc8004AgentId",
-            "type": "uint256",
-            "internalType": "uint256"
-          }
-        ]
-      }
+            name: 'erc8004AgentId',
+            type: 'uint256',
+            internalType: 'uint256',
+          },
+        ],
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "getRoleAdmin",
-    "inputs": [
+    type: 'function',
+    name: 'getRoleAdmin',
+    inputs: [
       {
-        "name": "role",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
+        name: 'role',
+        type: 'bytes32',
+        internalType: 'bytes32',
+      },
     ],
-    "outputs": [
+    outputs: [
       {
-        "name": "",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
+        name: '',
+        type: 'bytes32',
+        internalType: 'bytes32',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "grantRole",
-    "inputs": [
+    type: 'function',
+    name: 'grantRole',
+    inputs: [
       {
-        "name": "role",
-        "type": "bytes32",
-        "internalType": "bytes32"
+        name: 'role',
+        type: 'bytes32',
+        internalType: 'bytes32',
       },
       {
-        "name": "account",
-        "type": "address",
-        "internalType": "address"
-      }
+        name: 'account',
+        type: 'address',
+        internalType: 'address',
+      },
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
-    "type": "function",
-    "name": "hasERC8004Identity",
-    "inputs": [
+    type: 'function',
+    name: 'hasERC8004Identity',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
     ],
-    "outputs": [
+    outputs: [
       {
-        "name": "",
-        "type": "bool",
-        "internalType": "bool"
-      }
+        name: '',
+        type: 'bool',
+        internalType: 'bool',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "hasRole",
-    "inputs": [
+    type: 'function',
+    name: 'hasRole',
+    inputs: [
       {
-        "name": "role",
-        "type": "bytes32",
-        "internalType": "bytes32"
+        name: 'role',
+        type: 'bytes32',
+        internalType: 'bytes32',
       },
       {
-        "name": "account",
-        "type": "address",
-        "internalType": "address"
-      }
+        name: 'account',
+        type: 'address',
+        internalType: 'address',
+      },
     ],
-    "outputs": [
+    outputs: [
       {
-        "name": "",
-        "type": "bool",
-        "internalType": "bool"
-      }
+        name: '',
+        type: 'bool',
+        internalType: 'bool',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "isERC8004OwnerCurrent",
-    "inputs": [
+    type: 'function',
+    name: 'isERC8004OwnerCurrent',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
     ],
-    "outputs": [
+    outputs: [
       {
-        "name": "",
-        "type": "bool",
-        "internalType": "bool"
-      }
+        name: '',
+        type: 'bool',
+        internalType: 'bool',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "isPayoutEligible",
-    "inputs": [
+    type: 'function',
+    name: 'isPayoutEligible',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
     ],
-    "outputs": [
+    outputs: [
       {
-        "name": "",
-        "type": "bool",
-        "internalType": "bool"
-      }
+        name: '',
+        type: 'bool',
+        internalType: 'bool',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "linkERC8004Identity",
-    "inputs": [
+    type: 'function',
+    name: 'linkERC8004Identity',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "internalType": "uint256"
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
       },
       {
-        "name": "erc8004AgentId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: 'erc8004AgentId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
-    "type": "function",
-    "name": "nextAgentId",
-    "inputs": [],
-    "outputs": [
+    type: 'function',
+    name: 'nextAgentId',
+    inputs: [],
+    outputs: [
       {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: '',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "nonces",
-    "inputs": [
+    type: 'function',
+    name: 'nonces',
+    inputs: [
       {
-        "name": "owner",
-        "type": "address",
-        "internalType": "address"
-      }
+        name: 'owner',
+        type: 'address',
+        internalType: 'address',
+      },
     ],
-    "outputs": [
+    outputs: [
       {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: '',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "ownerOf",
-    "inputs": [
+    type: 'function',
+    name: 'ownerOf',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
     ],
-    "outputs": [
+    outputs: [
       {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
+        name: '',
+        type: 'address',
+        internalType: 'address',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "pause",
-    "inputs": [],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    type: 'function',
+    name: 'pause',
+    inputs: [],
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
-    "type": "function",
-    "name": "paused",
-    "inputs": [],
-    "outputs": [
+    type: 'function',
+    name: 'paused',
+    inputs: [],
+    outputs: [
       {
-        "name": "",
-        "type": "bool",
-        "internalType": "bool"
-      }
+        name: '',
+        type: 'bool',
+        internalType: 'bool',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "payoutRecipientOf",
-    "inputs": [
+    type: 'function',
+    name: 'payoutRecipientOf',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
     ],
-    "outputs": [
+    outputs: [
       {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
+        name: '',
+        type: 'address',
+        internalType: 'address',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "promoteAgent",
-    "inputs": [
+    type: 'function',
+    name: 'promoteAgent',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "internalType": "uint256"
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
       },
       {
-        "name": "targetTrack",
-        "type": "uint8",
-        "internalType": "enum IAgentRegistry.Track"
-      }
+        name: 'targetTrack',
+        type: 'uint8',
+        internalType: 'enum IAgentRegistry.Track',
+      },
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
-    "type": "function",
-    "name": "registerAgent",
-    "inputs": [
+    type: 'function',
+    name: 'registerAgent',
+    inputs: [
       {
-        "name": "owner",
-        "type": "address",
-        "internalType": "address"
+        name: 'owner',
+        type: 'address',
+        internalType: 'address',
       },
       {
-        "name": "vault",
-        "type": "address",
-        "internalType": "address"
+        name: 'vault',
+        type: 'address',
+        internalType: 'address',
       },
       {
-        "name": "name",
-        "type": "string",
-        "internalType": "string"
+        name: 'name',
+        type: 'string',
+        internalType: 'string',
       },
       {
-        "name": "metadataURI",
-        "type": "string",
-        "internalType": "string"
+        name: 'metadataURI',
+        type: 'string',
+        internalType: 'string',
       },
       {
-        "name": "signer",
-        "type": "address",
-        "internalType": "address"
+        name: 'signer',
+        type: 'address',
+        internalType: 'address',
       },
       {
-        "name": "linkERC8004",
-        "type": "bool",
-        "internalType": "bool"
+        name: 'linkERC8004',
+        type: 'bool',
+        internalType: 'bool',
       },
       {
-        "name": "erc8004AgentId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: 'erc8004AgentId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
     ],
-    "outputs": [
+    outputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
     ],
-    "stateMutability": "nonpayable"
+    stateMutability: 'nonpayable',
   },
   {
-    "type": "function",
-    "name": "renounceRole",
-    "inputs": [
+    type: 'function',
+    name: 'renounceRole',
+    inputs: [
       {
-        "name": "role",
-        "type": "bytes32",
-        "internalType": "bytes32"
+        name: 'role',
+        type: 'bytes32',
+        internalType: 'bytes32',
       },
       {
-        "name": "callerConfirmation",
-        "type": "address",
-        "internalType": "address"
-      }
+        name: 'callerConfirmation',
+        type: 'address',
+        internalType: 'address',
+      },
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
-    "type": "function",
-    "name": "revokeRole",
-    "inputs": [
+    type: 'function',
+    name: 'revokeRole',
+    inputs: [
       {
-        "name": "role",
-        "type": "bytes32",
-        "internalType": "bytes32"
+        name: 'role',
+        type: 'bytes32',
+        internalType: 'bytes32',
       },
       {
-        "name": "account",
-        "type": "address",
-        "internalType": "address"
-      }
+        name: 'account',
+        type: 'address',
+        internalType: 'address',
+      },
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
-    "type": "function",
-    "name": "selfRegisterAgent",
-    "inputs": [
+    type: 'function',
+    name: 'selfRegisterAgent',
+    inputs: [
       {
-        "name": "vault",
-        "type": "address",
-        "internalType": "address"
+        name: 'vault',
+        type: 'address',
+        internalType: 'address',
       },
       {
-        "name": "name",
-        "type": "string",
-        "internalType": "string"
+        name: 'name',
+        type: 'string',
+        internalType: 'string',
       },
       {
-        "name": "metadataURI",
-        "type": "string",
-        "internalType": "string"
+        name: 'metadataURI',
+        type: 'string',
+        internalType: 'string',
       },
       {
-        "name": "signer",
-        "type": "address",
-        "internalType": "address"
+        name: 'signer',
+        type: 'address',
+        internalType: 'address',
       },
       {
-        "name": "linkERC8004",
-        "type": "bool",
-        "internalType": "bool"
+        name: 'linkERC8004',
+        type: 'bool',
+        internalType: 'bool',
       },
       {
-        "name": "erc8004AgentId",
-        "type": "uint256",
-        "internalType": "uint256"
+        name: 'erc8004AgentId',
+        type: 'uint256',
+        internalType: 'uint256',
       },
       {
-        "name": "deadline",
-        "type": "uint256",
-        "internalType": "uint256"
+        name: 'deadline',
+        type: 'uint256',
+        internalType: 'uint256',
       },
       {
-        "name": "signature",
-        "type": "bytes",
-        "internalType": "bytes"
-      }
+        name: 'signature',
+        type: 'bytes',
+        internalType: 'bytes',
+      },
     ],
-    "outputs": [
+    outputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
     ],
-    "stateMutability": "nonpayable"
+    stateMutability: 'nonpayable',
   },
   {
-    "type": "function",
-    "name": "setAgentSigner",
-    "inputs": [
+    type: 'function',
+    name: 'setAgentSigner',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "internalType": "uint256"
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
       },
       {
-        "name": "signer",
-        "type": "address",
-        "internalType": "address"
-      }
+        name: 'signer',
+        type: 'address',
+        internalType: 'address',
+      },
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
-    "type": "function",
-    "name": "setAgentStatus",
-    "inputs": [
+    type: 'function',
+    name: 'setAgentStatus',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "internalType": "uint256"
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
       },
       {
-        "name": "status",
-        "type": "uint8",
-        "internalType": "enum IAgentRegistry.AgentStatus"
-      }
+        name: 'status',
+        type: 'uint8',
+        internalType: 'enum IAgentRegistry.AgentStatus',
+      },
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
-    "type": "function",
-    "name": "setAllocationManager",
-    "inputs": [
+    type: 'function',
+    name: 'setAllocationManager',
+    inputs: [
       {
-        "name": "allocationManager_",
-        "type": "address",
-        "internalType": "contract IAllocationManager"
-      }
+        name: 'allocationManager_',
+        type: 'address',
+        internalType: 'contract IAllocationManager',
+      },
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
-    "type": "function",
-    "name": "setFeeManager",
-    "inputs": [
+    type: 'function',
+    name: 'setFeeManager',
+    inputs: [
       {
-        "name": "feeManager_",
-        "type": "address",
-        "internalType": "contract IFeeManager"
-      }
+        name: 'feeManager_',
+        type: 'address',
+        internalType: 'contract IFeeManager',
+      },
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
-    "type": "function",
-    "name": "setPayoutRecipient",
-    "inputs": [
+    type: 'function',
+    name: 'setPayoutRecipient',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "internalType": "uint256"
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
       },
       {
-        "name": "payoutRecipient",
-        "type": "address",
-        "internalType": "address"
-      }
+        name: 'payoutRecipient',
+        type: 'address',
+        internalType: 'address',
+      },
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
-    "type": "function",
-    "name": "setVaultTrackRegistry",
-    "inputs": [
+    type: 'function',
+    name: 'setVaultTrackRegistry',
+    inputs: [
       {
-        "name": "vaultTrackRegistry_",
-        "type": "address",
-        "internalType": "contract IVaultTrackRegistry"
-      }
+        name: 'vaultTrackRegistry_',
+        type: 'address',
+        internalType: 'contract IVaultTrackRegistry',
+      },
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
-    "type": "function",
-    "name": "signerOf",
-    "inputs": [
+    type: 'function',
+    name: 'signerOf',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
     ],
-    "outputs": [
+    outputs: [
       {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
+        name: '',
+        type: 'address',
+        internalType: 'address',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "statusOf",
-    "inputs": [
+    type: 'function',
+    name: 'statusOf',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
     ],
-    "outputs": [
+    outputs: [
       {
-        "name": "",
-        "type": "uint8",
-        "internalType": "enum IAgentRegistry.AgentStatus"
-      }
+        name: '',
+        type: 'uint8',
+        internalType: 'enum IAgentRegistry.AgentStatus',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "supportsInterface",
-    "inputs": [
+    type: 'function',
+    name: 'supportsInterface',
+    inputs: [
       {
-        "name": "interfaceId",
-        "type": "bytes4",
-        "internalType": "bytes4"
-      }
+        name: 'interfaceId',
+        type: 'bytes4',
+        internalType: 'bytes4',
+      },
     ],
-    "outputs": [
+    outputs: [
       {
-        "name": "",
-        "type": "bool",
-        "internalType": "bool"
-      }
+        name: '',
+        type: 'bool',
+        internalType: 'bool',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "trackOf",
-    "inputs": [
+    type: 'function',
+    name: 'trackOf',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
     ],
-    "outputs": [
+    outputs: [
       {
-        "name": "",
-        "type": "uint8",
-        "internalType": "enum IAgentRegistry.Track"
-      }
+        name: '',
+        type: 'uint8',
+        internalType: 'enum IAgentRegistry.Track',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "transferAgentOwnership",
-    "inputs": [
+    type: 'function',
+    name: 'transferAgentOwnership',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "internalType": "uint256"
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
       },
       {
-        "name": "newOwner",
-        "type": "address",
-        "internalType": "address"
-      }
+        name: 'newOwner',
+        type: 'address',
+        internalType: 'address',
+      },
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
-    "type": "function",
-    "name": "unpause",
-    "inputs": [],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    type: 'function',
+    name: 'unpause',
+    inputs: [],
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
-    "type": "function",
-    "name": "updateAgentMetadata",
-    "inputs": [
+    type: 'function',
+    name: 'updateAgentMetadata',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "internalType": "uint256"
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
       },
       {
-        "name": "metadataURI",
-        "type": "string",
-        "internalType": "string"
-      }
+        name: 'metadataURI',
+        type: 'string',
+        internalType: 'string',
+      },
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
-    "type": "function",
-    "name": "vaultOf",
-    "inputs": [
+    type: 'function',
+    name: 'vaultOf',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
     ],
-    "outputs": [
+    outputs: [
       {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
+        name: '',
+        type: 'address',
+        internalType: 'address',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "function",
-    "name": "vaultTrackRegistry",
-    "inputs": [],
-    "outputs": [
+    type: 'function',
+    name: 'vaultTrackRegistry',
+    inputs: [],
+    outputs: [
       {
-        "name": "",
-        "type": "address",
-        "internalType": "contract IVaultTrackRegistry"
-      }
+        name: '',
+        type: 'address',
+        internalType: 'contract IVaultTrackRegistry',
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: 'view',
   },
   {
-    "type": "event",
-    "name": "AgentMetadataUpdated",
-    "inputs": [
+    type: 'event',
+    name: 'AgentMetadataUpdated',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
+        name: 'agentId',
+        type: 'uint256',
+        indexed: true,
+        internalType: 'uint256',
       },
       {
-        "name": "metadataURI",
-        "type": "string",
-        "indexed": false,
-        "internalType": "string"
-      }
+        name: 'metadataURI',
+        type: 'string',
+        indexed: false,
+        internalType: 'string',
+      },
     ],
-    "anonymous": false
+    anonymous: false,
   },
   {
-    "type": "event",
-    "name": "AgentOwnershipTransferred",
-    "inputs": [
+    type: 'event',
+    name: 'AgentOwnershipTransferred',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
+        name: 'agentId',
+        type: 'uint256',
+        indexed: true,
+        internalType: 'uint256',
       },
       {
-        "name": "from",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
+        name: 'from',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
       },
       {
-        "name": "to",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      }
+        name: 'to',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
+      },
     ],
-    "anonymous": false
+    anonymous: false,
   },
   {
-    "type": "event",
-    "name": "AgentPromoted",
-    "inputs": [
+    type: 'event',
+    name: 'AgentPromoted',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
+        name: 'agentId',
+        type: 'uint256',
+        indexed: true,
+        internalType: 'uint256',
       },
       {
-        "name": "vault",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
+        name: 'vault',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
       },
       {
-        "name": "fromTrack",
-        "type": "uint8",
-        "indexed": false,
-        "internalType": "enum IAgentRegistry.Track"
+        name: 'fromTrack',
+        type: 'uint8',
+        indexed: false,
+        internalType: 'enum IAgentRegistry.Track',
       },
       {
-        "name": "toTrack",
-        "type": "uint8",
-        "indexed": false,
-        "internalType": "enum IAgentRegistry.Track"
-      }
+        name: 'toTrack',
+        type: 'uint8',
+        indexed: false,
+        internalType: 'enum IAgentRegistry.Track',
+      },
     ],
-    "anonymous": false
+    anonymous: false,
   },
   {
-    "type": "event",
-    "name": "AgentRegistered",
-    "inputs": [
+    type: 'event',
+    name: 'AgentRegistered',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
+        name: 'agentId',
+        type: 'uint256',
+        indexed: true,
+        internalType: 'uint256',
       },
       {
-        "name": "vault",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
+        name: 'vault',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
       },
       {
-        "name": "owner",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
+        name: 'owner',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
       },
       {
-        "name": "signer",
-        "type": "address",
-        "indexed": false,
-        "internalType": "address"
+        name: 'signer',
+        type: 'address',
+        indexed: false,
+        internalType: 'address',
       },
       {
-        "name": "metadataURI",
-        "type": "string",
-        "indexed": false,
-        "internalType": "string"
+        name: 'metadataURI',
+        type: 'string',
+        indexed: false,
+        internalType: 'string',
       },
       {
-        "name": "track",
-        "type": "uint8",
-        "indexed": false,
-        "internalType": "enum IAgentRegistry.Track"
-      }
+        name: 'track',
+        type: 'uint8',
+        indexed: false,
+        internalType: 'enum IAgentRegistry.Track',
+      },
     ],
-    "anonymous": false
+    anonymous: false,
   },
   {
-    "type": "event",
-    "name": "AgentSignerUpdated",
-    "inputs": [
+    type: 'event',
+    name: 'AgentSignerUpdated',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
+        name: 'agentId',
+        type: 'uint256',
+        indexed: true,
+        internalType: 'uint256',
       },
       {
-        "name": "signer",
-        "type": "address",
-        "indexed": false,
-        "internalType": "address"
-      }
+        name: 'signer',
+        type: 'address',
+        indexed: false,
+        internalType: 'address',
+      },
     ],
-    "anonymous": false
+    anonymous: false,
   },
   {
-    "type": "event",
-    "name": "AgentStatusChanged",
-    "inputs": [
+    type: 'event',
+    name: 'AgentStatusChanged',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
+        name: 'agentId',
+        type: 'uint256',
+        indexed: true,
+        internalType: 'uint256',
       },
       {
-        "name": "oldStatus",
-        "type": "uint8",
-        "indexed": false,
-        "internalType": "enum IAgentRegistry.AgentStatus"
+        name: 'oldStatus',
+        type: 'uint8',
+        indexed: false,
+        internalType: 'enum IAgentRegistry.AgentStatus',
       },
       {
-        "name": "newStatus",
-        "type": "uint8",
-        "indexed": false,
-        "internalType": "enum IAgentRegistry.AgentStatus"
-      }
+        name: 'newStatus',
+        type: 'uint8',
+        indexed: false,
+        internalType: 'enum IAgentRegistry.AgentStatus',
+      },
     ],
-    "anonymous": false
+    anonymous: false,
   },
   {
-    "type": "event",
-    "name": "AllocationManagerUpdated",
-    "inputs": [
+    type: 'event',
+    name: 'AllocationManagerUpdated',
+    inputs: [
       {
-        "name": "allocationManager",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      }
+        name: 'allocationManager',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
+      },
     ],
-    "anonymous": false
+    anonymous: false,
   },
   {
-    "type": "event",
-    "name": "EIP712DomainChanged",
-    "inputs": [],
-    "anonymous": false
+    type: 'event',
+    name: 'EIP712DomainChanged',
+    inputs: [],
+    anonymous: false,
   },
   {
-    "type": "event",
-    "name": "ERC8004IdentityLinked",
-    "inputs": [
+    type: 'event',
+    name: 'ERC8004IdentityLinked',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
+        name: 'agentId',
+        type: 'uint256',
+        indexed: true,
+        internalType: 'uint256',
       },
       {
-        "name": "erc8004IdentityRegistry",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
+        name: 'erc8004IdentityRegistry',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
       },
       {
-        "name": "erc8004ChainId",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
+        name: 'erc8004ChainId',
+        type: 'uint256',
+        indexed: false,
+        internalType: 'uint256',
       },
       {
-        "name": "erc8004AgentId",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
+        name: 'erc8004AgentId',
+        type: 'uint256',
+        indexed: false,
+        internalType: 'uint256',
       },
       {
-        "name": "owner",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      }
+        name: 'owner',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
+      },
     ],
-    "anonymous": false
+    anonymous: false,
   },
   {
-    "type": "event",
-    "name": "FeeManagerUpdated",
-    "inputs": [
+    type: 'event',
+    name: 'FeeManagerUpdated',
+    inputs: [
       {
-        "name": "feeManager",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      }
+        name: 'feeManager',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
+      },
     ],
-    "anonymous": false
+    anonymous: false,
   },
   {
-    "type": "event",
-    "name": "Paused",
-    "inputs": [
+    type: 'event',
+    name: 'Paused',
+    inputs: [
       {
-        "name": "account",
-        "type": "address",
-        "indexed": false,
-        "internalType": "address"
-      }
+        name: 'account',
+        type: 'address',
+        indexed: false,
+        internalType: 'address',
+      },
     ],
-    "anonymous": false
+    anonymous: false,
   },
   {
-    "type": "event",
-    "name": "PayoutRecipientUpdated",
-    "inputs": [
+    type: 'event',
+    name: 'PayoutRecipientUpdated',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
+        name: 'agentId',
+        type: 'uint256',
+        indexed: true,
+        internalType: 'uint256',
       },
       {
-        "name": "payoutRecipient",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      }
+        name: 'payoutRecipient',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
+      },
     ],
-    "anonymous": false
+    anonymous: false,
   },
   {
-    "type": "event",
-    "name": "RoleAdminChanged",
-    "inputs": [
+    type: 'event',
+    name: 'RoleAdminChanged',
+    inputs: [
       {
-        "name": "role",
-        "type": "bytes32",
-        "indexed": true,
-        "internalType": "bytes32"
+        name: 'role',
+        type: 'bytes32',
+        indexed: true,
+        internalType: 'bytes32',
       },
       {
-        "name": "previousAdminRole",
-        "type": "bytes32",
-        "indexed": true,
-        "internalType": "bytes32"
+        name: 'previousAdminRole',
+        type: 'bytes32',
+        indexed: true,
+        internalType: 'bytes32',
       },
       {
-        "name": "newAdminRole",
-        "type": "bytes32",
-        "indexed": true,
-        "internalType": "bytes32"
-      }
+        name: 'newAdminRole',
+        type: 'bytes32',
+        indexed: true,
+        internalType: 'bytes32',
+      },
     ],
-    "anonymous": false
+    anonymous: false,
   },
   {
-    "type": "event",
-    "name": "RoleGranted",
-    "inputs": [
+    type: 'event',
+    name: 'RoleGranted',
+    inputs: [
       {
-        "name": "role",
-        "type": "bytes32",
-        "indexed": true,
-        "internalType": "bytes32"
+        name: 'role',
+        type: 'bytes32',
+        indexed: true,
+        internalType: 'bytes32',
       },
       {
-        "name": "account",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
+        name: 'account',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
       },
       {
-        "name": "sender",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      }
+        name: 'sender',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
+      },
     ],
-    "anonymous": false
+    anonymous: false,
   },
   {
-    "type": "event",
-    "name": "RoleRevoked",
-    "inputs": [
+    type: 'event',
+    name: 'RoleRevoked',
+    inputs: [
       {
-        "name": "role",
-        "type": "bytes32",
-        "indexed": true,
-        "internalType": "bytes32"
+        name: 'role',
+        type: 'bytes32',
+        indexed: true,
+        internalType: 'bytes32',
       },
       {
-        "name": "account",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
+        name: 'account',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
       },
       {
-        "name": "sender",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      }
+        name: 'sender',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
+      },
     ],
-    "anonymous": false
+    anonymous: false,
   },
   {
-    "type": "event",
-    "name": "Unpaused",
-    "inputs": [
+    type: 'event',
+    name: 'Unpaused',
+    inputs: [
       {
-        "name": "account",
-        "type": "address",
-        "indexed": false,
-        "internalType": "address"
-      }
+        name: 'account',
+        type: 'address',
+        indexed: false,
+        internalType: 'address',
+      },
     ],
-    "anonymous": false
+    anonymous: false,
   },
   {
-    "type": "event",
-    "name": "VaultTrackRegistryUpdated",
-    "inputs": [
+    type: 'event',
+    name: 'VaultTrackRegistryUpdated',
+    inputs: [
       {
-        "name": "vaultTrackRegistry",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      }
+        name: 'vaultTrackRegistry',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
+      },
     ],
-    "anonymous": false
+    anonymous: false,
   },
   {
-    "type": "error",
-    "name": "AccessControlBadConfirmation",
-    "inputs": []
+    type: 'error',
+    name: 'AccessControlBadConfirmation',
+    inputs: [],
   },
   {
-    "type": "error",
-    "name": "AccessControlUnauthorizedAccount",
-    "inputs": [
+    type: 'error',
+    name: 'AccessControlUnauthorizedAccount',
+    inputs: [
       {
-        "name": "account",
-        "type": "address",
-        "internalType": "address"
+        name: 'account',
+        type: 'address',
+        internalType: 'address',
       },
       {
-        "name": "neededRole",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
-    ]
+        name: 'neededRole',
+        type: 'bytes32',
+        internalType: 'bytes32',
+      },
+    ],
   },
   {
-    "type": "error",
-    "name": "AgentNotFound",
-    "inputs": [
+    type: 'error',
+    name: 'AgentNotFound',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ]
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
   },
   {
-    "type": "error",
-    "name": "ECDSAInvalidSignature",
-    "inputs": []
+    type: 'error',
+    name: 'ECDSAInvalidSignature',
+    inputs: [],
   },
   {
-    "type": "error",
-    "name": "ECDSAInvalidSignatureLength",
-    "inputs": [
+    type: 'error',
+    name: 'ECDSAInvalidSignatureLength',
+    inputs: [
       {
-        "name": "length",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ]
+        name: 'length',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
   },
   {
-    "type": "error",
-    "name": "ECDSAInvalidSignatureS",
-    "inputs": [
+    type: 'error',
+    name: 'ECDSAInvalidSignatureS',
+    inputs: [
       {
-        "name": "s",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
-    ]
+        name: 's',
+        type: 'bytes32',
+        internalType: 'bytes32',
+      },
+    ],
   },
   {
-    "type": "error",
-    "name": "ERC8004AlreadyLinked",
-    "inputs": [
+    type: 'error',
+    name: 'ERC8004AlreadyLinked',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ]
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
   },
   {
-    "type": "error",
-    "name": "ERC8004AlreadyRegistered",
-    "inputs": [
+    type: 'error',
+    name: 'ERC8004AlreadyRegistered',
+    inputs: [
       {
-        "name": "erc8004AgentId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ]
+        name: 'erc8004AgentId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
   },
   {
-    "type": "error",
-    "name": "ERC8004NotRegistered",
-    "inputs": [
+    type: 'error',
+    name: 'ERC8004NotRegistered',
+    inputs: [
       {
-        "name": "erc8004AgentId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ]
+        name: 'erc8004AgentId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
   },
   {
-    "type": "error",
-    "name": "EmptyName",
-    "inputs": []
+    type: 'error',
+    name: 'EmptyName',
+    inputs: [],
   },
   {
-    "type": "error",
-    "name": "EnforcedPause",
-    "inputs": []
+    type: 'error',
+    name: 'EnforcedPause',
+    inputs: [],
   },
   {
-    "type": "error",
-    "name": "ExpectedPause",
-    "inputs": []
+    type: 'error',
+    name: 'ExpectedPause',
+    inputs: [],
   },
   {
-    "type": "error",
-    "name": "ExpiredDeadline",
-    "inputs": []
+    type: 'error',
+    name: 'ExpiredDeadline',
+    inputs: [],
   },
   {
-    "type": "error",
-    "name": "InvalidAccountNonce",
-    "inputs": [
+    type: 'error',
+    name: 'InvalidAccountNonce',
+    inputs: [
       {
-        "name": "account",
-        "type": "address",
-        "internalType": "address"
+        name: 'account',
+        type: 'address',
+        internalType: 'address',
       },
       {
-        "name": "currentNonce",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ]
+        name: 'currentNonce',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
   },
   {
-    "type": "error",
-    "name": "InvalidERC8004Config",
-    "inputs": []
+    type: 'error',
+    name: 'InvalidERC8004Config',
+    inputs: [],
   },
   {
-    "type": "error",
-    "name": "InvalidPromotion",
-    "inputs": [
+    type: 'error',
+    name: 'InvalidPromotion',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "internalType": "uint256"
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
       },
       {
-        "name": "fromTrack",
-        "type": "uint8",
-        "internalType": "enum IAgentRegistry.Track"
+        name: 'fromTrack',
+        type: 'uint8',
+        internalType: 'enum IAgentRegistry.Track',
       },
       {
-        "name": "toTrack",
-        "type": "uint8",
-        "internalType": "enum IAgentRegistry.Track"
-      }
-    ]
+        name: 'toTrack',
+        type: 'uint8',
+        internalType: 'enum IAgentRegistry.Track',
+      },
+    ],
   },
   {
-    "type": "error",
-    "name": "InvalidShortString",
-    "inputs": []
+    type: 'error',
+    name: 'InvalidShortString',
+    inputs: [],
   },
   {
-    "type": "error",
-    "name": "InvalidSignature",
-    "inputs": []
+    type: 'error',
+    name: 'InvalidSignature',
+    inputs: [],
   },
   {
-    "type": "error",
-    "name": "MetadataUpdateNotAllowed",
-    "inputs": [
+    type: 'error',
+    name: 'MetadataUpdateNotAllowed',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ]
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
   },
   {
-    "type": "error",
-    "name": "NotAgentOwner",
-    "inputs": [
+    type: 'error',
+    name: 'NotAgentOwner',
+    inputs: [
       {
-        "name": "agentId",
-        "type": "uint256",
-        "internalType": "uint256"
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
       },
       {
-        "name": "caller",
-        "type": "address",
-        "internalType": "address"
-      }
-    ]
+        name: 'caller',
+        type: 'address',
+        internalType: 'address',
+      },
+    ],
   },
   {
-    "type": "error",
-    "name": "NotERC8004Owner",
-    "inputs": [
+    type: 'error',
+    name: 'NotERC8004Owner',
+    inputs: [
       {
-        "name": "erc8004AgentId",
-        "type": "uint256",
-        "internalType": "uint256"
+        name: 'erc8004AgentId',
+        type: 'uint256',
+        internalType: 'uint256',
       },
       {
-        "name": "caller",
-        "type": "address",
-        "internalType": "address"
-      }
-    ]
+        name: 'caller',
+        type: 'address',
+        internalType: 'address',
+      },
+    ],
   },
   {
-    "type": "error",
-    "name": "StringTooLong",
-    "inputs": [
+    type: 'error',
+    name: 'StringTooLong',
+    inputs: [
       {
-        "name": "str",
-        "type": "string",
-        "internalType": "string"
-      }
-    ]
+        name: 'str',
+        type: 'string',
+        internalType: 'string',
+      },
+    ],
   },
   {
-    "type": "error",
-    "name": "VaultNotApproved",
-    "inputs": [
+    type: 'error',
+    name: 'VaultNotApproved',
+    inputs: [
       {
-        "name": "vault",
-        "type": "address",
-        "internalType": "address"
-      }
-    ]
+        name: 'vault',
+        type: 'address',
+        internalType: 'address',
+      },
+    ],
   },
   {
-    "type": "error",
-    "name": "VaultTrackRegistryNotSet",
-    "inputs": []
+    type: 'error',
+    name: 'VaultTrackRegistryNotSet',
+    inputs: [],
   },
   {
-    "type": "error",
-    "name": "ZeroAddress",
-    "inputs": []
-  }
+    type: 'error',
+    name: 'ZeroAddress',
+    inputs: [],
+  },
 ] as const

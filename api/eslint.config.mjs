@@ -2,12 +2,7 @@ import baseConfig from '@hono/eslint-config'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig(
-  globalIgnores([
-    '.yarn',
-    '**/coverage',
-    '**/dist',
-    'src/services/abis/*.ts',
-  ]),
+  globalIgnores(['.yarn', '**/coverage', '**/dist', 'src/services/abis/*.ts']),
   {
     extends: baseConfig,
 
