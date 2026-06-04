@@ -107,7 +107,9 @@ contract DeployTrading is Script {
         MandateVault(roleConfig.vault)
             .grantRole(MandateVault(roleConfig.vault).TRADE_ROUTER_ROLE(), address(deployed.tradeRouter));
         AllocationManager(roleConfig.allocationManager)
-            .grantRole(AllocationManager(roleConfig.allocationManager).TRADE_ROUTER_ROLE(), address(deployed.tradeRouter));
+            .grantRole(
+                AllocationManager(roleConfig.allocationManager).TRADE_ROUTER_ROLE(), address(deployed.tradeRouter)
+            );
     }
 
     function _log(Deployed memory deployed, RoleConfig memory roleConfig) private pure {

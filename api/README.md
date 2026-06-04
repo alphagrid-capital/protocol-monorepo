@@ -19,7 +19,7 @@ Workers Logs and tracing are enabled in `wrangler.toml` (`observability.enabled`
 ```bash
 cd api
 yarn install
-yarn typecheck   # TypeScript check (no emit)
+yarn type-check   # TypeScript check (no emit)
 yarn dev         # Local dev server (wrangler dev)
 yarn deploy      # Deploy to Cloudflare (requires account auth)
 ```
@@ -91,7 +91,7 @@ Without these, `POST /agents/register` runs in mock mode (no chain submit).
 
 ## CI deployment
 
-Pushes to `main` that touch `api/**` run typecheck, then deploy via [wrangler-action](https://github.com/cloudflare/wrangler-action). Pull requests only run typecheck.
+Pushes to `main` that touch `api/**` run type-check, then deploy via [wrangler-action](https://github.com/cloudflare/wrangler-action). Pull requests only run type-check.
 
 ### GitHub repository secrets
 
@@ -107,7 +107,7 @@ Add these under **Settings → Secrets and variables → Actions → Repository 
 - **Account** → **Workers Scripts** → **Edit**
 - **Account** → **Workers Scripts** → **Read** (included in the template)
 
-`workflow_dispatch` on the API workflow also runs deploy when triggered on `main` (after typecheck passes).
+`workflow_dispatch` on the API workflow also runs deploy when triggered on `main` (after type-check passes).
 
 ## Environment
 
