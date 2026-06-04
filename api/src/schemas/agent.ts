@@ -121,6 +121,12 @@ export const AgentRecordSchema = z
 
 export type AgentRecord = z.infer<typeof AgentRecordSchema>
 
+export const GetAgentInputSchema = z
+  .object({
+    agentId: agentIdParamSchema,
+  })
+  .strict()
+
 export const GetAgentResponseSchema = z
   .object({
     agentId: agentIdParamSchema,

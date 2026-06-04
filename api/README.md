@@ -45,15 +45,18 @@ ChatGPT **browsing** only performs simple `GET` requests on **public** URLs. It 
 | Paste a URL in chat and get vault data | Deployed `GET /vaults` or `GET /vaults?format=md`                            |
 | Let ChatGPT discover endpoints         | Deployed `GET /` or `GET /llms.txt` (both derived from `/docs/swagger.json`) |
 | Custom GPT with structured actions     | Import `GET /docs/swagger.json` when creating Actions                        |
-| Claude / Cursor / MCP-native clients   | `POST /mcp` and tool `alphagrid_list_vaults`                                 |
+| Claude / Cursor / MCP-native clients   | `POST /mcp` (see MCP tools table below)                                    |
 
 **Do not paste** `/docs` if you want JSON—the UI is HTML. Paste the **data URL**, e.g. `https://<your-worker>.workers.dev/vaults?format=md`.
 
 ### MCP tools
 
-| Tool                    | HTTP equivalent |
-| ----------------------- | --------------- |
-| `alphagrid_list_vaults` | `GET /vaults`   |
+| Tool                                       | HTTP equivalent                 |
+| ------------------------------------------ | ------------------------------- |
+| `alphagrid_list_vaults`                    | `GET /vaults`                   |
+| `alphagrid_get_agent`                      | `GET /agents/{agentId}`         |
+| `alphagrid_get_agent_registration_quote`   | `GET /agents/register/quote`    |
+| `alphagrid_register_agent`                 | `POST /agents/register`         |
 
 Connect MCP clients to `http://localhost:8787/mcp` in development (or your deployed Worker URL). Clients must send `Accept: application/json, text/event-stream` on MCP requests.
 

@@ -4,6 +4,7 @@ export const MCP_SERVER_VERSION = '0.1.0'
 /** Single source of truth for MCP tool names (discovery + server registration). */
 export const MCP_TOOL_NAMES = {
   listVaults: 'alphagrid_list_vaults',
+  getAgent: 'alphagrid_get_agent',
   getAgentRegistrationQuote: 'alphagrid_get_agent_registration_quote',
   registerAgent: 'alphagrid_register_agent',
 } as const

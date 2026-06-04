@@ -7,6 +7,8 @@ import {
   AgentRegistrationQuoteSchema,
   AgentRegistrationRequestSchema,
   AgentRegistrationResponseSchema,
+  GetAgentInputSchema,
+  GetAgentResponseSchema,
 } from '../schemas/agent.js'
 import { AgentRegistrationService } from '../services/agent-registration.service.js'
 import { VaultsService } from '../services/vaults.service.js'
@@ -35,6 +37,28 @@ export function registerMcpTools(server: McpServer): void {
     },
     async () =>
       mcpToolSuccess(await VaultsService.fromEnv(getWorkerEnv()).listVaults())
+  )
+
+  server.registerTool(
+    MCP_TOOL_NAMES.getAgent,
+    {
+      title: 'Get agent by id',
+      description:
+        'Mirrors GET /agents/{agentId}. Reads AgentRegistry.getAgent via RPC.',
+      inputSchema: GetAgentInputSchema,
+      outputSchema: GetAgentResponseSchema,
+      annotations: READ_ONLY_TOOL_ANNOTATIONS,
+    },
+    async ({ agentId }) => {
+      try {
+        const output = await AgentRegistrationService.fromEnv(
+          getWorkerEnv()
+        ).getAgent(agentId)
+        return mcpToolSuccess(output)
+      } catch (error) {
+        return mcpToolErrorFromUnknown(error, 'Failed to load agent')
+      }
+    }
   )
 
   server.registerTool(
