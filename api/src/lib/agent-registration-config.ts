@@ -3,12 +3,15 @@ import { contracts } from '../constants/contracts.js'
 import { parsePrivateKey } from './evm-uilts.js'
 
 export interface AgentRegistrationConfig {
-  mode: 'mock' | 'live'
-  agentRegistry: `0x${string}` | null
-  feeManager: `0x${string}` | null
+  agentRegistryAddress: `0x${string}`
+  feeManagerAddress: `0x${string}`
   chainId: number
-  rpcUrl: string | null
+  rpcUrl: string
   relayerPrivateKey: `0x${string}` | null
+  registrationFee: {
+    assetSymbol: string
+    decimals: number
+  }
   x402: {
     networkName: string
     network: Network
@@ -18,7 +21,7 @@ export interface AgentRegistrationConfig {
 
 function requireEnv(
   env: Record<string, string | undefined>,
-  key: 'CHAIN_ID' | 'X402_NETWORK' | 'X402_FACILITATOR_URL'
+  key: 'CHAIN_ID' | 'RPC_URL' | 'X402_NETWORK' | 'X402_FACILITATOR_URL'
 ): string {
   const value = env[key]
   if (!value) {
@@ -35,16 +38,23 @@ export function loadAgentRegistrationConfig(
   if (!chainContracts) {
     throw new Error(`Unsupported CHAIN_ID: ${chainId}`)
   }
-  const agentRegistry = chainContracts.agentRegistry
-  const live = Boolean(agentRegistry)
+  if (!chainContracts.AgentRegistry) {
+    throw new Error(`AgentRegistry is not deployed for CHAIN_ID: ${chainId}`)
+  }
+  if (!chainContracts.FeeManager) {
+    throw new Error(`FeeManager is not deployed for CHAIN_ID: ${chainId}`)
+  }
 
   return {
-    mode: live ? 'live' : 'mock',
-    agentRegistry,
-    feeManager: chainContracts.feeManager,
+    agentRegistryAddress: chainContracts.AgentRegistry,
+    feeManagerAddress: chainContracts.FeeManager,
     chainId,
-    rpcUrl: env.RPC_URL ?? null,
+    rpcUrl: requireEnv(env, 'RPC_URL'),
     relayerPrivateKey: parsePrivateKey(env.RELAYER_PRIVATE_KEY),
+    registrationFee: {
+      assetSymbol: chainContracts.usdc.symbol,
+      decimals: chainContracts.usdc.decimals,
+    },
     x402: {
       networkName: chainContracts.networkName,
       network: requireEnv(env, 'X402_NETWORK') as Network,

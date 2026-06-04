@@ -99,11 +99,10 @@ const registerRoute = createRoute({
     502: { description: 'On-chain registration failed' },
     503: { description: 'Server or relayer configuration error' },
   },
+  middleware: createRegistrationPaymentMiddleware(),
 })
 
 export const agentRoutes = new OpenAPIHono()
-
-agentRoutes.use('/agents/register', createRegistrationPaymentMiddleware())
 
 function statusFromError(error: AppError): 400 | 402 | 404 | 502 | 503 {
   if (error.status === 404) {

@@ -1,12 +1,12 @@
 import type { MiddlewareHandler } from 'hono'
+import { ROUTE_PATHS } from '../constants/routes.js'
 import { loadAgentRegistrationConfig } from './agent-registration-config.js'
-import { RegistrationFeeService } from '../services/fee-manager.service.js'
+import { FeeManagerService } from '../services/fee-manager.service.js'
 import { getWorkerEnv } from './worker-env.js'
-import { verifyX402Payment } from './x402.js'
+import { runX402HonoPayment, runX402ProtectedRequest } from './x402.js'
 import type { X402PaymentConfig } from './x402.js'
 
 const REGISTER_METHOD = 'POST'
-const REGISTER_PATH = '/agents/register'
 interface RegistrationFeeState {
   amount: bigint
   treasury: `0x${string}` | null
@@ -32,7 +32,7 @@ function buildRegistrationPaymentConfig(
   const config = loadAgentRegistrationConfig(env)
   return {
     method: REGISTER_METHOD,
-    path: REGISTER_PATH,
+    path: ROUTE_PATHS.agentRegister,
     description: REGISTER_DESCRIPTION,
     mimeType: 'application/json',
     priceUsd: feeState.displayUsd,
@@ -42,35 +42,43 @@ function buildRegistrationPaymentConfig(
   }
 }
 
-export async function verifyRegistrationPayment(
-  request: Request,
-  parsedBody?: unknown,
-  env: Record<string, string | undefined> = getWorkerEnv(),
-  feeState?: RegistrationFeeState
-): Promise<{ ok: true } | { ok: false; response: Response }> {
+async function loadRegistrationFeeState(
+  env: Record<string, string | undefined>
+): Promise<RegistrationFeeState> {
   const config = loadAgentRegistrationConfig(env)
-  const registrationFeeState =
-    feeState ?? (await new RegistrationFeeService(config).getDetails())
-  if (registrationFeeState.amount === 0n) {
-    return { ok: true }
+  return new FeeManagerService(config).getRegistrationFee()
+}
+
+export async function runRegistrationWithPayment<T>(options: {
+  request: Request
+  parsedBody?: unknown
+  env?: Record<string, string | undefined>
+  handler: () => Promise<T>
+  toResponseBody: (value: T) => string
+}): Promise<{ ok: true; value: T } | { ok: false; response: Response }> {
+  const env = options.env ?? getWorkerEnv()
+  const feeState = await loadRegistrationFeeState(env)
+  if (feeState.amount === 0n) {
+    return { ok: true, value: await options.handler() }
   }
 
-  if (!registrationFeeState.treasury) {
+  if (!feeState.treasury) {
     return { ok: false, response: missingTreasuryResponse() }
   }
 
-  return verifyX402Payment({
-    payment: buildRegistrationPaymentConfig(env, registrationFeeState),
-    request,
-    parsedBody,
+  return runX402ProtectedRequest({
+    payment: buildRegistrationPaymentConfig(env, feeState),
+    request: options.request,
+    parsedBody: options.parsedBody,
+    handler: options.handler,
+    toResponseBody: options.toResponseBody,
   })
 }
 
 export function createRegistrationPaymentMiddleware(): MiddlewareHandler {
   return async (c, next) => {
     const env = getWorkerEnv()
-    const config = loadAgentRegistrationConfig(env)
-    const feeState = await new RegistrationFeeService(config).getDetails()
+    const feeState = await loadRegistrationFeeState(env)
     if (feeState.amount === 0n) {
       return next()
     }
@@ -79,14 +87,10 @@ export function createRegistrationPaymentMiddleware(): MiddlewareHandler {
       return missingTreasuryResponse()
     }
 
-    const verification = await verifyX402Payment({
-      payment: buildRegistrationPaymentConfig(env, feeState),
-      request: c.req.raw,
-    })
-    if (!verification.ok) {
-      return verification.response
-    }
-
-    return next()
+    await runX402HonoPayment(
+      c,
+      buildRegistrationPaymentConfig(env, feeState),
+      next
+    )
   }
 }

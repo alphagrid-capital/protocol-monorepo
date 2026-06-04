@@ -4,7 +4,8 @@ import {
   ListVaultsResponseSchema,
   VaultNotFoundSchema,
 } from '../schemas/vault.js'
-import { vaultsService } from '../services/vaults.service.js'
+import { getWorkerEnv } from '../lib/worker-env.js'
+import { VaultsService } from '../services/vaults.service.js'
 
 const listVaultsRoute = createRoute({
   method: 'get',
@@ -12,7 +13,7 @@ const listVaultsRoute = createRoute({
   tags: ['Vaults'],
   summary: 'List vaults',
   description:
-    'Returns thematic ERC-4626 vaults with basic stats (TVL, agents, returns). Data is mocked until the indexer is connected. Use `?format=md` or `Accept: text/markdown` for LLM-friendly plain text.',
+    'Returns thematic ERC-4626 vaults registered in VaultTrackRegistry with per-track policy from getVaultTrackConfig. Use `?format=md` or `Accept: text/markdown` for LLM-friendly plain text.',
   request: {
     query: z.object({
       format: z
@@ -46,7 +47,7 @@ const getVaultRoute = createRoute({
   tags: ['Vaults'],
   summary: 'Get vault by id',
   description:
-    'Returns a single thematic vault by `id` or `slug`. Data is mocked until the indexer is connected.',
+    'Returns a single thematic vault by `id`, `slug`, or contract address from VaultTrackRegistry.',
   request: {
     params: z.object({
       id: z.string().min(1).openapi({
@@ -77,8 +78,10 @@ const getVaultRoute = createRoute({
 
 export const vaultRoutes = new OpenAPIHono()
 
-vaultRoutes.openapi(getVaultRoute, (c) => {
-  const vault = vaultsService.getVaultById(c.req.param('id'))
+vaultRoutes.openapi(getVaultRoute, async (c) => {
+  const vault = await VaultsService.fromEnv(getWorkerEnv()).getVaultById(
+    c.req.param('id')
+  )
   if (!vault) {
     return c.json({ error: 'Vault not found' }, 404)
   }
@@ -87,13 +90,14 @@ vaultRoutes.openapi(getVaultRoute, (c) => {
   })
 })
 
-vaultRoutes.openapi(listVaultsRoute, (c) => {
-  const data = vaultsService.listVaults()
+vaultRoutes.openapi(listVaultsRoute, async (c) => {
+  const service = VaultsService.fromEnv(getWorkerEnv())
+  const data = await service.listVaults()
   const format = c.req.query('format')
   const accept = c.req.header('accept') ?? ''
 
   if (format === 'md' || accept.includes('text/markdown')) {
-    return c.text(vaultsService.formatVaultsMarkdown(data), 200, {
+    return c.text(service.formatVaultsMarkdown(data), 200, {
       'Content-Type': 'text/markdown; charset=utf-8',
       'Cache-Control': 'public, max-age=60',
     })

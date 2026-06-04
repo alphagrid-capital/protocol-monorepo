@@ -42,7 +42,6 @@ export const AgentRegistrationRequestSchema = z
   .strict()
 
 export const AgentRegistrationQuoteSchema = z.object({
-  mode: z.enum(['mock', 'live']),
   registrationFee: z.object({
     amount: z.string(),
     assetSymbol: z.string(),
@@ -60,16 +59,15 @@ export const AgentRegistrationQuoteSchema = z.object({
     domainName: z.string(),
     domainVersion: z.string(),
     chainId: z.number(),
-    verifyingContract: addressSchema.nullable(),
+    verifyingContract: addressSchema,
     primaryType: z.literal('SelfRegister'),
     selfRegisterTypehash: z.string(),
   }),
-  agentRegistry: addressSchema.nullable(),
+  agentRegistry: addressSchema,
   signerNonce: z.string().nullable(),
 })
 
 export const AgentRegistrationResponseSchema = z.object({
-  mode: z.enum(['mock', 'live']),
   agentId: z.string().nullable(),
   transactionHash: hexSchema.nullable(),
   transaction: z
@@ -125,10 +123,9 @@ export type AgentRecord = z.infer<typeof AgentRecordSchema>
 
 export const GetAgentResponseSchema = z
   .object({
-    mode: z.enum(['mock', 'live']),
     agentId: agentIdParamSchema,
     agent: AgentRecordSchema,
-    agentRegistry: addressSchema.nullable(),
+    agentRegistry: addressSchema,
   })
   .openapi('GetAgentResponse')
 

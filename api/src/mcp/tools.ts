@@ -1,6 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/server'
 import { z } from 'zod'
-import { verifyRegistrationPayment } from '../lib/x402-agent-registration.js'
+import { runRegistrationWithPayment } from '../lib/x402-agent-registration.js'
 import { getWorkerEnv } from '../lib/worker-env.js'
 import {
   AgentRegistrationQuoteInputSchema,
@@ -9,7 +9,7 @@ import {
   AgentRegistrationResponseSchema,
 } from '../schemas/agent.js'
 import { AgentRegistrationService } from '../services/agent-registration.service.js'
-import { vaultsService } from '../services/vaults.service.js'
+import { VaultsService } from '../services/vaults.service.js'
 import { ListVaultsResponseSchema } from '../schemas/vault.js'
 import {
   MCP_TOOL_NAMES,
@@ -23,30 +23,6 @@ import {
   mcpToolSuccess,
 } from './result.js'
 
-async function verifyRegistrationPaymentForMcp(
-  input: z.infer<typeof AgentRegistrationRequestSchema>
-) {
-  const request = getActiveMcpRequest()
-  if (!request) {
-    return mcpToolError(
-      'MCP request context is not available',
-      'INTERNAL_SERVER_ERROR'
-    )
-  }
-
-  const payment = await verifyRegistrationPayment(
-    request,
-    input,
-    getWorkerEnv()
-  )
-  if (payment.ok) {
-    return null
-  }
-
-  const body = await payment.response.text()
-  return mcpToolError(`x402 payment required.\n\n${body}`, 'PAYMENT_REQUIRED')
-}
-
 export function registerMcpTools(server: McpServer): void {
   server.registerTool(
     MCP_TOOL_NAMES.listVaults,
@@ -57,7 +33,8 @@ export function registerMcpTools(server: McpServer): void {
       outputSchema: ListVaultsResponseSchema,
       annotations: READ_ONLY_TOOL_ANNOTATIONS,
     },
-    async () => mcpToolSuccess(vaultsService.listVaults())
+    async () =>
+      mcpToolSuccess(await VaultsService.fromEnv(getWorkerEnv()).listVaults())
   )
 
   server.registerTool(
@@ -89,14 +66,30 @@ export function registerMcpTools(server: McpServer): void {
     },
     async (input) => {
       try {
-        const paymentError = await verifyRegistrationPaymentForMcp(input)
-        if (paymentError) {
-          return paymentError
+        const request = getActiveMcpRequest()
+        if (!request) {
+          return mcpToolError(
+            'MCP request context is not available',
+            'INTERNAL_SERVER_ERROR'
+          )
         }
 
-        const output =
-          await AgentRegistrationService.fromEnv(getWorkerEnv()).register(input)
-        return mcpToolSuccess(output)
+        const payment = await runRegistrationWithPayment({
+          request,
+          parsedBody: input,
+          handler: () =>
+            AgentRegistrationService.fromEnv(getWorkerEnv()).register(input),
+          toResponseBody: (output) => JSON.stringify(output),
+        })
+        if (!payment.ok) {
+          const body = await payment.response.text()
+          return mcpToolError(
+            `x402 payment required.\n\n${body}`,
+            'PAYMENT_REQUIRED'
+          )
+        }
+
+        return mcpToolSuccess(payment.value)
       } catch (error) {
         return mcpToolErrorFromUnknown(error, 'Registration failed')
       }

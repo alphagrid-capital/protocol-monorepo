@@ -6,21 +6,9 @@ export function runWithWorkerEnv<T>(
   env: WorkerEnv,
   fn: () => T | Promise<T>
 ): T | Promise<T> {
-  const previous = activeEnv
   activeEnv = env
-  try {
-    const result = fn()
-    if (result instanceof Promise) {
-      return result.finally(() => {
-        activeEnv = previous
-      })
-    }
-    activeEnv = previous
-    return result
-  } catch (error) {
-    activeEnv = previous
-    throw error
-  }
+  // Do not restore in finally: MCP tool handlers may run after the transport returns.
+  return fn()
 }
 
 export function getWorkerEnv(): WorkerEnv {

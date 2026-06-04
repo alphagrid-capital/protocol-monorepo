@@ -1,82 +1,252 @@
-import type { ListVaultsResult, VaultSummary } from '../types/vault.js'
+import type { Address, PublicClient } from 'viem'
+import { contracts, type ChainContracts } from '../constants/contracts.js'
+import { getWorkerEnv } from '../lib/worker-env.js'
+import type {
+  ListVaultsResult,
+  VaultSummary,
+  VaultTrackConfig,
+} from '../types/vault.js'
+import { vaultTrackRegistryAbi } from './abis/vault-track-registry.js'
+import { ProviderService } from './provider.service.js'
 
-/** Mock vault catalog aligned with MVP vault names in the technical PRD. */
-const MOCK_VAULTS: VaultSummary[] = [
-  {
+export interface VaultsConfig {
+  chainId: number
+  rpcUrl: string
+  vaultTrackRegistryAddress: `0x${string}`
+  chainContracts: ChainContracts
+}
+
+type VaultCatalogEntry = Pick<
+  VaultSummary,
+  'id' | 'name' | 'slug' | 'tagline' | 'description'
+>
+
+type OnChainVaultTrackConfig = {
+  vault: Address
+  trackId: bigint
+  initialAllocation: bigint
+  maxAllocation: bigint
+  maxDrawdownBps: bigint
+  maxTradeSizeBps: bigint
+  maxDailyTurnoverBps: bigint
+  evaluationPeriod: bigint
+  minTrades: bigint
+  promotionScore: bigint
+  active: boolean
+}
+
+/** Matches VaultTrackRegistry.MAX_TRACK_ID (tracks 0–2). */
+const VAULT_TRACK_IDS = [0, 1, 2] as const
+
+/** Static catalog for deployed thematic vaults. */
+const KNOWN_VAULT_CATALOG: Record<string, VaultCatalogEntry> = {
+  foundation: {
     id: 'foundation',
     name: 'Foundation',
     slug: 'foundation',
     tagline: 'Large-cap liquid equities',
     description:
       'Core allocation to large-cap, liquid tokenized equities. The default vault for conservative capital.',
-    tvlUsd: 125_000,
-    tvlChange24hPct: 0.8,
-    agentCount: 12,
-    returnYtdPct: 8.2,
-    chainId: 4660,
-    contractAddress: '0x000000000000000000000000000000000000f001',
   },
-  {
+  tech: {
     id: 'tech',
     name: 'Tech',
     slug: 'tech',
     tagline: 'Growth and innovation exposure',
     description:
       'Thematic exposure to technology and innovation leaders across tokenized equities.',
-    tvlUsd: 98_500,
-    tvlChange24hPct: 1.4,
-    agentCount: 18,
-    returnYtdPct: 14.6,
-    chainId: 4660,
-    contractAddress: '0x000000000000000000000000000000000000f002',
   },
-  {
+  volatility: {
     id: 'volatility',
     name: 'Volatility',
     slug: 'volatility',
     tagline: 'Vol-focused strategies',
     description:
       'Vault mandate for volatility-aware strategies with tighter risk controls.',
-    tvlUsd: 67_200,
-    tvlChange24hPct: -0.3,
-    agentCount: 9,
-    returnYtdPct: 5.1,
-    chainId: 4660,
-    contractAddress: '0x000000000000000000000000000000000000f003',
   },
-  {
+  macro: {
     id: 'macro',
     name: 'Macro',
     slug: 'macro',
     tagline: 'Macro and rates sensitivity',
     description:
       'Macro thematic vault spanning rates-sensitive and cross-asset tokenized exposures.',
-    tvlUsd: 54_300,
-    tvlChange24hPct: 0.5,
-    agentCount: 7,
-    returnYtdPct: 6.8,
-    chainId: 4660,
-    contractAddress: '0x000000000000000000000000000000000000f004',
   },
-]
+}
+
+const DEPLOYED_VAULT_KEYS = [
+  ['FoundationVault', 'foundation'],
+  ['TechVault', 'tech'],
+  ['VolatilityVault', 'volatility'],
+  ['MacroVault', 'macro'],
+] as const satisfies ReadonlyArray<
+  [keyof ChainContracts, keyof typeof KNOWN_VAULT_CATALOG]
+>
+
+function requireEnv(
+  env: Record<string, string | undefined>,
+  key: 'CHAIN_ID' | 'RPC_URL'
+): string {
+  const value = env[key]
+  if (!value) {
+    throw new Error(`${key} is not configured`)
+  }
+  return value
+}
+
+export function loadVaultsConfig(
+  env: Record<string, string | undefined> = {}
+): VaultsConfig {
+  const chainId = Number(requireEnv(env, 'CHAIN_ID'))
+  const chainContracts = contracts[chainId]
+  if (!chainContracts) {
+    throw new Error(`Unsupported CHAIN_ID: ${chainId}`)
+  }
+  if (!chainContracts.VaultTrackRegistry) {
+    throw new Error(`VaultTrackRegistry is not deployed for CHAIN_ID: ${chainId}`)
+  }
+
+  return {
+    chainId,
+    rpcUrl: requireEnv(env, 'RPC_URL'),
+    vaultTrackRegistryAddress: chainContracts.VaultTrackRegistry,
+    chainContracts,
+  }
+}
+
+function catalogEntryForAddress(
+  address: Address,
+  chainContracts: ChainContracts
+): VaultCatalogEntry {
+  const normalized = address.toLowerCase()
+
+  for (const [contractKey, catalogKey] of DEPLOYED_VAULT_KEYS) {
+    const deployed = chainContracts[contractKey]
+    if (deployed && deployed.toLowerCase() === normalized) {
+      return KNOWN_VAULT_CATALOG[catalogKey]
+    }
+  }
+
+  return {
+    id: normalized,
+    name: `${address.slice(0, 6)}...${address.slice(-4)}`,
+    slug: normalized,
+    tagline: '',
+    description: 'Registered vault (metadata not yet indexed).',
+  }
+}
+
+function serializeVaultTrackConfig(
+  config: OnChainVaultTrackConfig
+): VaultTrackConfig {
+  return {
+    vault: config.vault,
+    trackId: Number(config.trackId),
+    initialAllocation: config.initialAllocation.toString(),
+    maxAllocation: config.maxAllocation.toString(),
+    maxDrawdownBps: Number(config.maxDrawdownBps),
+    maxTradeSizeBps: Number(config.maxTradeSizeBps),
+    maxDailyTurnoverBps: Number(config.maxDailyTurnoverBps),
+    evaluationPeriod: config.evaluationPeriod.toString(),
+    minTrades: Number(config.minTrades),
+    promotionScore: Number(config.promotionScore),
+    active: config.active,
+  }
+}
+
+function toVaultSummary(
+  address: Address,
+  vaultTrackConfigs: VaultTrackConfig[],
+  config: VaultsConfig
+): VaultSummary {
+  const catalog = catalogEntryForAddress(address, config.chainContracts)
+
+  return {
+    ...catalog,
+    vaultTrackConfigs,
+    chainId: config.chainId,
+    contractAddress: address,
+  }
+}
 
 export class VaultsService {
-  /** Returns a single mocked vault by `id` or `slug`, or null if unknown. */
-  getVaultById(id: string): VaultSummary | null {
+  private readonly publicClient: PublicClient
+  private readonly vaultTrackRegistryAddress: Address
+
+  constructor(private readonly config: VaultsConfig) {
+    const providerService = new ProviderService(config.rpcUrl, config.chainId)
+    this.publicClient = providerService.createPublicClient()
+    this.vaultTrackRegistryAddress = config.vaultTrackRegistryAddress
+  }
+
+  static fromEnv(
+    env: Record<string, string | undefined> = getWorkerEnv()
+  ): VaultsService {
+    return new VaultsService(loadVaultsConfig(env))
+  }
+
+  private async fetchVaultTrackConfigs(
+    vault: Address
+  ): Promise<VaultTrackConfig[]> {
+    const configs = await Promise.all(
+      VAULT_TRACK_IDS.map((trackId) =>
+        this.publicClient.readContract({
+          address: this.vaultTrackRegistryAddress,
+          abi: vaultTrackRegistryAbi,
+          functionName: 'getVaultTrackConfig',
+          args: [vault, BigInt(trackId)],
+        })
+      )
+    )
+
+    return configs.map((config) =>
+      serializeVaultTrackConfig(config as OnChainVaultTrackConfig)
+    )
+  }
+
+  /** Returns a single vault by `id`, `slug`, or contract address, or null if unknown. */
+  async getVaultById(id: string): Promise<VaultSummary | null> {
     const key = id.toLowerCase()
+    const { vaults } = await this.listVaults()
     return (
-      MOCK_VAULTS.find(
+      vaults.find(
         (vault) =>
-          vault.id.toLowerCase() === key || vault.slug.toLowerCase() === key
+          vault.id.toLowerCase() === key ||
+          vault.slug.toLowerCase() === key ||
+          vault.contractAddress.toLowerCase() === key
       ) ?? null
     )
   }
 
-  /** Returns the mocked vault list with basic on-chain-style stats. */
-  listVaults(): ListVaultsResult {
+  /** Returns vaults registered in VaultTrackRegistry. */
+  async listVaults(): Promise<ListVaultsResult> {
+    const count = await this.publicClient.readContract({
+      address: this.vaultTrackRegistryAddress,
+      abi: vaultTrackRegistryAbi,
+      functionName: 'vaultCount',
+    })
+
+    const addresses = await Promise.all(
+      Array.from({ length: Number(count) }, (_, index) =>
+        this.publicClient.readContract({
+          address: this.vaultTrackRegistryAddress,
+          abi: vaultTrackRegistryAbi,
+          functionName: 'vaultAt',
+          args: [BigInt(index)],
+        })
+      )
+    )
+
+    const vaults = await Promise.all(
+      addresses.map(async (address) => {
+        const vaultTrackConfigs = await this.fetchVaultTrackConfigs(address)
+        return toVaultSummary(address, vaultTrackConfigs, this.config)
+      })
+    )
+
     return {
-      vaults: MOCK_VAULTS,
-      total: MOCK_VAULTS.length,
+      vaults,
+      total: vaults.length,
     }
   }
 
@@ -88,19 +258,26 @@ export class VaultsService {
       lines.push(`## ${vault.name} (\`${vault.id}\`)`)
       lines.push('')
       lines.push(`- **Tagline:** ${vault.tagline}`)
-      lines.push(`- **TVL (USD):** $${vault.tvlUsd.toLocaleString('en-US')}`)
-      lines.push(`- **TVL 24h change:** ${vault.tvlChange24hPct}%`)
-      lines.push(`- **Agents:** ${vault.agentCount}`)
-      lines.push(`- **Return YTD:** ${vault.returnYtdPct}%`)
       lines.push(`- **Chain ID:** ${vault.chainId}`)
       lines.push(`- **Contract:** \`${vault.contractAddress}\``)
       lines.push('')
       lines.push(vault.description)
       lines.push('')
+      for (const track of vault.vaultTrackConfigs) {
+        lines.push(`### Track ${track.trackId}${track.active ? '' : ' (inactive)'}`)
+        lines.push('')
+        lines.push(`- **Initial allocation (atomic):** ${track.initialAllocation}`)
+        lines.push(`- **Max allocation (atomic):** ${track.maxAllocation}`)
+        lines.push(`- **Max drawdown (bps):** ${track.maxDrawdownBps}`)
+        lines.push(`- **Max trade size (bps):** ${track.maxTradeSizeBps}`)
+        lines.push(`- **Max daily turnover (bps):** ${track.maxDailyTurnoverBps}`)
+        lines.push(`- **Evaluation period (s):** ${track.evaluationPeriod}`)
+        lines.push(`- **Min trades:** ${track.minTrades}`)
+        lines.push(`- **Promotion score:** ${track.promotionScore}`)
+        lines.push('')
+      }
     }
 
     return lines.join('\n').trimEnd()
   }
 }
-
-export const vaultsService = new VaultsService()

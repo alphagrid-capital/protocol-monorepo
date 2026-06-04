@@ -38,9 +38,6 @@ export class ProviderService {
   }
 
   static fromConfig(config: AgentRegistrationConfig): ProviderService {
-    if (!config.rpcUrl) {
-      throw new Error('RPC_URL is not configured')
-    }
     return new ProviderService(config.rpcUrl, config.chainId)
   }
 

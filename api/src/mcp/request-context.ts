@@ -6,9 +6,8 @@ export function runWithMcpRequest<T>(
   fn: () => Promise<T>
 ): Promise<T> {
   activeMcpRequest = request
-  return fn().finally(() => {
-    activeMcpRequest = null
-  })
+  // Do not clear in finally: MCP tool handlers may run after transport returns (SSE).
+  return fn()
 }
 
 export function getActiveMcpRequest(): Request | null {
