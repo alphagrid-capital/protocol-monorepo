@@ -52,7 +52,7 @@ interface IMandateVault is IERC4626 {
     /// @notice Whether `token` is enabled for this vault mandate and active in the registry.
     function isAllowedToken(address token) external view returns (bool);
 
-    function priceFeedOf(address token) external view returns (address);
+    function priceOracle() external view returns (address);
 
     function allowedTokenAt(uint256 index) external view returns (address);
 

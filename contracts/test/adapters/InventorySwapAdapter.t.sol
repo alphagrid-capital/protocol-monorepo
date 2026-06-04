@@ -15,7 +15,7 @@ import { MockERC20 } from "../../src/mocks/MockERC20.sol";
 import { AgentTestLib } from "../helpers/AgentTestLib.sol";
 import { TradingTestBase } from "../helpers/TradingTestBase.sol";
 import { VaultTestLib } from "../helpers/VaultTestLib.sol";
-import { MockPriceFeed } from "../mocks/MockPriceFeed.sol";
+import { MockPriceOracle } from "../../src/mocks/MockPriceOracle.sol";
 
 contract InventorySwapAdapterTest is TradingTestBase {
     InventorySwapAdapter internal inventoryAdapter;
@@ -79,9 +79,11 @@ contract InventorySwapAdapterTest is TradingTestBase {
         vault.setMaxPriceAge(1 hours);
         tradeRouter.setKeeperBounty(50, 100e6);
 
+        priceOracle = new MockPriceOracle(deployer);
+        tokenRegistry.setPriceOracle(address(priceOracle));
         nvda = new MockERC20("Mock NVDA", "mNVDA", 18);
-        nvdaFeed = new MockPriceFeed(150e8, 8);
-        tokenRegistry.registerToken(address(nvda), address(nvdaFeed));
+        priceOracle.setPrice(address(nvda), 150e8);
+        tokenRegistry.registerToken(address(nvda));
         vault.enableToken(address(nvda));
 
         _setVaultTrackConfig(vaultAddr, 0, CHALLENGE_CAP, 200_000e6);
@@ -110,7 +112,7 @@ contract InventorySwapAdapterTest is TradingTestBase {
         assertGt(positionManager.getPosition(positionId).tokenAmount, 0);
         assertEq(nvda.balanceOf(vaultAddr), positionManager.getPosition(positionId).tokenAmount);
 
-        nvdaFeed.setPrice(120e8);
+        _setTokenPrice(address(nvda), 120e8);
         vm.prank(makeAddr("keeper"));
         tradeRouter.executeExit(positionId);
 

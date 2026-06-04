@@ -28,7 +28,7 @@ contract TradingFlowIntegrationTest is TradingTestBase {
         assertEq(allocationManager.allocationUsed(agentId), 25_000e6);
         assertTrue(vault.isAllowedToken(address(nvda)));
 
-        nvdaFeed.setPrice(125e8);
+        _setTokenPrice(address(nvda), 125e8);
 
         vm.prank(makeAddr("keeper"));
         tradeRouter.executeExit(positionId);
@@ -49,7 +49,7 @@ contract TradingFlowIntegrationTest is TradingTestBase {
         vm.prank(operator);
         registry.setAgentStatus(agentId, IAgentRegistry.AgentStatus.Suspended);
 
-        nvdaFeed.setPrice(120e8);
+        _setTokenPrice(address(nvda), 120e8);
         vm.prank(makeAddr("keeper"));
         tradeRouter.executeExit(positionId);
 
@@ -115,7 +115,7 @@ contract TradingFlowIntegrationTest is TradingTestBase {
         vm.prank(deployer);
         vault.setTradingPaused(true);
 
-        nvdaFeed.setPrice(120e8);
+        _setTokenPrice(address(nvda), 120e8);
         vm.expectRevert(MandateVault.TradingOperationsPaused.selector);
         vm.prank(makeAddr("keeper"));
         tradeRouter.executeExit(positionId);

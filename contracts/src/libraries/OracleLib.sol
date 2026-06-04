@@ -5,7 +5,7 @@ import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { IPriceFeed } from "../interfaces/IPriceFeed.sol";
 
 /// @title OracleLib
-/// @notice Converts token amounts to the vault deposit asset using a Chainlink-style feed.
+/// @notice Converts token amounts to the vault deposit asset using a multi-asset price oracle.
 library OracleLib {
     error InvalidPrice();
     error StalePrice(uint256 updatedAt, uint256 maxAge);
@@ -14,20 +14,21 @@ library OracleLib {
     /// @param maxPriceAge Maximum oracle age in seconds; `0` disables staleness checks.
     function valueInAsset(
         uint256 amount,
-        address priceFeed,
+        address priceOracle,
+        address token,
         uint8 tokenDecimals,
         uint8 assetDecimals,
         uint256 maxPriceAge
     ) internal view returns (uint256) {
         if (amount == 0) return 0;
 
-        (, int256 answer,, uint256 updatedAt,) = IPriceFeed(priceFeed).latestRoundData();
+        (, int256 answer,, uint256 updatedAt,) = IPriceFeed(priceOracle).latestRoundData(token);
         if (answer <= 0) revert InvalidPrice();
         if (maxPriceAge != 0 && block.timestamp - updatedAt > maxPriceAge) {
             revert StalePrice(updatedAt, maxPriceAge);
         }
 
-        uint8 feedDecimals = IPriceFeed(priceFeed).decimals();
+        uint8 feedDecimals = IPriceFeed(priceOracle).decimals(token);
         uint256 price = SafeCast.toUint256(answer);
 
         // amount * price, normalized to asset decimals.

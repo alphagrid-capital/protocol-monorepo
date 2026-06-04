@@ -51,7 +51,7 @@ contracts/
 │   ├── adapters/                   # MockSwapAdapter, InventorySwapAdapter
 │   ├── interfaces/
 │   ├── libraries/                  # OracleLib
-│   └── mocks/                      # MockERC20
+│   └── mocks/                      # MockERC20, MockPriceOracle
 ├── test/
 │   ├── core/
 │   ├── vaults/
@@ -62,6 +62,8 @@ contracts/
     ├── DeployVaultInfrastructure.s.sol
     ├── DeployTrading.s.sol
     ├── ConfigureVaultTracks.s.sol
+    ├── DeployPriceOracle.s.sol
+    ├── DeployTokenCatalog.s.sol
     ├── SetRegistrationFee.s.sol
     └── DeployMockERC20.s.sol
 ```
@@ -95,7 +97,13 @@ forge script script/SetRegistrationFee.s.sol:SetRegistrationFee --rpc-url $RPC_U
 
 # Trading: position manager, trade router, swap adapter (on existing vault stack)
 forge script script/DeployTrading.s.sol:DeployTrading --rpc-url $RPC_URL --broadcast
+
+# Token catalog: unified MockPriceOracle + mock stocks + vault allowlists
+forge script script/DeployPriceOracle.s.sol:DeployPriceOracle --rpc-url $RPC_URL --broadcast
+forge script script/DeployTokenCatalog.s.sol:DeployTokenCatalog --rpc-url $RPC_URL --broadcast
 ```
+
+See [`deployments/README.md`](deployments/README.md) and [`../config/token-catalog.json`](../config/token-catalog.json).
 
 `DeployTrading` env vars: `ADMIN`, `EXECUTOR`, `OPERATOR` (optional), `AGENT_REGISTRY`, `ALLOCATION_MANAGER`, `TRACK_CONFIG`, `VAULT`, `DEPLOY_MOCK_SWAP_ADAPTER`.
 

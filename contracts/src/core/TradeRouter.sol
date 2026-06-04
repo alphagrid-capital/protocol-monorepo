@@ -355,7 +355,8 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
         uint8 tokenDecimals = vault.tokenRegistry().tokenDecimals(position.token);
         uint256 currentPrice = OracleLib.valueInAsset(
             10 ** tokenDecimals,
-            vault.tokenRegistry().priceFeedOf(position.token),
+            vault.tokenRegistry().priceOracle(),
+            position.token,
             tokenDecimals,
             6,
             vault.maxPriceAge()
@@ -380,7 +381,8 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
     {
         uint256 expected = OracleLib.valueInAsset(
             tokenIn,
-            vault.tokenRegistry().priceFeedOf(token),
+            vault.tokenRegistry().priceOracle(),
+            token,
             vault.tokenRegistry().tokenDecimals(token),
             6,
             vault.maxPriceAge()

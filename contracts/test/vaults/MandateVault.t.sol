@@ -5,11 +5,11 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { TokenRegistry } from "../../src/core/TokenRegistry.sol";
 import { OracleLib } from "../../src/libraries/OracleLib.sol";
 import { MockERC20 } from "../../src/mocks/MockERC20.sol";
+import { MockPriceOracle } from "../../src/mocks/MockPriceOracle.sol";
 import { MandateVault } from "../../src/vaults/MandateVault.sol";
 import { MandateVaultFactory } from "../../src/vaults/MandateVaultFactory.sol";
 import { BaseTest } from "../helpers/BaseTest.sol";
 import { VaultTestLib } from "../helpers/VaultTestLib.sol";
-import { MockPriceFeed } from "../mocks/MockPriceFeed.sol";
 
 contract MandateVaultTest is BaseTest {
     bytes32 internal constant VAULT_MANDATE = "TECH";
@@ -18,7 +18,7 @@ contract MandateVaultTest is BaseTest {
     TokenRegistry internal registry;
     MandateVault internal vault;
     MockERC20 internal nvda;
-    MockPriceFeed internal nvdaFeed;
+    MockPriceOracle internal oracle;
 
     address internal lp;
     address internal feeRecipient;
@@ -34,6 +34,8 @@ contract MandateVaultTest is BaseTest {
 
         vm.startPrank(deployer);
         registry = new TokenRegistry(deployer);
+        oracle = new MockPriceOracle(deployer);
+        registry.setPriceOracle(address(oracle));
         (vaultFactory,) = VaultTestLib.deployFactory(IERC20(address(usdc)));
         vault = VaultTestLib.deployVault(
             vaultFactory,
@@ -47,8 +49,8 @@ contract MandateVaultTest is BaseTest {
         );
 
         nvda = new MockERC20("Mock NVDA", "mNVDA", 18);
-        nvdaFeed = new MockPriceFeed(150e8, 8);
-        registry.registerToken(address(nvda), address(nvdaFeed));
+        oracle.setPrice(address(nvda), 150e8);
+        registry.registerToken(address(nvda));
         vault.enableToken(address(nvda));
         vault.setMaxPriceAge(1 hours);
 
@@ -105,7 +107,8 @@ contract MandateVaultTest is BaseTest {
         vm.stopPrank();
 
         nvda.mint(address(vault), 1e18);
-        nvdaFeed.setUpdatedAt(block.timestamp - 2 hours);
+        vm.prank(deployer);
+        oracle.setUpdatedAt(address(nvda), block.timestamp - 2 hours);
 
         vm.expectRevert(abi.encodeWithSelector(OracleLib.StalePrice.selector, block.timestamp - 2 hours, 1 hours));
         vault.totalAssets();
@@ -140,7 +143,7 @@ contract MandateVaultTest is BaseTest {
         assertEq(vault.totalAssets(), 100_000e6);
     }
 
-    function test_RegistryPriceFeedUpdate_UpdatesVaultNav() public {
+    function test_OraclePriceUpdate_UpdatesVaultNav() public {
         vm.startPrank(lp);
         usdc.approve(address(vault), 100_000e6);
         vault.deposit(100_000e6, lp);
@@ -148,10 +151,8 @@ contract MandateVaultTest is BaseTest {
 
         nvda.mint(address(vault), 2e18);
 
-        MockPriceFeed newFeed = new MockPriceFeed(200e8, 8);
-
         vm.prank(deployer);
-        registry.updatePriceFeed(address(nvda), address(newFeed));
+        oracle.setPrice(address(nvda), 200e8);
 
         // 100k USDC + 2 NVDA * $200 = 100,400 USDC
         assertEq(vault.totalAssets(), 100_400e6);
@@ -184,7 +185,8 @@ contract MandateVaultTest is BaseTest {
         vm.stopPrank();
 
         nvda.mint(address(vault), 1e18);
-        nvdaFeed.setUpdatedAt(block.timestamp - 30 days);
+        vm.prank(deployer);
+        oracle.setUpdatedAt(address(nvda), block.timestamp - 30 days);
 
         assertEq(vault.totalAssets(), 100_150e6);
     }
@@ -196,10 +198,15 @@ contract MandateVaultTest is BaseTest {
         vm.stopPrank();
 
         nvda.mint(address(vault), 1e18);
-        nvdaFeed.setPrice(-1);
+        vm.prank(deployer);
+        oracle.setPrice(address(nvda), -1);
 
         vm.expectRevert(OracleLib.InvalidPrice.selector);
         vault.totalAssets();
+    }
+
+    function test_PriceOracle_ReturnsRegistryOracle() public view {
+        assertEq(vault.priceOracle(), address(oracle));
     }
 
     function test_RevertWhen_EnableUnregisteredToken() public {
@@ -212,10 +219,10 @@ contract MandateVaultTest is BaseTest {
 
     function test_RevertWhen_SetEnabledForUnallowedToken() public {
         MockERC20 unlisted = new MockERC20("Unlisted", "UNL", 18);
-        MockPriceFeed feed = new MockPriceFeed(1e8, 8);
 
         vm.startPrank(deployer);
-        registry.registerToken(address(unlisted), address(feed));
+        oracle.setPrice(address(unlisted), 1e8);
+        registry.registerToken(address(unlisted));
         vm.stopPrank();
 
         vm.expectRevert(abi.encodeWithSelector(MandateVault.TokenNotAllowed.selector, address(unlisted)));
@@ -246,7 +253,7 @@ contract MandateVaultTest is BaseTest {
     }
 
     function test_WithdrawFee_ChargedInUsdc() public {
-        vm.startPrank(deployer);
+        vm.prank(deployer);
         vault.setWithdrawFeeBps(WITHDRAW_FEE_BPS);
         vm.stopPrank();
 
@@ -266,7 +273,7 @@ contract MandateVaultTest is BaseTest {
     }
 
     function test_RedeemFee_DeductedFromProceeds() public {
-        vm.startPrank(deployer);
+        vm.prank(deployer);
         vault.setWithdrawFeeBps(WITHDRAW_FEE_BPS);
         vm.stopPrank();
 

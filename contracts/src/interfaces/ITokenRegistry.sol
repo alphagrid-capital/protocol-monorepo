@@ -2,14 +2,13 @@
 pragma solidity ^0.8.30;
 
 /// @title ITokenRegistry
-/// @notice Protocol-wide catalog of tradable tokens and their oracle price feeds.
+/// @notice Protocol-wide catalog of tradable tokens backed by a shared price oracle.
 interface ITokenRegistry {
     // -------------------------------------------------------------------------
     // Types
     // -------------------------------------------------------------------------
 
     struct TokenConfig {
-        address priceFeed;
         uint8 decimals;
         bool active;
     }
@@ -18,9 +17,9 @@ interface ITokenRegistry {
     // Events
     // -------------------------------------------------------------------------
 
-    event TokenRegistered(address indexed token, address indexed priceFeed, uint8 decimals);
+    event PriceOracleSet(address indexed priceOracle);
 
-    event TokenPriceFeedUpdated(address indexed token, address indexed priceFeed);
+    event TokenRegistered(address indexed token, uint8 decimals);
 
     event TokenActiveUpdated(address indexed token, bool active);
 
@@ -28,13 +27,13 @@ interface ITokenRegistry {
     // Views
     // -------------------------------------------------------------------------
 
+    function priceOracle() external view returns (address);
+
     /// @notice Returns whether `token` has been registered.
     function isTokenListed(address token) external view returns (bool);
 
     /// @notice Returns whether `token` is registered and globally active.
     function isTokenActive(address token) external view returns (bool);
-
-    function priceFeedOf(address token) external view returns (address);
 
     function tokenDecimals(address token) external view returns (uint8);
 
@@ -48,9 +47,9 @@ interface ITokenRegistry {
     // Admin
     // -------------------------------------------------------------------------
 
-    function registerToken(address token, address priceFeed) external;
+    function setPriceOracle(address priceOracle) external;
 
-    function updatePriceFeed(address token, address priceFeed) external;
+    function registerToken(address token) external;
 
     function setTokenActive(address token, bool active) external;
 }

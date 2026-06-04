@@ -46,6 +46,16 @@ const contracts = [
     out: 'api/src/services/abis/vault-track-registry.ts',
     exportName: 'vaultTrackRegistryAbi',
   },
+  {
+    artifact: 'contracts/out/MandateVault.sol/MandateVault.json',
+    out: 'api/src/services/abis/mandate-vault.ts',
+    exportName: 'mandateVaultAbi',
+  },
+  {
+    artifact: 'contracts/out/MockPriceOracle.sol/MockPriceOracle.json',
+    out: 'api/src/services/abis/mock-price-oracle.ts',
+    exportName: 'mockPriceOracleAbi',
+  },
 ]
 
 for (const { artifact, out, exportName } of contracts) {

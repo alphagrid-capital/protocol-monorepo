@@ -16,7 +16,7 @@ import { IVaultTrackRegistry } from "../../src/interfaces/IVaultTrackRegistry.so
 import { MockERC20 } from "../../src/mocks/MockERC20.sol";
 import { MandateVault } from "../../src/vaults/MandateVault.sol";
 import { MandateVaultFactory } from "../../src/vaults/MandateVaultFactory.sol";
-import { MockPriceFeed } from "../mocks/MockPriceFeed.sol";
+import { MockPriceOracle } from "../../src/mocks/MockPriceOracle.sol";
 import { AgentTestLib } from "./AgentTestLib.sol";
 import { BaseTest } from "./BaseTest.sol";
 import { MockERC8004IdentityRegistry } from "../mocks/MockERC8004IdentityRegistry.sol";
@@ -43,7 +43,7 @@ abstract contract TradingTestBase is BaseTest {
     MockERC8004IdentityRegistry internal identityRegistry;
 
     MockERC20 internal nvda;
-    MockPriceFeed internal nvdaFeed;
+    MockPriceOracle internal priceOracle;
 
     address internal treasury;
     address internal operator;
@@ -105,9 +105,11 @@ abstract contract TradingTestBase is BaseTest {
         vault.setMaxPriceAge(1 hours);
         tradeRouter.setKeeperBounty(50, 100e6);
 
+        priceOracle = new MockPriceOracle(deployer);
+        tokenRegistry.setPriceOracle(address(priceOracle));
         nvda = new MockERC20("Mock NVDA", "mNVDA", 18);
-        nvdaFeed = new MockPriceFeed(150e8, 8);
-        tokenRegistry.registerToken(address(nvda), address(nvdaFeed));
+        priceOracle.setPrice(address(nvda), 150e8);
+        tokenRegistry.registerToken(address(nvda));
         vault.enableToken(address(nvda));
 
         _setVaultTrackConfig(vaultAddr, 0, CHALLENGE_CAP, 200_000e6);
@@ -119,6 +121,16 @@ abstract contract TradingTestBase is BaseTest {
         usdc.approve(vaultAddr, LP_USDC);
         vault.deposit(LP_USDC, lp);
         vm.stopPrank();
+    }
+
+    function _setTokenPrice(address token, int256 price) internal {
+        vm.prank(deployer);
+        priceOracle.setPrice(token, price);
+    }
+
+    function _setTokenUpdatedAt(address token, uint256 updatedAt_) internal {
+        vm.prank(deployer);
+        priceOracle.setUpdatedAt(token, updatedAt_);
     }
 
     function _registerAgent() internal returns (uint256 agentId) {

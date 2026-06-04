@@ -118,6 +118,19 @@ If the wallet MCP server is not in the available server list:
 1. Tell the user to restart **Alpha Wallet** / `alphagrid-wallet-mcp` in Cursor MCP settings.
 2. For **read-only** balances on Base Sepolia, `cast balance` and `cast call` on the USDC contract are acceptable when the user only needs a snapshot and provides or implies the wallet address from prior context.
 
+## AlphaGrid token catalog (trading universe)
+
+Tradable mock stocks and per-vault allowlists are **not** in wallet MCP by default. Use the AlphaGrid API or MCP server:
+
+| Need | Source |
+| --- | --- |
+| All listed tokens + oracle price | `GET /tokens` or MCP `alphagrid_list_tokens` |
+| Tokens for one vault (e.g. tech) | `GET /vaults/tech/tokens` or MCP `alphagrid_list_vault_tokens` |
+| Oracle quotes by symbol only | `GET /prices` or MCP `alphagrid_get_prices` |
+| On-chain quote | `MockPriceOracle.latestRoundData(token)` at `PriceOracle` from API/`api/src/constants/contracts.ts` |
+
+Off-chain catalog: `config/token-catalog.json`. Pyth equity tools remain optional cross-checks only.
+
 ## Further reading
 
 - `agents/wallet-mcp/README.md` — install, build, tool table

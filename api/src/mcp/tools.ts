@@ -14,7 +14,13 @@ import {
   LinkErc8004ResponseSchema,
 } from '../schemas/agent.js'
 import { AgentRegistrationService } from '../services/agent-registration.service.js'
+import { TokensService } from '../services/tokens.service.js'
 import { VaultsService } from '../services/vaults.service.js'
+import {
+  ListTokensResponseSchema,
+  OraclePricesResponseSchema,
+  VaultTokensResponseSchema,
+} from '../schemas/token.js'
 import { ListVaultsResponseSchema } from '../schemas/vault.js'
 import {
   MCP_TOOL_NAMES,
@@ -43,6 +49,55 @@ export function registerMcpTools(server: McpServer): void {
   )
 
   server.registerTool(
+    MCP_TOOL_NAMES.listTokens,
+    {
+      title: 'List tradable tokens',
+      description: 'Mirrors GET /tokens.',
+      inputSchema: z.object({}).strict(),
+      outputSchema: ListTokensResponseSchema,
+      annotations: READ_ONLY_TOOL_ANNOTATIONS,
+    },
+    async () =>
+      mcpToolSuccess(await TokensService.fromEnv(getWorkerEnv()).listTokens())
+  )
+
+  server.registerTool(
+    MCP_TOOL_NAMES.listVaultTokens,
+    {
+      title: 'List tokens for a vault',
+      description: 'Mirrors GET /vaults/{id}/tokens.',
+      inputSchema: z.object({
+        vaultId: z.string().min(1),
+      }),
+      outputSchema: VaultTokensResponseSchema,
+      annotations: READ_ONLY_TOOL_ANNOTATIONS,
+    },
+    async ({ vaultId }) => {
+      const result =
+        await TokensService.fromEnv(getWorkerEnv()).listVaultTokens(vaultId)
+      if (!result) {
+        return mcpToolError('Vault not found', 'NOT_FOUND')
+      }
+      return mcpToolSuccess(result)
+    }
+  )
+
+  server.registerTool(
+    MCP_TOOL_NAMES.getPrices,
+    {
+      title: 'Oracle prices by symbol',
+      description: 'Mirrors GET /prices.',
+      inputSchema: z.object({}).strict(),
+      outputSchema: OraclePricesResponseSchema,
+      annotations: READ_ONLY_TOOL_ANNOTATIONS,
+    },
+    async () =>
+      mcpToolSuccess(
+        await TokensService.fromEnv(getWorkerEnv()).getOraclePrices()
+      )
+  )
+
+  server.registerTool(
     MCP_TOOL_NAMES.getAgent,
     {
       title: 'Get agent by id',
@@ -54,9 +109,10 @@ export function registerMcpTools(server: McpServer): void {
     },
     async ({ agentId }) => {
       try {
-        const output = await AgentRegistrationService.fromEnv(
-          getWorkerEnv()
-        ).getAgent(agentId)
+        const output =
+          await AgentRegistrationService.fromEnv(getWorkerEnv()).getAgent(
+            agentId
+          )
         return mcpToolSuccess(output)
       } catch (error) {
         return mcpToolErrorFromUnknown(error, 'Failed to load agent')
@@ -76,12 +132,16 @@ export function registerMcpTools(server: McpServer): void {
     },
     async ({ erc8004AgentId }) => {
       try {
-        const output = await AgentRegistrationService.fromEnv(
-          getWorkerEnv()
-        ).getAgentByErc8004(erc8004AgentId)
+        const output =
+          await AgentRegistrationService.fromEnv(
+            getWorkerEnv()
+          ).getAgentByErc8004(erc8004AgentId)
         return mcpToolSuccess(output)
       } catch (error) {
-        return mcpToolErrorFromUnknown(error, 'Failed to load agent by ERC-8004')
+        return mcpToolErrorFromUnknown(
+          error,
+          'Failed to load agent by ERC-8004'
+        )
       }
     }
   )

@@ -174,7 +174,8 @@ contract MandateVault is IMandateVault, Initializable, ERC4626, AccessControl {
 
             total += OracleLib.valueInAsset(
                 balance,
-                _tokenRegistry.priceFeedOf(token),
+                _tokenRegistry.priceOracle(),
+                token,
                 _tokenRegistry.tokenDecimals(token),
                 IERC20Metadata(asset()).decimals(),
                 maxPriceAge
@@ -252,9 +253,8 @@ contract MandateVault is IMandateVault, Initializable, ERC4626, AccessControl {
     }
 
     /// @inheritdoc IMandateVault
-    function priceFeedOf(address token) external view returns (address) {
-        _requireAllowedToken(token);
-        return _tokenRegistry.priceFeedOf(token);
+    function priceOracle() external view returns (address) {
+        return _tokenRegistry.priceOracle();
     }
 
     /// @inheritdoc IMandateVault

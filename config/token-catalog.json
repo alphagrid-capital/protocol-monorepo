@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "tokens": [
+    { "symbol": "NVDA", "finnhubSymbol": "NVDA" },
+    { "symbol": "META", "finnhubSymbol": "META" },
+    { "symbol": "TSLA", "finnhubSymbol": "TSLA" },
+    { "symbol": "AAPL", "finnhubSymbol": "AAPL" },
+    { "symbol": "MSFT", "finnhubSymbol": "MSFT" },
+    { "symbol": "COIN", "finnhubSymbol": "COIN" },
+    { "symbol": "HOOD", "finnhubSymbol": "HOOD" },
+    { "symbol": "SPY", "finnhubSymbol": "SPY" }
+  ],
+  "chains": {
+    "84532": {
+      "tokens": {
+        "NVDA": "0x439D5F4B0e79Ba0889E2ED8249196a92FA678e5b",
+        "META": "0x020e425F59aac8Dd3B4EA52008Ba0003A9e7ED0e",
+        "TSLA": "0x60b9485eaF95b65c0E1CB0a6b90021E7b070436F",
+        "AAPL": "0x9B790bC286D3fDB9F454D715A91AB23C9e02B6a7",
+        "MSFT": "0xe6569a087B2893549188C7f5e17C5c200ABdf903",
+        "COIN": "0x680Dc47d633556d873fCc52357f694768515f001",
+        "HOOD": "0x28dA84668D59e653b5E4377419cFA0f25AcA5C21",
+        "SPY": "0xbc2486225c062C207A7732bb2a4882fc853f6dFe"
+      }
+    },
+    "46630": {
+      "tokens": {}
+    }
+  }
+}

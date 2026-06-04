@@ -105,6 +105,8 @@ export function registerDiscoveryRoutes(app: OpenAPIHono) {
       'User-agent: *',
       'Allow: /',
       'Allow: /vaults',
+      'Allow: /tokens',
+      'Allow: /prices',
       'Allow: /llms.txt',
       `Allow: ${ROUTE_PATHS.swaggerJson}`,
       '',

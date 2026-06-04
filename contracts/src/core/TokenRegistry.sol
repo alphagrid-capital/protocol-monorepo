@@ -6,7 +6,7 @@ import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/I
 import { ITokenRegistry } from "../interfaces/ITokenRegistry.sol";
 
 /// @title TokenRegistry
-/// @notice Canonical token and oracle feed catalog shared across AlphaGrid vaults.
+/// @notice Canonical token catalog shared across AlphaGrid vaults with one global price oracle.
 contract TokenRegistry is ITokenRegistry, AccessControl {
     // -------------------------------------------------------------------------
     // Constants
@@ -18,14 +18,18 @@ contract TokenRegistry is ITokenRegistry, AccessControl {
     // State
     // -------------------------------------------------------------------------
 
+    address public priceOracle;
+
     address[] private _tokens;
     mapping(address token => TokenConfig config) private _configs;
+    mapping(address token => bool listed) private _listed;
 
     // -------------------------------------------------------------------------
     // Errors
     // -------------------------------------------------------------------------
 
     error ZeroAddress();
+    error PriceOracleNotSet();
     error TokenNotListed(address token);
     error TokenAlreadyListed(address token);
 
@@ -47,18 +51,13 @@ contract TokenRegistry is ITokenRegistry, AccessControl {
 
     /// @inheritdoc ITokenRegistry
     function isTokenListed(address token) external view returns (bool) {
-        return _configs[token].priceFeed != address(0);
+        return _listed[token];
     }
 
     /// @inheritdoc ITokenRegistry
     function isTokenActive(address token) external view returns (bool) {
         TokenConfig storage config = _configs[token];
-        return config.priceFeed != address(0) && config.active;
-    }
-
-    /// @inheritdoc ITokenRegistry
-    function priceFeedOf(address token) external view returns (address) {
-        return _requireListed(token).priceFeed;
+        return _listed[token] && config.active;
     }
 
     /// @inheritdoc ITokenRegistry
@@ -86,24 +85,25 @@ contract TokenRegistry is ITokenRegistry, AccessControl {
     // -------------------------------------------------------------------------
 
     /// @inheritdoc ITokenRegistry
-    function registerToken(address token, address priceFeed) external onlyRole(REGISTRY_ADMIN_ROLE) {
-        if (token == address(0) || priceFeed == address(0)) revert ZeroAddress();
-        if (_configs[token].priceFeed != address(0)) revert TokenAlreadyListed(token);
-
-        uint8 decimals = IERC20Metadata(token).decimals();
-
-        _configs[token] = TokenConfig({ priceFeed: priceFeed, decimals: decimals, active: true });
-        _tokens.push(token);
-
-        emit TokenRegistered(token, priceFeed, decimals);
+    function setPriceOracle(address priceOracle_) external onlyRole(REGISTRY_ADMIN_ROLE) {
+        if (priceOracle_ == address(0)) revert ZeroAddress();
+        priceOracle = priceOracle_;
+        emit PriceOracleSet(priceOracle_);
     }
 
     /// @inheritdoc ITokenRegistry
-    function updatePriceFeed(address token, address priceFeed) external onlyRole(REGISTRY_ADMIN_ROLE) {
-        if (priceFeed == address(0)) revert ZeroAddress();
-        TokenConfig storage config = _requireListed(token);
-        config.priceFeed = priceFeed;
-        emit TokenPriceFeedUpdated(token, priceFeed);
+    function registerToken(address token) external onlyRole(REGISTRY_ADMIN_ROLE) {
+        if (token == address(0)) revert ZeroAddress();
+        if (priceOracle == address(0)) revert PriceOracleNotSet();
+        if (_listed[token]) revert TokenAlreadyListed(token);
+
+        uint8 decimals = IERC20Metadata(token).decimals();
+
+        _listed[token] = true;
+        _configs[token] = TokenConfig({ decimals: decimals, active: true });
+        _tokens.push(token);
+
+        emit TokenRegistered(token, decimals);
     }
 
     /// @inheritdoc ITokenRegistry
@@ -118,7 +118,7 @@ contract TokenRegistry is ITokenRegistry, AccessControl {
     // -------------------------------------------------------------------------
 
     function _requireListed(address token) private view returns (TokenConfig storage config) {
+        if (!_listed[token]) revert TokenNotListed(token);
         config = _configs[token];
-        if (config.priceFeed == address(0)) revert TokenNotListed(token);
     }
 }

@@ -1,6 +1,6 @@
-// Generated from contracts/out/TokenRegistry.sol/TokenRegistry.json. Do not edit.
+// Generated from contracts/out/MockPriceOracle.sol/MockPriceOracle.json. Do not edit.
 // Regenerate: make build  (or: node scripts/sync-contract-abis.mjs)
-export const tokenRegistryAbi = [
+export const mockPriceOracleAbi = [
   {
     type: 'constructor',
     inputs: [
@@ -27,13 +27,45 @@ export const tokenRegistryAbi = [
   },
   {
     type: 'function',
-    name: 'REGISTRY_ADMIN_ROLE',
+    name: 'DEFAULT_FEED_DECIMALS',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
+        type: 'uint8',
+        internalType: 'uint8',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'ORACLE_UPDATER_ROLE',
     inputs: [],
     outputs: [
       {
         name: '',
         type: 'bytes32',
         internalType: 'bytes32',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'decimals',
+    inputs: [
+      {
+        name: 'asset',
+        type: 'address',
+        internalType: 'address',
+      },
+    ],
+    outputs: [
+      {
+        name: '',
+        type: 'uint8',
+        internalType: 'uint8',
       },
     ],
     stateMutability: 'view',
@@ -53,37 +85,6 @@ export const tokenRegistryAbi = [
         name: '',
         type: 'bytes32',
         internalType: 'bytes32',
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'getTokenConfig',
-    inputs: [
-      {
-        name: 'token',
-        type: 'address',
-        internalType: 'address',
-      },
-    ],
-    outputs: [
-      {
-        name: '',
-        type: 'tuple',
-        internalType: 'struct ITokenRegistry.TokenConfig',
-        components: [
-          {
-            name: 'decimals',
-            type: 'uint8',
-            internalType: 'uint8',
-          },
-          {
-            name: 'active',
-            type: 'bool',
-            internalType: 'bool',
-          },
-        ],
       },
     ],
     stateMutability: 'view',
@@ -132,67 +133,42 @@ export const tokenRegistryAbi = [
   },
   {
     type: 'function',
-    name: 'isTokenActive',
+    name: 'latestRoundData',
     inputs: [
       {
-        name: 'token',
+        name: 'asset',
         type: 'address',
         internalType: 'address',
       },
     ],
     outputs: [
       {
-        name: '',
-        type: 'bool',
-        internalType: 'bool',
+        name: 'roundId',
+        type: 'uint80',
+        internalType: 'uint80',
+      },
+      {
+        name: 'answer',
+        type: 'int256',
+        internalType: 'int256',
+      },
+      {
+        name: 'startedAt',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+      {
+        name: 'updatedAt',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+      {
+        name: 'answeredInRound',
+        type: 'uint80',
+        internalType: 'uint80',
       },
     ],
     stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'isTokenListed',
-    inputs: [
-      {
-        name: 'token',
-        type: 'address',
-        internalType: 'address',
-      },
-    ],
-    outputs: [
-      {
-        name: '',
-        type: 'bool',
-        internalType: 'bool',
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'priceOracle',
-    inputs: [],
-    outputs: [
-      {
-        name: '',
-        type: 'address',
-        internalType: 'address',
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'registerToken',
-    inputs: [
-      {
-        name: 'token',
-        type: 'address',
-        internalType: 'address',
-      },
-    ],
-    outputs: [],
-    stateMutability: 'nonpayable',
   },
   {
     type: 'function',
@@ -232,12 +208,17 @@ export const tokenRegistryAbi = [
   },
   {
     type: 'function',
-    name: 'setPriceOracle',
+    name: 'setPrice',
     inputs: [
       {
-        name: 'priceOracle_',
+        name: 'asset',
         type: 'address',
         internalType: 'address',
+      },
+      {
+        name: 'price',
+        type: 'int256',
+        internalType: 'int256',
       },
     ],
     outputs: [],
@@ -245,17 +226,35 @@ export const tokenRegistryAbi = [
   },
   {
     type: 'function',
-    name: 'setTokenActive',
+    name: 'setPrices',
     inputs: [
       {
-        name: 'token',
+        name: 'assets',
+        type: 'address[]',
+        internalType: 'address[]',
+      },
+      {
+        name: 'prices',
+        type: 'int256[]',
+        internalType: 'int256[]',
+      },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'setUpdatedAt',
+    inputs: [
+      {
+        name: 'asset',
         type: 'address',
         internalType: 'address',
       },
       {
-        name: 'active',
-        type: 'bool',
-        internalType: 'bool',
+        name: 'updatedAt_',
+        type: 'uint256',
+        internalType: 'uint256',
       },
     ],
     outputs: [],
@@ -279,70 +278,6 @@ export const tokenRegistryAbi = [
       },
     ],
     stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'tokenAt',
-    inputs: [
-      {
-        name: 'index',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
-    ],
-    outputs: [
-      {
-        name: '',
-        type: 'address',
-        internalType: 'address',
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'tokenCount',
-    inputs: [],
-    outputs: [
-      {
-        name: '',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'tokenDecimals',
-    inputs: [
-      {
-        name: 'token',
-        type: 'address',
-        internalType: 'address',
-      },
-    ],
-    outputs: [
-      {
-        name: '',
-        type: 'uint8',
-        internalType: 'uint8',
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'event',
-    name: 'PriceOracleSet',
-    inputs: [
-      {
-        name: 'priceOracle',
-        type: 'address',
-        indexed: true,
-        internalType: 'address',
-      },
-    ],
-    anonymous: false,
   },
   {
     type: 'event',
@@ -420,44 +355,6 @@ export const tokenRegistryAbi = [
     anonymous: false,
   },
   {
-    type: 'event',
-    name: 'TokenActiveUpdated',
-    inputs: [
-      {
-        name: 'token',
-        type: 'address',
-        indexed: true,
-        internalType: 'address',
-      },
-      {
-        name: 'active',
-        type: 'bool',
-        indexed: false,
-        internalType: 'bool',
-      },
-    ],
-    anonymous: false,
-  },
-  {
-    type: 'event',
-    name: 'TokenRegistered',
-    inputs: [
-      {
-        name: 'token',
-        type: 'address',
-        indexed: true,
-        internalType: 'address',
-      },
-      {
-        name: 'decimals',
-        type: 'uint8',
-        indexed: false,
-        internalType: 'uint8',
-      },
-    ],
-    anonymous: false,
-  },
-  {
     type: 'error',
     name: 'AccessControlBadConfirmation',
     inputs: [],
@@ -480,26 +377,15 @@ export const tokenRegistryAbi = [
   },
   {
     type: 'error',
-    name: 'PriceOracleNotSet',
+    name: 'LengthMismatch',
     inputs: [],
   },
   {
     type: 'error',
-    name: 'TokenAlreadyListed',
+    name: 'TokenNotQuoted',
     inputs: [
       {
-        name: 'token',
-        type: 'address',
-        internalType: 'address',
-      },
-    ],
-  },
-  {
-    type: 'error',
-    name: 'TokenNotListed',
-    inputs: [
-      {
-        name: 'token',
+        name: 'asset',
         type: 'address',
         internalType: 'address',
       },

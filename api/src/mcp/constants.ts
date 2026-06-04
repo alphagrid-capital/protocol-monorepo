@@ -4,6 +4,9 @@ export const MCP_SERVER_VERSION = '0.1.0'
 /** Single source of truth for MCP tool names (discovery + server registration). */
 export const MCP_TOOL_NAMES = {
   listVaults: 'alphagrid_list_vaults',
+  listTokens: 'alphagrid_list_tokens',
+  listVaultTokens: 'alphagrid_list_vault_tokens',
+  getPrices: 'alphagrid_get_prices',
   getAgent: 'alphagrid_get_agent',
   getAgentByErc8004: 'alphagrid_get_agent_by_erc8004',
   linkAgentErc8004: 'alphagrid_link_agent_erc8004',

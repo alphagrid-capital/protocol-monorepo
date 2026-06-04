@@ -13,6 +13,7 @@ export interface ChainContracts {
   FeeManager: `0x${string}` | null
   VaultTrackRegistry: `0x${string}` | null
   TokenRegistry: `0x${string}` | null
+  PriceOracle: `0x${string}` | null
   AgentRegistry: `0x${string}` | null
   AllocationManager: `0x${string}` | null
   VaultFactory: `0x${string}` | null
@@ -28,17 +29,18 @@ export const contracts: Record<number, ChainContracts> = {
   84532: {
     networkName: 'Base Sepolia',
     network: 'eip155:84532',
-    FeeManager: '0x386716954D7c2e8E564b1558950727aD90e361d1',
-    VaultTrackRegistry: '0xe3865cfc8FD79430ADb133E4eD8B618d28858a56',
-    TokenRegistry: '0x3aFbc4035BFc77BD368925CABd535DcfA3bfc4c9',
-    AgentRegistry: '0x06E65607DD380f2A8c67B02F82Acc2FE3EA6b3A4',
-    AllocationManager: '0xE06733450584034A3A02aa255EA8743731971617',
-    VaultFactory: '0xf396dB3b0c1C5a495446577e90f938CcB726dB0E',
-    VaultImplementation: '0x1138139a0dC266Ea3c3a69428e80b21DB8098E0e',
-    FoundationVault: '0x98e47A7CF1Cc880aDA3CC51D39b136BDf0D962AA',
-    TechVault: '0x0853980Fa3B445CF3e3DEF2926D167Db35048A61',
-    VolatilityVault: '0x372F63C1c2bCA269Da95Dd06567c5Cc5b94C20b0',
-    MacroVault: '0x885f46965f452f02dF48d1d137d67777a185aFa4',
+    FeeManager: '0x6599cCCc646dCe746fA0b86690D36D78C3AA6943',
+    VaultTrackRegistry: '0x675215dd3233b96Ed7944Aa1b25105AF9D0317D2',
+    TokenRegistry: '0x4F29A28fA74d49173555Fd70BB769658034E02cD',
+    AgentRegistry: '0x8D416f94E01933daF4B792586e3A8e09D1e541bf',
+    AllocationManager: '0xa76a011Bd649B29CF73aB691ADE91Cfb3a6CDE34',
+    VaultFactory: '0xbF1A49c6bE1a39D954a1ff43f3AF280FC6C873eF',
+    VaultImplementation: '0xA3C721A384371d95d617d96c990E3e1ECdaAADB1',
+    FoundationVault: '0x603086b9e9064647f8E5cD2ce37525fEcf089953',
+    TechVault: '0x098dE57861012069292AE329E0a3E8AC17181c53',
+    VolatilityVault: '0x5f9B0818be458607f19398Debb81995bc4a7Cbf3',
+    MacroVault: '0x51c111f7287B42BC60A64Bf038d2868b520d0302',
+    PriceOracle: '0x6E41Db913c61D654F8624958F0B5fE30bE7595Ac',
     usdc: {
       address: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
       symbol: 'USDC',
@@ -52,6 +54,7 @@ export const contracts: Record<number, ChainContracts> = {
     FeeManager: null,
     VaultTrackRegistry: null,
     TokenRegistry: null,
+    PriceOracle: null,
     AgentRegistry: null,
     AllocationManager: null,
     VaultFactory: null,
@@ -73,6 +76,7 @@ export const contracts: Record<number, ChainContracts> = {
     FeeManager: null,
     VaultTrackRegistry: null,
     TokenRegistry: null,
+    PriceOracle: null,
     AgentRegistry: null,
     AllocationManager: null,
     VaultFactory: null,
@@ -94,6 +98,7 @@ export const contracts: Record<number, ChainContracts> = {
     FeeManager: null,
     VaultTrackRegistry: null,
     TokenRegistry: null,
+    PriceOracle: null,
     AgentRegistry: null,
     AllocationManager: null,
     VaultFactory: null,

@@ -40,7 +40,7 @@ contract TradeRouterLadderTest is TradingTestBase {
         uint256 initialTokens = positionManager.getPosition(positionId).tokenAmount;
         assertEq(allocationManager.allocationUsed(agentId), 10_000e6);
 
-        nvdaFeed.setPrice(135e8);
+        _setTokenPrice(address(nvda), 135e8);
         vm.prank(makeAddr("keeper1"));
         tradeRouter.executeExit(positionId);
 
@@ -48,7 +48,7 @@ contract TradeRouterLadderTest is TradingTestBase {
         assertEq(remaining, initialTokens / 2);
         assertEq(allocationManager.allocationUsed(agentId), 5000e6);
 
-        nvdaFeed.setPrice(115e8);
+        _setTokenPrice(address(nvda), 115e8);
         vm.prank(makeAddr("keeper2"));
         tradeRouter.executeExit(positionId);
 
@@ -84,13 +84,13 @@ contract TradeRouterLadderTest is TradingTestBase {
         vm.prank(executor);
         uint256 positionId = tradeRouter.openPosition(intent, sig);
 
-        nvdaFeed.setPrice(170e8);
+        _setTokenPrice(address(nvda), 170e8);
         vm.prank(makeAddr("keeperTp"));
         tradeRouter.executeExit(positionId);
 
         assertGt(positionManager.getPosition(positionId).tokenAmount, 0);
 
-        nvdaFeed.setPrice(130e8);
+        _setTokenPrice(address(nvda), 130e8);
         vm.prank(makeAddr("keeperSl"));
         tradeRouter.executeExit(positionId);
 

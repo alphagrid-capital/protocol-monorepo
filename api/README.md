@@ -26,15 +26,19 @@ yarn deploy      # Deploy to Cloudflare (requires account auth)
 
 ## Endpoints
 
-| Method | Path                 | Description                                                |
-| ------ | -------------------- | ---------------------------------------------------------- |
-| `GET`  | `/`                  | API discovery JSON (generated from OpenAPI)                |
-| `GET`  | `/llms.txt`          | LLM-oriented index ([llms.txt spec](https://llmstxt.org/)) |
-| `GET`  | `/health`            | Liveness probe                                             |
-| `GET`  | `/vaults`            | Mock vault catalog (`?format=md` for markdown)             |
-| `GET`  | `/docs`              | Swagger UI (humans; poor fit for URL paste in chat)        |
-| `GET`  | `/docs/swagger.json` | OpenAPI 3.1 (Custom GPT Actions)                           |
-| `POST` | `/mcp`               | MCP Streamable HTTP (stateless JSON)                       |
+| Method | Path                  | Description                                                |
+| ------ | --------------------- | ---------------------------------------------------------- |
+| `GET`  | `/`                   | API discovery JSON (generated from OpenAPI)                |
+| `GET`  | `/llms.txt`           | LLM-oriented index ([llms.txt spec](https://llmstxt.org/)) |
+| `GET`  | `/health`             | Liveness probe                                             |
+| `GET`  | `/vaults`             | Vault catalog (`?format=md` for markdown)                  |
+| `GET`  | `/vaults/{id}/tokens` | Tradable tokens for a vault mandate + oracle prices        |
+| `GET`  | `/tokens`             | Global token catalog + on-chain registry state             |
+| `GET`  | `/prices`             | MockPriceOracle quotes indexed by symbol (e.g. `NVDA`)     |
+| `POST` | `/prices/refresh`     | Manually fetch Finnhub quotes and update the oracle        |
+| `GET`  | `/docs`               | Swagger UI (humans; poor fit for URL paste in chat)        |
+| `GET`  | `/docs/swagger.json`  | OpenAPI 3.1 (Custom GPT Actions)                           |
+| `POST` | `/mcp`                | MCP Streamable HTTP (stateless JSON)                       |
 
 ## Using with ChatGPT and other LLMs
 
@@ -45,20 +49,23 @@ ChatGPT **browsing** only performs simple `GET` requests on **public** URLs. It 
 | Paste a URL in chat and get vault data | Deployed `GET /vaults` or `GET /vaults?format=md`                            |
 | Let ChatGPT discover endpoints         | Deployed `GET /` or `GET /llms.txt` (both derived from `/docs/swagger.json`) |
 | Custom GPT with structured actions     | Import `GET /docs/swagger.json` when creating Actions                        |
-| Claude / Cursor / MCP-native clients   | `POST /mcp` (see MCP tools table below)                                    |
+| Claude / Cursor / MCP-native clients   | `POST /mcp` (see MCP tools table below)                                      |
 
 **Do not paste** `/docs` if you want JSON—the UI is HTML. Paste the **data URL**, e.g. `https://<your-worker>.workers.dev/vaults?format=md`.
 
 ### MCP tools
 
-| Tool                                       | HTTP equivalent                 |
-| ------------------------------------------ | ------------------------------- |
-| `alphagrid_list_vaults`                    | `GET /vaults`                   |
-| `alphagrid_get_agent`                      | `GET /agents/{agentId}`                    |
-| `alphagrid_get_agent_by_erc8004`           | `GET /agents/by-erc8004/{erc8004AgentId}` |
-| `alphagrid_link_agent_erc8004`             | `POST /agents/{agentId}/erc8004/link`      |
-| `alphagrid_get_agent_registration_quote`   | `GET /agents/register/quote`               |
-| `alphagrid_register_agent`                 | `POST /agents/register`                    |
+| Tool                                     | HTTP equivalent                           |
+| ---------------------------------------- | ----------------------------------------- |
+| `alphagrid_list_vaults`                  | `GET /vaults`                             |
+| `alphagrid_list_tokens`                  | `GET /tokens`                             |
+| `alphagrid_list_vault_tokens`            | `GET /vaults/{id}/tokens`                 |
+| `alphagrid_get_prices`                   | `GET /prices`                             |
+| `alphagrid_get_agent`                    | `GET /agents/{agentId}`                   |
+| `alphagrid_get_agent_by_erc8004`         | `GET /agents/by-erc8004/{erc8004AgentId}` |
+| `alphagrid_link_agent_erc8004`           | `POST /agents/{agentId}/erc8004/link`     |
+| `alphagrid_get_agent_registration_quote` | `GET /agents/register/quote`              |
+| `alphagrid_register_agent`               | `POST /agents/register`                   |
 
 Connect MCP clients to `http://localhost:8787/mcp` in development (or your deployed Worker URL). Clients must send `Accept: application/json, text/event-stream` on MCP requests.
 
@@ -113,6 +120,19 @@ Add these under **Settings → Secrets and variables → Actions → Repository 
 - **Account** → **Workers Scripts** → **Read** (included in the template)
 
 `workflow_dispatch` on the API workflow also runs deploy when triggered on `main` (after type-check passes).
+
+## Mock price oracle (cron)
+
+When `PriceOracle` and token addresses are configured for `CHAIN_ID`, a cron (`*/15 * * * *` UTC, every day) calls Finnhub and submits `MockPriceOracle.setPrices`.
+
+| Secret / var                | Purpose                                                                            |
+| --------------------------- | ---------------------------------------------------------------------------------- |
+| `FINNHUB_API_KEY`           | Finnhub quote API (`wrangler secret put`)                                          |
+| `ORACLE_KEEPER_PRIVATE_KEY` | EOA with `ORACLE_UPDATER_ROLE` on `MockPriceOracle`                                |
+| `ORACLE_REFRESH_SECRET`     | Optional; if set, `POST /prices/refresh` requires `Authorization: Bearer <secret>` |
+| `RPC_URL` / `CHAIN_ID`      | Same as other on-chain reads                                                       |
+
+Fill `config/token-catalog.json` `chains.<id>.tokens` with addresses logged by `DeployTokenCatalog` before the keeper can update prices.
 
 ## Environment
 

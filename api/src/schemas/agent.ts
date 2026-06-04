@@ -140,7 +140,8 @@ export const GetAgentInputSchema = z
 export const LinkErc8004RequestSchema = z
   .object({
     erc8004AgentId: erc8004AgentIdParamSchema.openapi({
-      description: 'ERC-8004 identity token id to link; agent owner must hold the NFT',
+      description:
+        'ERC-8004 identity token id to link; agent owner must hold the NFT',
     }),
   })
   .strict()

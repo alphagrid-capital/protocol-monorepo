@@ -28,7 +28,7 @@ contract TradeRouterTest is TradingTestBase {
         assertGt(positionManager.getPosition(positionId).tokenAmount, 0);
         assertEq(positionManager.totalTokenLedger(address(nvda)), IERC20(address(nvda)).balanceOf(vaultAddr));
 
-        nvdaFeed.setPrice(120e8);
+        _setTokenPrice(address(nvda), 120e8);
 
         address keeper = makeAddr("keeper");
         uint256 keeperBefore = usdc.balanceOf(keeper);
@@ -73,7 +73,7 @@ contract TradeRouterTest is TradingTestBase {
 
         assertFalse(tradeRouter.isTriggerMet(positionId));
 
-        nvdaFeed.setPrice(130e8);
+        _setTokenPrice(address(nvda), 130e8);
         assertTrue(tradeRouter.isTriggerMet(positionId));
     }
 
@@ -160,7 +160,7 @@ contract TradeRouterTest is TradingTestBase {
         vm.prank(operator);
         registry.pause();
 
-        nvdaFeed.setPrice(120e8);
+        _setTokenPrice(address(nvda), 120e8);
         vm.prank(makeAddr("keeper"));
         tradeRouter.executeExit(positionId);
 

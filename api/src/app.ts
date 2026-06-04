@@ -6,6 +6,7 @@ import { openApiJsonResponse } from './openapi.js'
 import { registerDiscoveryRoutes } from './routes/discovery.js'
 import { agentRoutes } from './routes/agents.js'
 import { healthRoutes } from './routes/health.js'
+import { tokenRoutes } from './routes/tokens.js'
 import { vaultRoutes } from './routes/vaults.js'
 import type { WorkerEnv } from './types/worker-env.js'
 
@@ -52,6 +53,7 @@ function registerGlobalMiddleware(app: OpenAPIHono): void {
 function registerHttpRoutes(app: OpenAPIHono): void {
   app.route('/', healthRoutes)
   app.route('/', vaultRoutes)
+  app.route('/', tokenRoutes)
   app.route('/', agentRoutes)
   registerDiscoveryRoutes(app)
 }

@@ -1,6 +1,6 @@
 import type { Address, PublicClient } from 'viem'
-import { contracts  } from '../constants/contracts.js'
-import type {ChainContracts} from '../constants/contracts.js';
+import { contracts } from '../constants/contracts.js'
+import type { ChainContracts } from '../constants/contracts.js'
 import { getWorkerEnv } from '../lib/worker-env.js'
 import type {
   ListVaultsResult,
@@ -75,12 +75,7 @@ const KNOWN_VAULT_CATALOG: Record<string, VaultCatalogEntry> = {
   },
 }
 
-const DEPLOYED_VAULT_KEYS = [
-  ['FoundationVault', 'foundation'],
-  ['TechVault', 'tech'],
-  ['VolatilityVault', 'volatility'],
-  ['MacroVault', 'macro'],
-] as const satisfies readonly [keyof ChainContracts, keyof typeof KNOWN_VAULT_CATALOG][]
+import { DEPLOYED_VAULT_KEYS } from '../constants/deployed-vaults.js'
 
 function requireEnv(
   env: Record<string, string | undefined>,
@@ -200,9 +195,7 @@ export class VaultsService {
       )
     )
 
-    return configs.map((config) =>
-      serializeVaultTrackConfig(config)
-    )
+    return configs.map((config) => serializeVaultTrackConfig(config))
   }
 
   /** Returns a single vault by `id`, `slug`, or contract address, or null if unknown. */

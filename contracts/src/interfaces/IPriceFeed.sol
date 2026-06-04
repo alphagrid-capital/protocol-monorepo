@@ -2,12 +2,12 @@
 pragma solidity ^0.8.30;
 
 /// @title IPriceFeed
-/// @notice Chainlink-compatible price feed interface for vault NAV.
+/// @notice Multi-asset price oracle interface.
 interface IPriceFeed {
-    function latestRoundData()
+    function latestRoundData(address asset)
         external
         view
         returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound);
 
-    function decimals() external view returns (uint8);
+    function decimals(address asset) external view returns (uint8);
 }
