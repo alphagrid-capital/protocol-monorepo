@@ -99,7 +99,7 @@ function applyPaymentErrorToHono(
 ): void {
   const { response } = result
   const body = response.isHtml
-    ? String(response.body ?? '')
+    ? String(response.body?.toString() ?? '')
     : JSON.stringify(response.body ?? {})
   c.res = new Response(body, {
     status: response.status,
@@ -130,7 +130,7 @@ async function settleAfterHandler(
   if (!settleResult.success) {
     const { response: settleResponse } = settleResult
     const body = settleResponse.isHtml
-      ? String(settleResponse.body ?? '')
+      ? String(settleResponse.body?.toString() ?? '')
       : JSON.stringify(settleResponse.body ?? {})
     return new Response(body, {
       status: settleResponse.status,
@@ -279,7 +279,7 @@ export async function runX402ProtectedRequest<T>(options: {
     if (!settleResult.success) {
       const { response: settleResponse } = settleResult
       const body = settleResponse.isHtml
-        ? String(settleResponse.body ?? '')
+        ? String(settleResponse.body?.toString() ?? '')
         : JSON.stringify(settleResponse.body ?? {})
       return {
         ok: false,

@@ -1,5 +1,6 @@
 import type { Address, PublicClient } from 'viem'
-import { contracts, type ChainContracts } from '../constants/contracts.js'
+import { contracts  } from '../constants/contracts.js'
+import type {ChainContracts} from '../constants/contracts.js';
 import { getWorkerEnv } from '../lib/worker-env.js'
 import type {
   ListVaultsResult,
@@ -21,7 +22,7 @@ type VaultCatalogEntry = Pick<
   'id' | 'name' | 'slug' | 'tagline' | 'description'
 >
 
-type OnChainVaultTrackConfig = {
+interface OnChainVaultTrackConfig {
   vault: Address
   trackId: bigint
   initialAllocation: bigint
@@ -79,9 +80,7 @@ const DEPLOYED_VAULT_KEYS = [
   ['TechVault', 'tech'],
   ['VolatilityVault', 'volatility'],
   ['MacroVault', 'macro'],
-] as const satisfies ReadonlyArray<
-  [keyof ChainContracts, keyof typeof KNOWN_VAULT_CATALOG]
->
+] as const satisfies readonly [keyof ChainContracts, keyof typeof KNOWN_VAULT_CATALOG][]
 
 function requireEnv(
   env: Record<string, string | undefined>,
@@ -124,7 +123,7 @@ function catalogEntryForAddress(
 
   for (const [contractKey, catalogKey] of DEPLOYED_VAULT_KEYS) {
     const deployed = chainContracts[contractKey]
-    if (deployed && deployed.toLowerCase() === normalized) {
+    if (deployed?.toLowerCase() === normalized) {
       return KNOWN_VAULT_CATALOG[catalogKey]
     }
   }
@@ -202,7 +201,7 @@ export class VaultsService {
     )
 
     return configs.map((config) =>
-      serializeVaultTrackConfig(config as OnChainVaultTrackConfig)
+      serializeVaultTrackConfig(config)
     )
   }
 
