@@ -211,6 +211,10 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
         AgentStatus oldStatus = agent.status;
         agent.status = status;
         emit AgentStatusChanged(agentId, oldStatus, status);
+
+        if (address(allocationManager) != address(0) && _isTerminalAgentStatus(status)) {
+            allocationManager.onAgentRemoved(agentId);
+        }
     }
 
     /// @inheritdoc IAgentRegistry
@@ -486,5 +490,10 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
     function _isVaultApproved(address vault) private view returns (bool) {
         if (address(vaultTrackRegistry) == address(0)) revert VaultTrackRegistryNotSet();
         return vaultTrackRegistry.isVaultTrackActive(vault, uint256(Track.CHALLENGE));
+    }
+
+    /// @dev Terminal statuses release allocation cap via AllocationManager.
+    function _isTerminalAgentStatus(AgentStatus status) private pure returns (bool) {
+        return status == AgentStatus.Failed || status == AgentStatus.Exited || status == AgentStatus.Graduated;
     }
 }

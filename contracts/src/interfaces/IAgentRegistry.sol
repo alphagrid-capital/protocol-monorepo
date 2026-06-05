@@ -21,11 +21,17 @@ interface IAgentRegistry {
 
     /// @notice Agent lifecycle status.
     enum AgentStatus {
+        /// @dev Reserved: created but not yet entered into a vault track (unused in MVP registration).
         Draft,
+        /// @dev Default at registration; agent may open positions and compete on its current track.
         Active,
+        /// @dev Temporary operator pause; exits and force-close remain allowed, new opens blocked.
         Suspended,
+        /// @dev Terminal: failed track rules or risk policy; releases allocation cap via AllocationManager.
         Failed,
+        /// @dev Terminal: completed the program successfully; releases allocation cap (distinct from track promotion).
         Graduated,
+        /// @dev Terminal: voluntary or administrative removal; releases allocation cap.
         Exited
     }
 

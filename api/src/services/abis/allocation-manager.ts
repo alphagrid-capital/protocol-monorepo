@@ -259,6 +259,19 @@ export const allocationManagerAbi = [
   },
   {
     type: 'function',
+    name: 'onAgentRemoved',
+    inputs: [
+      {
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
     name: 'onAgentRegistered',
     inputs: [
       {
@@ -680,13 +693,24 @@ export const allocationManagerAbi = [
   },
   {
     type: 'error',
-    name: 'ExceedsMaxAllocation',
+    name: 'AllocationInUse',
     inputs: [
       {
         name: 'agentId',
         type: 'uint256',
         internalType: 'uint256',
       },
+      {
+        name: 'used',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+  },
+  {
+    type: 'error',
+    name: 'ExceedsMaxAllocation',
+    inputs: [
       {
         name: 'cap',
         type: 'uint256',

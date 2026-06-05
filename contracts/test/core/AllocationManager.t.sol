@@ -95,6 +95,53 @@ contract AllocationManagerTest is BaseTest {
         assertEq(allocationManager.totalAgentCaps(address(vault)), CHALLENGE_CAP);
     }
 
+    function test_OnAgentPromoted_AllowsUsedAboveNewCap() public {
+        uint256 challengeCap = 50_000e6;
+        uint256 fundedCap = 30_000e6;
+        uint256 used = 40_000e6;
+
+        vm.startPrank(deployer);
+        _setVaultTrackConfig(address(vault), 0, challengeCap, 100_000e6);
+        _setVaultTrackConfig(address(vault), 1, fundedCap, 100_000e6);
+        vm.stopPrank();
+
+        vm.startPrank(operator);
+        uint256 agentId = _registerAgent(alice, "Bot", "ipfs://bot");
+        allocationManager.setAllocationUsed(agentId, used);
+        registry.promoteAgent(agentId, IAgentRegistry.Track.FUNDED);
+        vm.stopPrank();
+
+        IAllocationManager.Allocation memory allocation = allocationManager.getAllocation(agentId);
+        assertEq(allocation.used, used);
+        assertEq(allocation.cap, fundedCap);
+        assertGt(allocation.used, allocation.cap);
+        assertEq(allocationManager.totalAgentCaps(address(vault)), fundedCap);
+    }
+
+    function test_OnAgentPromoted_IgnoresInactiveTargetTrack() public {
+        vm.prank(deployer);
+        _setVaultTrackConfigWithActive(address(vault), 1, FUNDED_CAP, 100_000e6, false);
+
+        vm.startPrank(operator);
+        uint256 agentId = _registerAgent(alice, "Bot", "ipfs://bot");
+        registry.promoteAgent(agentId, IAgentRegistry.Track.FUNDED);
+        vm.stopPrank();
+
+        IAllocationManager.Allocation memory allocation = allocationManager.getAllocation(agentId);
+        assertEq(allocation.trackId, 1);
+        assertEq(allocation.cap, FUNDED_CAP);
+    }
+
+    function test_OnAgentRegistered_IgnoresInactiveTrack() public {
+        vm.prank(deployer);
+        _setVaultTrackConfigWithActive(address(vault), 0, CHALLENGE_CAP, 25_000e6, false);
+
+        vm.prank(address(registry));
+        allocationManager.onAgentRegistered(1, address(vault), 0);
+
+        assertEq(allocationManager.allocationCap(1), CHALLENGE_CAP);
+    }
+
     function test_OnAgentPromotedUpdatesCap() public {
         vm.startPrank(operator);
         uint256 agentId = _registerAgent(alice, "Bot", "ipfs://bot");
@@ -201,6 +248,54 @@ contract AllocationManagerTest is BaseTest {
         assertEq(allocationManager.totalAgentCaps(address(vault)), CHALLENGE_CAP * 2);
     }
 
+    function test_OnAgentRemoved_ReleasesCap() public {
+        vm.startPrank(operator);
+        uint256 agentId = _registerAgent(alice, "Bot", "ipfs://bot");
+        vm.stopPrank();
+
+        vm.prank(address(registry));
+        allocationManager.onAgentRemoved(agentId);
+
+        IAllocationManager.Allocation memory allocation = allocationManager.getAllocation(agentId);
+        assertEq(uint256(allocation.status), uint256(IAllocationManager.AllocationStatus.Removed));
+        assertEq(allocation.cap, 0);
+        assertEq(allocationManager.totalAgentCaps(address(vault)), 0);
+    }
+
+    function test_OnAgentRemoved_Idempotent() public {
+        vm.startPrank(operator);
+        uint256 agentId = _registerAgent(alice, "Bot", "ipfs://bot");
+        registry.setAgentStatus(agentId, IAgentRegistry.AgentStatus.Failed);
+        registry.setAgentStatus(agentId, IAgentRegistry.AgentStatus.Exited);
+        vm.stopPrank();
+
+        assertEq(allocationManager.totalAgentCaps(address(vault)), 0);
+    }
+
+    function test_RevertWhen_RemoveWithUsedNonZero() public {
+        vm.startPrank(operator);
+        uint256 agentId = _registerAgent(alice, "Bot", "ipfs://bot");
+        allocationManager.setAllocationUsed(agentId, 1e6);
+        vm.stopPrank();
+
+        vm.expectRevert(abi.encodeWithSelector(AllocationManager.AllocationInUse.selector, agentId, 1e6));
+        vm.prank(address(registry));
+        allocationManager.onAgentRemoved(agentId);
+    }
+
+    function test_SetAgentStatus_TerminalStatusReleasesCap() public {
+        vm.startPrank(operator);
+        uint256 agentId = _registerAgent(alice, "Bot", "ipfs://bot");
+        registry.setAgentStatus(agentId, IAgentRegistry.AgentStatus.Failed);
+        vm.stopPrank();
+
+        assertEq(allocationManager.totalAgentCaps(address(vault)), 0);
+        assertEq(
+            uint256(allocationManager.getAllocation(agentId).status),
+            uint256(IAllocationManager.AllocationStatus.Removed)
+        );
+    }
+
     function test_SetAgentRegistry_EmitsEvent() public {
         address newRegistry = makeAddr("newRegistry");
 
@@ -226,6 +321,16 @@ contract AllocationManagerTest is BaseTest {
     function _setVaultTrackConfig(address vault_, uint256 trackId, uint256 initialAllocation, uint256 maxAllocation)
         internal
     {
+        _setVaultTrackConfigWithActive(vault_, trackId, initialAllocation, maxAllocation, true);
+    }
+
+    function _setVaultTrackConfigWithActive(
+        address vault_,
+        uint256 trackId,
+        uint256 initialAllocation,
+        uint256 maxAllocation,
+        bool active
+    ) internal {
         vaultTrackRegistry.setVaultTrackConfig(
             vault_,
             trackId,
@@ -240,7 +345,7 @@ contract AllocationManagerTest is BaseTest {
                 evaluationPeriod: 14 days,
                 minTrades: 5,
                 promotionScore: 70,
-                active: true
+                active: active
             })
         );
     }

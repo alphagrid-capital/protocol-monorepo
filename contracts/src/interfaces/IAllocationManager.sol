@@ -20,7 +20,7 @@ interface IAllocationManager {
         uint256 trackId;
         /// @dev USDC-equivalent exposure cap for this agent on `vault`.
         uint256 cap;
-        /// @dev USDC-equivalent notional currently deployed (updated by operator until TradeRouter).
+        /// @dev USDC-equivalent notional currently deployed.
         uint256 used;
         AllocationStatus status;
         uint64 createdAt;
@@ -66,6 +66,9 @@ interface IAllocationManager {
 
     /// @notice Resize allocation when an agent is promoted to a new track.
     function onAgentPromoted(uint256 agentId, address vault, uint256 fromTrackId, uint256 toTrackId) external;
+
+    /// @notice Release vault cap when an agent reaches a terminal registry status.
+    function onAgentRemoved(uint256 agentId) external;
 
     // -------------------------------------------------------------------------
     // Operator

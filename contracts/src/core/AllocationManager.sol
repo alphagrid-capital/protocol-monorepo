@@ -36,8 +36,9 @@ contract AllocationManager is IAllocationManager, AccessControl {
     error AllocationNotFound(uint256 agentId);
     error VaultMismatch(uint256 agentId, address expected, address actual);
     error TrackMismatch(uint256 agentId, uint256 expected, uint256 actual);
-    error ExceedsMaxAllocation(uint256 agentId, uint256 cap, uint256 maxAllocation);
+    error ExceedsMaxAllocation(uint256 cap, uint256 maxAllocation);
     error UsedExceedsCap(uint256 agentId, uint256 used, uint256 cap);
+    error AllocationInUse(uint256 agentId, uint256 used);
     error VaultTrackRegistryNotSet();
 
     // -------------------------------------------------------------------------
@@ -73,6 +74,7 @@ contract AllocationManager is IAllocationManager, AccessControl {
     // -------------------------------------------------------------------------
 
     /// @inheritdoc IAllocationManager
+    /// @dev Does not check `isVaultTrackActive`; AgentRegistry gates registration and TradeRouter gates opens.
     function onAgentRegistered(uint256 agentId, address vault, uint256 trackId) external onlyAgentRegistry {
         if (_allocations[agentId].vault != address(0)) revert AllocationExists(agentId);
 
@@ -81,6 +83,8 @@ contract AllocationManager is IAllocationManager, AccessControl {
     }
 
     /// @inheritdoc IAllocationManager
+    /// @dev Does not verify `used <=` new cap. Operator must promote only after exposure fits the target
+    ///      track cap; otherwise `used` may exceed `cap` and TradeRouter blocks new opens until `used` drops.
     function onAgentPromoted(uint256 agentId, address vault, uint256 fromTrackId, uint256 toTrackId)
         external
         onlyAgentRegistry
@@ -97,6 +101,23 @@ contract AllocationManager is IAllocationManager, AccessControl {
         _totalAgentCaps[vault] += cap;
 
         emit AllocationUpdated(agentId, vault, toTrackId, cap, allocation.status);
+    }
+
+    /// @inheritdoc IAllocationManager
+    function onAgentRemoved(uint256 agentId) external onlyAgentRegistry {
+        Allocation storage allocation = _requireAllocation(agentId);
+        if (allocation.status == AllocationStatus.Removed) return;
+
+        if (allocation.used != 0) revert AllocationInUse(agentId, allocation.used);
+
+        address vault = allocation.vault;
+        uint256 cap = allocation.cap;
+        allocation.status = AllocationStatus.Removed;
+        allocation.cap = 0;
+        allocation.updatedAt = uint64(block.timestamp);
+        _totalAgentCaps[vault] -= cap;
+
+        emit AllocationUpdated(agentId, vault, allocation.trackId, 0, AllocationStatus.Removed);
     }
 
     // -------------------------------------------------------------------------
@@ -167,12 +188,13 @@ contract AllocationManager is IAllocationManager, AccessControl {
     // Private Functions
     // -------------------------------------------------------------------------
 
+    /// @dev Reads `initialAllocation` only; track `active` is enforced by AgentRegistry (register) and TradeRouter (open).
     function _initialCap(address vault, uint256 trackId) private view returns (uint256) {
         if (address(vaultTrackRegistry) == address(0)) revert VaultTrackRegistryNotSet();
 
         IVaultTrackRegistry.VaultTrackConfig memory config = vaultTrackRegistry.getVaultTrackConfig(vault, trackId);
         if (config.initialAllocation > config.maxAllocation) {
-            revert ExceedsMaxAllocation(0, config.initialAllocation, config.maxAllocation);
+            revert ExceedsMaxAllocation(config.initialAllocation, config.maxAllocation);
         }
         return config.initialAllocation;
     }
