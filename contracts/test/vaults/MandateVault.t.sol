@@ -69,7 +69,7 @@ contract MandateVaultTest is BaseTest {
         assertEq(vault.totalAssets(), 100_000e6);
     }
 
-    function test_WithdrawCappedByIdleUsdc() public {
+    function test_WithdrawCappedByIdleAssets() public {
         vm.startPrank(lp);
         usdc.approve(address(vault), 100_000e6);
         vault.deposit(100_000e6, lp);
@@ -335,7 +335,7 @@ contract MandateVaultTest is BaseTest {
 
         vm.prank(router);
         vm.expectRevert(MandateVault.TradingOperationsPaused.selector);
-        vault.pullUsdcForTrade(router, 1e6);
+        vault.pullAssetsForTrade(router, 1e6);
 
         nvda.mint(address(vault), 1e18);
 

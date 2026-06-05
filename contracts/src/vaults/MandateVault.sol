@@ -15,7 +15,7 @@ import { ITokenRegistry } from "../interfaces/ITokenRegistry.sol";
 import { OracleLib } from "../libraries/OracleLib.sol";
 
 /// @title MandateVault
-/// @notice USDC ERC-4626 vault. Deposits are USDC-only; NAV includes whitelisted token holdings at oracle prices.
+/// @notice ERC-4626 vault. Deposits are single-asset; NAV includes whitelisted token holdings at oracle prices.
 /// @dev EIP-1167 clone deployments: implementation constructor binds the ERC-4626 asset; per-clone state is set in {initialize}.
 contract MandateVault is IMandateVault, Initializable, ERC4626, AccessControl {
     using Math for uint256;
@@ -67,14 +67,14 @@ contract MandateVault is IMandateVault, Initializable, ERC4626, AccessControl {
     error TokenAlreadyAllowed(address token);
     error BpsOutOfRange(uint256 bps);
     error FeeRecipientRequired();
-    error InsufficientIdleUsdc(uint256 requested, uint256 available);
+    error InsufficientIdleAssets(uint256 requested, uint256 available);
     error InsufficientTokenBalance(address token, uint256 requested, uint256 available);
 
     // -------------------------------------------------------------------------
     // Constructor (implementation only)
     // -------------------------------------------------------------------------
 
-    /// @param asset_ ERC-4626 underlying asset (e.g. USDC). Shared by all clones using this implementation.
+    /// @param asset_ ERC-4626 underlying asset. Shared by all clones using this implementation.
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(IERC20 asset_) ERC20("", "") ERC4626(asset_) {
         _ASSET_DECIMALS = IERC20Metadata(address(asset_)).decimals();
@@ -347,9 +347,9 @@ contract MandateVault is IMandateVault, Initializable, ERC4626, AccessControl {
     }
 
     /// @inheritdoc IMandateVault
-    function pullUsdcForTrade(address to, uint256 amount) external onlyRole(TRADE_ROUTER_ROLE) {
+    function pullAssetsForTrade(address to, uint256 amount) external onlyRole(TRADE_ROUTER_ROLE) {
         if (tradingPaused) revert TradingOperationsPaused();
-        _pullUsdc(to, amount);
+        _pullAssets(to, amount);
     }
 
     /// @inheritdoc IMandateVault
@@ -367,10 +367,10 @@ contract MandateVault is IMandateVault, Initializable, ERC4626, AccessControl {
     // Private Functions
     // -------------------------------------------------------------------------
 
-    function _pullUsdc(address to, uint256 amount) private {
+    function _pullAssets(address to, uint256 amount) private {
         if (to == address(0)) revert ZeroAddress();
         uint256 idle = idleAssets();
-        if (amount > idle) revert InsufficientIdleUsdc(amount, idle);
+        if (amount > idle) revert InsufficientIdleAssets(amount, idle);
         IERC20(asset()).safeTransfer(to, amount);
     }
 

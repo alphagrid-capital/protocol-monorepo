@@ -664,6 +664,24 @@ export const mandateVaultAbi = [
   },
   {
     type: 'function',
+    name: 'pullAssetsForTrade',
+    inputs: [
+      {
+        name: 'to',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
+        name: 'amount',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
     name: 'pullTokenForForceClose',
     inputs: [
       {
@@ -694,24 +712,6 @@ export const mandateVaultAbi = [
         type: 'address',
         internalType: 'address',
       },
-      {
-        name: 'to',
-        type: 'address',
-        internalType: 'address',
-      },
-      {
-        name: 'amount',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
-    ],
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    name: 'pullUsdcForTrade',
-    inputs: [
       {
         name: 'to',
         type: 'address',
@@ -1635,7 +1635,7 @@ export const mandateVaultAbi = [
   },
   {
     type: 'error',
-    name: 'InsufficientIdleUsdc',
+    name: 'InsufficientIdleAssets',
     inputs: [
       {
         name: 'requested',

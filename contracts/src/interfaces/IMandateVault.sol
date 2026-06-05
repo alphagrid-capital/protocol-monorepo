@@ -5,7 +5,7 @@ import { IERC4626 } from "@openzeppelin/contracts/interfaces/IERC4626.sol";
 import { ITokenRegistry } from "./ITokenRegistry.sol";
 
 /// @title IMandateVault
-/// @notice ERC-4626 vault with USDC deposits and oracle-based NAV for mandate-allowed holdings.
+/// @notice ERC-4626 vault with asset deposits and oracle-based NAV for mandate-allowed holdings.
 interface IMandateVault is IERC4626 {
     // -------------------------------------------------------------------------
     // Events
@@ -42,7 +42,7 @@ interface IMandateVault is IERC4626 {
 
     function withdrawFeeBps() external view returns (uint256);
 
-    /// @notice USDC recipient for LP deposit and withdraw fees.
+    /// @notice Asset recipient for LP deposit and withdraw fees.
     function feeRecipient() external view returns (address);
 
     function idleAssets() external view returns (uint256);
@@ -93,7 +93,7 @@ interface IMandateVault is IERC4626 {
     // Trade router
     // -------------------------------------------------------------------------
 
-    function pullUsdcForTrade(address to, uint256 amount) external;
+    function pullAssetsForTrade(address to, uint256 amount) external;
 
     function pullTokenForTrade(address token, address to, uint256 amount) external;
 

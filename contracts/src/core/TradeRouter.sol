@@ -170,7 +170,7 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
         IMandateVault vault = IMandateVault(intent.vault);
         IAllocationManager.Allocation memory allocation = allocationManager.getAllocation(intent.agentId);
 
-        vault.pullUsdcForTrade(address(swapAdapter), intent.usdcAmount);
+        vault.pullAssetsForTrade(address(swapAdapter), intent.usdcAmount);
         uint256 tokenOut =
             swapAdapter.swapUsdcForToken(intent.vault, intent.token, intent.usdcAmount, intent.minTokenOut);
 
@@ -423,7 +423,7 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
         if (payBounty) {
             bounty = _keeperBounty(usdcOut);
             if (bounty > 0) {
-                vault.pullUsdcForTrade(bountyRecipient, bounty);
+                vault.pullAssetsForTrade(bountyRecipient, bounty);
             }
         }
 
