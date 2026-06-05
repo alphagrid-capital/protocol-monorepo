@@ -358,7 +358,7 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
             vault.tokenRegistry().priceOracle(),
             position.token,
             tokenDecimals,
-            6,
+            vault.assetDecimals(),
             vault.maxPriceAge()
         );
         if (position.entryPriceUsdc == 0) return 0;
@@ -384,7 +384,7 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
             vault.tokenRegistry().priceOracle(),
             token,
             vault.tokenRegistry().tokenDecimals(token),
-            6,
+            vault.assetDecimals(),
             vault.maxPriceAge()
         );
         return expected.mulDiv(MAX_BPS - maxSlippageBps, MAX_BPS, Math.Rounding.Floor);

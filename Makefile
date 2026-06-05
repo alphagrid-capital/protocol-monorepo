@@ -4,10 +4,11 @@ CONTRACTS := contracts
 
 build:
 	cd $(CONTRACTS) && forge build
-	node scripts/sync-contract-abis.mjs
+	$(MAKE) sync-abis
 
 sync-abis:
 	node scripts/sync-contract-abis.mjs
+	cd api && yarn format:abis
 
 test:
 	cd $(CONTRACTS) && forge test

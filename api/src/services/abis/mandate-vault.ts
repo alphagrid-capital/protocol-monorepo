@@ -159,6 +159,19 @@ export const mandateVaultAbi = [
   },
   {
     type: 'function',
+    name: 'assetDecimals',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
+        type: 'uint8',
+        internalType: 'uint8',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'balanceOf',
     inputs: [
       {

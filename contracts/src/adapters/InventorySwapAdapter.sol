@@ -74,7 +74,7 @@ contract InventorySwapAdapter is ISwapAdapter {
             mandateVault.tokenRegistry().priceOracle(),
             token,
             mandateVault.tokenRegistry().tokenDecimals(token),
-            6,
+            mandateVault.assetDecimals(),
             mandateVault.maxPriceAge()
         );
         if (usdcOut < minUsdcOut) revert SlippageExceeded();
@@ -89,7 +89,12 @@ contract InventorySwapAdapter is ISwapAdapter {
     function _usdcToTokenAmount(IMandateVault vault, address token, uint256 usdcIn) internal view returns (uint256) {
         uint8 tokenDecimals = vault.tokenRegistry().tokenDecimals(token);
         uint256 oneTokenUsdc = OracleLib.valueInAsset(
-            10 ** tokenDecimals, vault.tokenRegistry().priceOracle(), token, tokenDecimals, 6, vault.maxPriceAge()
+            10 ** tokenDecimals,
+            vault.tokenRegistry().priceOracle(),
+            token,
+            tokenDecimals,
+            vault.assetDecimals(),
+            vault.maxPriceAge()
         );
         if (oneTokenUsdc == 0) return 0;
         return (usdcIn * (10 ** tokenDecimals)) / oneTokenUsdc;

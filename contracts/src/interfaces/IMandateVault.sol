@@ -47,6 +47,9 @@ interface IMandateVault is IERC4626 {
 
     function idleAssets() external view returns (uint256);
 
+    /// @notice Decimals of the ERC-4626 underlying asset (cached at implementation deploy).
+    function assetDecimals() external view returns (uint8);
+
     function maxPriceAge() external view returns (uint256);
 
     /// @notice Whether `token` is enabled for this vault mandate and active in the registry.

@@ -35,6 +35,8 @@ contract MandateVault is IMandateVault, Initializable, ERC4626, AccessControl {
     // State
     // -------------------------------------------------------------------------
 
+    uint8 private immutable _ASSET_DECIMALS;
+
     string private _shareName;
     string private _shareSymbol;
     bytes32 private _vaultName;
@@ -75,6 +77,7 @@ contract MandateVault is IMandateVault, Initializable, ERC4626, AccessControl {
     /// @param asset_ ERC-4626 underlying asset (e.g. USDC). Shared by all clones using this implementation.
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(IERC20 asset_) ERC20("", "") ERC4626(asset_) {
+        _ASSET_DECIMALS = IERC20Metadata(address(asset_)).decimals();
         _disableInitializers();
     }
 
@@ -139,6 +142,11 @@ contract MandateVault is IMandateVault, Initializable, ERC4626, AccessControl {
         return IERC20(asset()).balanceOf(address(this));
     }
 
+    /// @inheritdoc IMandateVault
+    function assetDecimals() external view returns (uint8) {
+        return _ASSET_DECIMALS;
+    }
+
     /// @inheritdoc ERC4626
     function previewDeposit(uint256 assets) public view override(ERC4626, IERC4626) returns (uint256) {
         return _convertToShares(_netDepositAssets(assets), Math.Rounding.Floor);
@@ -177,7 +185,7 @@ contract MandateVault is IMandateVault, Initializable, ERC4626, AccessControl {
                 _tokenRegistry.priceOracle(),
                 token,
                 _tokenRegistry.tokenDecimals(token),
-                IERC20Metadata(asset()).decimals(),
+                _ASSET_DECIMALS,
                 maxPriceAge
             );
         }
