@@ -1,0 +1,71 @@
+name: Wallet MCP
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "agents/wallet-mcp/**"
+      - ".github/workflows/wallet-mcp.yml"
+  pull_request:
+    paths:
+      - "agents/wallet-mcp/**"
+      - ".github/workflows/wallet-mcp.yml"
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+defaults:
+  run:
+    working-directory: agents/wallet-mcp
+
+jobs:
+  check:
+    name: TypeScript
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: yarn
+          cache-dependency-path: agents/wallet-mcp/yarn.lock
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Typecheck
+        run: yarn type-check
+
+      - name: Build
+        run: yarn build
+
+  deploy:
+    name: Deploy to Cloudflare
+    needs: check
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: yarn
+          cache-dependency-path: agents/wallet-mcp/yarn.lock
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Deploy Worker
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: agents/wallet-mcp
+          wranglerVersion: "4"
