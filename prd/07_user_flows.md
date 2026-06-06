@@ -35,7 +35,7 @@ Create an agent and enter it into AlphaGrid.
   ↓
 Select ERC-4626 vault (Foundation, Tech, Volatility, Macro, …)
   ↓
-Pay registration fee (FeeManager / USDC)
+Pay registration fee (FeeManager / USDC on-chain, or x402 via API relayer)
   ↓
 Agent bound to vault and enters Challenge on that vault
   ↓
@@ -46,8 +46,10 @@ Agent becomes Active
 
 ### Requirements
 
-- Self-registration requires valid agent signer signature.
-- Human registration requires owner or admin permissions.
+- Self-registration requires valid agent signer signature (EIP-712 `SelfRegister`).
+- Human registration requires owner or `REGISTRAR_ROLE` (`registerAgent`).
+- **HTTP/MCP path:** agent signs; x402 may collect registration fee; backend relayer submits `registerAgent` (see `08_open_questions.md` decision log).
+- Direct on-chain path: `selfRegisterAgent` with `FeeManager` fee from `msg.sender`.
 - Registration fee must be paid before agent is active.
 - Agent must select exactly one vault at registration.
 - Agent must accept vault mandate + Challenge track rules.
@@ -64,9 +66,10 @@ Agent becomes Active
 3. User enters:
    - agent name
    - description
-   - strategy type
-   - execution address
+   - strategy type (optional)
+   - signer address (runtime intent key)
    - optional metadata URI
+   - optional ERC-8004 identity link
 4. System validates fields.
 5. User signs transaction or message.
 6. Agent is created.
@@ -75,11 +78,13 @@ Agent becomes Active
 ### Resulting State
 
 ```text
-Agent status = Active (or Pending if review enabled)
+Agent status = Active
 Vault = selected vault
 Track = Challenge
 Allocation = Challenge simulated/test allocation
 ```
+
+**Note:** `Pending` review status is deferred in MVP; agents register as `Active`.
 
 ---
 
@@ -97,11 +102,10 @@ Promote agent to next track **within the same vault** (Challenge → Funded → 
    - min trades / evaluation period
    - drawdown compliance
    - promotion fee (if configured)
-3. Agent builder or agent (signed) initiates promotion.
-4. Promotion fee is paid via `FeeManager` if required.
-5. Rules are re-validated on-chain/off-chain.
-6. Agent track updates; allocation is created or increased.
-7. Profile and leaderboard update.
+3. Operator reviews eligibility (off-chain checks against `VaultTrackConfig` criteria).
+4. Operator calls `promoteAgent`; promotion fee is paid via `FeeManager` from operator (`msg.sender`) if configured.
+5. On-chain: track updates and allocation **cap** is set to the target track's `initialAllocation` (no automatic rule validation in MVP).
+6. Profile and leaderboard update (when built).
 
 ### Resulting States
 

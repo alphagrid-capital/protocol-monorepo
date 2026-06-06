@@ -65,8 +65,9 @@ Stores all agents participating in AlphaGrid.
 | `name` | Public agent name. |
 | `description` | Strategy or agent description. |
 | `owner` | Human owner wallet, if applicable. |
-| `signer_address` | Key used to sign agent intents and self-registration. |
-| `execution_address` | Address allowed to execute agent actions, if distinct from signer. |
+| `signer_address` | Key used to sign agent intents and registration (also the runtime execution signer in MVP). |
+| `payout_recipient` | Address that receives builder performance-fee payouts (defaults to owner; on-chain today). |
+| `erc8004_agent_id` | Optional linked ERC-8004 identity token id (on-chain today). |
 | `vault_id` | ERC-4626 vault the agent is bound to. |
 | `track_id` | Current track within the vault (Challenge, Funded, Prime). |
 | `status` | Draft, Active, Suspended, Failed, Graduated, Exited. |
@@ -79,8 +80,8 @@ Stores all agents participating in AlphaGrid.
 
 | Status | Meaning |
 |---|---|
-| `draft` | Created but not entered into a track. |
-| `pending_review` | Waiting for operator approval if approval is enabled. |
+| `draft` | Reserved in contracts; not used at registration in MVP (agents enter as `active`). |
+| `pending_review` | **Deferred** — not implemented in MVP. |
 | `active` | Currently competing. |
 | `suspended` | Temporarily paused. |
 | `failed` | Failed track rules. |
@@ -128,7 +129,7 @@ Agent profile must show:
 
 ### Purpose
 
-Tracks define **lifecycle stages** inside a vault. Track definitions are abstract and reusable; per-vault parameters are configured via `VaultTrackConfig`.
+Tracks define **lifecycle stages** inside a vault. Track definitions are abstract and reusable; per-vault parameters are configured in on-chain `VaultTrackRegistry` (`VaultTrackConfig` per vault + track).
 
 Initial track types:
 
@@ -168,13 +169,14 @@ Funded and Prime draw real capital from the agent’s bound ERC-4626 vault.
 | `track_id` | Track type within the vault. |
 | `initial_allocation` | Starting allocation for agents entering this stage. |
 | `max_allocation` | Maximum allocation at this stage. |
-| `max_drawdown_bps` | Failure threshold. |
-| `allowed_assets` | Assets agent may trade (intersected with vault allowlist). |
-| `evaluation_period` | Required duration before promotion eligibility. |
-| `min_trades` | Minimum activity requirement. |
-| `promotion_score` | Required Alpha Score to promote. |
-| `promotion_fee` | Optional fee to promote from this track (via FeeManager). |
-| `failure_rules` | Rule breach conditions. |
+| `max_drawdown_bps` | Failure threshold (stored for off-chain risk engine; not enforced on-chain in MVP). |
+| `max_trade_size_bps` | Max trade size as bps of allocation cap (enforced on-chain). |
+| `max_daily_turnover_bps` | Max daily turnover as bps of allocation cap (enforced on-chain). |
+| `evaluation_period` | Required duration before promotion eligibility (off-chain check in MVP). |
+| `min_trades` | Minimum activity requirement (off-chain check in MVP). |
+| `promotion_score` | Required Alpha Score to promote (off-chain check in MVP). |
+
+**Not in on-chain `VaultTrackConfig` (MVP):** per-track `allowed_assets` (vault + `TokenRegistry` allowlist applies instead), `promotion_fee` (configured in `FeeManager` per vault transition), structured `failure_rules` (off-chain policy).
 
 ---
 
@@ -191,7 +193,9 @@ Centralizes protocol fees for registration and track promotion.
 - Fees are configurable by admin; default settlement asset is **USDC**.
 - Fee payment must be recorded on-chain and reflected in agent lifecycle events.
 - Paying a fee does not bypass promotion rules or guarantee promotion.
-- Registration fee amount is configurable; when non-zero, payment is collected before registration completes. Zero amount skips transfer (open onboarding). Applies to both self-registration and human/operator registration.
+- Registration fee amount is configurable; when non-zero, payment is collected before registration completes. Zero amount skips transfer (open onboarding).
+- **HTTP registration path (MVP API):** agent signs EIP-712 `SelfRegister`; fee may be collected via **x402 (USDC)**; backend relayer submits `registerAgent` and skips on-chain `FeeManager` collection (treasury still receives USDC via x402).
+- **Direct on-chain path:** `selfRegisterAgent` collects via `FeeManager.payRegistrationFee` from `msg.sender`; operator `registerAgent` collects from the relayer/registrar unless fee is zero.
 
 ### MVP Decision
 
@@ -238,10 +242,10 @@ Determines how much capital each agent receives.
 
 ### Functional Requirements
 
-- Initial allocation is determined by vault + track config.
+- Initial allocation cap is determined by vault + track `initialAllocation` in `VaultTrackRegistry`.
 - Challenge allocation is simulated/test allocation only within the bound vault.
-- Allocation increases after performance thresholds are met.
-- Allocation decreases or is removed after failures.
+- In MVP, cap **increases only on track promotion** (Challenge → Funded → Prime), not dynamically within the same track.
+- Allocation is removed after terminal agent status (failed, graduated, exited); operator may adjust `used` exposure manually.
 - Allocation must respect track maximums.
 - Allocation changes must be logged.
 

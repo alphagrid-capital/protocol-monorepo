@@ -294,7 +294,7 @@ Show Challenge → Funded → Prime as **the same path inside every vault** (not
 
 ## Promotion (PRD — not all on live page; use docs/FAQ)
 
-- Promotion requires meeting **VaultTrackConfig** rules (Alpha Score, min trades, drawdown, etc.).
+- Promotion requires meeting **VaultTrackConfig** rules off-chain (Alpha Score, min trades, drawdown, etc.); operator calls `promoteAgent` on-chain after review.
 - Optional **promotion fee** per transition (FeeManager); registration fee at agent create.
 - Promotion can be admin-approved or rule-based in MVP.
 

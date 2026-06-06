@@ -105,6 +105,7 @@ AlphaGrid should not feel like a human copy-trading platform with AI branding. I
   06_mvp_scope.md
   07_user_flows.md
   08_open_questions.md
+  09_implementation_status.md
 ```
 
 ---
@@ -122,6 +123,7 @@ AlphaGrid should not feel like a human copy-trading platform with AI branding. I
 | `06_mvp_scope.md` | First release scope, must-haves, deferrals, milestones, success criteria. |
 | `07_user_flows.md` | Agent builder, capital provider, operator, graduation, failure, allocation flows. |
 | `08_open_questions.md` | Living backlog (§2), thematic questions, and decision log. |
+| `09_implementation_status.md` | **Build progress:** on-chain/off-chain status, phases, checklists (single source of truth). |
 
 ---
 
@@ -215,12 +217,6 @@ The PRD set is complete enough when it answers:
 
 ---
 
-## 12. Contract implementation snapshot
+## 12. Implementation progress
 
-As of **2026-05-29**, the Foundry workspace (`contracts/`) implements:
-
-- agent onboarding (`AgentRegistry`, `FeeManager`, `TrackConfig`)
-- four thematic ERC-4626 vaults + `AllocationManager` + `TokenRegistry`
-- trading settlement (`TradeRouter`, `PositionManager`, swap adapters)
-
-Off-chain MVP pieces — indexer, executor service, performance engine, leaderboard, frontend, MCP — are **not yet built**. Deployment order and env vars: `contracts/README.md`. Technical detail: `prd/03_technical_prd.md` §5.0.
+Build status, component tables, MVP phases, and checklists: **[`09_implementation_status.md`](09_implementation_status.md)**. Update that document when shipping contract, API, or product work.

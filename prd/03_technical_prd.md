@@ -109,39 +109,9 @@ Tokenized Stock Venue Adapter
 
 ## 5. Smart Contract Architecture
 
-### 5.0 On-chain implementation status
+### 5.0 Implementation status
 
-**Last updated:** 2026-05-29 (aligned with `contracts/` in repo)
-
-The MVP contract stack is implemented in Foundry. Deploy in order:
-
-1. `DeployAgentCore` — `FeeManager`, `TrackConfig`, `AgentRegistry`
-2. `DeployVaultInfrastructure` — greenfield: agent core + `TokenRegistry` + four `MandateVault` instances + `AllocationManager`
-3. `DeployTrading` — `PositionManager`, `TradeRouter`, swap adapter; wire roles to existing vault stack
-
-See `contracts/README.md` and `contracts/docs/position-intent-eip712.md` for deployment env vars and the `OpenPosition` signing schema.
-
-| Component | Status | Notes |
-| --- | --- | --- |
-| `AgentRegistry` | Implemented | Human + operator registration, vault binding, track lifecycle, operator-only promotion |
-| `TrackConfig` | Implemented | Per-vault track rules (`VaultTrackConfig`); PRD name `TrackRegistry` |
-| `FeeManager` | Implemented | Registration + promotion fees (USDC; amount may be zero) |
-| `TokenRegistry` | Implemented | Tradable token + price feed registration |
-| `AllocationManager` | Implemented | Simulated Challenge + real Funded/Prime allocations |
-| `MandateVault` | Implemented | ERC-4626; liquidity pause + trading pause; router-only pulls |
-| `PositionManager` | Implemented | Per-agent token ledger and position storage; router-only mutations |
-| `TradeRouter` | Implemented | Sole settlement path: `openPosition`, `executeExit`, `forceClose` |
-| `ISwapAdapter` | Implemented | `MockSwapAdapter` (dev/tests), `InventorySwapAdapter` (pre-funded inventory) |
-| `IntentValidator` | Consolidated | EIP-712 signature, nonce, deadline checks live in `TradeRouter` |
-| `ExecutionController` | Consolidated | `EXECUTOR_ROLE` / `OPERATOR_ROLE` on `TradeRouter` |
-| `ExecutorRegistry` | Deferred | MVP uses a single executor EOA granted `EXECUTOR_ROLE` |
-| `RiskManager` | Partial | On-chain: max trade size, max daily turnover, registry pause on opens, vault track active; drawdown breach / Alpha Score off-chain |
-| Dedicated `Treasury` | Deferred | Configurable fee recipient on vaults / `FeeManager` |
-| Portfolio 2/20 fees | Open | [OQ-001](08_open_questions.md#oq-001-portfolio-220-fee-model) — mgmt + performance fee on vault PnL |
-| ERC-8004 alignment | Open | [OQ-002](08_open_questions.md#oq-002-erc-8004-trustless-agents) — identity/reputation registries |
-| Robinhood RFQ engine | Open | [OQ-003](08_open_questions.md#oq-003-robinhood-rfq-engine) — production venue / `ISwapAdapter` |
-
-**Not yet built (off-chain MVP):** indexer, intent gateway API, AlphaGrid executor service, performance engine, leaderboard API, frontend, MCP server.
+On-chain and off-chain build progress (component tables, deploy order, API/MCP surface, MVP phases) is maintained in **`09_implementation_status.md`**. This section describes contract **design**; that document tracks what is **shipped**.
 
 ---
 
@@ -150,17 +120,17 @@ See `contracts/README.md` and `contracts/docs/position-intent-eip712.md` for dep
 Recommended contracts:
 
 1. `AgentRegistry`
-2. `TrackConfig` *(implemented; PRD concept: TrackRegistry)*
-3. `MandateVault` (ERC-4626 instances)
+2. `VaultTrackRegistry`
+3. `MandateVault` (ERC-4626 instances via `MandateVaultFactory`)
 4. `TokenRegistry`
 5. `AllocationManager`
 6. `PositionManager`
-7. `TradeRouter` *(includes MVP intent validation + executor gating)*
+7. `TradeRouter` _(includes MVP intent validation + executor gating)_
 8. `FeeManager`
-9. `ISwapAdapter` *(venue-specific; not a core registry)*
-10. `ExecutorRegistry` *(deferred post-MVP)*
-11. `RiskManager` *(partial; remainder off-chain in MVP)*
-12. `Treasury` *(deferred; configurable recipients today)*
+9. `ISwapAdapter` _(venue-specific; not a core registry)_
+10. `ExecutorRegistry` _(deferred post-MVP)_
+11. `RiskManager` _(partial; remainder off-chain in MVP)_
+12. `Treasury` _(deferred; configurable recipients today)_
 
 MVP consolidates separate `IntentValidator` and `ExecutionController` designs into `TradeRouter` to reduce contract surface area while preserving the same security properties.
 
@@ -174,58 +144,67 @@ Stores canonical agent identities and ownership.
 
 ### Responsibilities
 
-- register agent (human/operator path)
-- self-register agent (agent-signed path)
-- collect registration fee via `FeeManager`
+- register agent via `REGISTRAR_ROLE` (`registerAgent`) or agent-signed `selfRegisterAgent`
+- collect registration fee via `FeeManager` (skipped on-chain when registrar path uses API x402 settlement)
 - bind agent to exactly one vault at registration
 - enter Challenge track on that vault
-- update metadata hash
-- assign owner/operator
-- set execution address and signer
+- update metadata URI
+- assign owner, signer, and payout recipient
+- optional ERC-8004 identity link
 - track agent status and current track within vault
 - emit lifecycle events
 
 ### Key Functions
 
 ```solidity
-registerAgent(vaultId, name, metadataURI, executionAddress, signer)
-selfRegisterAgent(vaultId, name, metadataURI, signer, signature)
+registerAgent(owner, vault, name, metadataURI, signer, linkERC8004, erc8004AgentId) // REGISTRAR_ROLE
+selfRegisterAgent(vault, name, metadataURI, signer, linkERC8004, erc8004AgentId, deadline, signature)
 updateAgentMetadata(agentId, metadataURI)
-setExecutionAddress(agentId, executionAddress)
-setAgentStatus(agentId, status)
+linkERC8004Identity(agentId, erc8004AgentId)
 setAgentSigner(agentId, signer)
-promoteAgent(agentId, targetTrackId) // OPERATOR_ROLE only in MVP; after rules + FeeManager promotion fee
-ownerOfAgent(agentId)
-vaultOfAgent(agentId)
-trackOfAgent(agentId)
+setPayoutRecipient(agentId, payoutRecipient)
+transferAgentOwnership(agentId, newOwner)
+setAgentStatus(agentId, status) // OPERATOR_ROLE
+promoteAgent(agentId, targetTrack) // OPERATOR_ROLE; FeeManager promotion fee; no on-chain rule checks in MVP
+ownerOf(agentId)
+vaultOf(agentId)
+trackOf(agentId)
+signerOf(agentId)
+getAgentByERC8004(erc8004AgentId)
 ```
+
+**Deferred in MVP:** separate `executionAddress` / `setExecutionAddress` — `signer` is the runtime intent key.
 
 ### Events
 
 ```solidity
-AgentRegistered(agentId, vaultId, owner, signer, metadataURI)
+AgentRegistered(agentId, vault, owner, signer, metadataURI, track)
 AgentMetadataUpdated(agentId, metadataURI)
 AgentStatusChanged(agentId, oldStatus, newStatus)
-ExecutionAddressUpdated(agentId, executionAddress)
 AgentSignerUpdated(agentId, signer)
+AgentOwnershipTransferred(agentId, from, to)
+PayoutRecipientUpdated(agentId, payoutRecipient)
+AgentPromoted(agentId, vault, fromTrack, toTrack)
+ERC8004IdentityLinked(agentId, erc8004IdentityRegistry, erc8004ChainId, erc8004AgentId, owner)
 ```
 
 ---
 
-## 5.3 TrackConfig (TrackRegistry)
+## 5.3 VaultTrackRegistry
 
 ### Purpose
 
 Stores **track types** (lifecycle stages) and **per-vault track configuration**.
 
-**Implementation note:** Deployed as `TrackConfig` in `contracts/src/core/TrackConfig.sol`. The PRD name `TrackRegistry` describes the same responsibility.
+**Implementation:** `contracts/src/core/VaultTrackRegistry.sol`
 
 ### Responsibilities
 
-- define global track types (Challenge, Funded, Prime, extensible)
+- define global track types (Challenge, Funded, Prime)
 - configure `VaultTrackConfig` for each vault + track pair
-- expose effective rules to allocation/risk/execution contracts
-- define promotion criteria and optional promotion fee references
+- register approved vault addresses
+- expose effective rules to allocation and execution contracts
+- store promotion criteria fields for **off-chain** eligibility checks in MVP
 
 ### Track Type
 
@@ -252,10 +231,11 @@ struct VaultTrackConfig {
     uint256 evaluationPeriod;
     uint256 minTrades;
     uint256 promotionScore;
-    uint256 promotionFee; // 0 if none; enforced via FeeManager
     bool active;
 }
 ```
+
+Promotion fees are configured in `FeeManager` per `(vault, fromTrack, toTrack)`, not in `VaultTrackConfig`. Tradable assets are enforced via vault + `TokenRegistry` allowlists, not per-track asset lists.
 
 ---
 
@@ -361,7 +341,7 @@ setRegistrationFee(address asset, uint256 amount)
 setPromotionFee(address vault, uint256 fromTrackId, uint256 toTrackId, address asset, uint256 amount)
 getRegistrationFee() returns (address asset, uint256 amount)
 getPromotionFee(address vault, uint256 fromTrackId, uint256 toTrackId) returns (address asset, uint256 amount)
-payRegistrationFee(address payer, uint256 agentId) 
+payRegistrationFee(address payer, uint256 agentId)
 payPromotionFee(address payer, uint256 agentId, uint256 toTrackId)
 ```
 
@@ -565,7 +545,7 @@ Stores risk rules and can pause or restrict agents.
 
 **MVP implementation:** On-chain guardrails are split across contracts:
 
-- `TrackConfig` — `maxTradeSizeBps`, `maxDailyTurnoverBps`, track caps
+- `VaultTrackRegistry` — `maxTradeSizeBps`, `maxDailyTurnoverBps`, track caps; promotion criteria stored for off-chain use
 - `TradeRouter` — enforces trade size and daily turnover on open
 - `AgentRegistry` — agent status, global pause (opens only)
 - `MandateVault` — `liquidityPaused` / `tradingPaused`, token allowlist
@@ -589,7 +569,9 @@ Drawdown breach, Alpha Score graduation, and automated fail/promote actions rema
 
 ## 6.1 API Service
 
-Responsibilities:
+**Implementation status:** see `09_implementation_status.md` §4 (routes, MCP tools, checklists). Operational detail: `api/README.md`.
+
+Responsibilities (full MVP):
 
 - serve agent profiles
 - serve leaderboards
@@ -599,11 +581,11 @@ Responsibilities:
 - integrate with auth
 - prepare trade requests if needed
 
-Suggested stack:
+Suggested stack for remaining MVP services:
 
-- Node.js / TypeScript
-- PostgreSQL
-- Redis for caching / queues
+- TypeScript (Worker or Node)
+- PostgreSQL _(deferred until indexer/leaderboard; current API uses RPC reads)_
+- Redis for caching / queues _(optional)_
 - REST or GraphQL API
 
 ---
@@ -736,11 +718,11 @@ Responsibilities:
 
 Execution modes:
 
-| Mode                   | Description                                     | Protocol rollout |
-| ---------------------- | ----------------------------------------------- | ---------------- |
-| Central Executor       | AlphaGrid submits txs.                          | MVP              |
-| Permissioned Executors | Approved external executors can settle intents. | Later            |
-| Solver Auction         | Solvers compete for best execution.             | Later            |
+| Mode                   | Description                                     | Protocol rollout    |
+| ---------------------- | ----------------------------------------------- | ------------------- |
+| Central Executor       | AlphaGrid submits txs.                          | MVP                 |
+| Permissioned Executors | Approved external executors can settle intents. | Later               |
+| Solver Auction         | Solvers compete for best execution.             | Later               |
 | Direct Agent Execution | Agents submit constrained txs directly.         | Advanced / optional |
 
 ---
@@ -852,6 +834,8 @@ Risk checks:
 
 ## 7. Database Model
 
+**Implementation note:** The `api/` Worker does not use PostgreSQL yet. Agent and vault reads go through RPC (`viem`). Progress on indexer and DB: `09_implementation_status.md` §4. The schema below is the target model once an indexer and leaderboard land.
+
 ### 7.1 Tables
 
 Recommended MVP tables:
@@ -882,8 +866,9 @@ CREATE TABLE agents (
   id UUID PRIMARY KEY,
   onchain_agent_id NUMERIC,
   owner_address TEXT NOT NULL,
-  execution_address TEXT,
-  signer_address TEXT,
+  signer_address TEXT NOT NULL,
+  payout_recipient TEXT,
+  erc8004_agent_id NUMERIC,
   name TEXT NOT NULL,
   description TEXT,
   metadata_uri TEXT,
@@ -894,6 +879,8 @@ CREATE TABLE agents (
   updated_at TIMESTAMP NOT NULL DEFAULT now()
 );
 ```
+
+**Deferred:** separate `execution_address` column — MVP uses `signer_address` for intent signing.
 
 ---
 
@@ -1075,11 +1062,11 @@ Use a constrained intent model:
 ```text
 Agent signs OpenPosition intent (includes exit ladder)
   ↓
-Backend validates auth and schema (off-chain; not yet built)
+Backend validates auth and schema (off-chain; not yet built for trades)
   ↓
 Risk engine validates limits (off-chain; partial mirror on-chain)
   ↓
-AlphaGrid executor (EXECUTOR_ROLE) submits openPosition tx
+AlphaGrid executor (EXECUTOR_ROLE) submits openPosition tx (not yet built)
   ↓
 TradeRouter verifies EIP-712 signature, nonce, deadline, rules
   ↓
@@ -1274,63 +1261,27 @@ manipulated execution proof
 
 Recommended MVP infrastructure:
 
-| Layer           | Option                                           |
-| --------------- | ------------------------------------------------ |
-| Frontend        | Next.js / Vercel                                 |
-| Backend         | Node.js / TypeScript                             |
-| DB              | PostgreSQL                                       |
-| Cache / Queue   | Redis                                            |
-| Indexer         | Ponder or custom indexer                         |
-| Contracts       | Solidity + Foundry                               |
-| Monitoring      | BetterStack / Grafana                            |
-| Logs            | Axiom / Datadog / Grafana Loki                   |
-| Storage         | S3-compatible object storage                     |
-| Agent Interface | REST API + MCP server                            |
-| Execution       | AlphaGrid executor first, executor network later |
+| Layer           | Option                                              |
+| --------------- | --------------------------------------------------- |
+| Frontend        | Next.js / Vercel                                    |
+| Backend         | Cloudflare Workers (`api/`) or Node.js / TypeScript |
+| DB              | PostgreSQL _(when indexer/leaderboard land)_        |
+| Cache / Queue   | Redis                                               |
+| Indexer         | Ponder or custom indexer                            |
+| Contracts       | Solidity + Foundry                                  |
+| Monitoring      | BetterStack / Grafana                               |
+| Logs            | Axiom / Datadog / Grafana Loki                      |
+| Storage         | S3-compatible object storage                        |
+| Agent Interface | REST API + MCP server                               |
+| Execution       | AlphaGrid executor first, executor network later    |
 
 ---
 
 ## 12. MVP Technical Scope
 
-### Implemented on-chain (contracts/)
+On-chain, off-chain, and remaining MVP scope (checklists and phases) are maintained in **`09_implementation_status.md`** §3–§6. This section is intentionally brief to avoid duplicating that document.
 
-1. Agent registry (`AgentRegistry`) — self-register + operator register
-2. Track configuration (`TrackConfig`) — track types + `VaultTrackConfig`
-3. Four ERC-4626 `MandateVault` instances (greenfield deploy script)
-4. `FeeManager` (registration + promotion fees)
-5. `TokenRegistry` + vault token allowlist
-6. `AllocationManager`
-7. `PositionManager` + per-agent ledger
-8. `TradeRouter` — open, keeper exit, operator force-close
-9. `ISwapAdapter` implementations (`MockSwapAdapter`, `InventorySwapAdapter`)
-10. Foundry unit + integration tests; deploy scripts (`DeployAgentCore`, `DeployVaultInfrastructure`, `DeployTrading`)
-
-### Remaining MVP (off-chain + product)
-
-1. Backend API
-2. Agent metadata store
-3. MCP server
-4. Intent gateway (HTTP → executor)
-5. Central AlphaGrid executor service
-6. Indexer (positions, trades, allocations, vault TVL)
-7. Performance engine (PnL, drawdown, Alpha Score)
-8. Risk event engine (drawdown breach → operator actions)
-9. Leaderboard API (vault + track filters)
-10. Admin console
-11. Frontend app
-
-### Deferred (post-MVP on-chain)
-
-- full OIF integration
-- permissionless solvers
-- multi-chain execution
-- fully on-chain scoring
-- arbitrary trade execution
-- direct agent transaction execution
-- leveraged trading
-- advanced portfolio optimization
-- executor staking/slashing
-- solver auctions
+**Design targets not yet built:** indexer, intent gateway, executor service, performance/risk engines, leaderboard, admin console, frontend. **Deferred post-MVP on-chain:** OIF, solvers, multi-chain, on-chain scoring, leverage, executor staking — see `09_implementation_status.md` §8.
 
 ---
 

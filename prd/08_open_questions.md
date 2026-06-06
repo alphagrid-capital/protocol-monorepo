@@ -11,6 +11,8 @@ This document is the **living backlog** of unresolved product, technical, and go
 
 When a backlog item is decided, move it to the decision log and update linked PRDs (`04_tokenomics`, landing page, contracts README).
 
+**Implementation baseline** for open questions: `09_implementation_status.md` §7.
+
 ---
 
 ## 2. Active backlog (tracked)
@@ -53,11 +55,7 @@ Should AlphaGrid adopt a **2/20-style portfolio fee** for vault capital (classic
 
 #### Current implementation
 
-| Layer | State |
-| --- | --- |
-| Homepage / landing PRD | Not emphasized; profit split examples only |
-| `FeeManager` | Registration + promotion fees only |
-| `MandateVault` | `setFeeRecipient`; no mgmt/performance fee logic |
+See `09_implementation_status.md` §7 (OQ-001).
 
 #### Next steps (suggested)
 
@@ -75,9 +73,9 @@ Should AlphaGrid adopt a **2/20-style portfolio fee** for vault capital (classic
 
 ### OQ-002: ERC-8004 (Trustless Agents)
 
-**Status:** Open  
+**Status:** Open (identity partially implemented)  
 **Raised:** 2026-05-29  
-**Last updated:** 2026-05-29  
+**Last updated:** 2026-06-06  
 **Areas:** Agent identity, discovery, reputation, interoperability
 
 #### Question
@@ -94,7 +92,7 @@ Should AlphaGrid **integrate with or align to [ERC-8004: Trustless Agents](https
 
 Reference implementations exist (e.g. [erc-8004-contracts](https://github.com/erc-8004/erc-8004-contracts)); spec status remains **Draft** (EIP-8004, Aug 2025).
 
-AlphaGrid today uses a **custom** `AgentRegistry` (vault binding, tracks, signer, metadata URI) optimized for prop-trading lifecycle — not ERC-8004 identity/reputation contracts.
+AlphaGrid uses a **custom** `AgentRegistry` (vault binding, tracks, signer, metadata URI) for prop-trading lifecycle, with **optional ERC-8004 Identity Registry linkage** at registration or after via `linkERC8004Identity`. Reputation and validation registries are not integrated yet.
 
 #### Open sub-questions
 
@@ -107,11 +105,7 @@ AlphaGrid today uses a **custom** `AgentRegistry` (vault binding, tracks, signer
 
 #### Current implementation
 
-| Layer | State |
-| --- | --- |
-| `AgentRegistry` | Custom agent id, vault, track, signer, metadata; no ERC-8004 linkage |
-| Reputation / leaderboard | Off-chain (not built); no 8004 Reputation Registry |
-| Homepage | No ERC-8004 mention |
+See `09_implementation_status.md` §3–§4 and §7 (OQ-002).
 
 #### Next steps (suggested)
 
@@ -159,13 +153,7 @@ How should AlphaGrid **research and integrate Robinhood’s RFQ (request-for-quo
 
 #### Current implementation
 
-| Layer | State |
-| --- | --- |
-| `ISwapAdapter` | Mock + inventory only |
-| RFQ / Robinhood client | Not started |
-| Executor service | Not built |
-| Robinhood Chain deploy | RPC configured; no RH-specific deploy scripts |
-| Landing | RH Chain narrative present; no RFQ/engine detail |
+See `09_implementation_status.md` §3 and §7 (OQ-003).
 
 #### Next steps (suggested)
 
@@ -434,7 +422,7 @@ AlphaGrid needed a clear model for capital pools, agent lifecycle, and fees.
 ### Consequences
 
 - Replace track-level vault model with vault-scoped lifecycle.
-- Contracts: `MandateVault` (4626), `FeeManager`, `VaultTrackConfig` in `TrackConfig`.
+- Contracts: `MandateVault` (4626), `FeeManager`, `VaultTrackConfig` in `VaultTrackRegistry`.
 - Update functional, technical, tokenomics, flows, and MVP docs accordingly.
 
 ---
@@ -452,12 +440,36 @@ Agent core contract review asked whether MVP should require a non-zero registrat
 
 - Registration fee remains configurable in `FeeManager` (default asset USDC).
 - **Amount may be zero** for MVP/open onboarding; zero skips token transfer on-chain.
-- Non-zero fees still collect via `payRegistrationFee` before registration completes.
+- Non-zero fees collect via `payRegistrationFee` on direct on-chain paths (`selfRegisterAgent`, operator `registerAgent` when fee not skipped).
+- **HTTP API path:** non-zero fee may be collected via **x402 (USDC)** to treasury; relayer submits `registerAgent` with on-chain fee skipped.
 
 ### Consequences
 
-- PRD fee sections updated; contract behavior unchanged.
+- PRD fee sections updated; contract supports both on-chain and x402+relayer settlement.
 - Launch can start with zero fee and raise later via admin config.
+
+---
+
+## Decision: HTTP Registration via x402 + Relayer
+
+**Date:** 2026-06-06  
+**Status:** Accepted  
+
+### Context
+
+The `api/` Worker mediates agent registration for MCP and HTTP clients. Agents sign EIP-712 `SelfRegister`, but the relayer broadcasts `registerAgent` (not `selfRegisterAgent`).
+
+### Decision
+
+- Agent proves intent with **EIP-712 `SelfRegister`** signature.
+- When fee > 0, **x402** collects USDC to `FeeManager.treasury` before the relayer tx.
+- Relayer (`REGISTRAR_ROLE`) calls `registerAgent` with **`skipRegistrationFee`** so treasury is not charged twice.
+- Direct on-chain `selfRegisterAgent` remains available for wallets that pay via `FeeManager` on-chain.
+
+### Consequences
+
+- Documented in `02_functional_prd.md` §4.4 and `03_technical_prd.md` §5.2.
+- `api/README.md` is the operational reference for env vars.
 
 ---
 

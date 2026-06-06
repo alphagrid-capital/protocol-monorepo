@@ -49,7 +49,7 @@ Required:
 - create agent
 - set name/description
 - set owner wallet
-- set execution address
+- set signer address (runtime intent key; same as execution signer in MVP)
 - assign unique agent ID
 - show public agent profile
 
@@ -126,7 +126,7 @@ Required:
 
 MVP should avoid arbitrary contract calls.
 
-**On-chain (2026-05):** `TradeRouter.openPosition` with EIP-712 signed `OpenPosition` intent; exit ladder enforced on-chain; keeper `executeExit` and operator `forceClose`. Off-chain intent gateway, executor bot, and trade log UI still required for the full product loop.
+On-chain trading settlement is **done** (`TradeRouter`, EIP-712 opens, keeper exits). Off-chain trade path and UI are **not built** — see `09_implementation_status.md` §4–§6.
 
 ---
 
@@ -293,70 +293,18 @@ MVP should not include:
 
 ## 9. Recommended MVP Build Phases
 
-Build phases describe the **full MVP product** (contracts + off-chain + frontend). On-chain contract work for agent onboarding, vaults, allocation, and trading settlement is **complete** as of 2026-05; see `prd/03_technical_prd.md` §5.0.
+Build phases and per-phase status: **`09_implementation_status.md` §5**.
 
-### Phase 1 — Product Foundation
+Summary:
 
-- app shell
-- wallet/auth
-- agent registry UI
-- track pages
-- agent profile skeleton
-- admin skeleton
-
-### Phase 2 — Contracts and Core State
-
-**On-chain (done):**
-
-- `AgentRegistry`, `FeeManager`, `TrackConfig`
-- `TokenRegistry`, `AllocationManager`
-- four `MandateVault` (ERC-4626) instances
-- deploy: `DeployAgentCore`, `DeployVaultInfrastructure`
-
-**Still needed:**
-
-- contract event indexing
-- allocation / vault state in API
-
-### Phase 3 — Execution and Indexing
-
-**On-chain (done):**
-
-- `PositionManager`, `TradeRouter`, swap adapters
-- EIP-712 `OpenPosition` intents with exit ladder
-- permissionless keeper exits; operator `forceClose`
-- deploy: `DeployTrading`
-
-**Still needed:**
-
-- trade intent API / intent gateway
-- AlphaGrid executor service (`EXECUTOR_ROLE` EOA or bot)
-- indexer and trade history
-- frontend execution visibility
-
-### Phase 4 — Performance and Risk
-
-- PnL calculation
-- drawdown calculation
-- Alpha Score
-- risk events
-- failure/graduation logic
-
-### Phase 5 — Leaderboard and Public Demo
-
-- leaderboard
-- agent profiles
-- track dashboards
-- performance charts
-- public trade feed
-
-### Phase 6 — Admin and Hardening
-
-- admin controls
-- emergency pause
-- monitoring
-- audit logs
-- QA/testing
+| Phase | Focus | Status (2026-06-06) |
+| --- | --- | --- |
+| 1 | Product foundation (frontend shell) | Not started |
+| 2 | Contracts + core state + vault API | On-chain done; API partial |
+| 3 | Execution + indexing | On-chain done; intent gateway / executor / indexer not built |
+| 4 | Performance + risk | Not started |
+| 5 | Leaderboard + public demo | Not started |
+| 6 | Admin + hardening | Not started |
 
 ---
 

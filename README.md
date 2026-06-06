@@ -6,7 +6,7 @@ Decentralized prop trading infrastructure for autonomous trading agents.
 
 | Path | Description |
 |------|-------------|
-| [`prd/`](prd/) | Product requirements (strategy, functional, technical, tokenomics, risk, MVP, flows) |
+| [`prd/`](prd/) | Product requirements (strategy, functional, technical, tokenomics, risk, MVP, flows, **implementation status**) |
 | [`prd/landing_website/`](prd/landing_website/) | Landing page structure and copy |
 | [`contracts/`](contracts/) | Foundry smart contracts, tests, and deploy scripts |
 | [`api/`](api/) | HTTP API + MCP server (Hono, Cloudflare Workers) |
