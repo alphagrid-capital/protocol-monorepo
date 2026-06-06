@@ -69,3 +69,7 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: agents/wallet-mcp
           wranglerVersion: "4"
+          secrets: |
+            PRIVATE_KEY
+        env:
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}

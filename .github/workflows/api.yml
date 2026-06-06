@@ -66,3 +66,19 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: api
           wranglerVersion: "4"
+          secrets: |
+            ORACLE_KEEPER_PRIVATE_KEY
+            RPC_URL
+            CHAIN_ID
+            X402_NETWORK
+            X402_FACILITATOR_URL
+            RELAYER_PRIVATE_KEY
+            FINNHUB_API_KEY
+        env:
+          ORACLE_KEEPER_PRIVATE_KEY: ${{ secrets.ORACLE_KEEPER_PRIVATE_KEY }}
+          RPC_URL: ${{ secrets.RPC_URL }}
+          CHAIN_ID: ${{ secrets.CHAIN_ID }}
+          X402_NETWORK: ${{ secrets.X402_NETWORK }}
+          X402_FACILITATOR_URL: ${{ secrets.X402_FACILITATOR_URL }}
+          RELAYER_PRIVATE_KEY: ${{ secrets.RELAYER_PRIVATE_KEY }}
+          FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
