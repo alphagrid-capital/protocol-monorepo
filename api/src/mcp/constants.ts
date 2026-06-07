@@ -12,6 +12,11 @@ export const MCP_TOOL_NAMES = {
   linkAgentErc8004: 'alphagrid_link_agent_erc8004',
   getAgentRegistrationQuote: 'alphagrid_get_agent_registration_quote',
   registerAgent: 'alphagrid_register_agent',
+  submitTradeIntent: 'alphagrid_submit_trade_intent',
+  getAgentPositions: 'alphagrid_get_agent_positions',
+  getTradeHistory: 'alphagrid_get_trade_history',
+  getRiskState: 'alphagrid_get_risk_state',
+  getIntentStatus: 'alphagrid_get_intent_status',
 } as const
 
 export const MCP_TOOL_NAME_LIST = Object.values(MCP_TOOL_NAMES)

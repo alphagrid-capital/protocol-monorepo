@@ -12,12 +12,12 @@ Other PRD files describe **requirements and design**. When implementation change
 
 ## 2. Snapshot
 
-**Last updated:** 2026-06-06
+**Last updated:** 2026-06-07
 
 | Layer | Status | Summary |
 | --- | --- | --- |
 | **On-chain (`contracts/`)** | MVP complete | Agent onboarding, four vaults, allocation, trading settlement |
-| **Off-chain (`api/`)** | Partial | Vaults, tokens, prices, agent register/read, MCP, oracle keeper |
+| **Off-chain (`api/`)** | Partial | Vaults, tokens, prices, agent register/read, trading API stubs (501), MCP, oracle keeper |
 | **Product (indexer, perf, UI)** | Not started | Leaderboard, profiles, admin, frontend, trade executor |
 
 **MVP demo loop gap:** Agents can register and contracts can settle trades, but there is no end-to-end product path yet for trade submission, performance display, or leaderboard ranking.
@@ -75,12 +75,12 @@ Stack: **Cloudflare Worker** (`api/`, Hono + TypeScript). No PostgreSQL or index
 
 | Component | Status | Notes |
 | --- | --- | --- |
-| HTTP API | Partial | Health, vaults, tokens, prices, agent get/register, OpenAPI, discovery |
-| MCP server | Partial | Tools mirror implemented HTTP routes |
+| HTTP API | Partial | Health, vaults, tokens, prices, agent get/register, trading stubs (501), OpenAPI, discovery |
+| MCP server | Partial | Tools mirror implemented HTTP routes; trading tools return `NOT_IMPLEMENTED` |
 | x402 registration fee | Done | USDC via x402; relayer submits `registerAgent` (on-chain fee skipped) |
 | Oracle price keeper | Done | Cron + `POST /prices/refresh` → `MockPriceOracle` (Finnhub) |
 | PostgreSQL / indexer | Not built | No event index; no cached agent list |
-| Intent gateway + executor | Not built | No trade-intent API; no `EXECUTOR_ROLE` bot in repo |
+| Intent gateway + executor | Not built | HTTP/MCP trading routes exist as **501 stubs** only; no validation, storage, or `EXECUTOR_ROLE` bot |
 | Performance engine | Not built | PnL, drawdown, Alpha Score |
 | Risk event engine | Not built | Drawdown breach → automated status changes |
 | Leaderboard API | Not built | Vault + track filters |
@@ -105,6 +105,27 @@ Stack: **Cloudflare Worker** (`api/`, Hono + TypeScript). No PostgreSQL or index
 | `GET` | `/`, `/llms.txt`, `/docs/swagger.json` | Discovery / OpenAPI |
 | `POST` | `/mcp` | MCP Streamable HTTP |
 
+### Trading API stubs (501)
+
+Routes and MCP tools are registered in OpenAPI/discovery but return **501 Not Implemented** (`code: NOT_IMPLEMENTED`) until the intent gateway and executor ship.
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `POST` | `/agents/{agentId}/trade-intents` | Submit agent trade intent |
+| `POST` | `/intents/trade` | Global trade intent gateway |
+| `GET` | `/agents/{agentId}/trades` | Agent trade history |
+| `GET` | `/agents/{agentId}/positions` | Agent open positions |
+| `GET` | `/agents/{agentId}/risk-state` | Agent risk state |
+| `GET` | `/intents/{intentId}` | Intent status lookup |
+
+| MCP tool | HTTP equivalent |
+| --- | --- |
+| `alphagrid_submit_trade_intent` | `POST /agents/{agentId}/trade-intents` |
+| `alphagrid_get_agent_positions` | `GET /agents/{agentId}/positions` |
+| `alphagrid_get_trade_history` | `GET /agents/{agentId}/trades` |
+| `alphagrid_get_risk_state` | `GET /agents/{agentId}/risk-state` |
+| `alphagrid_get_intent_status` | `GET /intents/{intentId}` |
+
 ### Implemented MCP tools
 
 ```text
@@ -122,11 +143,13 @@ alphagrid_register_agent
 ### Planned MCP / API (not yet implemented)
 
 ```text
-get_track_rules / get_vault_state / get_portfolio / get_positions
-get_market_data / submit_trade_intent / submit_rebalance_intent
-get_trade_history / get_performance_metrics / get_risk_state / get_intent_status
+get_track_rules / get_vault_state / get_portfolio
+get_market_data / submit_rebalance_intent / get_performance_metrics
 GET /leaderboard / GET /agents (list) / admin routes / vault deposit APIs
+POST /intents/{id}/cancel / GET /intents/{id}/execution
 ```
+
+Trading routes listed in § Trading API stubs are **surface-only** (501); they are not counted as implemented here.
 
 ### Off-chain checklist
 
@@ -136,6 +159,7 @@ GET /leaderboard / GET /agents (list) / admin routes / vault deposit APIs
 - [x] Agent registration (x402 + relayer) and agent read by id / ERC-8004
 - [x] MCP tools for implemented routes
 - [x] Mock oracle price keeper
+- [x] Trading API + MCP stubs (501; OpenAPI/discovery wired)
 - [ ] Contract event indexing
 - [ ] Agent list, search, and allocation history cache
 - [ ] Trade intent gateway + AlphaGrid executor service
@@ -150,7 +174,7 @@ GET /leaderboard / GET /agents (list) / admin routes / vault deposit APIs
 
 ## 5. MVP build phases
 
-Phases describe the **full MVP product**. Status as of 2026-06-06:
+Phases describe the **full MVP product**. Status as of 2026-06-07:
 
 ### Phase 1 — Product Foundation
 
@@ -170,7 +194,9 @@ Phases describe the **full MVP product**. Status as of 2026-06-06:
 
 **On-chain:** Done (`PositionManager`, `TradeRouter`, swap adapters, EIP-712 opens, keeper exits, `forceClose`).
 
-**Remaining:** trade intent API, executor bot (`EXECUTOR_ROLE`), indexer + trade history, frontend execution visibility.
+**Partial (`api/`):** trading HTTP/MCP routes return 501 (stubs in OpenAPI only).
+
+**Remaining:** intent gateway logic, executor bot (`EXECUTOR_ROLE`), indexer + real trade/position reads, frontend execution visibility.
 
 ### Phase 4 — Performance and Risk
 

@@ -7,6 +7,7 @@ import { registerDiscoveryRoutes } from './routes/discovery.js'
 import { agentRoutes } from './routes/agents.js'
 import { healthRoutes } from './routes/health.js'
 import { tokenRoutes } from './routes/tokens.js'
+import { tradingRoutes } from './routes/trading.js'
 import { vaultRoutes } from './routes/vaults.js'
 import type { WorkerEnv } from './types/worker-env.js'
 
@@ -55,6 +56,7 @@ function registerHttpRoutes(app: OpenAPIHono): void {
   app.route('/', vaultRoutes)
   app.route('/', tokenRoutes)
   app.route('/', agentRoutes)
+  app.route('/', tradingRoutes)
   registerDiscoveryRoutes(app)
 }
 

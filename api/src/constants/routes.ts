@@ -15,6 +15,12 @@ export const ROUTE_PATHS = {
   agentLinkErc8004: '/agents/{agentId}/erc8004/link',
   agentRegister: '/agents/register',
   agentRegisterQuote: '/agents/register/quote',
+  agentTradeIntents: '/agents/{agentId}/trade-intents',
+  agentTrades: '/agents/{agentId}/trades',
+  agentPositions: '/agents/{agentId}/positions',
+  agentRiskState: '/agents/{agentId}/risk-state',
+  intentsTrade: '/intents/trade',
+  intentById: '/intents/{intentId}',
 } as const
 
 export const HTTP_ROUTES = {

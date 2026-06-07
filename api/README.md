@@ -36,6 +36,12 @@ yarn deploy      # Deploy to Cloudflare (requires account auth)
 | `GET`  | `/tokens`             | Global token catalog + on-chain registry state             |
 | `GET`  | `/prices`             | MockPriceOracle quotes indexed by symbol (e.g. `NVDA`)     |
 | `POST` | `/prices/refresh`     | Manually fetch Finnhub quotes and update the oracle        |
+| `POST` | `/agents/{agentId}/trade-intents` | Trade intent submit (**501** stub)              |
+| `POST` | `/intents/trade`      | Global trade intent submit (**501** stub)                  |
+| `GET`  | `/agents/{agentId}/trades` | Agent trade history (**501** stub)                    |
+| `GET`  | `/agents/{agentId}/positions` | Agent open positions (**501** stub)                |
+| `GET`  | `/agents/{agentId}/risk-state` | Agent risk state (**501** stub)                   |
+| `GET`  | `/intents/{intentId}` | Intent status lookup (**501** stub)                        |
 | `GET`  | `/docs`               | Swagger UI (humans; poor fit for URL paste in chat)        |
 | `GET`  | `/docs/swagger.json`  | OpenAPI 3.1 (Custom GPT Actions)                           |
 | `POST` | `/mcp`                | MCP Streamable HTTP (stateless JSON)                       |
@@ -66,6 +72,13 @@ ChatGPT **browsing** only performs simple `GET` requests on **public** URLs. It 
 | `alphagrid_link_agent_erc8004`           | `POST /agents/{agentId}/erc8004/link`     |
 | `alphagrid_get_agent_registration_quote` | `GET /agents/register/quote`              |
 | `alphagrid_register_agent`               | `POST /agents/register`                   |
+| `alphagrid_submit_trade_intent`          | `POST /agents/{agentId}/trade-intents` (**NOT_IMPLEMENTED**) |
+| `alphagrid_get_agent_positions`          | `GET /agents/{agentId}/positions` (**NOT_IMPLEMENTED**) |
+| `alphagrid_get_trade_history`            | `GET /agents/{agentId}/trades` (**NOT_IMPLEMENTED**) |
+| `alphagrid_get_risk_state`               | `GET /agents/{agentId}/risk-state` (**NOT_IMPLEMENTED**) |
+| `alphagrid_get_intent_status`            | `GET /intents/{intentId}` (**NOT_IMPLEMENTED**) |
+
+Trading stubs return HTTP **501** or MCP `NOT_IMPLEMENTED` with `{ "error": "Not implemented", "code": "NOT_IMPLEMENTED", ... }` until the intent gateway ships.
 
 Connect MCP clients to `http://localhost:8787/mcp` in development (or your deployed Worker URL). Clients must send `Accept: application/json, text/event-stream` on MCP requests.
 

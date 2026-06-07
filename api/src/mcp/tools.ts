@@ -21,7 +21,13 @@ import {
   OraclePricesResponseSchema,
   VaultTokensResponseSchema,
 } from '../schemas/token.js'
+import {
+  GetAgentTradingInputSchema,
+  GetIntentStatusInputSchema,
+  SubmitTradeIntentInputSchema,
+} from '../schemas/trading.js'
 import { ListVaultsResponseSchema } from '../schemas/vault.js'
+import { TradingService } from '../services/trading.service.js'
 import {
   MCP_TOOL_NAMES,
   READ_ONLY_TOOL_ANNOTATIONS,
@@ -228,5 +234,63 @@ export function registerMcpTools(server: McpServer): void {
         return mcpToolErrorFromUnknown(error, 'Registration failed')
       }
     }
+  )
+
+  const tradingNotImplemented = () =>
+    mcpToolError(TradingService.notImplemented().message, 'NOT_IMPLEMENTED')
+
+  server.registerTool(
+    MCP_TOOL_NAMES.submitTradeIntent,
+    {
+      title: 'Submit trade intent',
+      description: 'Mirrors POST /agents/{agentId}/trade-intents. Returns NOT_IMPLEMENTED.',
+      inputSchema: SubmitTradeIntentInputSchema,
+      annotations: WRITE_TOOL_ANNOTATIONS,
+    },
+    tradingNotImplemented
+  )
+
+  server.registerTool(
+    MCP_TOOL_NAMES.getAgentPositions,
+    {
+      title: 'Agent open positions',
+      description: 'Mirrors GET /agents/{agentId}/positions. Returns NOT_IMPLEMENTED.',
+      inputSchema: GetAgentTradingInputSchema,
+      annotations: READ_ONLY_TOOL_ANNOTATIONS,
+    },
+    tradingNotImplemented
+  )
+
+  server.registerTool(
+    MCP_TOOL_NAMES.getTradeHistory,
+    {
+      title: 'Agent trade history',
+      description: 'Mirrors GET /agents/{agentId}/trades. Returns NOT_IMPLEMENTED.',
+      inputSchema: GetAgentTradingInputSchema,
+      annotations: READ_ONLY_TOOL_ANNOTATIONS,
+    },
+    tradingNotImplemented
+  )
+
+  server.registerTool(
+    MCP_TOOL_NAMES.getRiskState,
+    {
+      title: 'Agent risk state',
+      description: 'Mirrors GET /agents/{agentId}/risk-state. Returns NOT_IMPLEMENTED.',
+      inputSchema: GetAgentTradingInputSchema,
+      annotations: READ_ONLY_TOOL_ANNOTATIONS,
+    },
+    tradingNotImplemented
+  )
+
+  server.registerTool(
+    MCP_TOOL_NAMES.getIntentStatus,
+    {
+      title: 'Trade intent status',
+      description: 'Mirrors GET /intents/{intentId}. Returns NOT_IMPLEMENTED.',
+      inputSchema: GetIntentStatusInputSchema,
+      annotations: READ_ONLY_TOOL_ANNOTATIONS,
+    },
+    tradingNotImplemented
   )
 }

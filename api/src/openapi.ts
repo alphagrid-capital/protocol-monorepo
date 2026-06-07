@@ -19,6 +19,11 @@ export const OPENAPI_DOCUMENT_CONFIG = {
       name: 'Agents',
       description: 'Agent registration via x402 and AgentRegistry',
     },
+    {
+      name: 'Trading',
+      description:
+        'Trade intents, positions, and risk state (501 stubs until intent gateway ships)',
+    },
   ],
 }
 
