@@ -83,7 +83,7 @@ Trade history, risk state, and intent status stubs return HTTP **501** or MCP `N
 
 Connect MCP clients to `http://localhost:8787/mcp` in development (or your deployed Worker URL). Clients must send `Accept: application/json, text/event-stream` on MCP requests.
 
-**Cursor custom MCP:** use your deployed `https://<worker-host>/mcp` URL (Streamable HTTP). The server keeps one transport per `Mcp-Session-Id` so SSE reconnects do not hit `409 Conflict`. On Cloudflare Workers, sessions are in-memory per isolate; for production traffic across many instances, use Durable Objects for session affinity.
+**Cursor custom MCP:** use your deployed `https://<worker-host>/mcp` URL (Streamable HTTP). Tool calls use **POST with JSON responses** (`enableJsonResponse`); `GET /mcp` returns a short-lived SSE ack (not a hanging stream). Opening `/mcp` in a browser will fail — use an MCP client or [MCP Inspector](https://github.com/modelcontextprotocol/inspector). Sessions are in-memory per isolate; for long-lived SSE or multi-instance affinity, use Durable Objects.
 
 ## Layout
 

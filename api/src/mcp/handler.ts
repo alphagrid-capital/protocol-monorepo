@@ -15,6 +15,41 @@ function jsonRpcError(status: number, code: number, message: string): Response {
   )
 }
 
+/**
+ * Workers cannot safely close SSE streams opened by prior requests on the same
+ * in-memory transport (cross-request promise resolution). Return a short-lived
+ * standalone SSE response instead of a hanging stream. Tool calls use POST JSON.
+ */
+function workersFriendlyMcpGetResponse(
+  sessionId: string,
+  request: Request
+): Response {
+  const accept = request.headers.get('accept') ?? ''
+  if (!accept.includes('text/event-stream')) {
+    return jsonRpcError(
+      406,
+      -32_000,
+      'Not Acceptable: Client must accept text/event-stream'
+    )
+  }
+
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(new TextEncoder().encode(': ok\n\n'))
+      controller.close()
+    },
+  })
+
+  return new Response(stream, {
+    status: 200,
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache, no-transform',
+      'mcp-session-id': sessionId,
+    },
+  })
+}
+
 async function parseJsonBody(
   request: Request,
   parsedBody?: unknown
@@ -55,7 +90,7 @@ export async function handleMcpRequest(
         return jsonRpcError(
           400,
           -32_000,
-          'Bad Request: Mcp-Session-Id header is required'
+          'Bad Request: Mcp-Session-Id header is required. Use an MCP client with POST /mcp (initialize); browser GET is not supported.'
         )
       }
 
@@ -65,7 +100,7 @@ export async function handleMcpRequest(
       }
 
       if (request.method === 'GET') {
-        session.transport.closeStandaloneSSEStream()
+        return workersFriendlyMcpGetResponse(sessionHeader, request)
       }
 
       return session.transport.handleRequest(request, { parsedBody: body })

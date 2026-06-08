@@ -49,7 +49,8 @@ export async function createMcpSession(): Promise<McpSession> {
 
   const transport = new WebStandardStreamableHTTPServerTransport({
     sessionIdGenerator: () => crypto.randomUUID(),
-    enableJsonResponse: false,
+    // JSON responses avoid per-POST SSE streams that are fragile on Workers.
+    enableJsonResponse: true,
     onsessioninitialized: (sessionId) => {
       sessions.set(sessionId, { server, transport })
     },
