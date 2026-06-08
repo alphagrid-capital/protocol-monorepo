@@ -1,11 +1,19 @@
-import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi'
+import { createRoute, OpenAPIHono, z, type RouteHandler } from '@hono/zod-openapi'
+import { AppError } from '../errors.js'
 import { agentIdParamSchema } from '../schemas/agent.js'
 import {
   intentIdParamSchema,
-  TradeIntentRequestSchema,
+  LegacyTradeIntentRequestSchema,
+  ListAgentPositionsResponseSchema,
+  OpenPositionRequestSchema,
+  SubmitTradeIntentResponseSchema,
+  TradeIntentQuoteQuerySchema,
+  TradeIntentQuoteSchema,
+  TradingErrorSchema,
   TradingNotImplementedSchema,
 } from '../schemas/trading.js'
-import { TradingService } from '../services/trading.service.js'
+import { TradingError, TradingService } from '../services/trading.service.js'
+import { getWorkerEnv } from '../lib/worker-env.js'
 
 const tradingNotImplementedResponses = {
   501: {
@@ -18,13 +26,69 @@ const tradingNotImplementedResponses = {
   },
 } as const
 
+const tradingErrorResponses = {
+  400: {
+    description: 'Invalid trade intent or on-chain validation failed',
+    content: { 'application/json': { schema: TradingErrorSchema } },
+  },
+  404: {
+    description: 'Agent not found',
+    content: { 'application/json': { schema: TradingErrorSchema } },
+  },
+  502: {
+    description: 'On-chain submission failed',
+    content: { 'application/json': { schema: TradingErrorSchema } },
+  },
+  503: {
+    description: 'Trading or executor not configured',
+    content: { 'application/json': { schema: TradingErrorSchema } },
+  },
+} as const
+
+function statusFromTradingError(error: AppError): 400 | 404 | 502 | 503 {
+  if (error.status === 404) {
+    return 404
+  }
+  if (error.status === 400 || error.status === 502 || error.status === 503) {
+    return error.status
+  }
+  return 503
+}
+
+const tradeIntentQuoteRoute = createRoute({
+  method: 'get',
+  path: '/agents/{agentId}/trade-intents/quote',
+  tags: ['Trading'],
+  summary: 'Trade intent signing quote',
+  description:
+    'Returns nonce, EIP-712 domain, vault, allocation headroom, and vault-allowed symbols for OpenPosition signing.',
+  request: {
+    params: z.object({
+      agentId: agentIdParamSchema.openapi({
+        param: { name: 'agentId', in: 'path' },
+        example: '1',
+      }),
+    }),
+    query: TradeIntentQuoteQuerySchema,
+  },
+  responses: {
+    200: {
+      description: 'Trade intent quote',
+      content: {
+        'application/json': { schema: TradeIntentQuoteSchema },
+      },
+    },
+    ...tradingErrorResponses,
+  },
+})
+
 const submitAgentTradeIntentRoute = createRoute({
   method: 'post',
   path: '/agents/{agentId}/trade-intents',
   tags: ['Trading'],
   summary: 'Submit agent trade intent',
   description:
-    'Planned intent gateway entrypoint for agent-signed trade intents. Returns 501 until the executor is wired.',
+    'Verifies an EIP-712 OpenPosition signature and relays TradeRouter.openPosition via the executor.',
   request: {
     params: z.object({
       agentId: agentIdParamSchema.openapi({
@@ -35,12 +99,45 @@ const submitAgentTradeIntentRoute = createRoute({
     body: {
       content: {
         'application/json': {
-          schema: TradeIntentRequestSchema,
+          schema: OpenPositionRequestSchema,
         },
       },
     },
   },
-  responses: tradingNotImplementedResponses,
+  responses: {
+    201: {
+      description: 'Position opened',
+      content: {
+        'application/json': { schema: SubmitTradeIntentResponseSchema },
+      },
+    },
+    ...tradingErrorResponses,
+  },
+})
+
+const getAgentPositionsRoute = createRoute({
+  method: 'get',
+  path: '/agents/{agentId}/positions',
+  tags: ['Trading'],
+  summary: 'Agent open positions',
+  description: 'Reads open positions from PositionManager via RPC (catalog token scan).',
+  request: {
+    params: z.object({
+      agentId: agentIdParamSchema.openapi({
+        param: { name: 'agentId', in: 'path' },
+        example: '1',
+      }),
+    }),
+  },
+  responses: {
+    200: {
+      description: 'Open positions',
+      content: {
+        'application/json': { schema: ListAgentPositionsResponseSchema },
+      },
+    },
+    ...tradingErrorResponses,
+  },
 })
 
 const submitTradeIntentRoute = createRoute({
@@ -48,13 +145,12 @@ const submitTradeIntentRoute = createRoute({
   path: '/intents/trade',
   tags: ['Trading'],
   summary: 'Submit trade intent',
-  description:
-    'Planned global intent gateway entrypoint. Returns 501 until the executor is wired.',
+  description: 'Planned global intent gateway entrypoint. Returns 501 until implemented.',
   request: {
     body: {
       content: {
         'application/json': {
-          schema: TradeIntentRequestSchema,
+          schema: LegacyTradeIntentRequestSchema,
         },
       },
     },
@@ -68,23 +164,6 @@ const getAgentTradesRoute = createRoute({
   tags: ['Trading'],
   summary: 'Agent trade history',
   description: 'Planned indexed trade history for an agent. Returns 501 until the indexer is built.',
-  request: {
-    params: z.object({
-      agentId: agentIdParamSchema.openapi({
-        param: { name: 'agentId', in: 'path' },
-        example: '1',
-      }),
-    }),
-  },
-  responses: tradingNotImplementedResponses,
-})
-
-const getAgentPositionsRoute = createRoute({
-  method: 'get',
-  path: '/agents/{agentId}/positions',
-  tags: ['Trading'],
-  summary: 'Agent open positions',
-  description: 'Planned on-chain position reads for an agent. Returns 501 until the indexer is built.',
   request: {
     params: z.object({
       agentId: agentIdParamSchema.openapi({
@@ -132,16 +211,76 @@ const getIntentRoute = createRoute({
 
 export const tradingRoutes = new OpenAPIHono()
 
-tradingRoutes.openapi(submitAgentTradeIntentRoute, (c) =>
-  c.json(TradingService.notImplemented(), 501)
+const tradeIntentQuoteHandler = async (
+  c: Parameters<RouteHandler<typeof tradeIntentQuoteRoute>>[0]
+) => {
+  try {
+    const symbol = c.req.query('symbol')
+    const quote = await TradingService.fromEnv(getWorkerEnv()).getQuote(
+      c.req.param('agentId'),
+      symbol
+    )
+    return c.json(quote, 200)
+  } catch (error) {
+    if (error instanceof TradingError || error instanceof AppError) {
+      return c.json({ error: error.message }, statusFromTradingError(error))
+    }
+    throw error
+  }
+}
+
+const submitAgentTradeIntentHandler = async (
+  c: Parameters<RouteHandler<typeof submitAgentTradeIntentRoute>>[0]
+) => {
+  try {
+    const result = await TradingService.fromEnv(getWorkerEnv()).submitIntent(
+      c.req.param('agentId'),
+      c.req.valid('json')
+    )
+    return c.json(result, 201)
+  } catch (error) {
+    if (error instanceof TradingError || error instanceof AppError) {
+      return c.json({ error: error.message }, statusFromTradingError(error))
+    }
+    throw error
+  }
+}
+
+const getAgentPositionsHandler = async (
+  c: Parameters<RouteHandler<typeof getAgentPositionsRoute>>[0]
+) => {
+    try {
+      const result = await TradingService.fromEnv(
+        getWorkerEnv()
+      ).listOpenPositions(c.req.param('agentId'))
+      return c.json(result, 200)
+    } catch (error) {
+      if (error instanceof TradingError || error instanceof AppError) {
+        return c.json({ error: error.message }, statusFromTradingError(error))
+      }
+      throw error
+    }
+  }
+
+tradingRoutes.openapi(
+  tradeIntentQuoteRoute,
+  tradeIntentQuoteHandler as RouteHandler<typeof tradeIntentQuoteRoute>
 )
+tradingRoutes.openapi(
+  submitAgentTradeIntentRoute,
+  submitAgentTradeIntentHandler as RouteHandler<
+    typeof submitAgentTradeIntentRoute
+  >
+)
+tradingRoutes.openapi(
+  getAgentPositionsRoute,
+  getAgentPositionsHandler as RouteHandler<typeof getAgentPositionsRoute>
+)
+
 tradingRoutes.openapi(submitTradeIntentRoute, (c) =>
   c.json(TradingService.notImplemented(), 501)
 )
 tradingRoutes.openapi(getAgentTradesRoute, (c) =>
-  c.json(TradingService.notImplemented(), 501)
-)
-tradingRoutes.openapi(getAgentPositionsRoute, (c) =>
   c.json(TradingService.notImplemented(), 501)
 )
 tradingRoutes.openapi(getAgentRiskStateRoute, (c) =>

@@ -148,6 +148,26 @@ export class AgentRegistryService {
     return { name, version }
   }
 
+  async signerOf(agentId: bigint): Promise<Address> {
+    const client = this.providerService.createPublicClient()
+    return client.readContract({
+      address: this.registryAddress,
+      abi: agentRegistryAbi,
+      functionName: 'signerOf',
+      args: [agentId],
+    })
+  }
+
+  async vaultOf(agentId: bigint): Promise<Address> {
+    const client = this.providerService.createPublicClient()
+    return client.readContract({
+      address: this.registryAddress,
+      abi: agentRegistryAbi,
+      functionName: 'vaultOf',
+      args: [agentId],
+    })
+  }
+
   async registerWithRelayer(
     relayerPrivateKey: Hex,
     data: SelfRegisterTypedData

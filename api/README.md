@@ -36,10 +36,11 @@ yarn deploy      # Deploy to Cloudflare (requires account auth)
 | `GET`  | `/tokens`             | Global token catalog + on-chain registry state             |
 | `GET`  | `/prices`             | MockPriceOracle quotes indexed by symbol (e.g. `NVDA`)     |
 | `POST` | `/prices/refresh`     | Manually fetch Finnhub quotes and update the oracle        |
-| `POST` | `/agents/{agentId}/trade-intents` | Trade intent submit (**501** stub)              |
+| `GET`  | `/agents/{agentId}/trade-intents/quote` | EIP-712 quote for open-position intent (nonce, vault, allocation) |
+| `POST` | `/agents/{agentId}/trade-intents` | Verify signed open intent; relay `TradeRouter.openPosition` (201) |
+| `GET`  | `/agents/{agentId}/positions` | Agent open positions (RPC read via `PositionManager`)      |
 | `POST` | `/intents/trade`      | Global trade intent submit (**501** stub)                  |
 | `GET`  | `/agents/{agentId}/trades` | Agent trade history (**501** stub)                    |
-| `GET`  | `/agents/{agentId}/positions` | Agent open positions (**501** stub)                |
 | `GET`  | `/agents/{agentId}/risk-state` | Agent risk state (**501** stub)                   |
 | `GET`  | `/intents/{intentId}` | Intent status lookup (**501** stub)                        |
 | `GET`  | `/docs`               | Swagger UI (humans; poor fit for URL paste in chat)        |
@@ -72,13 +73,13 @@ ChatGPT **browsing** only performs simple `GET` requests on **public** URLs. It 
 | `alphagrid_link_agent_erc8004`           | `POST /agents/{agentId}/erc8004/link`     |
 | `alphagrid_get_agent_registration_quote` | `GET /agents/register/quote`              |
 | `alphagrid_register_agent`               | `POST /agents/register`                   |
-| `alphagrid_submit_trade_intent`          | `POST /agents/{agentId}/trade-intents` (**NOT_IMPLEMENTED**) |
-| `alphagrid_get_agent_positions`          | `GET /agents/{agentId}/positions` (**NOT_IMPLEMENTED**) |
+| `alphagrid_submit_trade_intent`          | `POST /agents/{agentId}/trade-intents` |
+| `alphagrid_get_agent_positions`          | `GET /agents/{agentId}/positions` |
 | `alphagrid_get_trade_history`            | `GET /agents/{agentId}/trades` (**NOT_IMPLEMENTED**) |
 | `alphagrid_get_risk_state`               | `GET /agents/{agentId}/risk-state` (**NOT_IMPLEMENTED**) |
 | `alphagrid_get_intent_status`            | `GET /intents/{intentId}` (**NOT_IMPLEMENTED**) |
 
-Trading stubs return HTTP **501** or MCP `NOT_IMPLEMENTED` with `{ "error": "Not implemented", "code": "NOT_IMPLEMENTED", ... }` until the intent gateway ships.
+Trade history, risk state, and intent status stubs return HTTP **501** or MCP `NOT_IMPLEMENTED`. Open-position quote, submit, and positions require executor config (see below).
 
 Connect MCP clients to `http://localhost:8787/mcp` in development (or your deployed Worker URL). Clients must send `Accept: application/json, text/event-stream` on MCP requests.
 
@@ -113,6 +114,33 @@ When `AGENT_REGISTRY_ADDRESS`, `FEE_MANAGER_ADDRESS`, `RPC_URL`, and `RELAYER_PR
 | `X402_NETWORK` / `X402_FACILITATOR_URL` | x402 network/facilitator settings                         |
 
 Without these, `POST /agents/register` runs in mock mode (no chain submit).
+
+## Trade execution (open position)
+
+When `TRADE_ROUTER_ADDRESS` (or address in `api/src/constants/contracts.ts`), `RPC_URL`, `CHAIN_ID`, and `EXECUTOR_PRIVATE_KEY` are set, the API verifies EIP-712 `OpenPosition` intents and relays `TradeRouter.openPosition` via an EOA with `EXECUTOR_ROLE`.
+
+| Variable | Role |
+| --- | --- |
+| `TRADE_ROUTER_ADDRESS` | `TradeRouter` contract (optional if set in `contracts.ts` for `CHAIN_ID`) |
+| `EXECUTOR_PRIVATE_KEY` | Secret (`wrangler secret put`); signs `openPosition` txs |
+| `RPC_URL` / `CHAIN_ID` | Chain access (same as registration) |
+| `AGENT_REGISTRY_ADDRESS` | Resolve agent signer and vault |
+
+**Agent-friendly submit body:** `symbol`, human `usdcAmount`, `minTokenOut`, `maxSlippageBps`, `exits`, `deadline`, `nonce`, `signature`. Vault is resolved from `AgentRegistry.vaultOf(agentId)` — never from the client.
+
+**Quote first:** `GET /agents/{agentId}/trade-intents/quote` returns nonce, EIP-712 domain, vault, allocation headroom, and allowed symbols. Sign with the agent signer (see [`contracts/docs/position-intent-eip712.md`](../contracts/docs/position-intent-eip712.md)).
+
+Without executor config, quote/submit/positions return **503** (not configured). Settlement uses on-chain `MockSwapAdapter` (mock token mint/burn) — no external venue.
+
+### Manual E2E (testnet)
+
+1. Deploy trading stack (`DeployTrading`) and grant `EXECUTOR_ROLE` to the executor EOA.
+2. Ensure vault has idle USDC, enabled tokens, and oracle prices.
+3. Register an agent with a known signer.
+4. `GET /agents/{agentId}/trade-intents/quote`
+5. Sign `OpenPosition` with the agent signer.
+6. `POST /agents/{agentId}/trade-intents` with the signed body → `{ positionId, transactionHash }`
+7. `GET /agents/{agentId}/positions` shows the open position.
 
 ## CI deployment
 

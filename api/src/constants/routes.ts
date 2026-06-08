@@ -16,6 +16,7 @@ export const ROUTE_PATHS = {
   agentRegister: '/agents/register',
   agentRegisterQuote: '/agents/register/quote',
   agentTradeIntents: '/agents/{agentId}/trade-intents',
+  agentTradeIntentsQuote: '/agents/{agentId}/trade-intents/quote',
   agentTrades: '/agents/{agentId}/trades',
   agentPositions: '/agents/{agentId}/positions',
   agentRiskState: '/agents/{agentId}/risk-state',

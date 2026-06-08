@@ -73,6 +73,7 @@ jobs:
             X402_NETWORK
             X402_FACILITATOR_URL
             RELAYER_PRIVATE_KEY
+            EXECUTOR_PRIVATE_KEY
             FINNHUB_API_KEY
         env:
           ORACLE_KEEPER_PRIVATE_KEY: ${{ secrets.ORACLE_KEEPER_PRIVATE_KEY }}
@@ -81,4 +82,5 @@ jobs:
           X402_NETWORK: ${{ secrets.X402_NETWORK }}
           X402_FACILITATOR_URL: ${{ secrets.X402_FACILITATOR_URL }}
           RELAYER_PRIVATE_KEY: ${{ secrets.RELAYER_PRIVATE_KEY }}
+          EXECUTOR_PRIVATE_KEY: ${{ secrets.EXECUTOR_PRIVATE_KEY }}
           FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}

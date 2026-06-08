@@ -41,6 +41,10 @@ export class ProviderService {
     return new ProviderService(config.rpcUrl, config.chainId)
   }
 
+  static fromChain(rpcUrl: string, chainId: number): ProviderService {
+    return new ProviderService(rpcUrl, chainId)
+  }
+
   createPublicClient() {
     return createPublicClient({
       chain: this.chain,

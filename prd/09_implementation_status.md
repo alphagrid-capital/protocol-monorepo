@@ -17,10 +17,10 @@ Other PRD files describe **requirements and design**. When implementation change
 | Layer | Status | Summary |
 | --- | --- | --- |
 | **On-chain (`contracts/`)** | MVP complete | Agent onboarding, four vaults, allocation, trading settlement |
-| **Off-chain (`api/`)** | Partial | Vaults, tokens, prices, agent register/read, trading API stubs (501), MCP, oracle keeper |
+| **Off-chain (`api/`)** | Partial | Vaults, tokens, prices, agent register/read, open-position trade path, MCP, oracle keeper |
 | **Product (indexer, perf, UI)** | Not started | Leaderboard, profiles, admin, frontend, trade executor |
 
-**MVP demo loop gap:** Agents can register and contracts can settle trades, but there is no end-to-end product path yet for trade submission, performance display, or leaderboard ranking.
+**MVP demo loop gap:** Agents can register and open positions via the API when the executor is configured, but there is no indexer, performance display, or leaderboard ranking yet.
 
 ---
 
@@ -75,12 +75,12 @@ Stack: **Cloudflare Worker** (`api/`, Hono + TypeScript). No PostgreSQL or index
 
 | Component | Status | Notes |
 | --- | --- | --- |
-| HTTP API | Partial | Health, vaults, tokens, prices, agent get/register, trading stubs (501), OpenAPI, discovery |
-| MCP server | Partial | Tools mirror implemented HTTP routes; trading tools return `NOT_IMPLEMENTED` |
+| HTTP API | Partial | Health, vaults, tokens, prices, agent get/register, open-position quote/submit/positions, OpenAPI, discovery |
+| MCP server | Partial | Tools mirror implemented HTTP routes; trade history/risk/intent status still `NOT_IMPLEMENTED` |
 | x402 registration fee | Done | USDC via x402; relayer submits `registerAgent` (on-chain fee skipped) |
 | Oracle price keeper | Done | Cron + `POST /prices/refresh` → `MockPriceOracle` (Finnhub) |
 | PostgreSQL / indexer | Not built | No event index; no cached agent list |
-| Intent gateway + executor | Not built | HTTP/MCP trading routes exist as **501 stubs** only; no validation, storage, or `EXECUTOR_ROLE` bot |
+| Intent gateway + executor | Partial | Open-position quote, EIP-712 verify, `EXECUTOR_ROLE` relay to `TradeRouter.openPosition`; no DB intent store |
 | Performance engine | Not built | PnL, drawdown, Alpha Score |
 | Risk event engine | Not built | Drawdown breach → automated status changes |
 | Leaderboard API | Not built | Vault + track filters |
@@ -102,29 +102,43 @@ Stack: **Cloudflare Worker** (`api/`, Hono + TypeScript). No PostgreSQL or index
 | `GET` | `/agents/register/quote` | EIP-712 + x402 registration quote |
 | `POST` | `/agents/register` | Register via relayer (x402 when fee > 0) |
 | `POST` | `/agents/{agentId}/erc8004/link` | Link ERC-8004 identity |
+| `GET` | `/agents/{agentId}/trade-intents/quote` | EIP-712 quote (nonce, vault, allocation, allowed symbols) |
+| `POST` | `/agents/{agentId}/trade-intents` | Verify signed open intent; relay `openPosition` (201) |
+| `GET` | `/agents/{agentId}/positions` | Open positions via RPC (`PositionManager`) |
 | `GET` | `/`, `/llms.txt`, `/docs/swagger.json` | Discovery / OpenAPI |
 | `POST` | `/mcp` | MCP Streamable HTTP |
 
 ### Trading API stubs (501)
 
-Routes and MCP tools are registered in OpenAPI/discovery but return **501 Not Implemented** (`code: NOT_IMPLEMENTED`) until the intent gateway and executor ship.
+Routes are registered in OpenAPI but return **501 Not Implemented** (`code: NOT_IMPLEMENTED`).
 
 | Method | Path | Description |
 | --- | --- | --- |
-| `POST` | `/agents/{agentId}/trade-intents` | Submit agent trade intent |
 | `POST` | `/intents/trade` | Global trade intent gateway |
 | `GET` | `/agents/{agentId}/trades` | Agent trade history |
-| `GET` | `/agents/{agentId}/positions` | Agent open positions |
 | `GET` | `/agents/{agentId}/risk-state` | Agent risk state |
 | `GET` | `/intents/{intentId}` | Intent status lookup |
 
 | MCP tool | HTTP equivalent |
 | --- | --- |
-| `alphagrid_submit_trade_intent` | `POST /agents/{agentId}/trade-intents` |
-| `alphagrid_get_agent_positions` | `GET /agents/{agentId}/positions` |
 | `alphagrid_get_trade_history` | `GET /agents/{agentId}/trades` |
 | `alphagrid_get_risk_state` | `GET /agents/{agentId}/risk-state` |
 | `alphagrid_get_intent_status` | `GET /intents/{intentId}` |
+
+### Implemented trading (open position)
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `GET` | `/agents/{agentId}/trade-intents/quote` | Nonce, EIP-712 domain, vault, allocation cap/used |
+| `POST` | `/agents/{agentId}/trade-intents` | Agent-friendly body + signature → on-chain open |
+| `GET` | `/agents/{agentId}/positions` | RPC scan of open positions for catalog tokens |
+
+| MCP tool | HTTP equivalent |
+| --- | --- |
+| `alphagrid_submit_trade_intent` | `POST /agents/{agentId}/trade-intents` |
+| `alphagrid_get_agent_positions` | `GET /agents/{agentId}/positions` |
+
+Requires `EXECUTOR_PRIVATE_KEY`, `TRADE_ROUTER_ADDRESS` (or `contracts.ts`), and `RPC_URL` / `CHAIN_ID`. See [`api/README.md`](../api/README.md) and [`contracts/docs/position-intent-eip712.md`](../contracts/docs/position-intent-eip712.md).
 
 ### Implemented MCP tools
 
@@ -138,6 +152,8 @@ alphagrid_get_agent_by_erc8004
 alphagrid_link_agent_erc8004
 alphagrid_get_agent_registration_quote
 alphagrid_register_agent
+alphagrid_submit_trade_intent
+alphagrid_get_agent_positions
 ```
 
 ### Planned MCP / API (not yet implemented)
@@ -149,7 +165,7 @@ GET /leaderboard / GET /agents (list) / admin routes / vault deposit APIs
 POST /intents/{id}/cancel / GET /intents/{id}/execution
 ```
 
-Trading routes listed in § Trading API stubs are **surface-only** (501); they are not counted as implemented here.
+Trade history, risk state, and global intent gateway routes listed in § Trading API stubs are **501** only.
 
 ### Off-chain checklist
 
@@ -160,10 +176,11 @@ Trading routes listed in § Trading API stubs are **surface-only** (501); they a
 - [x] MCP tools for implemented routes
 - [x] Mock oracle price keeper
 - [x] Trading API + MCP stubs (501; OpenAPI/discovery wired)
+- [x] Open-position trade path (quote, EIP-712 submit, positions read; executor relay)
 - [ ] Contract event indexing
 - [ ] Agent list, search, and allocation history cache
-- [ ] Trade intent gateway + AlphaGrid executor service
-- [ ] Trade history and position reads for agents
+- [ ] Trade intent gateway + AlphaGrid executor service (close/rebalance, intent store)
+- [ ] Trade history reads for agents
 - [ ] Performance engine (PnL, drawdown, Alpha Score)
 - [ ] Risk event engine
 - [ ] Leaderboard API
@@ -194,9 +211,9 @@ Phases describe the **full MVP product**. Status as of 2026-06-07:
 
 **On-chain:** Done (`PositionManager`, `TradeRouter`, swap adapters, EIP-712 opens, keeper exits, `forceClose`).
 
-**Partial (`api/`):** trading HTTP/MCP routes return 501 (stubs in OpenAPI only).
+**Partial (`api/`):** trading HTTP/MCP open-position path (quote, submit, positions); history/risk/intent status remain 501.
 
-**Remaining:** intent gateway logic, executor bot (`EXECUTOR_ROLE`), indexer + real trade/position reads, frontend execution visibility.
+**Remaining:** intent store, trade history indexer, close/rebalance API, frontend execution visibility.
 
 ### Phase 4 — Performance and Risk
 
@@ -222,7 +239,7 @@ Phases describe the **full MVP product**. Status as of 2026-06-07:
 
 These block the MVP demo script in `06_mvp_scope.md` §11:
 
-1. Trade intent submission path (API → executor → `TradeRouter.openPosition`)
+1. ~~Trade intent submission path (API → executor → `TradeRouter.openPosition`)~~ — open position path implemented; trade history and indexer still missing
 2. Indexer recording positions, trades, allocations
 3. Performance engine updating PnL, drawdown, Alpha Score
 4. Leaderboard ranking agents

@@ -1,5 +1,6 @@
 import { AppError } from '../errors.js'
 import { AgentRegistrationError } from '../services/agent-registration.service.js'
+import { TradingError } from '../services/trading.service.js'
 
 interface ToolTextContent {
   type: 'text'
@@ -32,7 +33,7 @@ export function mcpToolErrorFromUnknown(
   error: unknown,
   fallbackMessage = 'Request failed'
 ) {
-  if (error instanceof AppError || error instanceof AgentRegistrationError) {
+  if (error instanceof AppError || error instanceof AgentRegistrationError || error instanceof TradingError) {
     return mcpToolError(error.message, error.code)
   }
   const message = error instanceof Error ? error.message : fallbackMessage

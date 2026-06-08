@@ -25,6 +25,8 @@ import {
   GetAgentTradingInputSchema,
   GetIntentStatusInputSchema,
   SubmitTradeIntentInputSchema,
+  SubmitTradeIntentResponseSchema,
+  ListAgentPositionsResponseSchema,
 } from '../schemas/trading.js'
 import { ListVaultsResponseSchema } from '../schemas/vault.js'
 import { TradingService } from '../services/trading.service.js'
@@ -236,30 +238,50 @@ export function registerMcpTools(server: McpServer): void {
     }
   )
 
-  const tradingNotImplemented = () =>
-    mcpToolError(TradingService.notImplemented().message, 'NOT_IMPLEMENTED')
-
   server.registerTool(
     MCP_TOOL_NAMES.submitTradeIntent,
     {
       title: 'Submit trade intent',
-      description: 'Mirrors POST /agents/{agentId}/trade-intents. Returns NOT_IMPLEMENTED.',
+      description: 'Mirrors POST /agents/{agentId}/trade-intents (EIP-712 OpenPosition + executor).',
       inputSchema: SubmitTradeIntentInputSchema,
+      outputSchema: SubmitTradeIntentResponseSchema,
       annotations: WRITE_TOOL_ANNOTATIONS,
     },
-    tradingNotImplemented
+    async ({ agentId, ...body }) => {
+      try {
+        const output = await TradingService.fromEnv(getWorkerEnv()).submitIntent(
+          agentId,
+          body
+        )
+        return mcpToolSuccess(output)
+      } catch (error) {
+        return mcpToolErrorFromUnknown(error, 'Trade submission failed')
+      }
+    }
   )
 
   server.registerTool(
     MCP_TOOL_NAMES.getAgentPositions,
     {
       title: 'Agent open positions',
-      description: 'Mirrors GET /agents/{agentId}/positions. Returns NOT_IMPLEMENTED.',
+      description: 'Mirrors GET /agents/{agentId}/positions.',
       inputSchema: GetAgentTradingInputSchema,
+      outputSchema: ListAgentPositionsResponseSchema,
       annotations: READ_ONLY_TOOL_ANNOTATIONS,
     },
-    tradingNotImplemented
+    async ({ agentId }) => {
+      try {
+        const output =
+          await TradingService.fromEnv(getWorkerEnv()).listOpenPositions(agentId)
+        return mcpToolSuccess(output)
+      } catch (error) {
+        return mcpToolErrorFromUnknown(error, 'Failed to load positions')
+      }
+    }
   )
+
+  const tradingNotImplemented = () =>
+    mcpToolError(TradingService.notImplemented().message, 'NOT_IMPLEMENTED')
 
   server.registerTool(
     MCP_TOOL_NAMES.getTradeHistory,

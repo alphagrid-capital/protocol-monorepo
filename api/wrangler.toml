@@ -23,6 +23,8 @@ head_sampling_rate = 1
 # X402_NETWORK = "eip155:84532"
 # X402_FACILITATOR_URL = "https://x402.org/facilitator"
 # RELAYER_PRIVATE_KEY — use `wrangler secret put RELAYER_PRIVATE_KEY` (never commit)
+# EXECUTOR_PRIVATE_KEY — use `wrangler secret put EXECUTOR_PRIVATE_KEY` (TradeRouter EXECUTOR_ROLE)
+# TRADE_ROUTER_ADDRESS — optional if set in api/src/constants/contracts.ts
 ENABLE_SWAGGER="true"
 # FINNHUB_API_KEY — `wrangler secret put FINNHUB_API_KEY`
 # ORACLE_KEEPER_PRIVATE_KEY — `wrangler secret put ORACLE_KEEPER_PRIVATE_KEY` (ORACLE_UPDATER on MockPriceOracle)
