@@ -10,6 +10,10 @@
   "scripts": {
     "build": "tsup && node -e \"require('fs').chmodSync('build/index.js', '755')\"",
     "clean": "rm -rf build",
+    "dev": "wrangler dev",
+    "dev:stdio": "node --env-file-if-exists=.env --import tsx src/index.ts",
+    "deploy": "wrangler deploy",
+    "format": "prettier --write .",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
@@ -23,8 +27,10 @@
   },
   "devDependencies": {
     "@types/node": "^22.13.9",
+    "prettier": "^3.8.3",
     "tsup": "^8.4.0",
     "tsx": "^4.19.3",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.2",
+    "wrangler": "^4.19.1"
   }
 }

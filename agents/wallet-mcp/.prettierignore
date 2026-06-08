@@ -1,0 +1,6 @@
+# .prettierignore
+node_modules/
+build/
+.wrangler/
+yarn.lock
+package-lock.json
