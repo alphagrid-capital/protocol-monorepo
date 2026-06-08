@@ -8,9 +8,15 @@
     "node": ">=20.17"
   },
   "scripts": {
-    "dev": "mint dev"
+    "dev": "mint dev",
+    "format": "prettier \"**/*.{css,js,json,md,mdx,ts,tsx}\" --write",
+    "format:check": "prettier \"**/*.{css,js,json,md,mdx,ts,tsx}\" --check"
   },
   "devDependencies": {
-    "mint": "^4.2.459"
+    "@mintlify/prettier-config": "^1.0.6",
+    "@trivago/prettier-plugin-sort-imports": "^6.0.2",
+    "mint": "^4.2.459",
+    "prettier": "^3.8.3",
+    "prettier-plugin-tailwindcss": "^0.8.0"
   }
 }

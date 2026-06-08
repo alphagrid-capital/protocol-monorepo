@@ -1,15 +1,142 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
+  "theme": "aspen",
   "name": "AlphaGrid",
+  "description": "Decentralized prop trading for autonomous agents",
   "colors": {
-    "primary": "#2563EB"
+    "primary": "#00E696",
+    "light": "#66F0BE",
+    "dark": "#00B878"
+  },
+  "logo": {
+    "light": "/logo/light-sm.png",
+    "dark": "/logo/dark-sm.png",
+    "href": "https://alphagrid.capital/"
+  },
+  "favicon": "/logo/favicon.png",
+  "appearance": {
+    "default": "dark"
+  },
+  "background": {
+    "decoration": "gradient",
+    "color": {
+      "dark": "#000000",
+      "light": "#F0FDF9"
+    }
+  },
+  "icons": {
+    "library": "lucide"
+  },
+  "navbar": {
+    "links": [
+      {
+        "type": "github",
+        "href": "https://github.com/alphagrid-prop/contracts"
+      },
+      {
+        "label": "X",
+        "href": "https://x.com/AlphaGridProp"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Open App",
+      "href": "https://alphagrid.capital/"
+    }
+  },
+  "footer": {
+    "socials": {
+      "x": "https://x.com/AlphaGridProp",
+      "github": "https://github.com/alphagrid-prop/contracts"
+    },
+    "links": [
+      {
+        "header": "Protocol",
+        "items": [
+          {
+            "label": "How it works",
+            "href": "/overview/how-it-works"
+          },
+          {
+            "label": "Protocol",
+            "href": "/protocol/protocol"
+          },
+          {
+            "label": "Risk engine",
+            "href": "/protocol/protocol#risk-engine"
+          }
+        ]
+      },
+      {
+        "header": "Build",
+        "items": [
+          {
+            "label": "Agent guide",
+            "href": "/agents/agent-guide"
+          },
+          {
+            "label": "API & MCP",
+            "href": "/reference/api-mcp"
+          },
+          {
+            "label": "Integrate",
+            "href": "/integrations/integrate"
+          }
+        ]
+      },
+      {
+        "header": "Resources",
+        "items": [
+          {
+            "label": "Vaults",
+            "href": "/capital/vaults"
+          },
+          {
+            "label": "Help",
+            "href": "/resources/help"
+          },
+          {
+            "label": "Landing page",
+            "href": "https://alphagrid.capital/"
+          }
+        ]
+      }
+    ]
+  },
+  "interaction": {
+    "drilldown": false
   },
   "navigation": {
     "groups": [
       {
-        "group": "Getting started",
-        "pages": ["index"]
+        "group": "Overview",
+        "icon": "book-open",
+        "pages": ["index", "overview/how-it-works", "overview/glossary"]
+      },
+      {
+        "group": "Build an agent",
+        "icon": "bot",
+        "pages": ["agents/agent-guide"]
+      },
+      {
+        "group": "Capital providers",
+        "icon": "landmark",
+        "pages": ["capital/vaults", "capital/returns-risk"]
+      },
+      {
+        "group": "Integrate",
+        "icon": "plug",
+        "pages": ["integrations/integrate", "reference/api-mcp"]
+      },
+      {
+        "group": "Protocol",
+        "icon": "network",
+        "pages": ["protocol/protocol", "reference/contracts"]
+      },
+      {
+        "group": "Help",
+        "icon": "life-buoy",
+        "pages": ["resources/help"]
       }
     ]
   }

@@ -14,6 +14,16 @@ yarn dev
 
 Open http://localhost:3000.
 
+## Format
+
+Uses [`@mintlify/prettier-config`](https://www.npmjs.com/package/@mintlify/prettier-config):
+
+```bash
+cd docs
+yarn format        # write
+yarn format:check  # CI check
+```
+
 ## Deploy
 
 1. Push this repository to GitHub.
