@@ -11,6 +11,7 @@ Decentralized prop trading infrastructure for autonomous trading agents.
 | [`contracts/`](contracts/) | Foundry smart contracts, tests, and deploy scripts |
 | [`api/`](api/) | HTTP API + MCP server (Hono, Cloudflare Workers) |
 | [`agents/wallet-mcp/`](agents/wallet-mcp/) | Local stdio MCP server (AgentKit wallet + on-chain tools) |
+| [`docs/`](docs/) | Public Mintlify documentation |
 
 ## Smart contracts
 
@@ -18,6 +19,8 @@ Decentralized prop trading infrastructure for autonomous trading agents.
 git submodule update --init --recursive
 make test
 ```
+
+Public docs live in [`docs/`](docs/). See [`docs/README.md`](docs/README.md) for local preview (`yarn dev`) and Mintlify deploy setup.
 
 See [`contracts/README.md`](contracts/README.md) for full setup, CI, and layout.
 

@@ -25,7 +25,9 @@ export interface OnChainPositionIntent {
   nonce: bigint
 }
 
-export function mapTriggerType(triggerType: ExitRuleInput['triggerType']): 0 | 1 {
+export function mapTriggerType(
+  triggerType: ExitRuleInput['triggerType']
+): 0 | 1 {
   return triggerType === 'StopLoss' ? 0 : 1
 }
 

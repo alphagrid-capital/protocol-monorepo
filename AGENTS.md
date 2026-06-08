@@ -4,7 +4,7 @@
 
 ### Project overview
 
-AlphaGrid is a monorepo: Foundry smart contracts in `contracts/`, and an HTTP API scaffold in `api/` (Cloudflare Workers; not yet implemented). See `README.md`, `contracts/README.md`, and `api/README.md` for commands.
+AlphaGrid is a monorepo: Foundry smart contracts in `contracts/`, an HTTP API in `api/` (Cloudflare Workers), and public Mintlify docs in `docs/`. See `README.md`, `contracts/README.md`, `api/README.md`, and `docs/README.md` for commands.
 
 ### Prerequisites
 

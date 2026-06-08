@@ -36,7 +36,9 @@ export function loadTradingConfig(
     throw new Error(`AgentRegistry is not deployed for CHAIN_ID: ${chainId}`)
   }
   if (!chainContracts.AllocationManager) {
-    throw new Error(`AllocationManager is not deployed for CHAIN_ID: ${chainId}`)
+    throw new Error(
+      `AllocationManager is not deployed for CHAIN_ID: ${chainId}`
+    )
   }
 
   const tradeRouterAddress =

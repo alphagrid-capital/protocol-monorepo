@@ -6,10 +6,7 @@ import {
   buildOnChainIntent,
   resolveTokenAddress,
 } from '../lib/trading-intent-builder.js'
-import {
-  loadTradingConfig,
-  type TradingConfig,
-} from '../lib/trading-config.js'
+import { loadTradingConfig, type TradingConfig } from '../lib/trading-config.js'
 import { tokenCatalog } from '../lib/token-catalog.js'
 import { getWorkerEnv } from '../lib/worker-env.js'
 import { isContractRevert } from '../lib/viem-revert.js'
@@ -103,9 +100,7 @@ export class TradingService {
     const allowedSymbols = await this.listAllowedSymbols(vault)
 
     const available =
-      allocation.cap > allocation.used
-        ? allocation.cap - allocation.used
-        : 0n
+      allocation.cap > allocation.used ? allocation.cap - allocation.used : 0n
 
     let token: Address | null = null
     if (symbol) {
@@ -241,7 +236,9 @@ export class TradingService {
     }
   }
 
-  async listOpenPositions(agentIdStr: string): Promise<ListAgentPositionsResponse> {
+  async listOpenPositions(
+    agentIdStr: string
+  ): Promise<ListAgentPositionsResponse> {
     const agentId = BigInt(agentIdStr)
     const registry = this.agentRegistryService()
     const tradeRouter = this.tradeRouterService()
@@ -341,7 +338,10 @@ export class TradingService {
       args: [token],
     })
     if (!isAllowed) {
-      throw new TradingError(`Token is not allowed on agent vault: ${token}`, 400)
+      throw new TradingError(
+        `Token is not allowed on agent vault: ${token}`,
+        400
+      )
     }
   }
 

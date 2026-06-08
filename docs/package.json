@@ -1,0 +1,16 @@
+{
+  "name": "@alphagrid/docs",
+  "version": "0.0.1",
+  "private": true,
+  "description": "AlphaGrid public documentation (Mintlify).",
+  "packageManager": "yarn@1.22.22",
+  "engines": {
+    "node": ">=20.17"
+  },
+  "scripts": {
+    "dev": "mint dev"
+  },
+  "devDependencies": {
+    "mint": "^4.2.459"
+  }
+}

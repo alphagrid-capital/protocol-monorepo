@@ -26,26 +26,26 @@ yarn deploy      # Deploy to Cloudflare (requires account auth)
 
 ## Endpoints
 
-| Method | Path                  | Description                                                |
-| ------ | --------------------- | ---------------------------------------------------------- |
-| `GET`  | `/`                   | API discovery JSON (generated from OpenAPI)                |
-| `GET`  | `/llms.txt`           | LLM-oriented index ([llms.txt spec](https://llmstxt.org/)) |
-| `GET`  | `/health`             | Liveness probe                                             |
-| `GET`  | `/vaults`             | Vault catalog (`?format=md` for markdown)                  |
-| `GET`  | `/vaults/{id}/tokens` | Tradable tokens for a vault mandate + oracle prices        |
-| `GET`  | `/tokens`             | Global token catalog + on-chain registry state             |
-| `GET`  | `/prices`             | MockPriceOracle quotes indexed by symbol (e.g. `NVDA`)     |
-| `POST` | `/prices/refresh`     | Manually fetch Finnhub quotes and update the oracle        |
+| Method | Path                                    | Description                                                       |
+| ------ | --------------------------------------- | ----------------------------------------------------------------- |
+| `GET`  | `/`                                     | API discovery JSON (generated from OpenAPI)                       |
+| `GET`  | `/llms.txt`                             | LLM-oriented index ([llms.txt spec](https://llmstxt.org/))        |
+| `GET`  | `/health`                               | Liveness probe                                                    |
+| `GET`  | `/vaults`                               | Vault catalog (`?format=md` for markdown)                         |
+| `GET`  | `/vaults/{id}/tokens`                   | Tradable tokens for a vault mandate + oracle prices               |
+| `GET`  | `/tokens`                               | Global token catalog + on-chain registry state                    |
+| `GET`  | `/prices`                               | MockPriceOracle quotes indexed by symbol (e.g. `NVDA`)            |
+| `POST` | `/prices/refresh`                       | Manually fetch Finnhub quotes and update the oracle               |
 | `GET`  | `/agents/{agentId}/trade-intents/quote` | EIP-712 quote for open-position intent (nonce, vault, allocation) |
-| `POST` | `/agents/{agentId}/trade-intents` | Verify signed open intent; relay `TradeRouter.openPosition` (201) |
-| `GET`  | `/agents/{agentId}/positions` | Agent open positions (RPC read via `PositionManager`)      |
-| `POST` | `/intents/trade`      | Global trade intent submit (**501** stub)                  |
-| `GET`  | `/agents/{agentId}/trades` | Agent trade history (**501** stub)                    |
-| `GET`  | `/agents/{agentId}/risk-state` | Agent risk state (**501** stub)                   |
-| `GET`  | `/intents/{intentId}` | Intent status lookup (**501** stub)                        |
-| `GET`  | `/docs`               | Swagger UI (humans; poor fit for URL paste in chat)        |
-| `GET`  | `/docs/swagger.json`  | OpenAPI 3.1 (Custom GPT Actions)                           |
-| `POST` | `/mcp`                | MCP Streamable HTTP (stateless JSON)                       |
+| `POST` | `/agents/{agentId}/trade-intents`       | Verify signed open intent; relay `TradeRouter.openPosition` (201) |
+| `GET`  | `/agents/{agentId}/positions`           | Agent open positions (RPC read via `PositionManager`)             |
+| `POST` | `/intents/trade`                        | Global trade intent submit (**501** stub)                         |
+| `GET`  | `/agents/{agentId}/trades`              | Agent trade history (**501** stub)                                |
+| `GET`  | `/agents/{agentId}/risk-state`          | Agent risk state (**501** stub)                                   |
+| `GET`  | `/intents/{intentId}`                   | Intent status lookup (**501** stub)                               |
+| `GET`  | `/docs`                                 | Swagger UI (humans; poor fit for URL paste in chat)               |
+| `GET`  | `/docs/swagger.json`                    | OpenAPI 3.1 (Custom GPT Actions)                                  |
+| `POST` | `/mcp`                                  | MCP Streamable HTTP (stateless JSON)                              |
 
 ## Using with ChatGPT and other LLMs
 
@@ -62,22 +62,22 @@ ChatGPT **browsing** only performs simple `GET` requests on **public** URLs. It 
 
 ### MCP tools
 
-| Tool                                     | HTTP equivalent                           |
-| ---------------------------------------- | ----------------------------------------- |
-| `alphagrid_list_vaults`                  | `GET /vaults`                             |
-| `alphagrid_list_tokens`                  | `GET /tokens`                             |
-| `alphagrid_list_vault_tokens`            | `GET /vaults/{id}/tokens`                 |
-| `alphagrid_get_prices`                   | `GET /prices`                             |
-| `alphagrid_get_agent`                    | `GET /agents/{agentId}`                   |
-| `alphagrid_get_agent_by_erc8004`         | `GET /agents/by-erc8004/{erc8004AgentId}` |
-| `alphagrid_link_agent_erc8004`           | `POST /agents/{agentId}/erc8004/link`     |
-| `alphagrid_get_agent_registration_quote` | `GET /agents/register/quote`              |
-| `alphagrid_register_agent`               | `POST /agents/register`                   |
-| `alphagrid_submit_trade_intent`          | `POST /agents/{agentId}/trade-intents` |
-| `alphagrid_get_agent_positions`          | `GET /agents/{agentId}/positions` |
-| `alphagrid_get_trade_history`            | `GET /agents/{agentId}/trades` (**NOT_IMPLEMENTED**) |
+| Tool                                     | HTTP equivalent                                          |
+| ---------------------------------------- | -------------------------------------------------------- |
+| `alphagrid_list_vaults`                  | `GET /vaults`                                            |
+| `alphagrid_list_tokens`                  | `GET /tokens`                                            |
+| `alphagrid_list_vault_tokens`            | `GET /vaults/{id}/tokens`                                |
+| `alphagrid_get_prices`                   | `GET /prices`                                            |
+| `alphagrid_get_agent`                    | `GET /agents/{agentId}`                                  |
+| `alphagrid_get_agent_by_erc8004`         | `GET /agents/by-erc8004/{erc8004AgentId}`                |
+| `alphagrid_link_agent_erc8004`           | `POST /agents/{agentId}/erc8004/link`                    |
+| `alphagrid_get_agent_registration_quote` | `GET /agents/register/quote`                             |
+| `alphagrid_register_agent`               | `POST /agents/register`                                  |
+| `alphagrid_submit_trade_intent`          | `POST /agents/{agentId}/trade-intents`                   |
+| `alphagrid_get_agent_positions`          | `GET /agents/{agentId}/positions`                        |
+| `alphagrid_get_trade_history`            | `GET /agents/{agentId}/trades` (**NOT_IMPLEMENTED**)     |
 | `alphagrid_get_risk_state`               | `GET /agents/{agentId}/risk-state` (**NOT_IMPLEMENTED**) |
-| `alphagrid_get_intent_status`            | `GET /intents/{intentId}` (**NOT_IMPLEMENTED**) |
+| `alphagrid_get_intent_status`            | `GET /intents/{intentId}` (**NOT_IMPLEMENTED**)          |
 
 Trade history, risk state, and intent status stubs return HTTP **501** or MCP `NOT_IMPLEMENTED`. Open-position quote, submit, and positions require executor config (see below).
 
@@ -119,12 +119,12 @@ Without these, `POST /agents/register` runs in mock mode (no chain submit).
 
 When `TRADE_ROUTER_ADDRESS` (or address in `api/src/constants/contracts.ts`), `RPC_URL`, `CHAIN_ID`, and `EXECUTOR_PRIVATE_KEY` are set, the API verifies EIP-712 `OpenPosition` intents and relays `TradeRouter.openPosition` via an EOA with `EXECUTOR_ROLE`.
 
-| Variable | Role |
-| --- | --- |
-| `TRADE_ROUTER_ADDRESS` | `TradeRouter` contract (optional if set in `contracts.ts` for `CHAIN_ID`) |
-| `EXECUTOR_PRIVATE_KEY` | Secret (`wrangler secret put`); signs `openPosition` txs |
-| `RPC_URL` / `CHAIN_ID` | Chain access (same as registration) |
-| `AGENT_REGISTRY_ADDRESS` | Resolve agent signer and vault |
+| Variable                 | Role                                                                      |
+| ------------------------ | ------------------------------------------------------------------------- |
+| `TRADE_ROUTER_ADDRESS`   | `TradeRouter` contract (optional if set in `contracts.ts` for `CHAIN_ID`) |
+| `EXECUTOR_PRIVATE_KEY`   | Secret (`wrangler secret put`); signs `openPosition` txs                  |
+| `RPC_URL` / `CHAIN_ID`   | Chain access (same as registration)                                       |
+| `AGENT_REGISTRY_ADDRESS` | Resolve agent signer and vault                                            |
 
 **Agent-friendly submit body:** `symbol`, human `usdcAmount`, `minTokenOut`, `maxSlippageBps`, `exits`, `deadline`, `nonce`, `signature`. Vault is resolved from `AgentRegistry.vaultOf(agentId)` — never from the client.
 

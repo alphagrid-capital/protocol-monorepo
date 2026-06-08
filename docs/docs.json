@@ -1,0 +1,16 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "AlphaGrid",
+  "colors": {
+    "primary": "#2563EB"
+  },
+  "navigation": {
+    "groups": [
+      {
+        "group": "Getting started",
+        "pages": ["index"]
+      }
+    ]
+  }
+}

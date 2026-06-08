@@ -242,17 +242,17 @@ export function registerMcpTools(server: McpServer): void {
     MCP_TOOL_NAMES.submitTradeIntent,
     {
       title: 'Submit trade intent',
-      description: 'Mirrors POST /agents/{agentId}/trade-intents (EIP-712 OpenPosition + executor).',
+      description:
+        'Mirrors POST /agents/{agentId}/trade-intents (EIP-712 OpenPosition + executor).',
       inputSchema: SubmitTradeIntentInputSchema,
       outputSchema: SubmitTradeIntentResponseSchema,
       annotations: WRITE_TOOL_ANNOTATIONS,
     },
     async ({ agentId, ...body }) => {
       try {
-        const output = await TradingService.fromEnv(getWorkerEnv()).submitIntent(
-          agentId,
-          body
-        )
+        const output = await TradingService.fromEnv(
+          getWorkerEnv()
+        ).submitIntent(agentId, body)
         return mcpToolSuccess(output)
       } catch (error) {
         return mcpToolErrorFromUnknown(error, 'Trade submission failed')
@@ -272,7 +272,9 @@ export function registerMcpTools(server: McpServer): void {
     async ({ agentId }) => {
       try {
         const output =
-          await TradingService.fromEnv(getWorkerEnv()).listOpenPositions(agentId)
+          await TradingService.fromEnv(getWorkerEnv()).listOpenPositions(
+            agentId
+          )
         return mcpToolSuccess(output)
       } catch (error) {
         return mcpToolErrorFromUnknown(error, 'Failed to load positions')
@@ -287,7 +289,8 @@ export function registerMcpTools(server: McpServer): void {
     MCP_TOOL_NAMES.getTradeHistory,
     {
       title: 'Agent trade history',
-      description: 'Mirrors GET /agents/{agentId}/trades. Returns NOT_IMPLEMENTED.',
+      description:
+        'Mirrors GET /agents/{agentId}/trades. Returns NOT_IMPLEMENTED.',
       inputSchema: GetAgentTradingInputSchema,
       annotations: READ_ONLY_TOOL_ANNOTATIONS,
     },
@@ -298,7 +301,8 @@ export function registerMcpTools(server: McpServer): void {
     MCP_TOOL_NAMES.getRiskState,
     {
       title: 'Agent risk state',
-      description: 'Mirrors GET /agents/{agentId}/risk-state. Returns NOT_IMPLEMENTED.',
+      description:
+        'Mirrors GET /agents/{agentId}/risk-state. Returns NOT_IMPLEMENTED.',
       inputSchema: GetAgentTradingInputSchema,
       annotations: READ_ONLY_TOOL_ANNOTATIONS,
     },

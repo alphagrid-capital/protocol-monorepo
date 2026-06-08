@@ -16,7 +16,7 @@ contract DepositToTechVault is Script {
     function run() external {
         IERC20 usdc = IERC20(vm.envAddress("USDC"));
         MandateVault vault = MandateVault(vm.envAddress("TECH_VAULT"));
-        
+
         address depositor = 0x31adfE243828BB73e5186f77A66de459a4f568a8;
 
         vm.startBroadcast();

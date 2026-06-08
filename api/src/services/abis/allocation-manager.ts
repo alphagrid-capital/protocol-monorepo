@@ -259,19 +259,6 @@ export const allocationManagerAbi = [
   },
   {
     type: 'function',
-    name: 'onAgentRemoved',
-    inputs: [
-      {
-        name: 'agentId',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
-    ],
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
     name: 'onAgentRegistered',
     inputs: [
       {
@@ -286,6 +273,19 @@ export const allocationManagerAbi = [
       },
       {
         name: 'trackId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'onAgentRemoved',
+    inputs: [
+      {
+        name: 'agentId',
         type: 'uint256',
         internalType: 'uint256',
       },
@@ -682,17 +682,6 @@ export const allocationManagerAbi = [
   },
   {
     type: 'error',
-    name: 'AllocationNotFound',
-    inputs: [
-      {
-        name: 'agentId',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
-    ],
-  },
-  {
-    type: 'error',
     name: 'AllocationInUse',
     inputs: [
       {
@@ -702,6 +691,17 @@ export const allocationManagerAbi = [
       },
       {
         name: 'used',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+  },
+  {
+    type: 'error',
+    name: 'AllocationNotFound',
+    inputs: [
+      {
+        name: 'agentId',
         type: 'uint256',
         internalType: 'uint256',
       },

@@ -33,7 +33,11 @@ export function mcpToolErrorFromUnknown(
   error: unknown,
   fallbackMessage = 'Request failed'
 ) {
-  if (error instanceof AppError || error instanceof AgentRegistrationError || error instanceof TradingError) {
+  if (
+    error instanceof AppError ||
+    error instanceof AgentRegistrationError ||
+    error instanceof TradingError
+  ) {
     return mcpToolError(error.message, error.code)
   }
   const message = error instanceof Error ? error.message : fallbackMessage
