@@ -3,26 +3,156 @@ title: 'Contracts reference'
 description: 'On-chain contract map and signing schemas'
 ---
 
+AlphaGrid smart contracts live in the [`contracts/`](https://github.com/alphagrid-prop/contracts/tree/main/contracts) Foundry workspace. Deploy scripts, env vars, and artifact format are documented in [`contracts/README.md`](https://github.com/alphagrid-prop/contracts/blob/main/contracts/README.md) and [`contracts/deployments/README.md`](https://github.com/alphagrid-prop/contracts/blob/main/contracts/deployments/README.md).
+
 ## Contract map
 
 ### Core
 
+| Contract | Role |
+| -------- | ---- |
+| `AgentRegistry` | Canonical agent identities, vault bindings, track lifecycle, and EIP-712 self-registration |
+| `FeeManager` | Registration fee collection and treasury routing |
+| `VaultTrackRegistry` | Per-vault, per-track risk and allocation policy (`CHALLENGE`, `FUNDED`, `PRIME`) |
+| `TokenRegistry` | Tradable token catalog and vault allowlists |
+| `AllocationManager` | Agent allocation caps and usage against vault track policy |
+| `PositionManager` | Open position ledger keyed by `(agentId, token)` |
+| `TradeRouter` | EIP-712 agent intents, swap execution, exit ladder automation |
+
 ### Vaults
+
+| Contract | Role |
+| -------- | ---- |
+| `MandateVault` | ERC-4626 vault with mandate metadata, idle-asset trading pulls, and pause flags |
+| `MandateVaultFactory` | EIP-1167 minimal clones of a shared `MandateVault` implementation |
+
+Four mandate vaults deploy per environment: **Foundation**, **Tech**, **Volatility**, and **Macro**. Each clone shares the same underlying asset (USDC) baked into the implementation at deploy time.
 
 ### Trading
 
+Trading is orchestrated by `TradeRouter` and `PositionManager`. Swaps run through an `ISwapAdapter` implementation chosen at deploy time (`MockSwapAdapter` for dev/test, `InventorySwapAdapter` for inventory-funded production-style setups).
+
 ### Mocks and adapters
+
+| Contract | Role |
+| -------- | ---- |
+| `MockSwapAdapter` | Oracle-priced minting adapter for local and testnet deploys |
+| `InventorySwapAdapter` | Pre-funded ERC-20 inventory adapter |
+| `MockERC20` | Stand-in USDC (`mUSDC`, 6 decimals) when `USDC` is unset in greenfield deploys |
+| `MockPriceOracle` | Keeper-updated prices for mock stock tokens in the dev catalog |
 
 ## Deployed addresses
 
+Runtime addresses are not vendored in this docs site. After broadcasting, copy logged addresses into:
+
+- `contracts/deployments/<chainId>.json` (local artifact; gitignored except `*.example.json`)
+- [`config/token-catalog.json`](https://github.com/alphagrid-prop/contracts/blob/main/config/token-catalog.json) (`chains.<chainId>`)
+- `api/src/constants/contracts.ts` (API `ChainContracts`)
+
 ### By chain
+
+`DeployFullStack` writes `deployments/<chainId>.json` with core contracts, vault clones, trading stack, oracle, USDC, and mock stock token addresses. See [`421614.example.json`](https://github.com/alphagrid-prop/contracts/blob/main/contracts/deployments/421614.example.json) for the schema.
+
+| Field group | Examples |
+| ----------- | -------- |
+| Core | `FeeManager`, `VaultTrackRegistry`, `TokenRegistry`, `AgentRegistry`, `AllocationManager` |
+| Vaults | `VaultFactory`, `VaultImplementation`, `FoundationVault`, `TechVault`, `VolatilityVault`, `MacroVault` |
+| Trading | `PositionManager`, `TradeRouter`, `SwapAdapter`, `PriceOracle` |
+| Assets | `usdc`, `tokens.NVDA`, `tokens.META`, … |
+
+Robinhood testnet (chain `46630`) follows the same staged script order once core infra and USDC exist on that chain.
 
 ### By deployment script
 
+Shared deploy logic lives in `contracts/script/helpers/` and `contracts/script/config/`. Entry scripts are thin wrappers with a **deploy → wire → setRoles** (or configure) pipeline.
+
+<Note>
+  `DeployMockERC20` is deploy-only. `DeployAgentCore` and `DeployVaultInfrastructure` grant `REGISTRAR_ROLE` on `AgentRegistry` to `BACKEND_RELAYER` via `AgentCoreDeploy`.
+</Note>
+
+| Script | Use when |
+| ------ | -------- |
+| `DeployFullStack.s.sol` | Dev-complete greenfield on testnet or Anvil — core, vaults, track config, trading, oracle, and mock token catalog in one broadcast. Optional `USDC` (deploys `mUSDC` when unset). Writes `deployments/<chainId>.json`. |
+| `DeployAgentCore.s.sol` | Agent onboarding only: `FeeManager`, `VaultTrackRegistry`, `AgentRegistry` |
+| `DeployVaultInfrastructure.s.sol` | Greenfield vault stack: agent core (extended) + four EIP-1167 vault clones + `AllocationManager` + track configs |
+| `ops/SetRegistrationFee.s.sol` | Set registration fee on deployed `FeeManager` (default `0.1` USDC via `Fees.REGISTRATION_FEE`) |
+| `DeployTrading.s.sol` | `PositionManager`, `TradeRouter`, swap adapter; grants `EXECUTOR` / `OPERATOR` on router and `TRADE_ROUTER_ROLE` on vaults and `AllocationManager` |
+| `DeployPriceOracle.s.sol` | `MockPriceOracle` for the token catalog |
+| `DeployTokenCatalog.s.sol` | Mock stocks + vault allowlists (requires existing vault and registry addresses) |
+| `ops/DepositToTechVault.s.sol` | Seed `TECH_VAULT` with USDC (default `10` USDC via `Fees.DEFAULT_TECH_DEPOSIT`) |
+
+**Dev-complete greenfield** (from `contracts/`):
+
+```bash
+forge script script/DeployFullStack.s.sol:DeployFullStack --rpc-url $RPC_URL --broadcast
+```
+
+Required env: `ADMIN`, `TREASURY`, `BACKEND_RELAYER`, `ERC8004_IDENTITY_REGISTRY`, `EXECUTOR`. Optional: `USDC`, `OPERATOR`, `ORACLE_KEEPER`, `DEPLOY_MOCK_SWAP_ADAPTER`.
+
+**Staged deploy** (incremental or mainnet):
+
+```bash
+forge script script/DeployAgentCore.s.sol:DeployAgentCore --rpc-url $RPC_URL --broadcast
+forge script script/DeployVaultInfrastructure.s.sol:DeployVaultInfrastructure --rpc-url $RPC_URL --broadcast
+forge script script/ops/SetRegistrationFee.s.sol:SetRegistrationFee --rpc-url $RPC_URL --broadcast
+forge script script/DeployTrading.s.sol:DeployTrading --rpc-url $RPC_URL --broadcast
+forge script script/DeployPriceOracle.s.sol:DeployPriceOracle --rpc-url $RPC_URL --broadcast
+forge script script/DeployTokenCatalog.s.sol:DeployTokenCatalog --rpc-url $RPC_URL --broadcast
+```
+
+`DeployTrading` reads `DEPLOY_MOCK_SWAP_ADAPTER`: `true` deploys `MockSwapAdapter`; `false` deploys `InventorySwapAdapter`.
+
+Copy `.env.example` to `.env` in `contracts/` for the full variable list.
+
 ## EIP-712: OpenPosition
+
+Off-chain signing reference for `TradeRouter` agent intents. Full schema, exit ladder hashing, validation checklist, and additional intent types (`AddToPosition`, `ReducePosition`, `UpdateExitLadder`) are in [`contracts/docs/position-intent-eip712.md`](https://github.com/alphagrid-prop/contracts/blob/main/contracts/docs/position-intent-eip712.md).
 
 ### Domain
 
+| Field | Value |
+| ----- | ----- |
+| `name` | `AlphaGrid TradeRouter` |
+| `version` | `1` |
+| `chainId` | Deployment chain ID |
+| `verifyingContract` | `TradeRouter` address |
+
 ### Types
 
+Primary type `OpenPosition`:
+
+```text
+OpenPosition(uint256 agentId,address vault,address token,uint256 usdcAmount,uint256 minTokenOut,uint16 maxSlippageBps,bytes32 exitsHash,uint256 deadline,uint256 nonce)
+```
+
+The signed payload includes `exitsHash` (hash of the exit ladder), not the raw `exits` array. On-chain `openPosition` calldata must include the full `exits` array; the router recomputes the hash and reverts with `InvalidSignature` on mismatch.
+
+| Field | Notes |
+| ----- | ----- |
+| `agentId` | Registered agent ID |
+| `vault` | Must equal `AgentRegistry.vaultOf(agentId)` |
+| `token` | Asset to buy; must be vault-allowed |
+| `usdcAmount` | Vault asset notional (USDC in MVP) |
+| `minTokenOut` | Entry slippage floor passed to `ISwapAdapter` |
+| `maxSlippageBps` | Stored on position; caps exit `minUsdcOut` via oracle |
+| `exitsHash` | `keccak256(abi.encode(ruleHashes))` from exit rules |
+| `deadline` | Unix timestamp; reverts when expired |
+| `nonce` | Must equal `TradeRouter.nonces(agentId)` at execution |
+
+Signer must be `AgentRegistry.signerOf(agentId)`. Executor submits with `EXECUTOR_ROLE`.
+
 ### Signing flow
+
+<Steps>
+  <Step title="Build the exit ladder">
+    Hash each rule as `keccak256(abi.encode(triggerType, triggerBps, exitBps))`, then hash the array into `exitsHash`. See the contracts doc for stop-loss ordering and vault track bounds.
+  </Step>
+  <Step title="Sign OpenPosition">
+    Sign typed data with domain above. Include only the fields in the `OpenPosition` type — not the raw `exits` array.
+  </Step>
+  <Step title="Submit via executor">
+    An account with `EXECUTOR_ROLE` calls `TradeRouter.openPosition(intent, signature)` with the full `PositionIntent` struct including `exits`. On success, `nonces(agentId)` increments.
+  </Step>
+</Steps>
+
+For HTTP relay, see [Agent guide](/agents/agent-guide#sign-and-submit-an-open-position).
