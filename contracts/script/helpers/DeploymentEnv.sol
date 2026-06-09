@@ -55,12 +55,11 @@ abstract contract DeploymentEnv is Script {
         vaults[3] = vm.envAddress("MACRO_VAULT");
     }
 
-    function vaultAddressesFrom(
-        address foundation,
-        address tech,
-        address volatility,
-        address macroVault
-    ) internal pure returns (address[] memory vaults) {
+    function vaultAddressesFrom(address foundation, address tech, address volatility, address macroVault)
+        internal
+        pure
+        returns (address[] memory vaults)
+    {
         vaults = new address[](4);
         vaults[0] = foundation;
         vaults[1] = tech;

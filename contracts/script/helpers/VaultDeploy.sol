@@ -32,7 +32,14 @@ abstract contract VaultDeploy is DeploymentEnv {
         IERC20 asset = IERC20(usdc);
         vaults.factory = new MandateVaultFactory(address(0), asset);
         vaults.foundationVault = deployVaultClone(
-            vaults.factory, asset, tokenRegistry_, admin, treasury, "AlphaGrid Foundation Vault", "agFND", MANDATE_FOUNDATION
+            vaults.factory,
+            asset,
+            tokenRegistry_,
+            admin,
+            treasury,
+            "AlphaGrid Foundation Vault",
+            "agFND",
+            MANDATE_FOUNDATION
         );
         vaults.techVault = deployVaultClone(
             vaults.factory, asset, tokenRegistry_, admin, treasury, "AlphaGrid Tech Vault", "agTECH", MANDATE_TECH

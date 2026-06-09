@@ -55,12 +55,7 @@ contract DeployFullStack is AgentCoreDeploy, VaultDeploy, DeploymentArtifacts {
             : ISwapAdapter(address(new InventorySwapAdapter(address(0))));
 
         TradeRouter tradeRouter = new TradeRouter(
-            admin,
-            core.registry,
-            core.allocationManager,
-            positionManager,
-            swapAdapter,
-            core.vaultTrackRegistry
+            admin, core.registry, core.allocationManager, positionManager, swapAdapter, core.vaultTrackRegistry
         );
 
         if (deployMock) {
