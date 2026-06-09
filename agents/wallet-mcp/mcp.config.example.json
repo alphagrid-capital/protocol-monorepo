@@ -1,10 +1,8 @@
 {
   "mcpServers": {
-    "alphagrid-wallet-mcp": {
-      "command": "node",
-      "args": [
-        "/Users/rychnovsky/Documents/Web_projects/klienti/Artiffine/AlphaGrid/agents/wallet-mcp/build/index.js"
-      ],
+    "alphagrid-local-wallet-mcp": {
+      "command": "npx",
+      "args": ["-y", "@alphagrid/local-wallet-mcp"],
       "env": {
         "WALLET_PROVIDER": "viem",
         "CDP_API_KEY_ID": "",

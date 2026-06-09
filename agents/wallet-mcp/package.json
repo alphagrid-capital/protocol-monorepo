@@ -1,15 +1,43 @@
 {
-  "name": "wallet-mcp",
+  "name": "@alphagrid/local-wallet-mcp",
   "version": "0.1.0",
-  "private": true,
-  "main": "index.js",
+  "description": "Local stdio MCP server (AgentKit wallet + on-chain tools) for AlphaGrid dev/testing",
+  "license": "MIT",
+  "main": "build/index.js",
   "type": "module",
-  "bin": {
-    "wallet-mcp": "./build/index.js"
+  "packageManager": "yarn@1.22.22",
+  "engines": {
+    "node": ">=24"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alphagrid-prop/contracts.git",
+    "directory": "agents/wallet-mcp"
+  },
+  "keywords": [
+    "mcp",
+    "agentkit",
+    "wallet",
+    "alphagrid",
+    "coinbase",
+    "viem"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "bin": {
+    "local-wallet-mcp": "./build/index.js"
+  },
+  "files": [
+    "build",
+    "README.md",
+    "mcp.config.example.json",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsup && node -e \"require('fs').chmodSync('build/index.js', '755')\"",
     "clean": "rm -rf build",
+    "prepublishOnly": "yarn build",
     "dev": "wrangler dev",
     "dev:stdio": "node --env-file-if-exists=.env --import tsx src/index.ts",
     "deploy": "wrangler deploy",

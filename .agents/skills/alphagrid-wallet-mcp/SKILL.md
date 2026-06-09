@@ -13,18 +13,18 @@ metadata:
     homepage: https://github.com/coinbase/agentkit
     requires:
       mcp:
-        - alphagrid-wallet-mcp
+        - alphagrid-local-wallet-mcp
 ---
 
 # AlphaGrid Wallet MCP
 
-Local stdio MCP server in `agents/wallet-mcp/` — exposes [AgentKit](https://docs.cdp.coinbase.com/agentkit/docs/welcome) wallet tools to Cursor/Claude. **Not a trading agent**; it is a signing wallet + helpers.
+Local stdio MCP server (`@alphagrid/local-wallet-mcp` on npm) — exposes [AgentKit](https://docs.cdp.coinbase.com/agentkit/docs/welcome) wallet tools to Cursor/Claude. **Not a trading agent**; it is a signing wallet + helpers.
 
-Human setup: `agents/wallet-mcp/README.md` and `mcp.config.example.json` (merge into `.cursor/mcp.json`).
+Human setup: install via `npx @alphagrid/local-wallet-mcp` in `.cursor/mcp.json` (see `agents/wallet-mcp/mcp.config.example.json`) or build from `agents/wallet-mcp/README.md` for monorepo development.
 
 ## MCP server identity
 
-- **Cursor config name:** `alphagrid-wallet-mcp` (example)
+- **Cursor config name:** `alphagrid-local-wallet-mcp` (example)
 - **Runtime server id:** often `user-Alpha Wallet` (name may vary in Cursor Settings)
 - **Always read tool schemas** from the MCP folder before `CallMcpTool`; never guess tool or server names.
 
@@ -115,7 +115,7 @@ Wallet canvases embed **static** numbers (no `fetch` in canvas). To refresh a ca
 
 If the wallet MCP server is not in the available server list:
 
-1. Tell the user to restart **Alpha Wallet** / `alphagrid-wallet-mcp` in Cursor MCP settings.
+1. Tell the user to restart **Alpha Wallet** / `alphagrid-local-wallet-mcp` in Cursor MCP settings.
 2. For **read-only** balances on Base Sepolia, `cast balance` and `cast call` on the USDC contract are acceptable when the user only needs a snapshot and provides or implies the wallet address from prior context.
 
 ## AlphaGrid token catalog (trading universe)

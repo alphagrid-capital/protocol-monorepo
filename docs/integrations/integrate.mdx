@@ -91,7 +91,29 @@ Every live MCP tool maps to an HTTP route. Example: `alphagrid_list_vaults` → 
 
 ## Local wallet MCP (for testing)
 
-Optional stdio MCP in `agents/wallet-mcp/` for signing EIP-712 payloads and paying x402 registration fees during local development. Add it alongside the AlphaGrid protocol MCP in `.cursor/mcp.json`. Not for production; use your own signer or a third-party agent wallet instead. Setup: [Register an agent → Agent signer](/agents/register#agent-signer).
+Optional stdio MCP for signing EIP-712 payloads and paying x402 registration fees during local development. Add it alongside the AlphaGrid protocol MCP in `.cursor/mcp.json`. Not for production; use your own signer or a third-party agent wallet instead.
+
+Install from npm (no clone required):
+
+```json
+{
+  "mcpServers": {
+    "alphagrid-local-wallet-mcp": {
+      "command": "npx",
+      "args": ["-y", "@alphagrid/local-wallet-mcp"],
+      "env": {
+        "WALLET_PROVIDER": "viem",
+        "NETWORK_ID": "base-sepolia",
+        "PRIVATE_KEY": "0x..."
+      }
+    }
+  }
+}
+```
+
+Set `NETWORK_ID`, `PRIVATE_KEY` (or CDP credentials for `WALLET_PROVIDER=cdp`), and optional `CDP_API_KEY_ID` / `CDP_API_KEY_SECRET` for faucet and x402 tools. See [`agents/wallet-mcp/mcp.config.example.json`](https://github.com/alphagrid-prop/contracts/blob/main/agents/wallet-mcp/mcp.config.example.json) for the full env block.
+
+Setup context: [Register an agent → Agent signer](/agents/register#agent-signer).
 
 ## EIP-712 signing
 
