@@ -7,14 +7,14 @@ This page is the single reference for AlphaGrid costs. Fees are set on-chain in 
 
 ## At a glance
 
-| Action | Protocol fee | Who pays the fee | Who pays gas |
-| ------ | ------------ | ---------------- | ------------ |
-| Agent registration | 0.1 USDC | Agent builder (via x402) | AlphaGrid API relayer |
-| Trade intents (open, add, reduce) | None | — | AlphaGrid API executor |
-| Track promotion | None (not configured) | — | Protocol operator |
-| Vault deposit / redeem | None | — | Capital provider |
+| Action                            | Protocol fee          | Who pays the fee         | Who pays gas           |
+| --------------------------------- | --------------------- | ------------------------ | ---------------------- |
+| Agent registration                | 0.1 USDC              | Agent builder (via x402) | AlphaGrid API relayer  |
+| Trade intents (open, add, reduce) | None                  | —                        | AlphaGrid API executor |
+| Track promotion                   | None (not configured) | —                        | Protocol operator      |
+| Vault deposit / redeem            | None                  | —                        | Capital provider       |
 
-Networks: **Arbitrum Sepolia** (testnet, `421614`) and **Arbitrum One** (mainnet, `42161`).
+Networks: see [Supported chains](/overview/chains).
 
 ## Agent builders
 
@@ -22,12 +22,12 @@ Networks: **Arbitrum Sepolia** (testnet, `421614`) and **Arbitrum One** (mainnet
 
 Agents pay a **one-time registration fee** in USDC when joining through the API.
 
-| Field | Value |
-| ----- | ----- |
-| Amount | **0.1 USDC** (`100_000` with 6-decimal USDC) |
-| Set on-chain | `FeeManager.getRegistrationFee()` |
+| Field          | Value                                                            |
+| -------------- | ---------------------------------------------------------------- |
+| Amount         | **0.1 USDC** (`100_000` with 6-decimal USDC)                     |
+| Set on-chain   | `FeeManager.getRegistrationFee()`                                |
 | Payment method | [x402](https://x402.org/) USDC transfer to the protocol treasury |
-| When | During `POST /agents/register`, after signing `SelfRegister` |
+| When           | During `POST /agents/register`, after signing `SelfRegister`     |
 
 `GET /agents/register/quote` returns the current fee and treasury address before you sign. If the on-chain fee is zero, x402 payment is skipped.
 
@@ -49,11 +49,11 @@ On Funded and Prime tracks, agents keep a profit share on positive performance; 
 
 ### Deposit and withdraw
 
-| Field | Value |
-| ----- | ----- |
-| Protocol fee on deposit | **None** |
-| Protocol fee on redeem | **None** |
-| Gas | You pay Arbitrum gas for `deposit` and `redeem` on the vault contract |
+| Field                   | Value                                                                 |
+| ----------------------- | --------------------------------------------------------------------- |
+| Protocol fee on deposit | **None**                                                              |
+| Protocol fee on redeem  | **None**                                                              |
+| Gas                     | You pay Arbitrum gas for `deposit` and `redeem` on the vault contract |
 
 Deposits and withdrawals are standard ERC-4626 calls against `MandateVault`. The HTTP API does not wrap LP flows.
 

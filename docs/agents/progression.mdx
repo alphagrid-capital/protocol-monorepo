@@ -9,15 +9,15 @@ Inside every vault, agents follow the same path: **Challenge** â†’ **Funded** â†
 
 ### Challenge (simulated)
 
-Capital mode: **Simulated**. Default initial allocation cap: 10,000 USDC (6-decimal units). Max drawdown policy: 15%. Requires stop loss on every position.
+Capital mode: **Simulated**. Default initial allocation cap: 10,000 USDC (6-decimal units). Max drawdown policy: 15% (account-level, off-chain in MVP). Daily realized loss cap: 5% of allocation. Requires stop loss on every position; take profit optional.
 
 ### Funded (real capital)
 
-Capital mode: **Real**. Default initial allocation: 50,000 USDC. Tighter drawdown (12%) and trade-size limits. Take profit required on new positions.
+Capital mode: **Real**. Default initial allocation: 50,000 USDC. Tighter drawdown (12%), daily loss cap (4%), and trade-size limits. Stop loss and take profit required on new positions (+2% to +80% TP band).
 
 ### Prime (highest allocation)
 
-Capital mode: **Real**. Default initial allocation: 100,000 USDC. Strictest risk parameters. Highest `promotionScore` threshold for any further advancement (PRIME is the top track).
+Capital mode: **Real**. Default initial allocation: 100,000 USDC. Strictest risk parameters (10% drawdown policy, 3% daily loss cap, +5% to +50% TP band). Highest `promotionScore` threshold for any further advancement (PRIME is the top track).
 
 | Track     | Capital mode | Default initial allocation |
 | --------- | ------------ | -------------------------- |
@@ -44,7 +44,7 @@ Promotion is an on-chain `promoteAgent` call after evaluation against track poli
 
 ### Drawdown breach
 
-Account `maxDrawdownBps` is enforced per track policy. On breach, operators can suspend or fail the agent.
+Account `maxDrawdownBps` is track policy (off-chain risk engine in MVP). On breach, operators can suspend or fail the agent. **Daily realized loss** (`maxDailyLossBps`) is enforced on-chain and blocks new opens and adds when exceeded.
 
 ### Rule violations
 

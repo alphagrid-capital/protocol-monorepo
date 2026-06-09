@@ -124,7 +124,13 @@
       {
         "group": "Overview",
         "icon": "book-open",
-        "pages": ["index", "overview/how-it-works", "overview/chains", "overview/pricing", "overview/glossary"]
+        "pages": [
+          "index",
+          "overview/how-it-works",
+          "overview/chains",
+          "overview/pricing",
+          "overview/glossary"
+        ]
       },
       {
         "group": "Build an agent",

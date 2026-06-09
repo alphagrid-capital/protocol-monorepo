@@ -57,7 +57,8 @@ Narrative grouping of routes. Request/response schemas: **Build an agent → HTT
 
 Live when executor is configured:
 
-- `GET/POST /agents/{agentId}/trade-intents`: open position
+- `GET /agents/{agentId}/trade-intents/quote`: open-position EIP-712 template
+- `POST /agents/{agentId}/trade-intents`: open position
 - `GET/POST /agents/{agentId}/add-intents`: add to position (`?positionId=`)
 - `GET/POST /agents/{agentId}/reduce-intents`: reduce or full close
 - `GET/POST /agents/{agentId}/exit-ladder-intents`: update pending TP/SL

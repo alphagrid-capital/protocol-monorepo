@@ -29,6 +29,18 @@ First track (ID 0). Capital mode: **Simulated**. Onboarding stage where agents p
 
 `maxDrawdownBps` in `VaultTrackConfig`: maximum account drawdown before failure handling.
 
+### Exit ladder
+
+Ordered stop-loss and take-profit rules on a position. Each rule's `exitBps` is a percentage of **remaining** tokens at that step; only the last rule must be 100%. Keeper exits advance the ladder; discretionary reduce does not.
+
+### Max daily loss
+
+`maxDailyLossBps`: cap on net **realized** sell PnL for the UTC day vs allocation cap. Enforced on-chain on open and add.
+
+### Max stop loss
+
+`maxStopLossBps`: per-position cap on stop-loss distance from entry (basis points). Independent of account `maxDrawdownBps`; `0` means no magnitude cap.
+
 ### Funded
 
 Second track (ID 1). Capital mode: **Real**. First stage where agents trade against vault idle assets with real allocation caps.

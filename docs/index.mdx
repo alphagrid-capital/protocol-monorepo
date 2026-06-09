@@ -36,7 +36,7 @@ Connect your agent via the [HTTP API](/reference/api-mcp#http-api), [MCP server]
 
 ### Capital providers
 
-You deposit USDC into thematic mandate vaults and receive ERC-4626 shares. Vault capital backs agent allocations on Funded and Prime tracks. Capital shifts toward verified risk-adjusted performers under continuous drawdown monitoring. See [Vaults](/capital/vaults) and [Returns & risk](/capital/returns-risk).
+You deposit USDC into thematic mandate vaults and receive ERC-4626 shares. Vault capital backs agent allocations on Funded and Prime tracks. Capital shifts toward verified risk-adjusted performers under track risk policy (on-chain trade limits plus account drawdown rules). See [Vaults](/capital/vaults) and [Returns & risk](/capital/returns-risk).
 
 ## Core loop
 
@@ -50,9 +50,7 @@ The same lifecycle applies inside every vault:
   <Step title="Trade under mandate rules">
     The agent trades tokenized equities within vault allowlists and track risk limits.
   </Step>
-  <Step title="Get measured">
-    Performance and drawdown are evaluated against per-track policy.
-  </Step>
+  <Step title="Get measured">Performance and drawdown are evaluated against per-track policy.</Step>
   <Step title="Promote or exit">
     Top agents graduate to Funded and Prime with larger real-capital allocations. Breaches release
     allocation back to the vault.

@@ -5,18 +5,18 @@ description: 'Thematic ERC-4626 vaults and capital routing'
 
 Capital providers deposit USDC into mandate vaults and receive ERC-4626 shares. Vault capital backs agent allocations on Funded and Prime tracks. Challenge-track agents use simulated capital and do not draw real vault assets.
 
-Deployments run on **Arbitrum Sepolia** (testnet, chain ID `421614`) and **Arbitrum One** (mainnet, chain ID `42161`).
+Deployments: see [Supported chains](/overview/chains).
 
 ## Thematic vaults
 
 Each deployment creates thematic vault clones from a shared `MandateVault` implementation via `MandateVaultFactory` (EIP-1167 minimal proxies). All vaults share the same underlying asset: USDC.
 
-| API slug     | Share symbol | Share name                 | Mandate focus                          |
-| ------------ | ------------ | -------------------------- | -------------------------------------- |
-| `foundation` | `agFND`      | AlphaGrid Foundation Vault | Blue-chip, broad mandate               |
-| `tech`       | `agTECH`     | AlphaGrid Tech Vault       | Technology-focused equities            |
-| `volatility` | `agVOL`      | AlphaGrid Volatility Vault | Higher-volatility names                |
-| `macro`      | `agMAC`      | AlphaGrid Macro Vault      | Macro exposure within the allowlist    |
+| API slug     | Share symbol | Share name                 | Mandate focus                       |
+| ------------ | ------------ | -------------------------- | ----------------------------------- |
+| `foundation` | `agFND`      | AlphaGrid Foundation Vault | Blue-chip, broad mandate            |
+| `tech`       | `agTECH`     | AlphaGrid Tech Vault       | Technology-focused equities         |
+| `volatility` | `agVOL`      | AlphaGrid Volatility Vault | Higher-volatility names             |
+| `macro`      | `agMAC`      | AlphaGrid Macro Vault      | Macro exposure within the allowlist |
 
 Additional vaults can be deployed via the factory as the protocol grows. Vault addresses and metadata are listed via `GET /vaults` on the public API.
 
@@ -40,9 +40,9 @@ Standard ERC-4626: deposit USDC, receive shares; redeem shares for USDC. Share p
 
 `MandateVault` has two independent pause flags:
 
-| Flag              | Effect                         |
-| ----------------- | ------------------------------ |
-| `liquidityPaused` | Blocks LP deposit/redeem       |
+| Flag              | Effect                                     |
+| ----------------- | ------------------------------------------ |
+| `liquidityPaused` | Blocks LP deposit/redeem                   |
 | `tradingPaused`   | Blocks new agent trades on vault positions |
 
 Deposit and withdraw are on-chain ERC-4626 calls against the vault contract address. Use your wallet directly; the HTTP API does not wrap LP flows.

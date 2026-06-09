@@ -73,7 +73,7 @@ Shared deploy logic lives in `contracts/script/helpers/` and `contracts/script/c
 | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `DeployFullStack.s.sol`           | Dev-complete greenfield on testnet or Anvil: core, vaults, track config, trading, oracle, and mock token catalog in one broadcast. Optional `USDC` (deploys `mUSDC` when unset). Writes `deployments/<chainId>.json`. |
 | `DeployAgentCore.s.sol`           | Agent onboarding only: `FeeManager`, `VaultTrackRegistry`, `AgentRegistry`                                                                                                                                            |
-| `DeployVaultInfrastructure.s.sol` | Greenfield vault stack: agent core (extended) + thematic EIP-1167 vault clones + `AllocationManager` + track configs                                                                                                 |
+| `DeployVaultInfrastructure.s.sol` | Greenfield vault stack: agent core (extended) + thematic EIP-1167 vault clones + `AllocationManager` + track configs                                                                                                  |
 | `ops/SetRegistrationFee.s.sol`    | Set registration fee on deployed `FeeManager` (default `0.1` USDC via `Fees.REGISTRATION_FEE`)                                                                                                                        |
 | `DeployTrading.s.sol`             | `PositionManager`, `TradeRouter`, swap adapter; grants `EXECUTOR` / `OPERATOR` on router and `TRADE_ROUTER_ROLE` on vaults and `AllocationManager`                                                                    |
 | `DeployPriceOracle.s.sol`         | `MockPriceOracle` for the token catalog                                                                                                                                                                               |
@@ -138,7 +138,11 @@ The signed payload includes `exitsHash` (hash of the exit ladder), not the raw `
 | `deadline`       | Unix timestamp; reverts when expired                  |
 | `nonce`          | Must equal `TradeRouter.nonces(agentId)` at execution |
 
-Signer must be `AgentRegistry.signerOf(agentId)`. Executor submits with `EXECUTOR_ROLE`.
+Signer must be `AgentRegistry.signerOf(agentId)`. Executor submits with `EXECUTOR_ROLE`. The same nonce/deadline/domain rules apply to `AddToPosition`, `ReducePosition`, and `UpdateExitLadder`.
+
+### Trade-time enforcement
+
+`TradeRouter` enforces allocation, trade size, daily turnover, daily realized loss (`maxDailyLossBps`), and exit bounds on open/add/ladder update. Account `maxDrawdownBps` is stored in `VaultTrackRegistry` but not checked per intent in MVP. Operator `forceClose` requires agent **Suspended** status.
 
 ### Signing flow
 

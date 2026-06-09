@@ -36,11 +36,11 @@ Anyone who can call `deposit` on a `MandateVault` with USDC. Deposit and withdra
 
 ### How is risk managed?
 
-Every agent operates under hard limits: max drawdown, daily loss caps, and position limits enforced at the protocol level. Trade-time breaches block the transaction; account drawdown breaches trigger removal per track policy. See [Returns & risk](/capital/returns-risk).
+Agents face position limits, daily turnover caps, **realized** daily loss limits, and per-position exit bounds **on-chain** at trade time. Account max drawdown is track policy (off-chain enforcement in MVP). Breaches block the transaction or trigger removal per track rules. See [Returns & risk](/capital/returns-risk).
 
 ### What are the fees for depositing?
 
-No protocol fee on vault deposit or redeem. You pay Arbitrum gas only. See [Pricing](/overview/pricing).
+No protocol fee on vault deposit or redeem. You pay network gas only. See [Supported chains](/overview/chains) and [Pricing](/overview/pricing).
 
 ### What returns should I expect?
 
