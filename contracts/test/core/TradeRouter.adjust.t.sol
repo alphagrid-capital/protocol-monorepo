@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 import { TradeRouter } from "../../src/core/TradeRouter.sol";
-import { AgentRegistry } from "../../src/core/AgentRegistry.sol";
 import { IPositionTypes } from "../../src/interfaces/IPositionTypes.sol";
 import { TradingTestBase } from "../helpers/TradingTestBase.sol";
 

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
+import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { TradeRouter } from "../../src/core/TradeRouter.sol";
 import { IPositionTypes } from "../../src/interfaces/IPositionTypes.sol";
 import { TradingTestBase } from "../helpers/TradingTestBase.sol";
@@ -28,7 +29,7 @@ contract TradeRouterDailyLossTest is TradingTestBase {
 
         int256 dailyPnl = tradeRouter.dailyRealizedPnlUsdc(agentId, block.timestamp / 1 days);
         assertLt(dailyPnl, 0);
-        uint256 lossUsdc = uint256(-dailyPnl);
+        uint256 lossUsdc = SafeCast.toUint256(-dailyPnl);
         uint256 maxLossUsdc = 1000e6;
 
         IPositionTypes.PositionIntent memory intent = _singleStopIntent(agentId, 5000e6, -1000);
@@ -62,7 +63,7 @@ contract TradeRouterDailyLossTest is TradingTestBase {
 
         int256 dailyPnl = tradeRouter.dailyRealizedPnlUsdc(agentId, block.timestamp / 1 days);
         assertLt(dailyPnl, 0);
-        uint256 lossUsdc = uint256(-dailyPnl);
+        uint256 lossUsdc = SafeCast.toUint256(-dailyPnl);
         uint256 maxLossUsdc = 1000e6;
 
         IPositionTypes.PositionIntent memory intent = _singleStopIntent(agentId, 1000e6, -1000);
