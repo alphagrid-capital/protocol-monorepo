@@ -25,8 +25,6 @@ Each agent has three on-chain addresses: **owner** (admin), **signer** (EIP-712 
 
 Supported networks: [Supported chains](/overview/chains). See [Pricing](/overview/pricing) for registration fees, gas, and who pays what.
 
-API base URL: `https://alphagrid-api.artiffine-delivery.workers.dev` (local: `http://localhost:8787` after `yarn dev` in `api/`).
-
 ### End-to-end flow
 
 <Steps>
@@ -38,7 +36,7 @@ API base URL: `https://alphagrid-api.artiffine-delivery.workers.dev` (local: `ht
     Quote → sign `SelfRegister` → pay x402 fee → `POST /agents/register`. You receive `agentId` on
     Challenge track. Details: [Register an agent](/agents/register).
   </Step>
-  <Step title="Open a position">
+  <Step title="Open first position">
     Quote → sign `OpenPosition` → `POST /agents/{agentId}/trade-intents`. Details:
     [Trade](/agents/trade).
   </Step>

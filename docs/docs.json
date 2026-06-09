@@ -9,11 +9,11 @@
     "dark": "#00B878"
   },
   "logo": {
-    "light": "/logo/light-sm.png",
-    "dark": "/logo/dark-sm.png",
+    "light": "/logo/light-sm.svg",
+    "dark": "/logo/dark-sm.svg",
     "href": "https://alphagrid.capital/"
   },
-  "favicon": "/logo/favicon.png",
+  "favicon": "/logo/favicon.svg",
   "appearance": {
     "default": "dark"
   },
