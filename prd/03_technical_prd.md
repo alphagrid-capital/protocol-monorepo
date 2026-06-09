@@ -228,11 +228,12 @@ struct VaultTrackConfig {
     uint256 maxDrawdownBps;
     uint256 maxTradeSizeBps;
     uint256 maxDailyTurnoverBps;
+    uint256 maxDailyLossBps;     // realized daily loss cap vs allocation.cap; 0 = disabled
     uint256 evaluationPeriod;
     uint256 minTrades;
     uint256 promotionScore;
     bool active;
-    uint256 maxStopLossBps;      // max SL magnitude in bps; 0 → use maxDrawdownBps on validation
+    uint256 maxStopLossBps;      // per-position SL cap in bps; 0 = no cap (not coupled to maxDrawdownBps)
     uint256 minTakeProfitBps;    // minimum TP trigger in bps; 0 = no floor
     uint256 maxTakeProfitBps;    // maximum TP trigger in bps; 0 = no cap
     bool requireStopLoss;        // when true, exit ladders must include at least one StopLoss rule

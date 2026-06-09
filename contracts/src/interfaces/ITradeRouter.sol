@@ -54,6 +54,9 @@ interface ITradeRouter is IPositionTypes {
     /// @notice Cumulative USDC notional traded by `agentId` on UTC day `day` (timestamp / 1 days).
     function dailyTurnoverUsdc(uint256 agentId, uint256 day) external view returns (uint256);
 
+    /// @notice Net realized PnL from sells on UTC day `day` (negative = net loss vs cost basis released).
+    function dailyRealizedPnlUsdc(uint256 agentId, uint256 day) external view returns (int256);
+
     // -------------------------------------------------------------------------
     // Execution
     // -------------------------------------------------------------------------

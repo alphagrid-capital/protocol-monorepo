@@ -243,6 +243,30 @@ export const tradeRouterAbi = [
   },
   {
     type: 'function',
+    name: 'dailyRealizedPnlUsdc',
+    inputs: [
+      {
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+      {
+        name: 'day',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    outputs: [
+      {
+        name: '',
+        type: 'int256',
+        internalType: 'int256',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'dailyTurnoverUsdc',
     inputs: [
       {
@@ -1190,6 +1214,27 @@ export const tradeRouterAbi = [
       },
       {
         name: 'cap',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+  },
+  {
+    type: 'error',
+    name: 'ExceedsDailyLoss',
+    inputs: [
+      {
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+      {
+        name: 'lossUsdc',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+      {
+        name: 'maxLossUsdc',
         type: 'uint256',
         internalType: 'uint256',
       },

@@ -30,6 +30,7 @@ interface OnChainVaultTrackConfig {
   maxDrawdownBps: bigint
   maxTradeSizeBps: bigint
   maxDailyTurnoverBps: bigint
+  maxDailyLossBps: bigint
   evaluationPeriod: bigint
   minTrades: bigint
   promotionScore: bigint
@@ -148,6 +149,7 @@ function serializeVaultTrackConfig(
     maxDrawdownBps: Number(config.maxDrawdownBps),
     maxTradeSizeBps: Number(config.maxTradeSizeBps),
     maxDailyTurnoverBps: Number(config.maxDailyTurnoverBps),
+    maxDailyLossBps: Number(config.maxDailyLossBps),
     evaluationPeriod: config.evaluationPeriod.toString(),
     minTrades: Number(config.minTrades),
     promotionScore: Number(config.promotionScore),

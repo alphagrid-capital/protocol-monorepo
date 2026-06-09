@@ -74,6 +74,7 @@ contract VaultTrackRegistry is IVaultTrackRegistry, AccessControl {
         _validateBps(config.maxDrawdownBps);
         _validateBps(config.maxTradeSizeBps);
         _validateBps(config.maxDailyTurnoverBps);
+        _validateBps(config.maxDailyLossBps);
         _validateBps(config.maxStopLossBps);
         _validateBps(config.minTakeProfitBps);
         _validateBps(config.maxTakeProfitBps);
@@ -91,6 +92,7 @@ contract VaultTrackRegistry is IVaultTrackRegistry, AccessControl {
             maxDrawdownBps: config.maxDrawdownBps,
             maxTradeSizeBps: config.maxTradeSizeBps,
             maxDailyTurnoverBps: config.maxDailyTurnoverBps,
+            maxDailyLossBps: config.maxDailyLossBps,
             evaluationPeriod: config.evaluationPeriod,
             minTrades: config.minTrades,
             promotionScore: config.promotionScore,

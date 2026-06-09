@@ -342,6 +342,7 @@ contract AllocationManagerTest is BaseTest {
                 maxDrawdownBps: 1500,
                 maxTradeSizeBps: 500,
                 maxDailyTurnoverBps: 2500,
+                maxDailyLossBps: 0,
                 evaluationPeriod: 14 days,
                 minTrades: 5,
                 promotionScore: 70,

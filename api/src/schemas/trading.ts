@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi'
 import { agentIdParamSchema } from './agent.js'
-import { ExitBoundsSchema } from './vault.js'
+import { AccountRiskBoundsSchema, ExitBoundsSchema } from './vault.js'
 
 export const TradingNotImplementedSchema = z
   .object({
@@ -75,6 +75,11 @@ export const TradeIntentQuoteSchema = z
     allowedSymbols: z.array(z.string()),
     trackId: z.number().int(),
     exitBounds: ExitBoundsSchema,
+    accountRiskBounds: AccountRiskBoundsSchema,
+    dailyRealizedPnlUsdc: z.string().openapi({
+      description: 'Net realized PnL today (negative = loss); from TradeRouter.dailyRealizedPnlUsdc',
+      example: '0',
+    }),
     defaultExit: z.array(ExitRuleInputSchema),
     eip712: z.object({
       domainName: z.string(),

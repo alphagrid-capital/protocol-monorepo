@@ -105,11 +105,15 @@ export class TradingService {
     const vault = agent.vault as Address
     const signer = agent.signer as Address
     const trackId = BigInt(agent.track)
-    const [nonce, eip712Domain, exitBounds] = await Promise.all([
-      tradeRouter.nonces(agentId),
-      tradeRouter.getEip712Domain(),
-      this.getExitBounds(vault, trackId),
-    ])
+    const day = BigInt(Math.floor(Date.now() / 1000 / 86400))
+    const [nonce, eip712Domain, exitBounds, accountRiskBounds, dailyRealizedPnlUsdc] =
+      await Promise.all([
+        tradeRouter.nonces(agentId),
+        tradeRouter.getEip712Domain(),
+        this.getExitBounds(vault, trackId),
+        this.getAccountRiskBounds(vault, trackId),
+        tradeRouter.dailyRealizedPnlUsdc(agentId, day),
+      ])
     const allocation = await this.getAllocation(agentId)
     const allowedSymbols = await this.listAllowedSymbols(vault)
 
@@ -138,6 +142,8 @@ export class TradingService {
       allowedSymbols,
       trackId: Number(trackId),
       exitBounds,
+      accountRiskBounds,
+      dailyRealizedPnlUsdc: dailyRealizedPnlUsdc.toString(),
       defaultExit: DEFAULT_EXIT_LADDER,
       eip712: {
         domainName: eip712Domain.name,
@@ -632,6 +638,26 @@ export class TradingService {
     return token
   }
 
+  private async getAccountRiskBounds(vault: Address, trackId: bigint) {
+    const registryAddress = this.config.chainContracts.VaultTrackRegistry
+    if (!registryAddress) {
+      throw new TradingError('VaultTrackRegistry is not configured', 503)
+    }
+
+    const client = this.providerService().createPublicClient()
+    const config = await client.readContract({
+      address: registryAddress,
+      abi: vaultTrackRegistryAbi,
+      functionName: 'getVaultTrackConfig',
+      args: [vault, trackId],
+    })
+
+    return {
+      maxDailyLossBps: Number(config.maxDailyLossBps),
+      maxDrawdownBps: Number(config.maxDrawdownBps),
+    }
+  }
+
   private async getExitBounds(vault: Address, trackId: bigint) {
     const registryAddress = this.config.chainContracts.VaultTrackRegistry
     if (!registryAddress) {
@@ -646,13 +672,8 @@ export class TradingService {
       args: [vault, trackId],
     })
 
-    const maxSl =
-      config.maxStopLossBps === 0n
-        ? config.maxDrawdownBps
-        : config.maxStopLossBps
-
     return {
-      maxStopLossBps: Number(maxSl),
+      maxStopLossBps: Number(config.maxStopLossBps),
       minTakeProfitBps: Number(config.minTakeProfitBps),
       maxTakeProfitBps: Number(config.maxTakeProfitBps),
       requireStopLoss: config.requireStopLoss,
@@ -739,6 +760,7 @@ export class TradingService {
       'ExceedsAllocationCap',
       'ExceedsMaxTradeSize',
       'ExceedsDailyTurnover',
+      'ExceedsDailyLoss',
       'VaultTrackNotActive',
     ] as const
 

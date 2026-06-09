@@ -205,6 +205,11 @@ export const vaultTrackRegistryAbi = [
             internalType: 'uint256',
           },
           {
+            name: 'maxDailyLossBps',
+            type: 'uint256',
+            internalType: 'uint256',
+          },
+          {
             name: 'evaluationPeriod',
             type: 'uint256',
             internalType: 'uint256',
@@ -426,6 +431,11 @@ export const vaultTrackRegistryAbi = [
           },
           {
             name: 'maxDailyTurnoverBps',
+            type: 'uint256',
+            internalType: 'uint256',
+          },
+          {
+            name: 'maxDailyLossBps',
             type: 'uint256',
             internalType: 'uint256',
           },
@@ -704,6 +714,11 @@ export const vaultTrackRegistryAbi = [
           },
           {
             name: 'maxDailyTurnoverBps',
+            type: 'uint256',
+            internalType: 'uint256',
+          },
+          {
+            name: 'maxDailyLossBps',
             type: 'uint256',
             internalType: 'uint256',
           },

@@ -217,13 +217,22 @@ Per vault + track, exit ladders on **open** and **update** must satisfy:
 
 | Field | Meaning |
 |-------|---------|
-| `maxStopLossBps` | SL rules must have `triggerBps >= -maxStopLossBps`. When `0`, falls back to `maxDrawdownBps`. |
+| `maxStopLossBps` | Per-position cap: SL rules must have `triggerBps >= -maxStopLossBps`. When `0`, no SL magnitude cap. Independent of `maxDrawdownBps` (account-level). |
 | `minTakeProfitBps` | When non-zero, every TP rule must have `triggerBps >= minTakeProfitBps`. |
 | `maxTakeProfitBps` | When non-zero, every TP rule must have `triggerBps <= maxTakeProfitBps`. |
 | `requireStopLoss` | When true, ladder must include at least one StopLoss rule. |
 | `requireTakeProfit` | When true, ladder must include at least one TakeProfit rule. |
 
 Violations revert with `ExitRulesOutOfBounds`.
+
+## Account risk (`VaultTrackConfig` + `TradeRouter`)
+
+| Field | On-chain enforcement |
+|-------|---------------------|
+| `maxDailyLossBps` | When non-zero, blocks `openPosition` and `addToPosition` after net **realized** sell PnL today (UTC day) exceeds `allocation.cap × maxDailyLossBps / 10000`. Updated on every sell (`reducePosition`, `executeExit`, `forceClose`). `reducePosition` / ladder update still allowed. `0` = disabled. |
+| `maxDrawdownBps` | Stored for policy; **account-level HWM drawdown is not enforced on-chain in MVP** (off-chain risk engine). |
+
+View: `TradeRouter.dailyRealizedPnlUsdc(agentId, day)`.
 
 ## Primary type: `AddToPosition`
 

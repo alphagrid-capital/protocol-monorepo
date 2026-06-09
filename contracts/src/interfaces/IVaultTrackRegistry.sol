@@ -28,14 +28,17 @@ interface IVaultTrackRegistry {
         uint256 trackId;
         uint256 initialAllocation;
         uint256 maxAllocation;
+        /// @notice Account-level failure threshold in bps; off-chain risk engine in MVP (not ladder validation).
         uint256 maxDrawdownBps;
         uint256 maxTradeSizeBps;
         uint256 maxDailyTurnoverBps;
+        /// @notice Max realized daily loss as bps of allocation cap; 0 = disabled. Enforced in TradeRouter.
+        uint256 maxDailyLossBps;
         uint256 evaluationPeriod;
         uint256 minTrades;
         uint256 promotionScore;
         bool active;
-        /// @notice Max stop-loss magnitude in bps; 0 falls back to maxDrawdownBps on validation.
+        /// @notice Max per-position stop-loss magnitude in bps; 0 = no cap. Independent of maxDrawdownBps.
         uint256 maxStopLossBps;
         /// @notice Minimum take-profit trigger in bps; 0 = no floor.
         uint256 minTakeProfitBps;

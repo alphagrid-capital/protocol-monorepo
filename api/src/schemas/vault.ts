@@ -11,6 +11,7 @@ export const VaultTrackConfigSchema = z
     maxDrawdownBps: z.number().int().openapi({ example: 1500 }),
     maxTradeSizeBps: z.number().int().openapi({ example: 5000 }),
     maxDailyTurnoverBps: z.number().int().openapi({ example: 2500 }),
+    maxDailyLossBps: z.number().int().openapi({ example: 500 }),
     evaluationPeriod: z.string().openapi({ example: '1209600' }),
     minTrades: z.number().int().openapi({ example: 5 }),
     promotionScore: z.number().int().openapi({ example: 70 }),
@@ -32,6 +33,13 @@ export const ExitBoundsSchema = z
     requireTakeProfit: z.boolean(),
   })
   .openapi('ExitBounds')
+
+export const AccountRiskBoundsSchema = z
+  .object({
+    maxDailyLossBps: z.number().int(),
+    maxDrawdownBps: z.number().int(),
+  })
+  .openapi('AccountRiskBounds')
 
 export const VaultSummarySchema = z
   .object({

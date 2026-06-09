@@ -7,6 +7,7 @@ export interface VaultTrackConfig {
   maxDrawdownBps: number;
   maxTradeSizeBps: number;
   maxDailyTurnoverBps: number;
+  maxDailyLossBps: number;
   evaluationPeriod: string;
   minTrades: number;
   promotionScore: number;

@@ -171,11 +171,12 @@ Funded and Prime draw real capital from the agent’s bound ERC-4626 vault.
 | `max_allocation` | Maximum allocation at this stage. |
 | `max_drawdown_bps` | Failure threshold (stored for off-chain risk engine; not enforced on-chain in MVP). |
 | `max_trade_size_bps` | Max trade size as bps of allocation cap (enforced on-chain). |
-| `max_daily_turnover_bps` | Max daily turnover as bps of allocation cap (enforced on-chain). |
+| `max_daily_turnover_bps` | Max daily turnover as bps of vault total assets (enforced on-chain). |
+| `max_daily_loss_bps` | Max net realized daily loss as bps of allocation cap (enforced on-chain on open/add). `0` = disabled. |
 | `evaluation_period` | Required duration before promotion eligibility (off-chain check in MVP). |
 | `min_trades` | Minimum activity requirement (off-chain check in MVP). |
 | `promotion_score` | Required Alpha Score to promote (off-chain check in MVP). |
-| `max_stop_loss_bps` | Max stop-loss magnitude in bps; `0` falls back to `max_drawdown_bps` on open/ladder-update validation. |
+| `max_stop_loss_bps` | Max per-position stop-loss magnitude in bps on open/ladder-update; `0` = no cap. Independent of account `max_drawdown_bps`. |
 | `min_take_profit_bps` | Minimum take-profit trigger in bps; `0` = no floor. |
 | `max_take_profit_bps` | Maximum take-profit trigger in bps; `0` = no cap. |
 | `require_stop_loss` | When true, exit ladders must include at least one `StopLoss` rule. |

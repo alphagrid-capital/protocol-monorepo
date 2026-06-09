@@ -191,6 +191,7 @@ contract VaultTrackRegistryTest is BaseTest {
             maxDrawdownBps: 1000,
             maxTradeSizeBps: 500,
             maxDailyTurnoverBps: 2000,
+            maxDailyLossBps: 0,
             evaluationPeriod: 30 days,
             minTrades: 10,
             promotionScore: 75,

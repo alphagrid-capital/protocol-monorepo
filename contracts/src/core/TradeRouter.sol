@@ -67,6 +67,7 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
 
     mapping(uint256 agentId => uint256 nonce) private _nonces;
     mapping(uint256 agentId => mapping(uint256 day => uint256 turnoverUsdc)) private _dailyTurnoverUsdc;
+    mapping(uint256 agentId => mapping(uint256 day => int256 realizedPnlUsdc)) private _dailyRealizedPnlUsdc;
 
     uint256 public keeperBountyBps;
     uint256 public maxKeeperBounty;
@@ -89,6 +90,7 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
     error ExceedsAllocationCap(uint256 agentId, uint256 used, uint256 cap);
     error ExceedsMaxTradeSize(uint256 tradeSize, uint256 maxTradeSize);
     error ExceedsDailyTurnover(uint256 agentId, uint256 turnover, uint256 maxTurnover);
+    error ExceedsDailyLoss(uint256 agentId, uint256 lossUsdc, uint256 maxLossUsdc);
     error TriggerNotMet(uint256 positionId);
     error PositionNotOpen(uint256 positionId);
     error PositionAgentMismatch(uint256 positionId, uint256 agentId);
@@ -152,6 +154,11 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
     /// @inheritdoc ITradeRouter
     function dailyTurnoverUsdc(uint256 agentId, uint256 day) external view returns (uint256) {
         return _dailyTurnoverUsdc[agentId][day];
+    }
+
+    /// @inheritdoc ITradeRouter
+    function dailyRealizedPnlUsdc(uint256 agentId, uint256 day) external view returns (int256) {
+        return _dailyRealizedPnlUsdc[agentId][day];
     }
 
     // -------------------------------------------------------------------------
@@ -271,6 +278,7 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
         _validateAgentCanOpen(intent.agentId, intent.vault, intent.token);
         _validateTradeSize(IMandateVault(intent.vault), intent.agentId, intent.usdcAmount);
         _validateDailyTurnover(IMandateVault(intent.vault), intent.agentId, intent.usdcAmount);
+        _validateDailyLoss(intent.agentId);
 
         IAllocationManager.Allocation memory allocation = allocationManager.getAllocation(intent.agentId);
         if (allocation.used + intent.usdcAmount > allocation.cap) {
@@ -291,6 +299,7 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
 
         _validateTradeSize(IMandateVault(position.vault), intent.agentId, intent.usdcAmount);
         _validateDailyTurnover(IMandateVault(position.vault), intent.agentId, intent.usdcAmount);
+        _validateDailyLoss(intent.agentId);
 
         IAllocationManager.Allocation memory allocation = allocationManager.getAllocation(intent.agentId);
         if (allocation.used + intent.usdcAmount > allocation.cap) {
@@ -529,7 +538,6 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
 
         IVaultTrackRegistry.VaultTrackConfig memory config = vaultTrackRegistry.getVaultTrackConfig(vault, trackId);
 
-        uint256 maxSl = config.maxStopLossBps == 0 ? config.maxDrawdownBps : config.maxStopLossBps;
         bool hasStopLoss;
         bool hasTakeProfit;
 
@@ -538,7 +546,9 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
             ExitRule calldata rule = exits[i];
             if (rule.triggerType == TriggerType.StopLoss) {
                 hasStopLoss = true;
-                if (rule.triggerBps < -SafeCast.toInt256(maxSl)) revert ExitRulesOutOfBounds();
+                if (config.maxStopLossBps > 0 && rule.triggerBps < -SafeCast.toInt256(config.maxStopLossBps)) {
+                    revert ExitRulesOutOfBounds();
+                }
             } else {
                 hasTakeProfit = true;
                 if (config.minTakeProfitBps > 0 && rule.triggerBps < SafeCast.toInt256(config.minTakeProfitBps)) {
@@ -602,6 +612,29 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
         if (usdcNotional == 0) return;
         uint256 day = block.timestamp / 1 days;
         _dailyTurnoverUsdc[agentId][day] += usdcNotional;
+    }
+
+    function _validateDailyLoss(uint256 agentId) private view {
+        uint256 trackId = uint256(agentRegistry.trackOf(agentId));
+        IAllocationManager.Allocation memory allocation = allocationManager.getAllocation(agentId);
+        IVaultTrackRegistry.VaultTrackConfig memory config =
+            vaultTrackRegistry.getVaultTrackConfig(allocation.vault, trackId);
+        if (config.maxDailyLossBps == 0) return;
+
+        int256 dailyPnl = _dailyRealizedPnlUsdc[agentId][block.timestamp / 1 days];
+        if (dailyPnl >= 0) return;
+
+        uint256 lossUsdc = SafeCast.toUint256(-dailyPnl);
+        uint256 maxLossUsdc = allocation.cap.mulDiv(config.maxDailyLossBps, MAX_BPS, Math.Rounding.Floor);
+        if (lossUsdc >= maxLossUsdc) {
+            revert ExceedsDailyLoss(agentId, lossUsdc, maxLossUsdc);
+        }
+    }
+
+    function _recordDailyRealizedPnl(uint256 agentId, uint256 usdcReleased, uint256 usdcOut) private {
+        if (usdcReleased == usdcOut) return;
+        uint256 day = block.timestamp / 1 days;
+        _dailyRealizedPnlUsdc[agentId][day] += SafeCast.toInt256(usdcOut) - SafeCast.toInt256(usdcReleased);
     }
 
     function _positionPnlBps(Position memory position) private view returns (int256) {
@@ -693,6 +726,8 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
         if (mode != SellMode.ForceClose) {
             _recordDailyTurnover(position.agentId, usdcOut);
         }
+
+        _recordDailyRealizedPnl(position.agentId, usdcReleased, usdcOut);
 
         _assertLedgerInvariant(vault, position.token);
     }

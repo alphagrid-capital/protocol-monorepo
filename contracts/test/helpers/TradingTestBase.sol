@@ -285,6 +285,13 @@ abstract contract TradingTestBase is BaseTest {
         );
     }
 
+    function _setMaxDailyLossBps(uint256 bps) internal {
+        IVaultTrackRegistry.VaultTrackConfig memory config = vaultTrackRegistry.getVaultTrackConfig(vaultAddr, 0);
+        config.maxDailyLossBps = bps;
+        vm.prank(deployer);
+        vaultTrackRegistry.setVaultTrackConfig(vaultAddr, 0, config);
+    }
+
     function _setRequireTakeProfit(bool required) internal {
         IVaultTrackRegistry.VaultTrackConfig memory config = vaultTrackRegistry.getVaultTrackConfig(vaultAddr, 0);
         config.requireTakeProfit = required;
@@ -306,6 +313,7 @@ abstract contract TradingTestBase is BaseTest {
                 maxDrawdownBps: 1500,
                 maxTradeSizeBps: 5000,
                 maxDailyTurnoverBps: 2500,
+                maxDailyLossBps: 0,
                 evaluationPeriod: 14 days,
                 minTrades: 5,
                 promotionScore: 70,

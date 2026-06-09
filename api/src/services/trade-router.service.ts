@@ -44,6 +44,16 @@ export class TradeRouterService {
     })
   }
 
+  async dailyRealizedPnlUsdc(agentId: bigint, day: bigint): Promise<bigint> {
+    const client = this.providerService.createPublicClient()
+    return client.readContract({
+      address: this.config.tradeRouterAddress,
+      abi: tradeRouterAbi,
+      functionName: 'dailyRealizedPnlUsdc',
+      args: [agentId, day],
+    })
+  }
+
   private async writeAndWait(
     functionName: 'openPosition' | 'addToPosition' | 'reducePosition' | 'updateExitLadder',
     args: readonly unknown[]
