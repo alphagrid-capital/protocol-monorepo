@@ -3,7 +3,7 @@ title: 'Contracts reference'
 description: 'On-chain contract map and signing schemas'
 ---
 
-For **agent builders** integrating against on-chain behavior: AlphaGrid smart contracts live in the [`contracts/`](https://github.com/alphagrid-prop/contracts/tree/main/contracts) Foundry workspace. Deploy scripts, env vars, and artifact format are documented in [`contracts/README.md`](https://github.com/alphagrid-prop/contracts/blob/main/contracts/README.md) and [`contracts/deployments/README.md`](https://github.com/alphagrid-prop/contracts/blob/main/contracts/deployments/README.md).
+For **agent builders** integrating against on-chain behavior: AlphaGrid smart contracts enforce registration, vault policy, allocation limits, and trade execution. This page maps each contract's role, deployed addresses, and EIP-712 signing schemas.
 
 ## Contract map
 
@@ -13,7 +13,7 @@ For **agent builders** integrating against on-chain behavior: AlphaGrid smart co
 | -------------------- | ------------------------------------------------------------------------------------------ |
 | `AgentRegistry`      | Canonical agent identities, vault bindings, track lifecycle, and EIP-712 self-registration |
 | `FeeManager`         | Registration fee collection and treasury routing                                           |
-| `VaultTrackRegistry` | Per-vault, per-track risk and allocation policy (`CHALLENGE`, `FUNDED`, `PRIME`)           |
+| `VaultTrackRegistry` | Per-vault, per-track risk and allocation policy                                            |
 | `TokenRegistry`      | Tradable token catalog and vault allowlists                                                |
 | `AllocationManager`  | Agent allocation caps and usage against vault track policy                                 |
 | `PositionManager`    | Open position ledger keyed by `(agentId, token)`                                           |
@@ -34,74 +34,24 @@ Trading is orchestrated by `TradeRouter` and `PositionManager`. Swaps run throug
 
 ### Mocks and adapters
 
-| Contract               | Role                                                                           |
-| ---------------------- | ------------------------------------------------------------------------------ |
-| `MockSwapAdapter`      | Oracle-priced minting adapter for local and testnet deploys                    |
-| `InventorySwapAdapter` | Pre-funded ERC-20 inventory adapter                                            |
-| `MockERC20`            | Stand-in USDC (`mUSDC`, 6 decimals) when `USDC` is unset in greenfield deploys |
-| `MockPriceOracle`      | Keeper-updated prices for mock stock tokens in the dev catalog                 |
+| Contract               | Role                                                           |
+| ---------------------- | -------------------------------------------------------------- |
+| `MockSwapAdapter`      | Oracle-priced minting adapter for local and testnet deploys    |
+| `InventorySwapAdapter` | Pre-funded ERC-20 inventory adapter                            |
+| `MockPriceOracle`      | Keeper-updated prices for mock stock tokens in the dev catalog |
 
 ## Deployed addresses
 
-Runtime addresses are not vendored in this docs site. After broadcasting, copy logged addresses into:
-
-- `contracts/deployments/<chainId>.json` (local artifact; gitignored except `*.example.json`)
-- [`config/token-catalog.json`](https://github.com/alphagrid-prop/contracts/blob/main/config/token-catalog.json) (`chains.<chainId>`)
-- `api/src/constants/contracts.ts` (API `ChainContracts`)
-
-### By chain
-
-`DeployFullStack` writes `deployments/<chainId>.json` with core contracts, vault clones, trading stack, oracle, USDC, and mock stock token addresses. See [`421614.example.json`](https://github.com/alphagrid-prop/contracts/blob/main/contracts/deployments/421614.example.json) for the schema.
-
-| Field group | Examples                                                                                               |
-| ----------- | ------------------------------------------------------------------------------------------------------ |
-| Core        | `FeeManager`, `VaultTrackRegistry`, `TokenRegistry`, `AgentRegistry`, `AllocationManager`              |
-| Vaults      | `VaultFactory`, `VaultImplementation`, `FoundationVault`, `TechVault`, `VolatilityVault`, `MacroVault` |
-| Trading     | `PositionManager`, `TradeRouter`, `SwapAdapter`, `PriceOracle`                                         |
-| Assets      | `usdc`, `tokens.NVDA`, `tokens.META`, …                                                                |
-
-### By deployment script
-
-Shared deploy logic lives in `contracts/script/helpers/` and `contracts/script/config/`. Entry scripts are thin wrappers with a **deploy → wire → setRoles** (or configure) pipeline.
-
-<Note>
-  `DeployMockERC20` is deploy-only. `DeployAgentCore` and `DeployVaultInfrastructure` grant
-  `REGISTRAR_ROLE` on `AgentRegistry` to `BACKEND_RELAYER` via `AgentCoreDeploy`.
-</Note>
-
-| Script                            | Use when                                                                                                                                                                                                              |
-| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `DeployFullStack.s.sol`           | Dev-complete greenfield on testnet or Anvil: core, vaults, track config, trading, oracle, and mock token catalog in one broadcast. Optional `USDC` (deploys `mUSDC` when unset). Writes `deployments/<chainId>.json`. |
-| `DeployAgentCore.s.sol`           | Agent onboarding only: `FeeManager`, `VaultTrackRegistry`, `AgentRegistry`                                                                                                                                            |
-| `DeployVaultInfrastructure.s.sol` | Greenfield vault stack: agent core (extended) + thematic EIP-1167 vault clones + `AllocationManager` + track configs                                                                                                  |
-| `ops/SetRegistrationFee.s.sol`    | Set registration fee on deployed `FeeManager` (default `0.1` USDC via `Fees.REGISTRATION_FEE`)                                                                                                                        |
-| `DeployTrading.s.sol`             | `PositionManager`, `TradeRouter`, swap adapter; grants `EXECUTOR` / `OPERATOR` on router and `TRADE_ROUTER_ROLE` on vaults and `AllocationManager`                                                                    |
-| `DeployPriceOracle.s.sol`         | `MockPriceOracle` for the token catalog                                                                                                                                                                               |
-| `DeployTokenCatalog.s.sol`        | Mock stocks + vault allowlists (requires existing vault and registry addresses)                                                                                                                                       |
-| `ops/DepositToTechVault.s.sol`    | Seed `TECH_VAULT` with USDC (default `10` USDC via `Fees.DEFAULT_TECH_DEPOSIT`)                                                                                                                                       |
-
-**Dev-complete greenfield** (from `contracts/`):
-
-```bash
-forge script script/DeployFullStack.s.sol:DeployFullStack --rpc-url $RPC_URL --broadcast
-```
-
-Required env: `ADMIN`, `TREASURY`, `BACKEND_RELAYER`, `ERC8004_IDENTITY_REGISTRY`, `EXECUTOR`. Optional: `USDC`, `OPERATOR`, `ORACLE_KEEPER`, `DEPLOY_MOCK_SWAP_ADAPTER`.
-
-**Staged deploy** (incremental or mainnet):
-
-```bash
-forge script script/DeployAgentCore.s.sol:DeployAgentCore --rpc-url $RPC_URL --broadcast
-forge script script/DeployVaultInfrastructure.s.sol:DeployVaultInfrastructure --rpc-url $RPC_URL --broadcast
-forge script script/ops/SetRegistrationFee.s.sol:SetRegistrationFee --rpc-url $RPC_URL --broadcast
-forge script script/DeployTrading.s.sol:DeployTrading --rpc-url $RPC_URL --broadcast
-forge script script/DeployPriceOracle.s.sol:DeployPriceOracle --rpc-url $RPC_URL --broadcast
-forge script script/DeployTokenCatalog.s.sol:DeployTokenCatalog --rpc-url $RPC_URL --broadcast
-```
-
-`DeployTrading` reads `DEPLOY_MOCK_SWAP_ADAPTER`: `true` deploys `MockSwapAdapter`; `false` deploys `InventorySwapAdapter`.
-
-Copy `.env.example` to `.env` in `contracts/` for the full variable list.
+| Contract              | Testnet address | Mainnet address |
+| --------------------- | --------------- | --------------- |
+| `AgentRegistry`       |                 |                 |
+| `FeeManager`          |                 |                 |
+| `VaultTrackRegistry`  |                 |                 |
+| `TokenRegistry`       |                 |                 |
+| `AllocationManager`   |                 |                 |
+| `PositionManager`     |                 |                 |
+| `TradeRouter`         |                 |                 |
+| `MandateVaultFactory` |                 |                 |
 
 ## EIP-712: OpenPosition
 
@@ -142,7 +92,7 @@ Signer must be `AgentRegistry.signerOf(agentId)`. Executor submits with `EXECUTO
 
 ### Trade-time enforcement
 
-`TradeRouter` enforces allocation, trade size, daily turnover, daily realized loss (`maxDailyLossBps`), and exit bounds on open/add/ladder update. Account `maxDrawdownBps` is stored in `VaultTrackRegistry` but not checked per intent in MVP. Operator `forceClose` requires agent **Suspended** status.
+`TradeRouter` enforces allocation, trade size, daily turnover, daily realized loss (`maxDailyLossBps`), and exit bounds on open/add/ladder update. Account `maxDrawdownBps` is stored in `VaultTrackRegistry` but not checked per intent. Operator `forceClose` requires agent **Suspended** status.
 
 ### Signing flow
 
