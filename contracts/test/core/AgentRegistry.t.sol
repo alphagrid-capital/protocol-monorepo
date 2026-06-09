@@ -619,7 +619,12 @@ contract AgentRegistryTest is BaseTest {
                 evaluationPeriod: 14 days,
                 minTrades: 5,
                 promotionScore: 70,
-                active: active
+                active: active,
+                maxStopLossBps: 1500,
+                minTakeProfitBps: 0,
+                maxTakeProfitBps: 10_000,
+                requireStopLoss: true,
+                requireTakeProfit: false
             })
         );
     }

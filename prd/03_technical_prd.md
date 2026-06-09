@@ -232,8 +232,15 @@ struct VaultTrackConfig {
     uint256 minTrades;
     uint256 promotionScore;
     bool active;
+    uint256 maxStopLossBps;      // max SL magnitude in bps; 0 → use maxDrawdownBps on validation
+    uint256 minTakeProfitBps;    // minimum TP trigger in bps; 0 = no floor
+    uint256 maxTakeProfitBps;    // maximum TP trigger in bps; 0 = no cap
+    bool requireStopLoss;        // when true, exit ladders must include at least one StopLoss rule
+    bool requireTakeProfit;      // when true, exit ladders must include at least one TakeProfit rule
 }
 ```
+
+`TradeRouter._validateExitRulesForTrack` enforces exit-bound fields on `openPosition` and `updateExitLadder`. Defaults in `ConfigureVaultTracks.s.sol`: Challenge SL ≤15%, TP uncapped, `requireTakeProfit` false; Funded SL ≤12%, TP +2%–+80%, `requireTakeProfit` true; Prime SL ≤10%, TP +5%–+50%, `requireTakeProfit` true; all tracks require at least one stop-loss on open/update.
 
 Promotion fees are configured in `FeeManager` per `(vault, fromTrack, toTrack)`, not in `VaultTrackConfig`. Tradable assets are enforced via vault + `TokenRegistry` allowlists, not per-track asset lists.
 
@@ -410,7 +417,7 @@ Controls who can submit execution transactions and under what conditions.
 
 **MVP implementation:** Replaced by role gating on `TradeRouter`:
 
-- `EXECUTOR_ROLE` — may call `openPosition` with a valid agent signature
+- `EXECUTOR_ROLE` — may relay signed `openPosition`, `addToPosition`, `reducePosition`, and `updateExitLadder` intents
 - `OPERATOR_ROLE` — may call `forceClose` when agent is `Suspended`
 - Any address — may call `executeExit` when an exit rule triggers (keeper bounty)
 
@@ -449,18 +456,25 @@ On-chain execution entrypoint for all approved trade settlement. **Only** path t
 
 ### Responsibilities
 
-- validate EIP-712 `OpenPosition` intent (agent signature, nonce, deadline)
-- enforce agent status, vault track active, allocation, max trade size, max daily turnover
-- open positions via approved `ISwapAdapter`
+- validate EIP-712 position intents (agent signature, nonce, deadline)
+- enforce agent status, vault track active, allocation, max trade size, max daily turnover, and per-track exit bounds
+- open and adjust positions via approved `ISwapAdapter`
 - execute exit ladder rules (`StopLoss` / `TakeProfit`; partial exits of remaining size)
 - pay keeper bounty on permissionless `executeExit`
 - operator `forceClose` when agent is `Suspended` (bypasses vault trading pause)
 - maintain per-agent nonces and daily turnover accounting
 - emit position and execution events for indexer consumption
 
-### Position intent (open)
+### Position intents
 
-Agents sign an `OpenPosition` intent binding vault, token, USDC size, slippage bounds, and an **exit ladder** hashed as `exitsHash`. Schema: `contracts/docs/position-intent-eip712.md`.
+Agents sign EIP-712 intents; schema: `contracts/docs/position-intent-eip712.md`.
+
+| Intent | Purpose |
+|--------|---------|
+| `OpenPosition` | Open a new position with exit ladder (`exitsHash`) |
+| `AddToPosition` | Buy more into an open position; blended entry price; ladder unchanged |
+| `ReducePosition` | Discretionary partial or full sell (`exitBps` of **remaining** tokens; `10000` = full close) |
+| `UpdateExitLadder` | Replace **pending** rules from `nextRuleIndex` onward; consumed steps unchanged |
 
 ```solidity
 struct PositionIntent {
@@ -474,29 +488,79 @@ struct PositionIntent {
     uint256 deadline;
     uint256 nonce;
 }
+
+struct AddToPositionIntent {
+    uint256 agentId;
+    uint256 positionId;
+    uint256 usdcAmount;
+    uint256 minTokenOut;
+    uint16 maxSlippageBps;
+    uint256 deadline;
+    uint256 nonce;
+}
+
+struct ReducePositionIntent {
+    uint256 agentId;
+    uint256 positionId;
+    uint16 exitBps;
+    uint256 deadline;
+    uint256 nonce;
+}
+
+struct UpdateExitLadderIntent {
+    uint256 agentId;
+    uint256 positionId;
+    ExitRule[] exits;   // pending rules only; hashed as exitsHash in signature
+    uint256 deadline;
+    uint256 nonce;
+}
 ```
+
+### Keeper vs agent exits
+
+| Path | Who | Trigger | Advances ladder |
+|------|-----|---------|-----------------|
+| `executeExit` | Anyone (keeper bounty) | Current rule PnL trigger | Yes (`applyLadderExit`) |
+| `reducePosition` | Agent (signed) | Anytime | No (`applyDiscretionaryReduce`) |
+| `updateExitLadder` | Agent (signed) | Changes future automation | No |
+| `forceClose` | Operator | Agent `Suspended` | No (discretionary) |
 
 ### Key functions
 
 ```solidity
-openPosition(PositionIntent calldata intent, bytes calldata signature) // EXECUTOR_ROLE
-executeExit(uint256 positionId) external                               // permissionless keeper
-forceClose(uint256 positionId) external                                // OPERATOR_ROLE; agent Suspended
+openPosition(PositionIntent calldata intent, bytes calldata signature)           // EXECUTOR_ROLE
+addToPosition(AddToPositionIntent calldata intent, bytes calldata signature)     // EXECUTOR_ROLE
+reducePosition(ReducePositionIntent calldata intent, bytes calldata signature) // EXECUTOR_ROLE
+updateExitLadder(UpdateExitLadderIntent calldata intent, bytes calldata signature) // EXECUTOR_ROLE
+executeExit(uint256 positionId) external                                         // permissionless keeper
+forceClose(uint256 positionId) external                                          // OPERATOR_ROLE; agent Suspended
 ```
 
 ### Design rules
 
 - Executors do not control vault withdrawals or admin actions.
-- Opens respect `AgentRegistry` pause and vault `tradingPaused`; routine pulls blocked when trading paused.
+- Opens and adds respect `AgentRegistry` pause and vault `tradingPaused`; routine pulls blocked when trading paused.
 - `forceClose` remains available when trading is paused so operators can flatten suspended agents.
-- Registry pause blocks **new opens only**; keeper exits continue.
+- Registry pause blocks **new opens and adds**; reduce, ladder update, keeper exits, and force-close policies differ (see pause matrix).
+- `updateExitLadder` reverts `PendingRuleAlreadyTriggered` when the first new pending rule would already fire; agent must `reducePosition` instead.
 - Swap adapters receive pulled assets in-transaction; no standalone agent wallet execution.
+
+### Pause matrix
+
+| Intent | `AgentRegistry` paused | Vault `tradingPaused` |
+|--------|------------------------|------------------------|
+| `openPosition` | Block | Block |
+| `addToPosition` | Block | Block |
+| `reducePosition` | Allow | Block |
+| `updateExitLadder` | Allow | Allow |
+| `executeExit` | Allow | Block |
+| `forceClose` | Allow | Allow |
 
 ### Related contracts
 
-- `PositionManager` — stores positions and per-agent token ledger; only `TradeRouter` may mutate.
+- `PositionManager` — stores positions and per-agent token ledger; `applyLadderExit` (keeper) vs `applyDiscretionaryReduce` (agent/operator); `increasePosition`, `updatePendingExitRules`; only `TradeRouter` may mutate.
 - `MandateVault` — `TRADE_ROUTER_ROLE` for `pullUsdcForTrade` / `pullTokenForTrade` / force-close pulls.
-- `AllocationManager` — `TRADE_ROUTER_ROLE` for allocation usage updates on open.
+- `AllocationManager` — `TRADE_ROUTER_ROLE` for allocation usage updates on open and add.
 
 ---
 
@@ -545,9 +609,9 @@ Stores risk rules and can pause or restrict agents.
 
 **MVP implementation:** On-chain guardrails are split across contracts:
 
-- `VaultTrackRegistry` — `maxTradeSizeBps`, `maxDailyTurnoverBps`, track caps; promotion criteria stored for off-chain use
-- `TradeRouter` — enforces trade size and daily turnover on open
-- `AgentRegistry` — agent status, global pause (opens only)
+- `VaultTrackRegistry` — `maxTradeSizeBps`, `maxDailyTurnoverBps`, exit bounds (`maxStopLossBps`, `minTakeProfitBps`, `maxTakeProfitBps`, `requireStopLoss`, `requireTakeProfit`), track caps; promotion criteria stored for off-chain use
+- `TradeRouter` — enforces trade size and daily turnover on open/add/reduce; exit bounds on open and ladder update
+- `AgentRegistry` — agent status, global pause (blocks opens and adds; reduce/ladder update allowed)
 - `MandateVault` — `liquidityPaused` / `tradingPaused`, token allowlist
 
 Drawdown breach, Alpha Score graduation, and automated fail/promote actions remain **off-chain** (performance + risk engines) with operator execution on-chain in MVP.
@@ -1060,19 +1124,19 @@ Do not allow agents to execute arbitrary transactions.
 Use a constrained intent model:
 
 ```text
-Agent signs OpenPosition intent (includes exit ladder)
+Agent signs position intent (OpenPosition / AddToPosition / ReducePosition / UpdateExitLadder)
   ↓
-Backend validates auth and schema (off-chain; not yet built for trades)
+API validates schema and EIP-712 signature (open + adjust paths implemented)
   ↓
 Risk engine validates limits (off-chain; partial mirror on-chain)
   ↓
-AlphaGrid executor (EXECUTOR_ROLE) submits openPosition tx (not yet built)
+AlphaGrid executor (EXECUTOR_ROLE) relays signed intent to TradeRouter
   ↓
-TradeRouter verifies EIP-712 signature, nonce, deadline, rules
+TradeRouter verifies signature, nonce, deadline, track exit bounds (open/update), allocation, trade size
   ↓
-Vault + AllocationManager + PositionManager updated; adapter swaps
+Vault + AllocationManager + PositionManager updated; adapter swaps on open/add/reduce
   ↓
-Keepers call executeExit when price triggers fire (permissionless)
+Keepers call executeExit when price triggers fire (permissionless); agent may reduce or update pending ladder earlier
   ↓
 Indexer records result (off-chain; not yet built)
 ```

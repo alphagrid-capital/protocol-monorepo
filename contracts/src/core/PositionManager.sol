@@ -37,6 +37,7 @@ contract PositionManager is IPositionManager, AccessControl {
     error PositionNotOpen(uint256 positionId);
     error PositionAlreadyOpen(uint256 agentId, address token);
     error InvalidExitState(uint256 positionId);
+    error InvalidPendingExitRules(uint256 positionId);
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -151,8 +152,8 @@ contract PositionManager is IPositionManager, AccessControl {
         emit PositionOpened(positionId, agentId, vault, token, tokenAmount, entryPriceUsdc, usdcCostBasis);
     }
 
-    /// @notice Apply a partial or full exit to a position.
-    function applyExit(uint256 positionId, uint256 tokenSold, uint256 usdcReleased)
+    /// @notice Apply a keeper ladder exit (advances nextRuleIndex).
+    function applyLadderExit(uint256 positionId, uint256 tokenSold, uint256 usdcReleased)
         external
         onlyTradeRouter
         returns (uint8 ruleIndex)
@@ -166,18 +167,65 @@ contract PositionManager is IPositionManager, AccessControl {
         ruleIndex = position.nextRuleIndex;
         position.nextRuleIndex++;
 
-        position.tokenAmount -= tokenSold;
-        position.usdcCostBasis -= usdcReleased;
-        _agentTokenBalance[position.agentId][position.token] -= tokenSold;
-        _totalTokenLedger[position.token] -= tokenSold;
+        _reducePositionSize(position, tokenSold, usdcReleased);
 
-        emit PositionExitApplied(positionId, position.agentId, ruleIndex, tokenSold, usdcReleased);
+        emit PositionLadderExitApplied(positionId, position.agentId, ruleIndex, tokenSold, usdcReleased);
+    }
 
-        if (position.tokenAmount == 0) {
-            position.status = PositionStatus.Closed;
-            delete _openPositionId[position.agentId][position.token];
-            emit PositionClosed(positionId, position.agentId);
+    /// @notice Apply an agent or operator discretionary sell (does not advance nextRuleIndex).
+    function applyDiscretionaryReduce(uint256 positionId, uint256 tokenSold, uint256 usdcReleased)
+        external
+        onlyTradeRouter
+    {
+        Position storage position = _positions[positionId];
+        if (position.status != PositionStatus.Open) revert PositionNotOpen(positionId);
+
+        _reducePositionSize(position, tokenSold, usdcReleased);
+
+        emit PositionReduced(positionId, position.agentId, tokenSold, usdcReleased);
+    }
+
+    /// @notice Add tokens to an open position with weighted-average entry price.
+    function increasePosition(
+        uint256 positionId,
+        uint256 tokensAdded,
+        uint256 usdcAdded,
+        uint16 maxSlippageBps,
+        uint256 newEntryPriceUsdc
+    ) external onlyTradeRouter {
+        Position storage position = _positions[positionId];
+        if (position.status != PositionStatus.Open) revert PositionNotOpen(positionId);
+
+        position.tokenAmount += tokensAdded;
+        position.usdcCostBasis += usdcAdded;
+        position.entryPriceUsdc = newEntryPriceUsdc;
+        if (maxSlippageBps > position.maxSlippageBps) {
+            position.maxSlippageBps = maxSlippageBps;
         }
+
+        _agentTokenBalance[position.agentId][position.token] += tokensAdded;
+        _totalTokenLedger[position.token] += tokensAdded;
+
+        emit PositionIncreased(positionId, position.agentId, tokensAdded, usdcAdded, position.entryPriceUsdc);
+    }
+
+    /// @notice Replace pending exit rules from nextRuleIndex onward.
+    function updatePendingExitRules(uint256 positionId, ExitRule[] calldata newPendingRules) external onlyTradeRouter {
+        Position storage position = _positions[positionId];
+        if (position.status != PositionStatus.Open) revert PositionNotOpen(positionId);
+        if (newPendingRules.length == 0) revert InvalidPendingExitRules(positionId);
+
+        ExitRule[] storage rules = _exitRules[positionId];
+        uint8 idx = position.nextRuleIndex;
+        while (rules.length > idx) {
+            rules.pop();
+        }
+        uint256 len = newPendingRules.length;
+        for (uint256 i = 0; i < len; i++) {
+            rules.push(newPendingRules[i]);
+        }
+
+        emit PositionExitLadderUpdated(positionId, position.agentId, idx);
     }
 
     // -------------------------------------------------------------------------
@@ -193,6 +241,19 @@ contract PositionManager is IPositionManager, AccessControl {
     // -------------------------------------------------------------------------
     // Private Functions
     // -------------------------------------------------------------------------
+
+    function _reducePositionSize(Position storage position, uint256 tokenSold, uint256 usdcReleased) private {
+        position.tokenAmount -= tokenSold;
+        position.usdcCostBasis -= usdcReleased;
+        _agentTokenBalance[position.agentId][position.token] -= tokenSold;
+        _totalTokenLedger[position.token] -= tokenSold;
+
+        if (position.tokenAmount == 0) {
+            position.status = PositionStatus.Closed;
+            delete _openPositionId[position.agentId][position.token];
+            emit PositionClosed(position.positionId, position.agentId);
+        }
+    }
 
     function _requirePosition(uint256 positionId) private view returns (Position memory position) {
         position = _positions[positionId];

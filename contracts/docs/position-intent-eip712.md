@@ -1,6 +1,8 @@
 # Position intent EIP-712 schema
 
-Off-chain signing reference for `TradeRouter.openPosition`.
+Off-chain signing reference for `TradeRouter` agent intents: `openPosition`, `addToPosition`, `reducePosition`, and `updateExitLadder`.
+
+All intents share `TradeRouter.nonces(agentId)` and require `EXECUTOR_ROLE` for submission.
 
 ## Domain
 
@@ -208,3 +210,69 @@ Mixed take-profit then stop-loss:
 | Ledger invariant after open | `LedgerExceedsVaultBalance` |
 
 `liquidityPaused` blocks LP deposits/withdrawals only; it does **not** block `pullAssetsForTrade`.
+
+## Vault exit bounds (`VaultTrackConfig`)
+
+Per vault + track, exit ladders on **open** and **update** must satisfy:
+
+| Field | Meaning |
+|-------|---------|
+| `maxStopLossBps` | SL rules must have `triggerBps >= -maxStopLossBps`. When `0`, falls back to `maxDrawdownBps`. |
+| `minTakeProfitBps` | When non-zero, every TP rule must have `triggerBps >= minTakeProfitBps`. |
+| `maxTakeProfitBps` | When non-zero, every TP rule must have `triggerBps <= maxTakeProfitBps`. |
+| `requireStopLoss` | When true, ladder must include at least one StopLoss rule. |
+| `requireTakeProfit` | When true, ladder must include at least one TakeProfit rule. |
+
+Violations revert with `ExitRulesOutOfBounds`.
+
+## Primary type: `AddToPosition`
+
+```text
+AddToPosition(uint256 agentId,uint256 positionId,uint256 usdcAmount,uint256 minTokenOut,uint16 maxSlippageBps,uint256 deadline,uint256 nonce)
+```
+
+- Increases an open position; recomputes weighted-average `entryPriceUsdc`.
+- Blocked when `AgentRegistry` is paused or vault `tradingPaused`.
+- Allocation cap, trade size, and daily turnover apply to `usdcAmount`.
+
+## Primary type: `ReducePosition`
+
+```text
+ReducePosition(uint256 agentId,uint256 positionId,uint16 exitBps,uint256 deadline,uint256 nonce)
+```
+
+- Discretionary sell: `exitBps` is fraction of **remaining** tokens (`10000` = full close).
+- No PnL gate; does **not** advance `nextRuleIndex` or consume ladder steps.
+- Allowed when registry is paused; blocked when vault `tradingPaused`.
+
+## Primary type: `UpdateExitLadder`
+
+```text
+UpdateExitLadder(uint256 agentId,uint256 positionId,bytes32 exitsHash,uint256 deadline,uint256 nonce)
+```
+
+- Replaces **pending** rules from `nextRuleIndex` onward; consumed steps are unchanged.
+- `exitsHash` uses the same rule hashing as `OpenPosition`.
+- Must pass vault exit bounds and `_validateExitRules`.
+- Reverts `PendingRuleAlreadyTriggered` if the first new rule would already fire (use `reducePosition` for immediate action).
+- Allowed when registry or vault trading is paused (no asset pull).
+
+## Keeper vs agent exits
+
+| Path | Who | Trigger | Advances ladder |
+|------|-----|---------|-----------------|
+| `executeExit` | Anyone (keeper bounty) | Current rule PnL trigger | Yes |
+| `reducePosition` | Agent (signed) | Anytime | No |
+| `updateExitLadder` | Agent (signed) | Changes future automation | No |
+| `forceClose` | Operator | Agent suspended | No (discretionary) |
+
+## Pause matrix
+
+| Intent | `AgentRegistry` paused | Vault `tradingPaused` |
+|--------|------------------------|------------------------|
+| `openPosition` | Block | Block |
+| `addToPosition` | Block | Block |
+| `reducePosition` | Allow | Block |
+| `updateExitLadder` | Allow | Allow |
+| `executeExit` | Allow | Block |
+| `forceClose` | Allow | Allow |

@@ -34,6 +34,11 @@ interface OnChainVaultTrackConfig {
   minTrades: bigint
   promotionScore: bigint
   active: boolean
+  maxStopLossBps: bigint
+  minTakeProfitBps: bigint
+  maxTakeProfitBps: bigint
+  requireStopLoss: boolean
+  requireTakeProfit: boolean
 }
 
 /** Matches VaultTrackRegistry.MAX_TRACK_ID (tracks 0–2). */
@@ -147,6 +152,11 @@ function serializeVaultTrackConfig(
     minTrades: Number(config.minTrades),
     promotionScore: Number(config.promotionScore),
     active: config.active,
+    maxStopLossBps: Number(config.maxStopLossBps),
+    minTakeProfitBps: Number(config.minTakeProfitBps),
+    maxTakeProfitBps: Number(config.maxTakeProfitBps),
+    requireStopLoss: config.requireStopLoss,
+    requireTakeProfit: config.requireTakeProfit,
   }
 }
 

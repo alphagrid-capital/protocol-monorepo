@@ -18,7 +18,7 @@ contract TradeRouterLadderTest is TradingTestBase {
             triggerType: IPositionTypes.TriggerType.StopLoss, triggerBps: -1000, exitBps: 5000
         });
         exits[1] = IPositionTypes.ExitRule({
-            triggerType: IPositionTypes.TriggerType.StopLoss, triggerBps: -2000, exitBps: 10_000
+            triggerType: IPositionTypes.TriggerType.StopLoss, triggerBps: -1500, exitBps: 10_000
         });
 
         IPositionTypes.PositionIntent memory intent = IPositionTypes.PositionIntent({

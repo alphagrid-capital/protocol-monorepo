@@ -31,6 +31,18 @@ export function mapTriggerType(
   return triggerType === 'StopLoss' ? 0 : 1
 }
 
+export function mapOnChainExitRule(rule: {
+  triggerType: number
+  triggerBps: bigint
+  exitBps: number
+}): ExitRuleInput {
+  return {
+    triggerType: rule.triggerType === 0 ? 'StopLoss' : 'TakeProfit',
+    triggerBps: Number(rule.triggerBps),
+    exitBps: rule.exitBps,
+  }
+}
+
 export function mapExitRules(exits: ExitRuleInput[]): OnChainExitRule[] {
   return exits.map((rule) => ({
     triggerType: mapTriggerType(rule.triggerType),

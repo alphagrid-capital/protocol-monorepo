@@ -4,7 +4,7 @@ pragma solidity ^0.8.30;
 import { IPositionTypes } from "./IPositionTypes.sol";
 
 /// @title ITradeRouter
-/// @notice Entrypoint for agent position opens and permissionless keeper exits.
+/// @notice Entrypoint for agent position opens, adjustments, and permissionless keeper exits.
 interface ITradeRouter is IPositionTypes {
     // -------------------------------------------------------------------------
     // Events
@@ -13,6 +13,16 @@ interface ITradeRouter is IPositionTypes {
     event PositionOpenedFromIntent(
         uint256 indexed positionId, uint256 indexed agentId, address indexed vault, address token, uint256 usdcIn
     );
+
+    event PositionIncreasedFromIntent(
+        uint256 indexed positionId, uint256 indexed agentId, uint256 usdcIn, uint256 tokensAdded
+    );
+
+    event PositionReducedFromIntent(
+        uint256 indexed positionId, uint256 indexed agentId, uint16 exitBps, uint256 usdcOut
+    );
+
+    event PositionExitLadderUpdatedFromIntent(uint256 indexed positionId, uint256 indexed agentId, uint8 nextRuleIndex);
 
     event ExitExecuted(
         uint256 indexed positionId,
@@ -51,6 +61,16 @@ interface ITradeRouter is IPositionTypes {
     function openPosition(PositionIntent calldata intent, bytes calldata signature)
         external
         returns (uint256 positionId);
+
+    function addToPosition(AddToPositionIntent calldata intent, bytes calldata signature)
+        external
+        returns (uint256 tokensAdded);
+
+    function reducePosition(ReducePositionIntent calldata intent, bytes calldata signature)
+        external
+        returns (uint256 usdcOut);
+
+    function updateExitLadder(UpdateExitLadderIntent calldata intent, bytes calldata signature) external;
 
     function executeExit(uint256 positionId) external returns (uint256 usdcOut);
 

@@ -36,9 +36,15 @@ yarn deploy      # Deploy to Cloudflare (requires account auth)
 | `GET`  | `/tokens`                               | Global token catalog + on-chain registry state                    |
 | `GET`  | `/prices`                               | MockPriceOracle quotes indexed by symbol (e.g. `NVDA`)            |
 | `POST` | `/prices/refresh`                       | Manually fetch Finnhub quotes and update the oracle               |
-| `GET`  | `/agents/{agentId}/trade-intents/quote` | EIP-712 quote for open-position intent (nonce, vault, allocation) |
+| `GET`  | `/agents/{agentId}/trade-intents/quote` | EIP-712 quote for open-position intent (nonce, vault, allocation, exit bounds) |
 | `POST` | `/agents/{agentId}/trade-intents`       | Verify signed open intent; relay `TradeRouter.openPosition` (201) |
-| `GET`  | `/agents/{agentId}/positions`           | Agent open positions (RPC read via `PositionManager`)             |
+| `GET`  | `/agents/{agentId}/add-intents/quote`   | Quote for `AddToPosition` (`?positionId=`) |
+| `POST` | `/agents/{agentId}/add-intents`         | Relay signed add-to-position intent (201) |
+| `GET`  | `/agents/{agentId}/reduce-intents/quote` | Quote for `ReducePosition` (`?positionId=`) |
+| `POST` | `/agents/{agentId}/reduce-intents`      | Relay signed reduce intent — partial or full close (201) |
+| `GET`  | `/agents/{agentId}/exit-ladder-intents/quote` | Quote for `UpdateExitLadder` (`?positionId=`) |
+| `POST` | `/agents/{agentId}/exit-ladder-intents` | Relay signed pending TP/SL update (201) |
+| `GET`  | `/agents/{agentId}/positions`           | Agent open positions with exit rules (RPC via `PositionManager`) |
 | `POST` | `/intents/trade`                        | Global trade intent submit (**501** stub)                         |
 | `GET`  | `/agents/{agentId}/trades`              | Agent trade history (**501** stub)                                |
 | `GET`  | `/agents/{agentId}/risk-state`          | Agent risk state (**501** stub)                                   |
@@ -74,12 +80,18 @@ ChatGPT **browsing** only performs simple `GET` requests on **public** URLs. It 
 | `alphagrid_get_agent_registration_quote` | `GET /agents/register/quote`                             |
 | `alphagrid_register_agent`               | `POST /agents/register`                                  |
 | `alphagrid_submit_trade_intent`          | `POST /agents/{agentId}/trade-intents`                   |
+| `alphagrid_get_add_intent_quote`         | `GET /agents/{agentId}/add-intents/quote`                |
+| `alphagrid_submit_add_intent`            | `POST /agents/{agentId}/add-intents`                     |
+| `alphagrid_get_reduce_intent_quote`      | `GET /agents/{agentId}/reduce-intents/quote`             |
+| `alphagrid_submit_reduce_intent`         | `POST /agents/{agentId}/reduce-intents`                  |
+| `alphagrid_get_exit_ladder_intent_quote` | `GET /agents/{agentId}/exit-ladder-intents/quote`          |
+| `alphagrid_submit_exit_ladder_intent`    | `POST /agents/{agentId}/exit-ladder-intents`             |
 | `alphagrid_get_agent_positions`          | `GET /agents/{agentId}/positions`                        |
 | `alphagrid_get_trade_history`            | `GET /agents/{agentId}/trades` (**NOT_IMPLEMENTED**)     |
 | `alphagrid_get_risk_state`               | `GET /agents/{agentId}/risk-state` (**NOT_IMPLEMENTED**) |
 | `alphagrid_get_intent_status`            | `GET /intents/{intentId}` (**NOT_IMPLEMENTED**)          |
 
-Trade history, risk state, and intent status stubs return HTTP **501** or MCP `NOT_IMPLEMENTED`. Open-position quote, submit, and positions require executor config (see below).
+Trade history, risk state, and intent status stubs return HTTP **501** or MCP `NOT_IMPLEMENTED`. Open/add/reduce/exit-ladder intents and positions require executor config (see below).
 
 Connect MCP clients to `http://localhost:8787/mcp` in development (or your deployed Worker URL). Clients must send `Accept: application/json, text/event-stream` on MCP requests.
 
@@ -115,9 +127,11 @@ When `AGENT_REGISTRY_ADDRESS`, `FEE_MANAGER_ADDRESS`, `RPC_URL`, and `RELAYER_PR
 
 Without these, `POST /agents/register` runs in mock mode (no chain submit).
 
-## Trade execution (open position)
+## Trade execution (positions)
 
-When `TRADE_ROUTER_ADDRESS` (or address in `api/src/constants/contracts.ts`), `RPC_URL`, `CHAIN_ID`, and `EXECUTOR_PRIVATE_KEY` are set, the API verifies EIP-712 `OpenPosition` intents and relays `TradeRouter.openPosition` via an EOA with `EXECUTOR_ROLE`.
+When `TRADE_ROUTER_ADDRESS` (or address in `api/src/constants/contracts.ts`), `RPC_URL`, `CHAIN_ID`, and `EXECUTOR_PRIVATE_KEY` are set, the API verifies EIP-712 intents and relays `TradeRouter` calls via an EOA with `EXECUTOR_ROLE`.
+
+Supported intents: `OpenPosition`, `AddToPosition`, `ReducePosition` (partial or `exitBps=10000` full close), `UpdateExitLadder` (pending TP/SL replacement within vault track bounds).
 
 | Variable                 | Role                                                                      |
 | ------------------------ | ------------------------------------------------------------------------- |
@@ -128,7 +142,7 @@ When `TRADE_ROUTER_ADDRESS` (or address in `api/src/constants/contracts.ts`), `R
 
 **Agent-friendly submit body:** `symbol`, human `usdcAmount`, `minTokenOut`, `maxSlippageBps`, `exits`, `deadline`, `nonce`, `signature`. Vault is resolved from `AgentRegistry.vaultOf(agentId)` — never from the client.
 
-**Quote first:** `GET /agents/{agentId}/trade-intents/quote` returns nonce, EIP-712 domain, vault, allocation headroom, and allowed symbols. Sign with the agent signer (see [`contracts/docs/position-intent-eip712.md`](../contracts/docs/position-intent-eip712.md)).
+**Quote first:** Open quotes return `exitBounds` and `trackId` from `VaultTrackConfig`. Position adjust quotes require `?positionId=`. Sign with the agent signer (see [`contracts/docs/position-intent-eip712.md`](../contracts/docs/position-intent-eip712.md)).
 
 Without executor config, quote/submit/positions return **503** (not configured). Settlement uses on-chain `MockSwapAdapter` (mock token mint/burn) — no external venue.
 
@@ -140,7 +154,8 @@ Without executor config, quote/submit/positions return **503** (not configured).
 4. `GET /agents/{agentId}/trade-intents/quote`
 5. Sign `OpenPosition` with the agent signer.
 6. `POST /agents/{agentId}/trade-intents` with the signed body → `{ positionId, transactionHash }`
-7. `GET /agents/{agentId}/positions` shows the open position.
+7. `GET /agents/{agentId}/positions` shows the open position with exit rules.
+8. Optional: `add-intents`, `reduce-intents`, or `exit-ladder-intents` quote → sign → submit to adjust size or pending TP/SL.
 
 ## CI deployment
 

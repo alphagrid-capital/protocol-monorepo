@@ -19,7 +19,7 @@ import { IVaultTrackRegistry } from "../interfaces/IVaultTrackRegistry.sol";
 import { OracleLib } from "../libraries/OracleLib.sol";
 
 /// @title TradeRouter
-/// @notice Executes signed position opens, permissionless keeper exits, and operator force closes.
+/// @notice Executes signed position opens/adjustments, permissionless keeper exits, and operator force closes.
 contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
     using Math for uint256;
 
@@ -37,6 +37,23 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
     bytes32 public constant OPEN_POSITION_TYPEHASH = keccak256(
         "OpenPosition(uint256 agentId,address vault,address token,uint256 usdcAmount,uint256 minTokenOut,uint16 maxSlippageBps,bytes32 exitsHash,uint256 deadline,uint256 nonce)"
     );
+
+    bytes32 public constant ADD_TO_POSITION_TYPEHASH = keccak256(
+        "AddToPosition(uint256 agentId,uint256 positionId,uint256 usdcAmount,uint256 minTokenOut,uint16 maxSlippageBps,uint256 deadline,uint256 nonce)"
+    );
+
+    bytes32 public constant REDUCE_POSITION_TYPEHASH =
+        keccak256("ReducePosition(uint256 agentId,uint256 positionId,uint16 exitBps,uint256 deadline,uint256 nonce)");
+
+    bytes32 public constant UPDATE_EXIT_LADDER_TYPEHASH = keccak256(
+        "UpdateExitLadder(uint256 agentId,uint256 positionId,bytes32 exitsHash,uint256 deadline,uint256 nonce)"
+    );
+
+    enum SellMode {
+        Ladder,
+        Discretionary,
+        ForceClose
+    }
 
     // -------------------------------------------------------------------------
     // State
@@ -67,12 +84,17 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
     error TokenNotAllowed(address token);
     error PositionAlreadyOpen(uint256 agentId, address token);
     error InvalidExitRules();
+    error ExitRulesOutOfBounds();
     error AllocationNotActive(uint256 agentId);
     error ExceedsAllocationCap(uint256 agentId, uint256 used, uint256 cap);
     error ExceedsMaxTradeSize(uint256 tradeSize, uint256 maxTradeSize);
     error ExceedsDailyTurnover(uint256 agentId, uint256 turnover, uint256 maxTurnover);
     error TriggerNotMet(uint256 positionId);
     error PositionNotOpen(uint256 positionId);
+    error PositionAgentMismatch(uint256 positionId, uint256 agentId);
+    error InvalidReduceAmount(uint256 positionId);
+    error TooManyExitRules(uint256 positionId);
+    error PendingRuleAlreadyTriggered(uint256 positionId);
     error AgentNotSuspended(uint256 agentId);
     error RegistryPaused();
     error VaultTrackNotActive(address vault, uint256 trackId);
@@ -148,14 +170,104 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
         emit PositionOpenedFromIntent(positionId, intent.agentId, intent.vault, intent.token, intent.usdcAmount);
     }
 
+    /// @inheritdoc ITradeRouter
+    function addToPosition(AddToPositionIntent calldata intent, bytes calldata signature)
+        external
+        onlyRole(EXECUTOR_ROLE)
+        nonReentrant
+        returns (uint256 tokensAdded)
+    {
+        _validateAddIntent(intent, signature);
+        tokensAdded = _addToPosition(intent);
+        emit PositionIncreasedFromIntent(intent.positionId, intent.agentId, intent.usdcAmount, tokensAdded);
+    }
+
+    /// @inheritdoc ITradeRouter
+    function reducePosition(ReducePositionIntent calldata intent, bytes calldata signature)
+        external
+        onlyRole(EXECUTOR_ROLE)
+        nonReentrant
+        returns (uint256 usdcOut)
+    {
+        _validateReduceIntent(intent, signature);
+        usdcOut = _reducePosition(intent);
+        emit PositionReducedFromIntent(intent.positionId, intent.agentId, intent.exitBps, usdcOut);
+    }
+
+    /// @inheritdoc ITradeRouter
+    function updateExitLadder(UpdateExitLadderIntent calldata intent, bytes calldata signature)
+        external
+        onlyRole(EXECUTOR_ROLE)
+        nonReentrant
+    {
+        _validateUpdateExitLadderIntent(intent, signature);
+        Position memory position = positionManager.getPosition(intent.positionId);
+        positionManager.updatePendingExitRules(intent.positionId, intent.exits);
+        _nonces[intent.agentId]++;
+        emit PositionExitLadderUpdatedFromIntent(intent.positionId, intent.agentId, position.nextRuleIndex);
+    }
+
+    /// @inheritdoc ITradeRouter
+    function executeExit(uint256 positionId) external nonReentrant returns (uint256 usdcOut) {
+        Position memory position = positionManager.getPosition(positionId);
+        if (position.status != PositionStatus.Open) revert PositionNotOpen(positionId);
+
+        ExitRule memory rule = positionManager.getNextExitRule(positionId);
+        int256 pnlBps = _positionPnlBps(position);
+        if (!_isRuleTriggered(rule, pnlBps)) revert TriggerNotMet(positionId);
+
+        uint256 sellAmount = position.tokenAmount.mulDiv(rule.exitBps, MAX_BPS, Math.Rounding.Floor);
+        if (sellAmount == 0) revert TriggerNotMet(positionId);
+
+        uint256 usdcReleased = position.usdcCostBasis.mulDiv(sellAmount, position.tokenAmount, Math.Rounding.Floor);
+        uint8 ruleIndex = position.nextRuleIndex;
+        uint256 bounty;
+
+        (usdcOut, bounty) = _sell(positionId, position, sellAmount, usdcReleased, msg.sender, true, SellMode.Ladder);
+
+        emit ExitExecuted(positionId, position.agentId, ruleIndex, msg.sender, usdcOut, bounty);
+    }
+
+    /// @inheritdoc ITradeRouter
+    function forceClose(uint256 positionId) external onlyRole(OPERATOR_ROLE) nonReentrant returns (uint256 usdcOut) {
+        Position memory position = positionManager.getPosition(positionId);
+        if (position.status != PositionStatus.Open) revert PositionNotOpen(positionId);
+
+        IAgentRegistry.Agent memory agent = agentRegistry.getAgent(position.agentId);
+        if (agent.status != IAgentRegistry.AgentStatus.Suspended) revert AgentNotSuspended(position.agentId);
+
+        uint256 sellAmount = position.tokenAmount;
+        uint256 usdcReleased = position.usdcCostBasis;
+
+        (usdcOut,) = _sell(positionId, position, sellAmount, usdcReleased, address(0), false, SellMode.ForceClose);
+
+        emit PositionForceClosed(positionId, position.agentId, msg.sender, usdcOut);
+    }
+
+    // -------------------------------------------------------------------------
+    // Admin
+    // -------------------------------------------------------------------------
+
+    function setKeeperBounty(uint256 keeperBountyBps_, uint256 maxKeeperBounty_) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (keeperBountyBps_ > MAX_BPS) revert BpsOutOfRange(keeperBountyBps_);
+        keeperBountyBps = keeperBountyBps_;
+        maxKeeperBounty = maxKeeperBounty_;
+        emit KeeperBountyUpdated(keeperBountyBps_, maxKeeperBounty_);
+    }
+
+    // -------------------------------------------------------------------------
+    // Private Functions — validation
+    // -------------------------------------------------------------------------
+
     function _validateOpenIntent(PositionIntent calldata intent, bytes calldata signature) private view {
         if (Pausable(address(agentRegistry)).paused()) revert RegistryPaused();
         if (block.timestamp > intent.deadline) revert ExpiredDeadline();
         if (_nonces[intent.agentId] != intent.nonce) {
             revert InvalidNonce(_nonces[intent.agentId], intent.nonce);
         }
-        _verifyIntentSignature(intent, signature);
-        _validateExitRules(intent.exits);
+        _verifyOpenSignature(intent, signature);
+        uint256 trackId = uint256(agentRegistry.trackOf(intent.agentId));
+        _validateExitRulesForTrack(intent.exits, intent.vault, trackId);
         _validateAgentCanOpen(intent.agentId, intent.vault, intent.token);
         _validateTradeSize(IMandateVault(intent.vault), intent.agentId, intent.usdcAmount);
         _validateDailyTurnover(IMandateVault(intent.vault), intent.agentId, intent.usdcAmount);
@@ -165,6 +277,79 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
             revert ExceedsAllocationCap(intent.agentId, allocation.used + intent.usdcAmount, allocation.cap);
         }
     }
+
+    function _validateAddIntent(AddToPositionIntent calldata intent, bytes calldata signature) private view {
+        if (Pausable(address(agentRegistry)).paused()) revert RegistryPaused();
+        if (block.timestamp > intent.deadline) revert ExpiredDeadline();
+        if (_nonces[intent.agentId] != intent.nonce) {
+            revert InvalidNonce(_nonces[intent.agentId], intent.nonce);
+        }
+        _verifyAddSignature(intent, signature);
+        Position memory position = _requireOpenPositionForAgent(intent.positionId, intent.agentId);
+        IAgentRegistry.Agent memory agent = _requireActiveAgent(intent.agentId);
+        if (agent.vault != position.vault) revert VaultMismatch(intent.agentId, agent.vault, position.vault);
+
+        _validateTradeSize(IMandateVault(position.vault), intent.agentId, intent.usdcAmount);
+        _validateDailyTurnover(IMandateVault(position.vault), intent.agentId, intent.usdcAmount);
+
+        IAllocationManager.Allocation memory allocation = allocationManager.getAllocation(intent.agentId);
+        if (allocation.used + intent.usdcAmount > allocation.cap) {
+            revert ExceedsAllocationCap(intent.agentId, allocation.used + intent.usdcAmount, allocation.cap);
+        }
+    }
+
+    function _validateReduceIntent(ReducePositionIntent calldata intent, bytes calldata signature) private view {
+        if (block.timestamp > intent.deadline) revert ExpiredDeadline();
+        if (_nonces[intent.agentId] != intent.nonce) {
+            revert InvalidNonce(_nonces[intent.agentId], intent.nonce);
+        }
+        if (intent.exitBps == 0 || intent.exitBps > MAX_BPS) revert BpsOutOfRange(intent.exitBps);
+        _verifyReduceSignature(intent, signature);
+        Position memory position = _requireOpenPositionForAgent(intent.positionId, intent.agentId);
+        _requireActiveAgent(intent.agentId);
+        uint256 sellAmount = position.tokenAmount.mulDiv(intent.exitBps, MAX_BPS, Math.Rounding.Floor);
+        if (sellAmount == 0) revert InvalidReduceAmount(intent.positionId);
+    }
+
+    function _validateUpdateExitLadderIntent(UpdateExitLadderIntent calldata intent, bytes calldata signature)
+        private
+        view
+    {
+        if (block.timestamp > intent.deadline) revert ExpiredDeadline();
+        if (_nonces[intent.agentId] != intent.nonce) {
+            revert InvalidNonce(_nonces[intent.agentId], intent.nonce);
+        }
+        if (intent.exits.length == 0) revert InvalidExitRules();
+        _verifyUpdateExitLadderSignature(intent, signature);
+        Position memory position = _requireOpenPositionForAgent(intent.positionId, intent.agentId);
+        _requireActiveAgent(intent.agentId);
+
+        uint256 trackId = uint256(agentRegistry.trackOf(intent.agentId));
+        _validateExitRulesForTrack(intent.exits, position.vault, trackId);
+
+        if (position.nextRuleIndex + intent.exits.length > MAX_EXIT_RULES) {
+            revert TooManyExitRules(intent.positionId);
+        }
+
+        int256 pnlBps = _positionPnlBps(position);
+        if (_isRuleTriggered(intent.exits[0], pnlBps)) {
+            revert PendingRuleAlreadyTriggered(intent.positionId);
+        }
+    }
+
+    function _requireOpenPositionForAgent(uint256 positionId, uint256 agentId)
+        private
+        view
+        returns (Position memory position)
+    {
+        position = positionManager.getPosition(positionId);
+        if (position.status != PositionStatus.Open) revert PositionNotOpen(positionId);
+        if (position.agentId != agentId) revert PositionAgentMismatch(positionId, agentId);
+    }
+
+    // -------------------------------------------------------------------------
+    // Private Functions — execution
+    // -------------------------------------------------------------------------
 
     function _openPosition(PositionIntent calldata intent) private returns (uint256 positionId) {
         IMandateVault vault = IMandateVault(intent.vault);
@@ -195,59 +380,47 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
         _assertLedgerInvariant(vault, intent.token);
     }
 
-    /// @inheritdoc ITradeRouter
-    function executeExit(uint256 positionId) external nonReentrant returns (uint256 usdcOut) {
-        Position memory position = positionManager.getPosition(positionId);
-        if (position.status != PositionStatus.Open) revert PositionNotOpen(positionId);
+    function _addToPosition(AddToPositionIntent calldata intent) private returns (uint256 tokensAdded) {
+        Position memory position = positionManager.getPosition(intent.positionId);
+        IMandateVault vault = IMandateVault(position.vault);
+        IAllocationManager.Allocation memory allocation = allocationManager.getAllocation(intent.agentId);
 
-        ExitRule memory rule = positionManager.getNextExitRule(positionId);
-        int256 pnlBps = _positionPnlBps(position);
-        if (!_isRuleTriggered(rule, pnlBps)) revert TriggerNotMet(positionId);
+        vault.pullAssetsForTrade(address(swapAdapter), intent.usdcAmount);
+        tokensAdded =
+            swapAdapter.swapUsdcForToken(position.vault, position.token, intent.usdcAmount, intent.minTokenOut);
 
-        uint256 sellAmount = position.tokenAmount.mulDiv(rule.exitBps, MAX_BPS, Math.Rounding.Floor);
-        if (sellAmount == 0) revert TriggerNotMet(positionId);
+        uint8 tokenDecimals = vault.tokenRegistry().tokenDecimals(position.token);
+        uint256 newTokenAmount = position.tokenAmount + tokensAdded;
+        uint256 newUsdcCostBasis = position.usdcCostBasis + intent.usdcAmount;
+        uint256 newEntryPriceUsdc = (newUsdcCostBasis * (10 ** tokenDecimals)) / newTokenAmount;
 
+        positionManager.increasePosition(
+            intent.positionId, tokensAdded, intent.usdcAmount, intent.maxSlippageBps, newEntryPriceUsdc
+        );
+
+        _nonces[intent.agentId]++;
+        allocationManager.setAllocationUsedByRouter(intent.agentId, allocation.used + intent.usdcAmount);
+
+        _recordDailyTurnover(intent.agentId, intent.usdcAmount);
+        _assertLedgerInvariant(vault, position.token);
+    }
+
+    function _reducePosition(ReducePositionIntent calldata intent) private returns (uint256 usdcOut) {
+        Position memory position = positionManager.getPosition(intent.positionId);
+        uint256 sellAmount = position.tokenAmount.mulDiv(intent.exitBps, MAX_BPS, Math.Rounding.Floor);
         uint256 usdcReleased = position.usdcCostBasis.mulDiv(sellAmount, position.tokenAmount, Math.Rounding.Floor);
-        uint8 ruleIndex = position.nextRuleIndex;
-        uint256 bounty;
 
-        (usdcOut, bounty) = _sellAndClose(positionId, position, sellAmount, usdcReleased, msg.sender, true, false);
+        (usdcOut,) =
+            _sell(intent.positionId, position, sellAmount, usdcReleased, address(0), false, SellMode.Discretionary);
 
-        emit ExitExecuted(positionId, position.agentId, ruleIndex, msg.sender, usdcOut, bounty);
-    }
-
-    /// @inheritdoc ITradeRouter
-    function forceClose(uint256 positionId) external onlyRole(OPERATOR_ROLE) nonReentrant returns (uint256 usdcOut) {
-        Position memory position = positionManager.getPosition(positionId);
-        if (position.status != PositionStatus.Open) revert PositionNotOpen(positionId);
-
-        IAgentRegistry.Agent memory agent = agentRegistry.getAgent(position.agentId);
-        if (agent.status != IAgentRegistry.AgentStatus.Suspended) revert AgentNotSuspended(position.agentId);
-
-        uint256 sellAmount = position.tokenAmount;
-        uint256 usdcReleased = position.usdcCostBasis;
-
-        (usdcOut,) = _sellAndClose(positionId, position, sellAmount, usdcReleased, address(0), false, true);
-
-        emit PositionForceClosed(positionId, position.agentId, msg.sender, usdcOut);
+        _nonces[intent.agentId]++;
     }
 
     // -------------------------------------------------------------------------
-    // Admin
+    // Private Functions — signatures
     // -------------------------------------------------------------------------
 
-    function setKeeperBounty(uint256 keeperBountyBps_, uint256 maxKeeperBounty_) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (keeperBountyBps_ > MAX_BPS) revert BpsOutOfRange(keeperBountyBps_);
-        keeperBountyBps = keeperBountyBps_;
-        maxKeeperBounty = maxKeeperBounty_;
-        emit KeeperBountyUpdated(keeperBountyBps_, maxKeeperBounty_);
-    }
-
-    // -------------------------------------------------------------------------
-    // Private Functions
-    // -------------------------------------------------------------------------
-
-    function _verifyIntentSignature(PositionIntent calldata intent, bytes calldata signature) private view {
+    function _verifyOpenSignature(PositionIntent calldata intent, bytes calldata signature) private view {
         bytes32 structHash = keccak256(
             abi.encode(
                 OPEN_POSITION_TYPEHASH,
@@ -262,9 +435,60 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
                 intent.nonce
             )
         );
+        _recoverSigner(intent.agentId, structHash, signature);
+    }
+
+    function _verifyAddSignature(AddToPositionIntent calldata intent, bytes calldata signature) private view {
+        bytes32 structHash = keccak256(
+            abi.encode(
+                ADD_TO_POSITION_TYPEHASH,
+                intent.agentId,
+                intent.positionId,
+                intent.usdcAmount,
+                intent.minTokenOut,
+                intent.maxSlippageBps,
+                intent.deadline,
+                intent.nonce
+            )
+        );
+        _recoverSigner(intent.agentId, structHash, signature);
+    }
+
+    function _verifyReduceSignature(ReducePositionIntent calldata intent, bytes calldata signature) private view {
+        bytes32 structHash = keccak256(
+            abi.encode(
+                REDUCE_POSITION_TYPEHASH,
+                intent.agentId,
+                intent.positionId,
+                intent.exitBps,
+                intent.deadline,
+                intent.nonce
+            )
+        );
+        _recoverSigner(intent.agentId, structHash, signature);
+    }
+
+    function _verifyUpdateExitLadderSignature(UpdateExitLadderIntent calldata intent, bytes calldata signature)
+        private
+        view
+    {
+        bytes32 structHash = keccak256(
+            abi.encode(
+                UPDATE_EXIT_LADDER_TYPEHASH,
+                intent.agentId,
+                intent.positionId,
+                _hashExitRules(intent.exits),
+                intent.deadline,
+                intent.nonce
+            )
+        );
+        _recoverSigner(intent.agentId, structHash, signature);
+    }
+
+    function _recoverSigner(uint256 agentId, bytes32 structHash, bytes calldata signature) private view {
         bytes32 digest = _hashTypedDataV4(structHash);
         address signer = ECDSA.recover(digest, signature);
-        if (signer != agentRegistry.signerOf(intent.agentId)) revert InvalidSignature();
+        if (signer != agentRegistry.signerOf(agentId)) revert InvalidSignature();
     }
 
     function _hashExitRules(ExitRule[] calldata exits) private pure returns (bytes32) {
@@ -298,6 +522,36 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
                 lastTp = rule.triggerBps;
             }
         }
+    }
+
+    function _validateExitRulesForTrack(ExitRule[] calldata exits, address vault, uint256 trackId) private view {
+        _validateExitRules(exits);
+
+        IVaultTrackRegistry.VaultTrackConfig memory config = vaultTrackRegistry.getVaultTrackConfig(vault, trackId);
+
+        uint256 maxSl = config.maxStopLossBps == 0 ? config.maxDrawdownBps : config.maxStopLossBps;
+        bool hasStopLoss;
+        bool hasTakeProfit;
+
+        uint256 len = exits.length;
+        for (uint256 i = 0; i < len; i++) {
+            ExitRule calldata rule = exits[i];
+            if (rule.triggerType == TriggerType.StopLoss) {
+                hasStopLoss = true;
+                if (rule.triggerBps < -SafeCast.toInt256(maxSl)) revert ExitRulesOutOfBounds();
+            } else {
+                hasTakeProfit = true;
+                if (config.minTakeProfitBps > 0 && rule.triggerBps < SafeCast.toInt256(config.minTakeProfitBps)) {
+                    revert ExitRulesOutOfBounds();
+                }
+                if (config.maxTakeProfitBps > 0 && rule.triggerBps > SafeCast.toInt256(config.maxTakeProfitBps)) {
+                    revert ExitRulesOutOfBounds();
+                }
+            }
+        }
+
+        if (config.requireStopLoss && !hasStopLoss) revert ExitRulesOutOfBounds();
+        if (config.requireTakeProfit && !hasTakeProfit) revert ExitRulesOutOfBounds();
     }
 
     function _validateAgentCanOpen(uint256 agentId, address vault, address token) private view {
@@ -397,23 +651,23 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
         return bounty;
     }
 
-    function _sellAndClose(
+    function _sell(
         uint256 positionId,
         Position memory position,
         uint256 sellAmount,
         uint256 usdcReleased,
         address bountyRecipient,
         bool payBounty,
-        bool isForceClose
+        SellMode mode
     ) private returns (uint256 usdcOut, uint256 bounty) {
         IMandateVault vault = IMandateVault(position.vault);
         uint256 minUsdcOut = _minUsdcOut(vault, position.token, sellAmount, position.maxSlippageBps);
 
-        if (!isForceClose) {
+        if (mode != SellMode.ForceClose) {
             _validateDailyTurnover(vault, position.agentId, minUsdcOut);
         }
 
-        if (isForceClose) {
+        if (mode == SellMode.ForceClose) {
             vault.pullTokenForForceClose(position.token, address(swapAdapter), sellAmount);
         } else {
             vault.pullTokenForTrade(position.token, address(swapAdapter), sellAmount);
@@ -427,12 +681,16 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
             }
         }
 
-        positionManager.applyExit(positionId, sellAmount, usdcReleased);
+        if (mode == SellMode.Ladder) {
+            positionManager.applyLadderExit(positionId, sellAmount, usdcReleased);
+        } else {
+            positionManager.applyDiscretionaryReduce(positionId, sellAmount, usdcReleased);
+        }
 
         IAllocationManager.Allocation memory allocation = allocationManager.getAllocation(position.agentId);
         allocationManager.setAllocationUsedByRouter(position.agentId, allocation.used - usdcReleased);
 
-        if (!isForceClose) {
+        if (mode != SellMode.ForceClose) {
             _recordDailyTurnover(position.agentId, usdcOut);
         }
 

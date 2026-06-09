@@ -35,6 +35,16 @@ interface IVaultTrackRegistry {
         uint256 minTrades;
         uint256 promotionScore;
         bool active;
+        /// @notice Max stop-loss magnitude in bps; 0 falls back to maxDrawdownBps on validation.
+        uint256 maxStopLossBps;
+        /// @notice Minimum take-profit trigger in bps; 0 = no floor.
+        uint256 minTakeProfitBps;
+        /// @notice Maximum take-profit trigger in bps; 0 = no cap.
+        uint256 maxTakeProfitBps;
+        /// @notice When true, exit ladders must include at least one StopLoss rule.
+        bool requireStopLoss;
+        /// @notice When true, exit ladders must include at least one TakeProfit rule.
+        bool requireTakeProfit;
     }
 
     // -------------------------------------------------------------------------

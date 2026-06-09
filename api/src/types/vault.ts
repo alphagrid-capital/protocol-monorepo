@@ -11,6 +11,11 @@ export interface VaultTrackConfig {
   minTrades: number;
   promotionScore: number;
   active: boolean;
+  maxStopLossBps: number;
+  minTakeProfitBps: number;
+  maxTakeProfitBps: number;
+  requireStopLoss: boolean;
+  requireTakeProfit: boolean;
 }
 
 /** Summary for a thematic ERC-4626 vault registered in VaultTrackRegistry. */

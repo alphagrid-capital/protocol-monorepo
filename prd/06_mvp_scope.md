@@ -126,7 +126,7 @@ Required:
 
 MVP should avoid arbitrary contract calls.
 
-On-chain trading settlement is **done** (`TradeRouter`, EIP-712 opens, keeper exits). Off-chain trade path and UI are **not built** — see `09_implementation_status.md` §4–§6.
+On-chain trading settlement is **done** (`TradeRouter`, EIP-712 open + adjust intents, keeper exits). Off-chain adjust trade path is **partial** (API/MCP quote + submit); UI and indexer are **not built** — see `09_implementation_status.md` §4–§6.
 
 ---
 

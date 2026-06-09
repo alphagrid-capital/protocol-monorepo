@@ -224,6 +224,31 @@ export const vaultTrackRegistryAbi = [
             type: 'bool',
             internalType: 'bool',
           },
+          {
+            name: 'maxStopLossBps',
+            type: 'uint256',
+            internalType: 'uint256',
+          },
+          {
+            name: 'minTakeProfitBps',
+            type: 'uint256',
+            internalType: 'uint256',
+          },
+          {
+            name: 'maxTakeProfitBps',
+            type: 'uint256',
+            internalType: 'uint256',
+          },
+          {
+            name: 'requireStopLoss',
+            type: 'bool',
+            internalType: 'bool',
+          },
+          {
+            name: 'requireTakeProfit',
+            type: 'bool',
+            internalType: 'bool',
+          },
         ],
       },
     ],
@@ -421,6 +446,31 @@ export const vaultTrackRegistryAbi = [
           },
           {
             name: 'active',
+            type: 'bool',
+            internalType: 'bool',
+          },
+          {
+            name: 'maxStopLossBps',
+            type: 'uint256',
+            internalType: 'uint256',
+          },
+          {
+            name: 'minTakeProfitBps',
+            type: 'uint256',
+            internalType: 'uint256',
+          },
+          {
+            name: 'maxTakeProfitBps',
+            type: 'uint256',
+            internalType: 'uint256',
+          },
+          {
+            name: 'requireStopLoss',
+            type: 'bool',
+            internalType: 'bool',
+          },
+          {
+            name: 'requireTakeProfit',
             type: 'bool',
             internalType: 'bool',
           },
@@ -674,6 +724,31 @@ export const vaultTrackRegistryAbi = [
           },
           {
             name: 'active',
+            type: 'bool',
+            internalType: 'bool',
+          },
+          {
+            name: 'maxStopLossBps',
+            type: 'uint256',
+            internalType: 'uint256',
+          },
+          {
+            name: 'minTakeProfitBps',
+            type: 'uint256',
+            internalType: 'uint256',
+          },
+          {
+            name: 'maxTakeProfitBps',
+            type: 'uint256',
+            internalType: 'uint256',
+          },
+          {
+            name: 'requireStopLoss',
+            type: 'bool',
+            internalType: 'bool',
+          },
+          {
+            name: 'requireTakeProfit',
             type: 'bool',
             internalType: 'bool',
           },

@@ -21,9 +21,21 @@ interface IPositionManager is IPositionTypes {
         uint256 usdcCostBasis
     );
 
-    event PositionExitApplied(
+    event PositionLadderExitApplied(
         uint256 indexed positionId, uint256 indexed agentId, uint8 ruleIndex, uint256 tokenSold, uint256 usdcReleased
     );
+
+    event PositionReduced(uint256 indexed positionId, uint256 indexed agentId, uint256 tokenSold, uint256 usdcReleased);
+
+    event PositionIncreased(
+        uint256 indexed positionId,
+        uint256 indexed agentId,
+        uint256 tokensAdded,
+        uint256 usdcAdded,
+        uint256 entryPriceUsdc
+    );
+
+    event PositionExitLadderUpdated(uint256 indexed positionId, uint256 indexed agentId, uint8 nextRuleIndex);
 
     event PositionClosed(uint256 indexed positionId, uint256 indexed agentId);
 
@@ -63,5 +75,19 @@ interface IPositionManager is IPositionTypes {
         ExitRule[] calldata exits
     ) external returns (uint256 positionId);
 
-    function applyExit(uint256 positionId, uint256 tokenSold, uint256 usdcReleased) external returns (uint8 ruleIndex);
+    function applyLadderExit(uint256 positionId, uint256 tokenSold, uint256 usdcReleased)
+        external
+        returns (uint8 ruleIndex);
+
+    function applyDiscretionaryReduce(uint256 positionId, uint256 tokenSold, uint256 usdcReleased) external;
+
+    function increasePosition(
+        uint256 positionId,
+        uint256 tokensAdded,
+        uint256 usdcAdded,
+        uint16 maxSlippageBps,
+        uint256 newEntryPriceUsdc
+    ) external;
+
+    function updatePendingExitRules(uint256 positionId, ExitRule[] calldata newPendingRules) external;
 }

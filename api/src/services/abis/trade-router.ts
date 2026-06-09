@@ -39,6 +39,19 @@ export const tradeRouterAbi = [
   },
   {
     type: 'function',
+    name: 'ADD_TO_POSITION_TYPEHASH',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
+        type: 'bytes32',
+        internalType: 'bytes32',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'DEFAULT_ADMIN_ROLE',
     inputs: [],
     outputs: [
@@ -114,6 +127,93 @@ export const tradeRouterAbi = [
       },
     ],
     stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'REDUCE_POSITION_TYPEHASH',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
+        type: 'bytes32',
+        internalType: 'bytes32',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'UPDATE_EXIT_LADDER_TYPEHASH',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
+        type: 'bytes32',
+        internalType: 'bytes32',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'addToPosition',
+    inputs: [
+      {
+        name: 'intent',
+        type: 'tuple',
+        internalType: 'struct IPositionTypes.AddToPositionIntent',
+        components: [
+          {
+            name: 'agentId',
+            type: 'uint256',
+            internalType: 'uint256',
+          },
+          {
+            name: 'positionId',
+            type: 'uint256',
+            internalType: 'uint256',
+          },
+          {
+            name: 'usdcAmount',
+            type: 'uint256',
+            internalType: 'uint256',
+          },
+          {
+            name: 'minTokenOut',
+            type: 'uint256',
+            internalType: 'uint256',
+          },
+          {
+            name: 'maxSlippageBps',
+            type: 'uint16',
+            internalType: 'uint16',
+          },
+          {
+            name: 'deadline',
+            type: 'uint256',
+            internalType: 'uint256',
+          },
+          {
+            name: 'nonce',
+            type: 'uint256',
+            internalType: 'uint256',
+          },
+        ],
+      },
+      {
+        name: 'signature',
+        type: 'bytes',
+        internalType: 'bytes',
+      },
+    ],
+    outputs: [
+      {
+        name: 'tokensAdded',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    stateMutability: 'nonpayable',
   },
   {
     type: 'function',
@@ -474,6 +574,57 @@ export const tradeRouterAbi = [
   },
   {
     type: 'function',
+    name: 'reducePosition',
+    inputs: [
+      {
+        name: 'intent',
+        type: 'tuple',
+        internalType: 'struct IPositionTypes.ReducePositionIntent',
+        components: [
+          {
+            name: 'agentId',
+            type: 'uint256',
+            internalType: 'uint256',
+          },
+          {
+            name: 'positionId',
+            type: 'uint256',
+            internalType: 'uint256',
+          },
+          {
+            name: 'exitBps',
+            type: 'uint16',
+            internalType: 'uint16',
+          },
+          {
+            name: 'deadline',
+            type: 'uint256',
+            internalType: 'uint256',
+          },
+          {
+            name: 'nonce',
+            type: 'uint256',
+            internalType: 'uint256',
+          },
+        ],
+      },
+      {
+        name: 'signature',
+        type: 'bytes',
+        internalType: 'bytes',
+      },
+    ],
+    outputs: [
+      {
+        name: 'usdcOut',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
     name: 'renounceRole',
     inputs: [
       {
@@ -560,6 +711,68 @@ export const tradeRouterAbi = [
   },
   {
     type: 'function',
+    name: 'updateExitLadder',
+    inputs: [
+      {
+        name: 'intent',
+        type: 'tuple',
+        internalType: 'struct IPositionTypes.UpdateExitLadderIntent',
+        components: [
+          {
+            name: 'agentId',
+            type: 'uint256',
+            internalType: 'uint256',
+          },
+          {
+            name: 'positionId',
+            type: 'uint256',
+            internalType: 'uint256',
+          },
+          {
+            name: 'exits',
+            type: 'tuple[]',
+            internalType: 'struct IPositionTypes.ExitRule[]',
+            components: [
+              {
+                name: 'triggerType',
+                type: 'uint8',
+                internalType: 'enum IPositionTypes.TriggerType',
+              },
+              {
+                name: 'triggerBps',
+                type: 'int256',
+                internalType: 'int256',
+              },
+              {
+                name: 'exitBps',
+                type: 'uint16',
+                internalType: 'uint16',
+              },
+            ],
+          },
+          {
+            name: 'deadline',
+            type: 'uint256',
+            internalType: 'uint256',
+          },
+          {
+            name: 'nonce',
+            type: 'uint256',
+            internalType: 'uint256',
+          },
+        ],
+      },
+      {
+        name: 'signature',
+        type: 'bytes',
+        internalType: 'bytes',
+      },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
     name: 'vaultTrackRegistry',
     inputs: [],
     outputs: [
@@ -641,6 +854,31 @@ export const tradeRouterAbi = [
   },
   {
     type: 'event',
+    name: 'PositionExitLadderUpdatedFromIntent',
+    inputs: [
+      {
+        name: 'positionId',
+        type: 'uint256',
+        indexed: true,
+        internalType: 'uint256',
+      },
+      {
+        name: 'agentId',
+        type: 'uint256',
+        indexed: true,
+        internalType: 'uint256',
+      },
+      {
+        name: 'nextRuleIndex',
+        type: 'uint8',
+        indexed: false,
+        internalType: 'uint8',
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: 'event',
     name: 'PositionForceClosed',
     inputs: [
       {
@@ -663,6 +901,37 @@ export const tradeRouterAbi = [
       },
       {
         name: 'usdcOut',
+        type: 'uint256',
+        indexed: false,
+        internalType: 'uint256',
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: 'event',
+    name: 'PositionIncreasedFromIntent',
+    inputs: [
+      {
+        name: 'positionId',
+        type: 'uint256',
+        indexed: true,
+        internalType: 'uint256',
+      },
+      {
+        name: 'agentId',
+        type: 'uint256',
+        indexed: true,
+        internalType: 'uint256',
+      },
+      {
+        name: 'usdcIn',
+        type: 'uint256',
+        indexed: false,
+        internalType: 'uint256',
+      },
+      {
+        name: 'tokensAdded',
         type: 'uint256',
         indexed: false,
         internalType: 'uint256',
@@ -700,6 +969,37 @@ export const tradeRouterAbi = [
       },
       {
         name: 'usdcIn',
+        type: 'uint256',
+        indexed: false,
+        internalType: 'uint256',
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: 'event',
+    name: 'PositionReducedFromIntent',
+    inputs: [
+      {
+        name: 'positionId',
+        type: 'uint256',
+        indexed: true,
+        internalType: 'uint256',
+      },
+      {
+        name: 'agentId',
+        type: 'uint256',
+        indexed: true,
+        internalType: 'uint256',
+      },
+      {
+        name: 'exitBps',
+        type: 'uint16',
+        indexed: false,
+        internalType: 'uint16',
+      },
+      {
+        name: 'usdcOut',
         type: 'uint256',
         indexed: false,
         internalType: 'uint256',
@@ -934,6 +1234,11 @@ export const tradeRouterAbi = [
   },
   {
     type: 'error',
+    name: 'ExitRulesOutOfBounds',
+    inputs: [],
+  },
+  {
+    type: 'error',
     name: 'ExpiredDeadline',
     inputs: [],
   },
@@ -965,6 +1270,17 @@ export const tradeRouterAbi = [
   },
   {
     type: 'error',
+    name: 'InvalidReduceAmount',
+    inputs: [
+      {
+        name: 'positionId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+  },
+  {
+    type: 'error',
     name: 'InvalidShortString',
     inputs: [],
   },
@@ -989,6 +1305,33 @@ export const tradeRouterAbi = [
       },
       {
         name: 'vaultBalance',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+  },
+  {
+    type: 'error',
+    name: 'PendingRuleAlreadyTriggered',
+    inputs: [
+      {
+        name: 'positionId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+  },
+  {
+    type: 'error',
+    name: 'PositionAgentMismatch',
+    inputs: [
+      {
+        name: 'positionId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+      {
+        name: 'agentId',
         type: 'uint256',
         internalType: 'uint256',
       },
@@ -1088,6 +1431,17 @@ export const tradeRouterAbi = [
         name: 'token',
         type: 'address',
         internalType: 'address',
+      },
+    ],
+  },
+  {
+    type: 'error',
+    name: 'TooManyExitRules',
+    inputs: [
+      {
+        name: 'positionId',
+        type: 'uint256',
+        internalType: 'uint256',
       },
     ],
   },

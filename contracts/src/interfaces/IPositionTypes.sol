@@ -32,6 +32,32 @@ interface IPositionTypes {
         uint256 nonce;
     }
 
+    struct AddToPositionIntent {
+        uint256 agentId;
+        uint256 positionId;
+        uint256 usdcAmount;
+        uint256 minTokenOut;
+        uint16 maxSlippageBps;
+        uint256 deadline;
+        uint256 nonce;
+    }
+
+    struct ReducePositionIntent {
+        uint256 agentId;
+        uint256 positionId;
+        uint16 exitBps;
+        uint256 deadline;
+        uint256 nonce;
+    }
+
+    struct UpdateExitLadderIntent {
+        uint256 agentId;
+        uint256 positionId;
+        ExitRule[] exits;
+        uint256 deadline;
+        uint256 nonce;
+    }
+
     struct Position {
         uint256 positionId;
         uint256 agentId;

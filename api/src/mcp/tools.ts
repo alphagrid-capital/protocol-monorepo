@@ -24,6 +24,11 @@ import {
 import {
   GetAgentTradingInputSchema,
   GetIntentStatusInputSchema,
+  PositionAdjustInputSchema,
+  SubmitAddIntentInputSchema,
+  SubmitAdjustIntentResponseSchema,
+  SubmitExitLadderIntentInputSchema,
+  SubmitReduceIntentInputSchema,
   SubmitTradeIntentInputSchema,
   SubmitTradeIntentResponseSchema,
   ListAgentPositionsResponseSchema,
@@ -256,6 +261,131 @@ export function registerMcpTools(server: McpServer): void {
         return mcpToolSuccess(output)
       } catch (error) {
         return mcpToolErrorFromUnknown(error, 'Trade submission failed')
+      }
+    }
+  )
+
+  server.registerTool(
+    MCP_TOOL_NAMES.getAddIntentQuote,
+    {
+      title: 'Add-to-position intent quote',
+      description: 'Mirrors GET /agents/{agentId}/add-intents/quote.',
+      inputSchema: PositionAdjustInputSchema,
+      annotations: READ_ONLY_TOOL_ANNOTATIONS,
+    },
+    async ({ agentId, positionId }) => {
+      try {
+        const output = await TradingService.fromEnv(getWorkerEnv()).getAddQuote(
+          agentId,
+          positionId
+        )
+        return mcpToolSuccess(output)
+      } catch (error) {
+        return mcpToolErrorFromUnknown(error, 'Add quote failed')
+      }
+    }
+  )
+
+  server.registerTool(
+    MCP_TOOL_NAMES.submitAddIntent,
+    {
+      title: 'Submit add-to-position intent',
+      description: 'Mirrors POST /agents/{agentId}/add-intents.',
+      inputSchema: SubmitAddIntentInputSchema,
+      outputSchema: SubmitAdjustIntentResponseSchema,
+      annotations: WRITE_TOOL_ANNOTATIONS,
+    },
+    async ({ agentId, ...body }) => {
+      try {
+        const output = await TradingService.fromEnv(
+          getWorkerEnv()
+        ).submitAddIntent(agentId, body)
+        return mcpToolSuccess(output)
+      } catch (error) {
+        return mcpToolErrorFromUnknown(error, 'Add submission failed')
+      }
+    }
+  )
+
+  server.registerTool(
+    MCP_TOOL_NAMES.getReduceIntentQuote,
+    {
+      title: 'Reduce-position intent quote',
+      description: 'Mirrors GET /agents/{agentId}/reduce-intents/quote.',
+      inputSchema: PositionAdjustInputSchema,
+      annotations: READ_ONLY_TOOL_ANNOTATIONS,
+    },
+    async ({ agentId, positionId }) => {
+      try {
+        const output = await TradingService.fromEnv(
+          getWorkerEnv()
+        ).getReduceQuote(agentId, positionId)
+        return mcpToolSuccess(output)
+      } catch (error) {
+        return mcpToolErrorFromUnknown(error, 'Reduce quote failed')
+      }
+    }
+  )
+
+  server.registerTool(
+    MCP_TOOL_NAMES.submitReduceIntent,
+    {
+      title: 'Submit reduce-position intent',
+      description: 'Mirrors POST /agents/{agentId}/reduce-intents.',
+      inputSchema: SubmitReduceIntentInputSchema,
+      outputSchema: SubmitAdjustIntentResponseSchema,
+      annotations: WRITE_TOOL_ANNOTATIONS,
+    },
+    async ({ agentId, ...body }) => {
+      try {
+        const output = await TradingService.fromEnv(
+          getWorkerEnv()
+        ).submitReduceIntent(agentId, body)
+        return mcpToolSuccess(output)
+      } catch (error) {
+        return mcpToolErrorFromUnknown(error, 'Reduce submission failed')
+      }
+    }
+  )
+
+  server.registerTool(
+    MCP_TOOL_NAMES.getExitLadderIntentQuote,
+    {
+      title: 'Update exit ladder intent quote',
+      description:
+        'Mirrors GET /agents/{agentId}/exit-ladder-intents/quote.',
+      inputSchema: PositionAdjustInputSchema,
+      annotations: READ_ONLY_TOOL_ANNOTATIONS,
+    },
+    async ({ agentId, positionId }) => {
+      try {
+        const output = await TradingService.fromEnv(
+          getWorkerEnv()
+        ).getExitLadderQuote(agentId, positionId)
+        return mcpToolSuccess(output)
+      } catch (error) {
+        return mcpToolErrorFromUnknown(error, 'Exit ladder quote failed')
+      }
+    }
+  )
+
+  server.registerTool(
+    MCP_TOOL_NAMES.submitExitLadderIntent,
+    {
+      title: 'Submit update exit ladder intent',
+      description: 'Mirrors POST /agents/{agentId}/exit-ladder-intents.',
+      inputSchema: SubmitExitLadderIntentInputSchema,
+      outputSchema: SubmitAdjustIntentResponseSchema,
+      annotations: WRITE_TOOL_ANNOTATIONS,
+    },
+    async ({ agentId, ...body }) => {
+      try {
+        const output = await TradingService.fromEnv(
+          getWorkerEnv()
+        ).submitExitLadderIntent(agentId, body)
+        return mcpToolSuccess(output)
+      } catch (error) {
+        return mcpToolErrorFromUnknown(error, 'Exit ladder submission failed')
       }
     }
   )

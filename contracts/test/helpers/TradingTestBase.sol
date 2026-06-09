@@ -198,6 +198,80 @@ abstract contract TradingTestBase is BaseTest {
         return keccak256(abi.encode(hashes));
     }
 
+    function _openPosition(uint256 agentId, uint256 usdcAmount, int256 stopBps) internal returns (uint256 positionId) {
+        IPositionTypes.PositionIntent memory intent = _singleStopIntent(agentId, usdcAmount, stopBps);
+        bytes memory sig = _signOpenPosition(intent);
+        vm.prank(executor);
+        positionId = tradeRouter.openPosition(intent, sig);
+    }
+
+    function _signAddToPosition(IPositionTypes.AddToPositionIntent memory intent) internal view returns (bytes memory) {
+        intent.deadline = block.timestamp + 1 hours;
+        intent.nonce = tradeRouter.nonces(intent.agentId);
+
+        bytes32 structHash = keccak256(
+            abi.encode(
+                tradeRouter.ADD_TO_POSITION_TYPEHASH(),
+                intent.agentId,
+                intent.positionId,
+                intent.usdcAmount,
+                intent.minTokenOut,
+                intent.maxSlippageBps,
+                intent.deadline,
+                intent.nonce
+            )
+        );
+        bytes32 digest = MessageHashUtils.toTypedDataHash(_routerDomainSeparator(), structHash);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(AGENT_SIGNER_PK, digest);
+        return abi.encodePacked(r, s, v);
+    }
+
+    function _signReducePosition(IPositionTypes.ReducePositionIntent memory intent)
+        internal
+        view
+        returns (bytes memory)
+    {
+        intent.deadline = block.timestamp + 1 hours;
+        intent.nonce = tradeRouter.nonces(intent.agentId);
+
+        bytes32 structHash = keccak256(
+            abi.encode(
+                tradeRouter.REDUCE_POSITION_TYPEHASH(),
+                intent.agentId,
+                intent.positionId,
+                intent.exitBps,
+                intent.deadline,
+                intent.nonce
+            )
+        );
+        bytes32 digest = MessageHashUtils.toTypedDataHash(_routerDomainSeparator(), structHash);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(AGENT_SIGNER_PK, digest);
+        return abi.encodePacked(r, s, v);
+    }
+
+    function _signUpdateExitLadder(IPositionTypes.UpdateExitLadderIntent memory intent)
+        internal
+        view
+        returns (bytes memory)
+    {
+        intent.deadline = block.timestamp + 1 hours;
+        intent.nonce = tradeRouter.nonces(intent.agentId);
+
+        bytes32 structHash = keccak256(
+            abi.encode(
+                tradeRouter.UPDATE_EXIT_LADDER_TYPEHASH(),
+                intent.agentId,
+                intent.positionId,
+                _hashExitRules(intent.exits),
+                intent.deadline,
+                intent.nonce
+            )
+        );
+        bytes32 digest = MessageHashUtils.toTypedDataHash(_routerDomainSeparator(), structHash);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(AGENT_SIGNER_PK, digest);
+        return abi.encodePacked(r, s, v);
+    }
+
     function _routerDomainSeparator() internal view returns (bytes32) {
         (,, string memory version, uint256 chainId, address verifyingContract,,) = tradeRouter.eip712Domain();
         return keccak256(
@@ -209,6 +283,13 @@ abstract contract TradingTestBase is BaseTest {
                 verifyingContract
             )
         );
+    }
+
+    function _setRequireTakeProfit(bool required) internal {
+        IVaultTrackRegistry.VaultTrackConfig memory config = vaultTrackRegistry.getVaultTrackConfig(vaultAddr, 0);
+        config.requireTakeProfit = required;
+        vm.prank(deployer);
+        vaultTrackRegistry.setVaultTrackConfig(vaultAddr, 0, config);
     }
 
     function _setVaultTrackConfig(address vault_, uint256 trackId, uint256 initialAllocation, uint256 maxAllocation)
@@ -228,7 +309,12 @@ abstract contract TradingTestBase is BaseTest {
                 evaluationPeriod: 14 days,
                 minTrades: 5,
                 promotionScore: 70,
-                active: true
+                active: true,
+                maxStopLossBps: 1500,
+                minTakeProfitBps: 0,
+                maxTakeProfitBps: 10_000,
+                requireStopLoss: true,
+                requireTakeProfit: false
             })
         );
     }

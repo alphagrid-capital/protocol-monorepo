@@ -74,6 +74,9 @@ contract VaultTrackRegistry is IVaultTrackRegistry, AccessControl {
         _validateBps(config.maxDrawdownBps);
         _validateBps(config.maxTradeSizeBps);
         _validateBps(config.maxDailyTurnoverBps);
+        _validateBps(config.maxStopLossBps);
+        _validateBps(config.minTakeProfitBps);
+        _validateBps(config.maxTakeProfitBps);
         if (config.initialAllocation > config.maxAllocation) {
             revert AllocationOutOfRange(config.initialAllocation, config.maxAllocation);
         }
@@ -91,7 +94,12 @@ contract VaultTrackRegistry is IVaultTrackRegistry, AccessControl {
             evaluationPeriod: config.evaluationPeriod,
             minTrades: config.minTrades,
             promotionScore: config.promotionScore,
-            active: config.active
+            active: config.active,
+            maxStopLossBps: config.maxStopLossBps,
+            minTakeProfitBps: config.minTakeProfitBps,
+            maxTakeProfitBps: config.maxTakeProfitBps,
+            requireStopLoss: config.requireStopLoss,
+            requireTakeProfit: config.requireTakeProfit
         });
 
         _vaultTrackConfigs[vault][trackId] = stored;

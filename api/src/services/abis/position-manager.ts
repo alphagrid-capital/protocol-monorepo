@@ -64,7 +64,30 @@ export const positionManagerAbi = [
   },
   {
     type: 'function',
-    name: 'applyExit',
+    name: 'applyDiscretionaryReduce',
+    inputs: [
+      {
+        name: 'positionId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+      {
+        name: 'tokenSold',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+      {
+        name: 'usdcReleased',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'applyLadderExit',
     inputs: [
       {
         name: 'positionId',
@@ -302,6 +325,39 @@ export const positionManagerAbi = [
   },
   {
     type: 'function',
+    name: 'increasePosition',
+    inputs: [
+      {
+        name: 'positionId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+      {
+        name: 'tokensAdded',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+      {
+        name: 'usdcAdded',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+      {
+        name: 'maxSlippageBps',
+        type: 'uint16',
+        internalType: 'uint16',
+      },
+      {
+        name: 'newEntryPriceUsdc',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
     name: 'openPosition',
     inputs: [
       {
@@ -509,6 +565,41 @@ export const positionManagerAbi = [
     stateMutability: 'view',
   },
   {
+    type: 'function',
+    name: 'updatePendingExitRules',
+    inputs: [
+      {
+        name: 'positionId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+      {
+        name: 'newPendingRules',
+        type: 'tuple[]',
+        internalType: 'struct IPositionTypes.ExitRule[]',
+        components: [
+          {
+            name: 'triggerType',
+            type: 'uint8',
+            internalType: 'enum IPositionTypes.TriggerType',
+          },
+          {
+            name: 'triggerBps',
+            type: 'int256',
+            internalType: 'int256',
+          },
+          {
+            name: 'exitBps',
+            type: 'uint16',
+            internalType: 'uint16',
+          },
+        ],
+      },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
     type: 'event',
     name: 'PositionClosed',
     inputs: [
@@ -529,7 +620,69 @@ export const positionManagerAbi = [
   },
   {
     type: 'event',
-    name: 'PositionExitApplied',
+    name: 'PositionExitLadderUpdated',
+    inputs: [
+      {
+        name: 'positionId',
+        type: 'uint256',
+        indexed: true,
+        internalType: 'uint256',
+      },
+      {
+        name: 'agentId',
+        type: 'uint256',
+        indexed: true,
+        internalType: 'uint256',
+      },
+      {
+        name: 'nextRuleIndex',
+        type: 'uint8',
+        indexed: false,
+        internalType: 'uint8',
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: 'event',
+    name: 'PositionIncreased',
+    inputs: [
+      {
+        name: 'positionId',
+        type: 'uint256',
+        indexed: true,
+        internalType: 'uint256',
+      },
+      {
+        name: 'agentId',
+        type: 'uint256',
+        indexed: true,
+        internalType: 'uint256',
+      },
+      {
+        name: 'tokensAdded',
+        type: 'uint256',
+        indexed: false,
+        internalType: 'uint256',
+      },
+      {
+        name: 'usdcAdded',
+        type: 'uint256',
+        indexed: false,
+        internalType: 'uint256',
+      },
+      {
+        name: 'entryPriceUsdc',
+        type: 'uint256',
+        indexed: false,
+        internalType: 'uint256',
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: 'event',
+    name: 'PositionLadderExitApplied',
     inputs: [
       {
         name: 'positionId',
@@ -606,6 +759,37 @@ export const positionManagerAbi = [
       },
       {
         name: 'usdcCostBasis',
+        type: 'uint256',
+        indexed: false,
+        internalType: 'uint256',
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: 'event',
+    name: 'PositionReduced',
+    inputs: [
+      {
+        name: 'positionId',
+        type: 'uint256',
+        indexed: true,
+        internalType: 'uint256',
+      },
+      {
+        name: 'agentId',
+        type: 'uint256',
+        indexed: true,
+        internalType: 'uint256',
+      },
+      {
+        name: 'tokenSold',
+        type: 'uint256',
+        indexed: false,
+        internalType: 'uint256',
+      },
+      {
+        name: 'usdcReleased',
         type: 'uint256',
         indexed: false,
         internalType: 'uint256',
@@ -712,6 +896,17 @@ export const positionManagerAbi = [
   {
     type: 'error',
     name: 'InvalidExitState',
+    inputs: [
+      {
+        name: 'positionId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+  },
+  {
+    type: 'error',
+    name: 'InvalidPendingExitRules',
     inputs: [
       {
         name: 'positionId',

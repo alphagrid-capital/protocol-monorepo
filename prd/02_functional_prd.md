@@ -175,6 +175,11 @@ Funded and Prime draw real capital from the agent’s bound ERC-4626 vault.
 | `evaluation_period` | Required duration before promotion eligibility (off-chain check in MVP). |
 | `min_trades` | Minimum activity requirement (off-chain check in MVP). |
 | `promotion_score` | Required Alpha Score to promote (off-chain check in MVP). |
+| `max_stop_loss_bps` | Max stop-loss magnitude in bps; `0` falls back to `max_drawdown_bps` on open/ladder-update validation. |
+| `min_take_profit_bps` | Minimum take-profit trigger in bps; `0` = no floor. |
+| `max_take_profit_bps` | Maximum take-profit trigger in bps; `0` = no cap. |
+| `require_stop_loss` | When true, exit ladders must include at least one `StopLoss` rule. |
+| `require_take_profit` | When true, exit ladders must include at least one `TakeProfit` rule. |
 
 **Not in on-chain `VaultTrackConfig` (MVP):** per-track `allowed_assets` (vault + `TokenRegistry` allowlist applies instead), `promotion_fee` (configured in `FeeManager` per vault transition), structured `failure_rules` (off-chain policy).
 
@@ -284,13 +289,14 @@ Support a narrow execution environment:
 - limited assets (vault + `TokenRegistry` allowlist)
 - no leverage
 - approved swap adapter only (`ISwapAdapter`; production venue adapter TBD)
-- on-chain constraints: max trade size, max daily turnover, exit ladder on every open
-- agent signs **OpenPosition** EIP-712 intent including exit rules (`StopLoss` / `TakeProfit`)
-- executor with `EXECUTOR_ROLE` submits `TradeRouter.openPosition`
-- permissionless keepers call `TradeRouter.executeExit` when triggers fire
+- on-chain constraints: max trade size, max daily turnover, exit ladder on every open, per-track exit bounds on open and ladder update
+- agent signs EIP-712 intents: **OpenPosition** (open), **AddToPosition** (buy more), **ReducePosition** (discretionary partial/full sell), **UpdateExitLadder** (replace pending TP/SL)
+- executor with `EXECUTOR_ROLE` relays signed intents to `TradeRouter`
+- permissionless keepers call `TradeRouter.executeExit` when ladder triggers fire (advances `nextRuleIndex`)
+- agent may `reducePosition` anytime (no trigger gate; does not advance ladder) or `updateExitLadder` to change pending automation within vault bounds
 - operator may `forceClose` when agent is `Suspended`
 
-See `contracts/docs/position-intent-eip712.md` for the signing schema.
+See `contracts/docs/position-intent-eip712.md` for the signing schema and pause matrix.
 
 ---
 

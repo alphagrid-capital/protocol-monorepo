@@ -9,11 +9,19 @@ import { agentIdParamSchema } from '../schemas/agent.js'
 import {
   intentIdParamSchema,
   LegacyTradeIntentRequestSchema,
+  AddIntentQuoteSchema,
+  AddPositionRequestSchema,
+  ExitLadderIntentQuoteSchema,
   ListAgentPositionsResponseSchema,
   OpenPositionRequestSchema,
+  PositionIntentQuoteQuerySchema,
+  ReduceIntentQuoteSchema,
+  ReducePositionRequestSchema,
+  SubmitAdjustIntentResponseSchema,
   SubmitTradeIntentResponseSchema,
   TradeIntentQuoteQuerySchema,
   TradeIntentQuoteSchema,
+  UpdateExitLadderRequestSchema,
   TradingErrorSchema,
   TradingNotImplementedSchema,
 } from '../schemas/trading.js'
@@ -140,6 +148,126 @@ const getAgentPositionsRoute = createRoute({
       description: 'Open positions',
       content: {
         'application/json': { schema: ListAgentPositionsResponseSchema },
+      },
+    },
+    ...tradingErrorResponses,
+  },
+})
+
+const agentIdParams = z.object({
+  agentId: agentIdParamSchema.openapi({
+    param: { name: 'agentId', in: 'path' },
+    example: '1',
+  }),
+})
+
+const addIntentQuoteRoute = createRoute({
+  method: 'get',
+  path: '/agents/{agentId}/add-intents/quote',
+  tags: ['Trading'],
+  summary: 'Add-to-position intent quote',
+  request: { params: agentIdParams, query: PositionIntentQuoteQuerySchema },
+  responses: {
+    200: {
+      description: 'Add intent quote',
+      content: { 'application/json': { schema: AddIntentQuoteSchema } },
+    },
+    ...tradingErrorResponses,
+  },
+})
+
+const submitAddIntentRoute = createRoute({
+  method: 'post',
+  path: '/agents/{agentId}/add-intents',
+  tags: ['Trading'],
+  summary: 'Submit add-to-position intent',
+  request: {
+    params: agentIdParams,
+    body: { content: { 'application/json': { schema: AddPositionRequestSchema } } },
+  },
+  responses: {
+    201: {
+      description: 'Position increased',
+      content: {
+        'application/json': { schema: SubmitAdjustIntentResponseSchema },
+      },
+    },
+    ...tradingErrorResponses,
+  },
+})
+
+const reduceIntentQuoteRoute = createRoute({
+  method: 'get',
+  path: '/agents/{agentId}/reduce-intents/quote',
+  tags: ['Trading'],
+  summary: 'Reduce-position intent quote',
+  request: { params: agentIdParams, query: PositionIntentQuoteQuerySchema },
+  responses: {
+    200: {
+      description: 'Reduce intent quote',
+      content: { 'application/json': { schema: ReduceIntentQuoteSchema } },
+    },
+    ...tradingErrorResponses,
+  },
+})
+
+const submitReduceIntentRoute = createRoute({
+  method: 'post',
+  path: '/agents/{agentId}/reduce-intents',
+  tags: ['Trading'],
+  summary: 'Submit reduce-position intent',
+  request: {
+    params: agentIdParams,
+    body: {
+      content: { 'application/json': { schema: ReducePositionRequestSchema } },
+    },
+  },
+  responses: {
+    201: {
+      description: 'Position reduced',
+      content: {
+        'application/json': { schema: SubmitAdjustIntentResponseSchema },
+      },
+    },
+    ...tradingErrorResponses,
+  },
+})
+
+const exitLadderIntentQuoteRoute = createRoute({
+  method: 'get',
+  path: '/agents/{agentId}/exit-ladder-intents/quote',
+  tags: ['Trading'],
+  summary: 'Update exit ladder intent quote',
+  request: { params: agentIdParams, query: PositionIntentQuoteQuerySchema },
+  responses: {
+    200: {
+      description: 'Exit ladder intent quote',
+      content: {
+        'application/json': { schema: ExitLadderIntentQuoteSchema },
+      },
+    },
+    ...tradingErrorResponses,
+  },
+})
+
+const submitExitLadderIntentRoute = createRoute({
+  method: 'post',
+  path: '/agents/{agentId}/exit-ladder-intents',
+  tags: ['Trading'],
+  summary: 'Submit update exit ladder intent',
+  request: {
+    params: agentIdParams,
+    body: {
+      content: {
+        'application/json': { schema: UpdateExitLadderRequestSchema },
+      },
+    },
+  },
+  responses: {
+    201: {
+      description: 'Exit ladder updated',
+      content: {
+        'application/json': { schema: SubmitAdjustIntentResponseSchema },
       },
     },
     ...tradingErrorResponses,
@@ -284,6 +412,146 @@ tradingRoutes.openapi(
 tradingRoutes.openapi(
   getAgentPositionsRoute,
   getAgentPositionsHandler as RouteHandler<typeof getAgentPositionsRoute>
+)
+
+const addIntentQuoteHandler = async (
+  c: Parameters<RouteHandler<typeof addIntentQuoteRoute>>[0]
+) => {
+  try {
+    const positionId = c.req.query('positionId')
+    if (!positionId) {
+      return c.json({ error: 'positionId query parameter is required' }, 400)
+    }
+    const quote = await TradingService.fromEnv(getWorkerEnv()).getAddQuote(
+      c.req.param('agentId'),
+      positionId
+    )
+    return c.json(quote, 200)
+  } catch (error) {
+    if (error instanceof TradingError || error instanceof AppError) {
+      return c.json({ error: error.message }, statusFromTradingError(error))
+    }
+    throw error
+  }
+}
+
+const submitAddIntentHandler = async (
+  c: Parameters<RouteHandler<typeof submitAddIntentRoute>>[0]
+) => {
+  try {
+    const result = await TradingService.fromEnv(getWorkerEnv()).submitAddIntent(
+      c.req.param('agentId'),
+      c.req.valid('json')
+    )
+    return c.json(result, 201)
+  } catch (error) {
+    if (error instanceof TradingError || error instanceof AppError) {
+      return c.json({ error: error.message }, statusFromTradingError(error))
+    }
+    throw error
+  }
+}
+
+const reduceIntentQuoteHandler = async (
+  c: Parameters<RouteHandler<typeof reduceIntentQuoteRoute>>[0]
+) => {
+  try {
+    const positionId = c.req.query('positionId')
+    if (!positionId) {
+      return c.json({ error: 'positionId query parameter is required' }, 400)
+    }
+    const quote = await TradingService.fromEnv(getWorkerEnv()).getReduceQuote(
+      c.req.param('agentId'),
+      positionId
+    )
+    return c.json(quote, 200)
+  } catch (error) {
+    if (error instanceof TradingError || error instanceof AppError) {
+      return c.json({ error: error.message }, statusFromTradingError(error))
+    }
+    throw error
+  }
+}
+
+const submitReduceIntentHandler = async (
+  c: Parameters<RouteHandler<typeof submitReduceIntentRoute>>[0]
+) => {
+  try {
+    const result = await TradingService.fromEnv(
+      getWorkerEnv()
+    ).submitReduceIntent(c.req.param('agentId'), c.req.valid('json'))
+    return c.json(result, 201)
+  } catch (error) {
+    if (error instanceof TradingError || error instanceof AppError) {
+      return c.json({ error: error.message }, statusFromTradingError(error))
+    }
+    throw error
+  }
+}
+
+const exitLadderIntentQuoteHandler = async (
+  c: Parameters<RouteHandler<typeof exitLadderIntentQuoteRoute>>[0]
+) => {
+  try {
+    const positionId = c.req.query('positionId')
+    if (!positionId) {
+      return c.json({ error: 'positionId query parameter is required' }, 400)
+    }
+    const quote = await TradingService.fromEnv(
+      getWorkerEnv()
+    ).getExitLadderQuote(c.req.param('agentId'), positionId)
+    return c.json(quote, 200)
+  } catch (error) {
+    if (error instanceof TradingError || error instanceof AppError) {
+      return c.json({ error: error.message }, statusFromTradingError(error))
+    }
+    throw error
+  }
+}
+
+const submitExitLadderIntentHandler = async (
+  c: Parameters<RouteHandler<typeof submitExitLadderIntentRoute>>[0]
+) => {
+  try {
+    const result = await TradingService.fromEnv(
+      getWorkerEnv()
+    ).submitExitLadderIntent(c.req.param('agentId'), c.req.valid('json'))
+    return c.json(result, 201)
+  } catch (error) {
+    if (error instanceof TradingError || error instanceof AppError) {
+      return c.json({ error: error.message }, statusFromTradingError(error))
+    }
+    throw error
+  }
+}
+
+tradingRoutes.openapi(
+  addIntentQuoteRoute,
+  addIntentQuoteHandler as RouteHandler<typeof addIntentQuoteRoute>
+)
+tradingRoutes.openapi(
+  submitAddIntentRoute,
+  submitAddIntentHandler as RouteHandler<typeof submitAddIntentRoute>
+)
+tradingRoutes.openapi(
+  reduceIntentQuoteRoute,
+  reduceIntentQuoteHandler as RouteHandler<typeof reduceIntentQuoteRoute>
+)
+tradingRoutes.openapi(
+  submitReduceIntentRoute,
+  submitReduceIntentHandler as RouteHandler<typeof submitReduceIntentRoute>
+)
+tradingRoutes.openapi(
+  exitLadderIntentQuoteRoute,
+  exitLadderIntentQuoteHandler as RouteHandler<
+    typeof exitLadderIntentQuoteRoute
+  >
+)
+tradingRoutes.openapi(
+  submitExitLadderIntentRoute,
+  submitExitLadderIntentHandler as RouteHandler<
+    typeof submitExitLadderIntentRoute
+  >
 )
 
 tradingRoutes.openapi(submitTradeIntentRoute, (c) =>

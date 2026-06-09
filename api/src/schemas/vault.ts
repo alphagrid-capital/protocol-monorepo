@@ -15,8 +15,23 @@ export const VaultTrackConfigSchema = z
     minTrades: z.number().int().openapi({ example: 5 }),
     promotionScore: z.number().int().openapi({ example: 70 }),
     active: z.boolean().openapi({ example: true }),
+    maxStopLossBps: z.number().int().openapi({ example: 1500 }),
+    minTakeProfitBps: z.number().int().openapi({ example: 0 }),
+    maxTakeProfitBps: z.number().int().openapi({ example: 10000 }),
+    requireStopLoss: z.boolean().openapi({ example: true }),
+    requireTakeProfit: z.boolean().openapi({ example: false }),
   })
   .openapi('VaultTrackConfig')
+
+export const ExitBoundsSchema = z
+  .object({
+    maxStopLossBps: z.number().int(),
+    minTakeProfitBps: z.number().int(),
+    maxTakeProfitBps: z.number().int(),
+    requireStopLoss: z.boolean(),
+    requireTakeProfit: z.boolean(),
+  })
+  .openapi('ExitBounds')
 
 export const VaultSummarySchema = z
   .object({

@@ -1,5 +1,6 @@
 import { z } from '@hono/zod-openapi'
 import { agentIdParamSchema } from './agent.js'
+import { ExitBoundsSchema } from './vault.js'
 
 export const TradingNotImplementedSchema = z
   .object({
@@ -72,6 +73,8 @@ export const TradeIntentQuoteSchema = z
       available: z.string(),
     }),
     allowedSymbols: z.array(z.string()),
+    trackId: z.number().int(),
+    exitBounds: ExitBoundsSchema,
     defaultExit: z.array(ExitRuleInputSchema),
     eip712: z.object({
       domainName: z.string(),
@@ -106,9 +109,109 @@ export const AgentPositionSchema = z
     maxSlippageBps: z.number().int(),
     status: z.enum(['Open', 'Closed']),
     nextRuleIndex: z.number().int(),
+    exitRules: z.array(ExitRuleInputSchema),
+    pendingRules: z.array(ExitRuleInputSchema),
     openedAt: z.string(),
   })
   .openapi('AgentPosition')
+
+const positionIntentQuoteFields = {
+  agentId: agentIdParamSchema,
+  positionId: z.string(),
+  signer: z.string(),
+  nonce: z.string(),
+  eip712: z.object({
+    domainName: z.string(),
+    domainVersion: z.string(),
+    chainId: z.number().int(),
+    verifyingContract: z.string(),
+    primaryType: z.string(),
+  }),
+  tradeRouter: z.string(),
+}
+
+export const PositionIntentQuoteQuerySchema = z.object({
+  positionId: z.string().regex(/^\d+$/).openapi({ example: '1' }),
+})
+
+export const AddIntentQuoteSchema = z
+  .object({
+    ...positionIntentQuoteFields,
+    allocation: z.object({
+      used: z.string(),
+      cap: z.string(),
+      available: z.string(),
+    }),
+    position: AgentPositionSchema.omit({ exitRules: true, pendingRules: true }),
+    eip712: positionIntentQuoteFields.eip712.extend({
+      primaryType: z.literal('AddToPosition'),
+    }),
+  })
+  .openapi('AddIntentQuote')
+
+export const ReduceIntentQuoteSchema = z
+  .object({
+    ...positionIntentQuoteFields,
+    position: AgentPositionSchema,
+    eip712: positionIntentQuoteFields.eip712.extend({
+      primaryType: z.literal('ReducePosition'),
+    }),
+  })
+  .openapi('ReduceIntentQuote')
+
+export const ExitLadderIntentQuoteSchema = z
+  .object({
+    ...positionIntentQuoteFields,
+    exitBounds: ExitBoundsSchema,
+    currentRules: z.array(ExitRuleInputSchema),
+    pendingRules: z.array(ExitRuleInputSchema),
+    nextRuleIndex: z.number().int(),
+    eip712: positionIntentQuoteFields.eip712.extend({
+      primaryType: z.literal('UpdateExitLadder'),
+    }),
+  })
+  .openapi('ExitLadderIntentQuote')
+
+const signedIntentFields = {
+  positionId: z.string().regex(/^\d+$/),
+  deadline: z.string().regex(/^\d+$/),
+  nonce: z.string().regex(/^\d+$/),
+  signature: z.string().regex(/^0x[a-fA-F0-9]+$/),
+}
+
+export const AddPositionRequestSchema = z
+  .object({
+    ...signedIntentFields,
+    usdcAmount: z.string().regex(/^\d+(\.\d+)?$/),
+    minTokenOut: z.string().regex(/^\d+$/).default('0'),
+    maxSlippageBps: z.number().int().min(0).max(10000).default(100),
+  })
+  .strict()
+  .openapi('AddPositionRequest')
+
+export const ReducePositionRequestSchema = z
+  .object({
+    ...signedIntentFields,
+    exitBps: z.number().int().min(1).max(10000),
+  })
+  .strict()
+  .openapi('ReducePositionRequest')
+
+export const UpdateExitLadderRequestSchema = z
+  .object({
+    ...signedIntentFields,
+    exits: z.array(ExitRuleInputSchema).min(1).max(5),
+  })
+  .strict()
+  .openapi('UpdateExitLadderRequest')
+
+export const SubmitAdjustIntentResponseSchema = z
+  .object({
+    agentId: agentIdParamSchema,
+    positionId: z.string(),
+    transactionHash: z.string(),
+  })
+  .openapi('SubmitAdjustIntentResponse')
 
 export const ListAgentPositionsResponseSchema = z
   .object({
@@ -147,6 +250,24 @@ export const GetAgentTradingInputSchema = z
   })
   .strict()
 
+export const PositionAdjustInputSchema = GetAgentTradingInputSchema.extend({
+  positionId: z.string().regex(/^\d+$/),
+}).strict()
+
+export const SubmitAddIntentInputSchema = AddPositionRequestSchema.extend({
+  agentId: agentIdParamSchema,
+}).strict()
+
+export const SubmitReduceIntentInputSchema =
+  ReducePositionRequestSchema.extend({
+    agentId: agentIdParamSchema,
+  }).strict()
+
+export const SubmitExitLadderIntentInputSchema =
+  UpdateExitLadderRequestSchema.extend({
+    agentId: agentIdParamSchema,
+  }).strict()
+
 export const GetIntentStatusInputSchema = z
   .object({
     intentId: intentIdParamSchema,
@@ -160,4 +281,12 @@ export type SubmitTradeIntentResponse = z.infer<
 >
 export type ListAgentPositionsResponse = z.infer<
   typeof ListAgentPositionsResponseSchema
+>
+export type AddPositionRequest = z.infer<typeof AddPositionRequestSchema>
+export type ReducePositionRequest = z.infer<typeof ReducePositionRequestSchema>
+export type UpdateExitLadderRequest = z.infer<
+  typeof UpdateExitLadderRequestSchema
+>
+export type SubmitAdjustIntentResponse = z.infer<
+  typeof SubmitAdjustIntentResponseSchema
 >

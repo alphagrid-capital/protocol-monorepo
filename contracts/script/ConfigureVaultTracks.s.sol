@@ -46,7 +46,12 @@ contract ConfigureVaultTracks is Script {
             evaluationPeriod: 14 days,
             minTrades: 5,
             promotionScore: 70,
-            active: true
+            active: true,
+            maxStopLossBps: 1500,
+            minTakeProfitBps: 0,
+            maxTakeProfitBps: 10_000,
+            requireStopLoss: true,
+            requireTakeProfit: false
         });
     }
 
@@ -63,7 +68,12 @@ contract ConfigureVaultTracks is Script {
             evaluationPeriod: 30 days,
             minTrades: 10,
             promotionScore: 75,
-            active: true
+            active: true,
+            maxStopLossBps: 1200,
+            minTakeProfitBps: 200,
+            maxTakeProfitBps: 8000,
+            requireStopLoss: true,
+            requireTakeProfit: true
         });
     }
 
@@ -80,7 +90,12 @@ contract ConfigureVaultTracks is Script {
             evaluationPeriod: 60 days,
             minTrades: 20,
             promotionScore: 80,
-            active: true
+            active: true,
+            maxStopLossBps: 1000,
+            minTakeProfitBps: 500,
+            maxTakeProfitBps: 5000,
+            requireStopLoss: true,
+            requireTakeProfit: true
         });
     }
 

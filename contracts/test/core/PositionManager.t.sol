@@ -37,18 +37,18 @@ contract PositionManagerTest is TradingTestBase {
             triggerType: IPositionTypes.TriggerType.StopLoss, triggerBps: -1000, exitBps: 5000
         });
         exits[1] = IPositionTypes.ExitRule({
-            triggerType: IPositionTypes.TriggerType.StopLoss, triggerBps: -2000, exitBps: 10_000
+            triggerType: IPositionTypes.TriggerType.StopLoss, triggerBps: -1500, exitBps: 10_000
         });
 
         vm.startPrank(address(tradeRouter));
         uint256 positionId = positionManager.openPosition(1, vaultAddr, address(nvda), 2e18, 150e6, 2000e6, 100, exits);
-        positionManager.applyExit(positionId, 1e18, 1000e6);
+        positionManager.applyLadderExit(positionId, 1e18, 1000e6);
         vm.stopPrank();
 
         assertEq(positionManager.agentTokenBalance(1, address(nvda)), 1e18);
 
         vm.prank(address(tradeRouter));
-        positionManager.applyExit(positionId, 1e18, 1000e6);
+        positionManager.applyLadderExit(positionId, 1e18, 1000e6);
 
         assertEq(positionManager.agentTokenBalance(1, address(nvda)), 0);
         assertEq(positionManager.totalTokenLedger(address(nvda)), 0);

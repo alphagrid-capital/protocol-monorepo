@@ -194,7 +194,12 @@ contract VaultTrackRegistryTest is BaseTest {
             evaluationPeriod: 30 days,
             minTrades: 10,
             promotionScore: 75,
-            active: active
+            active: active,
+            maxStopLossBps: 1500,
+            minTakeProfitBps: 0,
+            maxTakeProfitBps: 10_000,
+            requireStopLoss: true,
+            requireTakeProfit: false
         });
     }
 }

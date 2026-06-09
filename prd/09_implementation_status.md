@@ -12,15 +12,15 @@ Other PRD files describe **requirements and design**. When implementation change
 
 ## 2. Snapshot
 
-**Last updated:** 2026-06-07
+**Last updated:** 2026-06-08
 
 | Layer | Status | Summary |
 | --- | --- | --- |
-| **On-chain (`contracts/`)** | MVP complete | Agent onboarding, four vaults, allocation, trading settlement |
-| **Off-chain (`api/`)** | Partial | Vaults, tokens, prices, agent register/read, open-position trade path, MCP, oracle keeper |
-| **Product (indexer, perf, UI)** | Not started | Leaderboard, profiles, admin, frontend, trade executor |
+| **On-chain (`contracts/`)** | MVP complete | Agent onboarding, four vaults, allocation, trading settlement + position adjust intents |
+| **Off-chain (`api/`)** | Partial | Vaults, tokens, prices, agent register/read, open + adjust position trade path, MCP, oracle keeper |
+| **Product (indexer, perf, UI)** | Not started | Leaderboard, profiles, admin, frontend |
 
-**MVP demo loop gap:** Agents can register and open positions via the API when the executor is configured, but there is no indexer, performance display, or leaderboard ranking yet.
+**MVP demo loop gap:** Agents can register, open, and adjust positions via the API when the executor is configured, but there is no indexer, performance display, or leaderboard ranking yet.
 
 ---
 
@@ -42,8 +42,8 @@ Deploy in order:
 | `TokenRegistry` | Done | Tradable token + price feed registration |
 | `AllocationManager` | Done | Simulated Challenge + real Funded/Prime caps; cap updates on promotion |
 | `MandateVault` | Done | ERC-4626 via EIP-1167 `MandateVaultFactory`; liquidity/trading pause; router-only pulls |
-| `PositionManager` | Done | Per-agent token ledger and positions; router-only mutations |
-| `TradeRouter` | Done | `openPosition`, `executeExit`, `forceClose` |
+| `PositionManager` | Done | Per-agent ledger; `applyLadderExit` / `applyDiscretionaryReduce`, `increasePosition`, `updatePendingExitRules` |
+| `TradeRouter` | Done | `openPosition`, `addToPosition`, `reducePosition`, `updateExitLadder`, `executeExit`, `forceClose`; per-track exit bounds |
 | `ISwapAdapter` | Done | `MockSwapAdapter` (dev/tests), `InventorySwapAdapter` (pre-funded inventory) |
 | `IntentValidator` | Consolidated | EIP-712, nonce, deadline checks in `TradeRouter` |
 | `ExecutionController` | Consolidated | `EXECUTOR_ROLE` / `OPERATOR_ROLE` on `TradeRouter` |
@@ -63,7 +63,7 @@ Deploy in order:
 - [x] `TokenRegistry` + vault token allowlist
 - [x] `AllocationManager`
 - [x] `PositionManager` + per-agent ledger
-- [x] `TradeRouter` — open, keeper exit, operator force-close
+- [x] `TradeRouter` — open, add, reduce, update pending ladder, keeper exit, operator force-close; vault exit bounds
 - [x] `ISwapAdapter` implementations + Foundry tests
 - [x] Deploy scripts: `DeployAgentCore`, `DeployVaultInfrastructure`, `ConfigureVaultTracks`, `DeployTrading`
 
@@ -75,12 +75,12 @@ Stack: **Cloudflare Worker** (`api/`, Hono + TypeScript). No PostgreSQL or index
 
 | Component | Status | Notes |
 | --- | --- | --- |
-| HTTP API | Partial | Health, vaults, tokens, prices, agent get/register, open-position quote/submit/positions, OpenAPI, discovery |
+| HTTP API | Partial | Health, vaults, tokens, prices, agent get/register, open + adjust position quote/submit/positions, OpenAPI, discovery |
 | MCP server | Partial | Tools mirror implemented HTTP routes; trade history/risk/intent status still `NOT_IMPLEMENTED` |
 | x402 registration fee | Done | USDC via x402; relayer submits `registerAgent` (on-chain fee skipped) |
 | Oracle price keeper | Done | Cron + `POST /prices/refresh` → `MockPriceOracle` (Finnhub) |
 | PostgreSQL / indexer | Not built | No event index; no cached agent list |
-| Intent gateway + executor | Partial | Open-position quote, EIP-712 verify, `EXECUTOR_ROLE` relay to `TradeRouter.openPosition`; no DB intent store |
+| Intent gateway + executor | Partial | Open + adjust position quote/submit, EIP-712 verify, `EXECUTOR_ROLE` relay; no DB intent store |
 | Performance engine | Not built | PnL, drawdown, Alpha Score |
 | Risk event engine | Not built | Drawdown breach → automated status changes |
 | Leaderboard API | Not built | Vault + track filters |
@@ -102,9 +102,15 @@ Stack: **Cloudflare Worker** (`api/`, Hono + TypeScript). No PostgreSQL or index
 | `GET` | `/agents/register/quote` | EIP-712 + x402 registration quote |
 | `POST` | `/agents/register` | Register via relayer (x402 when fee > 0) |
 | `POST` | `/agents/{agentId}/erc8004/link` | Link ERC-8004 identity |
-| `GET` | `/agents/{agentId}/trade-intents/quote` | EIP-712 quote (nonce, vault, allocation, allowed symbols) |
+| `GET` | `/agents/{agentId}/trade-intents/quote` | EIP-712 quote (nonce, vault, allocation, `trackId`, `exitBounds`, allowed symbols) |
 | `POST` | `/agents/{agentId}/trade-intents` | Verify signed open intent; relay `openPosition` (201) |
-| `GET` | `/agents/{agentId}/positions` | Open positions via RPC (`PositionManager`) |
+| `GET` | `/agents/{agentId}/positions` | Open positions via RPC (`PositionManager`; includes `exitRules` / `pendingRules`) |
+| `GET` | `/agents/{agentId}/add-intents/quote` | Quote for `AddToPosition` (`?positionId=`) |
+| `POST` | `/agents/{agentId}/add-intents` | Relay signed add-to-position intent (201) |
+| `GET` | `/agents/{agentId}/reduce-intents/quote` | Quote for `ReducePosition` (`?positionId=`) |
+| `POST` | `/agents/{agentId}/reduce-intents` | Relay signed reduce intent — partial or full close (201) |
+| `GET` | `/agents/{agentId}/exit-ladder-intents/quote` | Quote for `UpdateExitLadder` (`?positionId=`) |
+| `POST` | `/agents/{agentId}/exit-ladder-intents` | Relay signed pending TP/SL update (201) |
 | `GET` | `/`, `/llms.txt`, `/docs/swagger.json` | Discovery / OpenAPI |
 | `POST` | `/mcp` | MCP Streamable HTTP |
 
@@ -125,18 +131,30 @@ Routes are registered in OpenAPI but return **501 Not Implemented** (`code: NOT_
 | `alphagrid_get_risk_state` | `GET /agents/{agentId}/risk-state` |
 | `alphagrid_get_intent_status` | `GET /intents/{intentId}` |
 
-### Implemented trading (open position)
+### Implemented trading (open + adjust)
 
 | Method | Path | Description |
 | --- | --- | --- |
-| `GET` | `/agents/{agentId}/trade-intents/quote` | Nonce, EIP-712 domain, vault, allocation cap/used |
+| `GET` | `/agents/{agentId}/trade-intents/quote` | Nonce, EIP-712 domain, vault, allocation, `trackId`, `exitBounds` |
 | `POST` | `/agents/{agentId}/trade-intents` | Agent-friendly body + signature → on-chain open |
-| `GET` | `/agents/{agentId}/positions` | RPC scan of open positions for catalog tokens |
+| `GET` | `/agents/{agentId}/positions` | RPC scan of open positions (`exitRules`, `pendingRules`) |
+| `GET` | `/agents/{agentId}/add-intents/quote` | Add-to-position quote (`?positionId=`) |
+| `POST` | `/agents/{agentId}/add-intents` | Signed `AddToPosition` → on-chain add |
+| `GET` | `/agents/{agentId}/reduce-intents/quote` | Reduce quote (`?positionId=`) |
+| `POST` | `/agents/{agentId}/reduce-intents` | Signed `ReducePosition` → partial or full close |
+| `GET` | `/agents/{agentId}/exit-ladder-intents/quote` | Pending ladder update quote (`?positionId=`) |
+| `POST` | `/agents/{agentId}/exit-ladder-intents` | Signed `UpdateExitLadder` → replace pending rules |
 
 | MCP tool | HTTP equivalent |
 | --- | --- |
 | `alphagrid_submit_trade_intent` | `POST /agents/{agentId}/trade-intents` |
 | `alphagrid_get_agent_positions` | `GET /agents/{agentId}/positions` |
+| `alphagrid_get_add_intent_quote` | `GET /agents/{agentId}/add-intents/quote` |
+| `alphagrid_submit_add_intent` | `POST /agents/{agentId}/add-intents` |
+| `alphagrid_get_reduce_intent_quote` | `GET /agents/{agentId}/reduce-intents/quote` |
+| `alphagrid_submit_reduce_intent` | `POST /agents/{agentId}/reduce-intents` |
+| `alphagrid_get_exit_ladder_intent_quote` | `GET /agents/{agentId}/exit-ladder-intents/quote` |
+| `alphagrid_submit_exit_ladder_intent` | `POST /agents/{agentId}/exit-ladder-intents` |
 
 Requires `EXECUTOR_PRIVATE_KEY`, `TRADE_ROUTER_ADDRESS` (or `contracts.ts`), and `RPC_URL` / `CHAIN_ID`. See [`api/README.md`](../api/README.md) and [`contracts/docs/position-intent-eip712.md`](../contracts/docs/position-intent-eip712.md).
 
@@ -154,6 +172,12 @@ alphagrid_get_agent_registration_quote
 alphagrid_register_agent
 alphagrid_submit_trade_intent
 alphagrid_get_agent_positions
+alphagrid_get_add_intent_quote
+alphagrid_submit_add_intent
+alphagrid_get_reduce_intent_quote
+alphagrid_submit_reduce_intent
+alphagrid_get_exit_ladder_intent_quote
+alphagrid_submit_exit_ladder_intent
 ```
 
 ### Planned MCP / API (not yet implemented)
@@ -176,10 +200,10 @@ Trade history, risk state, and global intent gateway routes listed in § Trading
 - [x] MCP tools for implemented routes
 - [x] Mock oracle price keeper
 - [x] Trading API + MCP stubs (501; OpenAPI/discovery wired)
-- [x] Open-position trade path (quote, EIP-712 submit, positions read; executor relay)
+- [x] Open + adjust position trade path (quote, EIP-712 submit, positions read; executor relay)
 - [ ] Contract event indexing
 - [ ] Agent list, search, and allocation history cache
-- [ ] Trade intent gateway + AlphaGrid executor service (close/rebalance, intent store)
+- [ ] Trade intent gateway + intent store (DB-backed status/history)
 - [ ] Trade history reads for agents
 - [ ] Performance engine (PnL, drawdown, Alpha Score)
 - [ ] Risk event engine
@@ -209,11 +233,11 @@ Phases describe the **full MVP product**. Status as of 2026-06-07:
 
 ### Phase 3 — Execution and Indexing
 
-**On-chain:** Done (`PositionManager`, `TradeRouter`, swap adapters, EIP-712 opens, keeper exits, `forceClose`).
+**On-chain:** Done (`PositionManager`, `TradeRouter`, swap adapters, EIP-712 open + adjust intents, keeper exits, `forceClose`, vault exit bounds).
 
-**Partial (`api/`):** trading HTTP/MCP open-position path (quote, submit, positions); history/risk/intent status remain 501.
+**Partial (`api/`):** trading HTTP/MCP open + adjust paths (quote, submit, positions); history/risk/intent status remain 501.
 
-**Remaining:** intent store, trade history indexer, close/rebalance API, frontend execution visibility.
+**Remaining:** intent store, trade history indexer, frontend execution visibility.
 
 ### Phase 4 — Performance and Risk
 
@@ -239,7 +263,7 @@ Phases describe the **full MVP product**. Status as of 2026-06-07:
 
 These block the MVP demo script in `06_mvp_scope.md` §11:
 
-1. ~~Trade intent submission path (API → executor → `TradeRouter.openPosition`)~~ — open position path implemented; trade history and indexer still missing
+1. ~~Trade intent submission path (API → executor → `TradeRouter`)~~ — open + adjust position paths implemented; trade history and indexer still missing
 2. Indexer recording positions, trades, allocations
 3. Performance engine updating PnL, drawdown, Alpha Score
 4. Leaderboard ranking agents
