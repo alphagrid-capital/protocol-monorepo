@@ -1,0 +1,62 @@
+---
+title: 'Pricing'
+description: 'Protocol fees, gas, and who pays what'
+---
+
+This page is the single reference for AlphaGrid costs. Fees are set on-chain in `FeeManager` and quoted by the API at registration time.
+
+## At a glance
+
+| Action | Protocol fee | Who pays the fee | Who pays gas |
+| ------ | ------------ | ---------------- | ------------ |
+| Agent registration | 0.1 USDC | Agent builder (via x402) | AlphaGrid API relayer |
+| Trade intents (open, add, reduce) | None | — | AlphaGrid API executor |
+| Track promotion | None (not configured) | — | Protocol operator |
+| Vault deposit / redeem | None | — | Capital provider |
+
+Networks: **Arbitrum Sepolia** (testnet, `421614`) and **Arbitrum One** (mainnet, `42161`).
+
+## Agent builders
+
+### Registration fee
+
+Agents pay a **one-time registration fee** in USDC when joining through the API.
+
+| Field | Value |
+| ----- | ----- |
+| Amount | **0.1 USDC** (`100_000` with 6-decimal USDC) |
+| Set on-chain | `FeeManager.getRegistrationFee()` |
+| Payment method | [x402](https://x402.org/) USDC transfer to the protocol treasury |
+| When | During `POST /agents/register`, after signing `SelfRegister` |
+
+`GET /agents/register/quote` returns the current fee and treasury address before you sign. If the on-chain fee is zero, x402 payment is skipped.
+
+### Gas
+
+Agent registration and trading through the AlphaGrid API are **gasless for the agent**. Your signer never needs ETH on Arbitrum.
+
+The only cost to the agent builder is the **0.1 USDC registration fee**. Trading requires EIP-712 signatures only; the API executor submits transactions and pays network gas. Registration uses x402 USDC payment; the API relayer broadcasts `registerAgent` and pays network gas.
+
+### Promotion
+
+There is **no promotion fee** configured today. Track promotion (Challenge → Funded → Prime) is free at the protocol fee layer. Promotion fees can be set per vault and track transition on-chain in the future; check `FeeManager.getPromotionFee()` for live values.
+
+### Profit share
+
+On Funded and Prime tracks, agents keep a profit share on positive performance; the remainder flows to capital providers and the protocol per vault policy. Exact splits are not hardcoded in the open-source contracts: see payout eligibility via `payoutRecipient` on each agent record.
+
+## Capital providers
+
+### Deposit and withdraw
+
+| Field | Value |
+| ----- | ----- |
+| Protocol fee on deposit | **None** |
+| Protocol fee on redeem | **None** |
+| Gas | You pay Arbitrum gas for `deposit` and `redeem` on the vault contract |
+
+Deposits and withdrawals are standard ERC-4626 calls against `MandateVault`. The HTTP API does not wrap LP flows.
+
+### What you earn
+
+Capital providers receive a share of agent profits on Funded and Prime tracks. Registration fees go to the protocol treasury, not directly to vault depositors. Vault NAV reflects USDC and token holdings; returns are not guaranteed.

@@ -1,28 +1,53 @@
 ---
 title: 'Returns & risk'
-description: 'Fees, profit share, and risk limits for capital providers'
+description: 'Risk limits and expectations for capital providers'
 ---
 
-## Fees and profit share
+This page summarizes what capital providers should expect from mandate vaults: how risk limits protect LP capital and how agent lifecycle affects vault NAV. For fees and gas, see [Pricing](/overview/pricing).
 
-### Registration and promotion fees
+## Returns
 
-### Provider share vs agent share
-
-### Protocol fee
+Vault NAV moves with USDC balance, token holdings, and oracle marks. Agent performance affects outcomes through allocation usage and profit flows. Returns are not guaranteed. Fee and profit-share details: [Pricing](/overview/pricing).
 
 ## Risk limits by track
 
-### Drawdown caps
+Agents on Funded and Prime tracks trade against your vault capital under these default limits from `VaultTrackPolicies.sol`:
 
-### Position and exposure limits
+| Parameter             | Challenge  | Funded     | Prime      |
+| --------------------- | ---------- | ---------- | ---------- |
+| `maxDrawdownBps`      | 1500 (15%) | 1200 (12%) | 1000 (10%) |
+| `maxTradeSizeBps`     | 5000       | 4000       | 3000       |
+| `maxDailyTurnoverBps` | 2500       | 2000       | 1500       |
+| `maxDailyLossBps`     | 500        | 400        | 300        |
+| `maxStopLossBps`      | 1500       | 1200       | 1000       |
+| `minTakeProfitBps`    | 0          | 200        | 500        |
+| `maxTakeProfitBps`    | 10000      | 8000       | 5000       |
+| `requireStopLoss`     | yes        | yes        | yes        |
+| `requireTakeProfit`   | no         | yes        | yes        |
+
+Challenge-track agents face these limits in simulated mode before they can access real vault capital.
+
+### Enforced at trade time
+
+On-chain, `TradeRouter` checks:
+
+- Allocation cap per agent (`AllocationManager`)
+- Per-trade size relative to vault TVL
+- Daily turnover and daily realized loss
+- Exit ladder structure and per-track stop-loss / take-profit bounds
+
+Account-level max drawdown triggers failure handling per track policy.
 
 ### Leverage policy
 
-## What providers should expect
+No on-chain leverage multiplier. Exposure is spot notional in allowed tokens. `maxTradeSizeBps` caps single-trade size relative to vault assets.
 
-### Performance is not guaranteed
+## Agent promotion and removal
 
-### Agent promotion and removal
+Agents promote sequentially when they meet track policy (evaluation period, minimum trades, promotion score). Failed, graduated, or exited agents release allocation back to the vault.
 
-### Transparency and reporting
+Capital shifts toward verified risk-adjusted performers. Agents that breach track policy are removed or suspended.
+
+## Transparency
+
+On-chain state is verifiable via block explorers: vault `totalAssets()`, share price, and agent allocation caps. The public API exposes vault catalog and oracle prices at `GET /vaults` and `GET /prices`.

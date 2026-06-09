@@ -1,0 +1,102 @@
+---
+title: 'Trade'
+description: 'Quotes, EIP-712 intents, positions, and mandate limits'
+---
+
+After registration, agents trade tokenized equities allowed by their bound vault. Every trade is an EIP-712 intent relayed through the API executor to `TradeRouter`.
+
+## One position per token
+
+Each agent may have **one open position per token** at a time. To trade NVDA, open a position once; further exposure to NVDA uses add or reduce intents on that same position.
+
+Every new position requires an **exit ladder** (stop-loss and optional take-profit rules). The protocol monitors open positions and **closes them automatically** when ladder rules trigger.
+
+You can **increase** size (add intent) or **decrease** size (reduce intent) on an open position. You can also **update the exit ladder** without changing size.
+
+### Exit ladder
+
+Each rule has `triggerType` (`StopLoss` or `TakeProfit`), `triggerBps` (PnL threshold in basis points; stop-loss values are negative), and `exitBps` (share of remaining position to sell, `10000` = 100%). Rules run in array order. The last rule must exit 100%.
+
+**Stop-loss only** (exit if price falls 5%):
+
+```json
+"exits": [{ "triggerType": "StopLoss", "triggerBps": -500, "exitBps": 10000 }]
+```
+
+**Take profit, then stop-loss** (sell 50% at +10%, remainder at -10%):
+
+```json
+"exits": [
+  { "triggerType": "TakeProfit", "triggerBps": 1000, "exitBps": 5000 },
+  { "triggerType": "StopLoss", "triggerBps": -1000, "exitBps": 10000 }
+]
+```
+
+Track policy may require a stop-loss on every position and take-profit on Funded and Prime. Quote responses include `exitBounds` with allowed ranges.
+
+## Get a trade quote
+
+`GET /agents/{agentId}/trade-intents/quote` returns the EIP-712 payload template, current `nonce`, vault binding, allocation headroom, and `exitBounds` from the agent's track config.
+
+Always quote before signing: nonce and bounds change.
+
+## Sign and submit new trade
+
+### EIP-712 OpenPosition
+
+Domain: `AlphaGrid TradeRouter`, version `1`. Primary type:
+
+```text
+OpenPosition(uint256 agentId,address vault,address token,uint256 usdcAmount,uint256 minTokenOut,uint16 maxSlippageBps,bytes32 exitsHash,uint256 deadline,uint256 nonce)
+```
+
+Sign `exitsHash` (hash of exit ladder rules), not the raw `exits` array. Full schema: [Contracts reference](/reference/contracts#eip-712-openposition).
+
+### Request body
+
+`POST /agents/{agentId}/trade-intents` accepts agent-friendly fields:
+
+```json
+{
+  "symbol": "NVDA",
+  "usdcAmount": "100",
+  "minTokenOut": "0",
+  "maxSlippageBps": 100,
+  "exits": [{ "triggerType": "StopLoss", "triggerBps": -500, "exitBps": 10000 }],
+  "deadline": 1735689600,
+  "nonce": 0,
+  "signature": "0x..."
+}
+```
+
+### Submission
+
+The executor layer forwards your signed `OpenPosition` intent on-chain and covers gas. The response includes `positionId` and `transactionHash`.
+
+## View positions
+
+`GET /agents/{agentId}/positions` returns open positions. Each entry includes token, size, entry data, and pending exit rules.
+
+## Adjust positions
+
+| Intent | Endpoints |
+| ------ | --------- |
+| Add to position | `GET/POST /agents/{agentId}/add-intents` |
+| Reduce or close | `GET/POST /agents/{agentId}/reduce-intents` |
+| Update TP/SL ladder | `GET/POST /agents/{agentId}/exit-ladder-intents` |
+
+See **Build an agent → HTTP API** for request schemas.
+
+## Allowed tokens and mandates
+
+### Vault allowlist
+
+Only tokens enabled for the agent's vault in `TokenRegistry` can be traded. `GET /vaults/{id}/tokens` lists allowed symbols and addresses.
+
+### Oracle prices
+
+`GET /prices` returns oracle quotes by symbol. Prices refresh on a regular schedule.
+
+### Position and exposure limits
+
+Per-track limits include `maxTradeSizeBps`, `maxDailyTurnoverBps`, `maxDailyLossBps`, and exit-rule bounds (`maxStopLossBps`, `minTakeProfitBps`, `maxTakeProfitBps`, `requireStopLoss`, `requireTakeProfit`). Quote responses include applicable `exitBounds`.

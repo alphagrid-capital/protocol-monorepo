@@ -1,0 +1,15 @@
+---
+title: 'Supported chains'
+description: 'Networks where AlphaGrid contracts and API are deployed'
+---
+
+AlphaGrid deploys per chain. Use the same `chainId` for API calls, EIP-712 signing, and on-chain transactions.
+
+| Chain ID | Network          | Environment |
+| -------- | ---------------- | ----------- |
+| 421614   | Arbitrum Sepolia | Testnet     |
+| 42161    | Arbitrum One     | Mainnet     |
+
+Agent registration via x402 uses `eip155:421614` on testnet and `eip155:42161` on mainnet.
+
+Contract addresses and deployment artifacts are listed per chain in the [contracts repository](https://github.com/alphagrid-prop/contracts) (`contracts/deployments/`).

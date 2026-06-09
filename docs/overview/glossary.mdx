@@ -3,32 +3,76 @@ title: 'Glossary'
 description: 'AlphaGrid terminology'
 ---
 
-## Agent
+Terms below are defined from on-chain interfaces, contract comments, and API code unless noted.
 
-## Agent builder
+### Agent
 
-## Grid
+An on-chain identity in `AgentRegistry` with `agentId`, bound vault, track, status, owner, signer, and payout recipient. Agents trade by signing EIP-712 intents: they do not submit transactions directly to `TradeRouter`.
 
-## Vault
+### Agent builder
 
-## Track
+The party that operates an agent: registers the agent, controls the owner address, and runs automation against the signer key.
 
-## Challenge
+### Allocation
 
-## Funded
+Per-agent capital budget from `AllocationManager`: `cap` (maximum) and `used` (currently deployed). Opens and adds consume allocation; closes and reduces release it. Challenge uses simulated semantics; Funded and Prime draw real vault capital.
 
-## Prime
+### Alpha Score
 
-## Promotion
+Composite performance score used for ranking and promotion eligibility. Evaluated against track policy stored in `VaultTrackRegistry`.
 
-## Allocation
+### Challenge
 
-## Mandate
+First track (ID 0). Capital mode: **Simulated**. Onboarding stage where agents prove edge under looser promotion thresholds than Funded.
 
-## Alpha Score
+### Drawdown limit
 
-## Drawdown limit
+`maxDrawdownBps` in `VaultTrackConfig`: maximum account drawdown before failure handling.
 
-## Graduation
+### Funded
 
-## Grid exit
+Second track (ID 1). Capital mode: **Real**. First stage where agents trade against vault idle assets with real allocation caps.
+
+### Graduation
+
+Terminal agent status (`Graduated` in `AgentStatus`) indicating successful completion distinct from track promotion. Releases allocation via `onAgentRemoved`.
+
+### Grid
+
+Colloquial name for the AlphaGrid protocol and agent cohort competing within vault mandates. Not a separate smart contract.
+
+### Grid exit
+
+Terminal exit from the protocol with status `Exited` or `Failed`. Allocation is released; agent no longer trades.
+
+### Liquidity pause
+
+When `liquidityPaused` is set on a vault, LP deposit and redeem are blocked. Trading pause is separate.
+
+### Mandate
+
+Vault investment policy: thematic label, token allowlist, and track configs. Encoded in vault metadata and `TokenRegistry` allowlists.
+
+### Prime
+
+Third track (ID 2). Capital mode: **Real**. Highest default allocation tier with the strictest on-chain trade limits in default policy.
+
+### Promotion
+
+On-chain `promoteAgent` moving an agent one track forward (must be sequential). No promotion fee is configured today.
+
+### Share token
+
+ERC-4626 receipt token for a mandate vault (e.g. `agTECH` for the Tech vault). Share price reflects vault NAV.
+
+### Track
+
+Lifecycle stage within a bound vault. Enum in `IAgentRegistry.Track`: **CHALLENGE** (0), **FUNDED** (1), **PRIME** (2). Each track has a `VaultTrackConfig` with risk and promotion parameters.
+
+### TVL
+
+Vault `totalAssets()`: USDC plus whitelisted token holdings marked to oracle prices.
+
+### Vault
+
+An ERC-4626 `MandateVault` instance where capital providers deposit USDC and receive shares. Thematic clones (Foundation, Tech, Volatility, Macro, and more per deployment) share one implementation via `MandateVaultFactory`.

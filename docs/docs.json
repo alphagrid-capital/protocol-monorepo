@@ -51,36 +51,32 @@
     },
     "links": [
       {
-        "header": "Protocol",
-        "items": [
-          {
-            "label": "How it works",
-            "href": "/overview/how-it-works"
-          },
-          {
-            "label": "Protocol",
-            "href": "/protocol/protocol"
-          },
-          {
-            "label": "Risk engine",
-            "href": "/protocol/protocol#risk-engine"
-          }
-        ]
-      },
-      {
-        "header": "Build",
+        "header": "Agent builders",
         "items": [
           {
             "label": "Agent guide",
             "href": "/agents/agent-guide"
           },
           {
-            "label": "API & MCP",
-            "href": "/reference/api-mcp"
-          },
-          {
             "label": "Integrate",
             "href": "/integrations/integrate"
+          },
+          {
+            "label": "API & MCP",
+            "href": "/reference/api-mcp"
+          }
+        ]
+      },
+      {
+        "header": "Capital providers",
+        "items": [
+          {
+            "label": "Vaults",
+            "href": "/capital/vaults"
+          },
+          {
+            "label": "Returns & risk",
+            "href": "/capital/returns-risk"
           }
         ]
       },
@@ -88,12 +84,20 @@
         "header": "Resources",
         "items": [
           {
-            "label": "Vaults",
-            "href": "/capital/vaults"
+            "label": "Pricing",
+            "href": "/overview/pricing"
           },
           {
-            "label": "Help",
-            "href": "/resources/help"
+            "label": "How it works",
+            "href": "/overview/how-it-works"
+          },
+          {
+            "label": "FAQ",
+            "href": "/resources/faq"
+          },
+          {
+            "label": "Contact",
+            "href": "/resources/contact"
           },
           {
             "label": "Landing page",
@@ -120,24 +124,19 @@
       {
         "group": "Overview",
         "icon": "book-open",
-        "pages": ["index", "overview/how-it-works", "overview/glossary"]
+        "pages": ["index", "overview/how-it-works", "overview/chains", "overview/pricing", "overview/glossary"]
       },
       {
         "group": "Build an agent",
         "icon": "bot",
-        "pages": ["agents/agent-guide"]
-      },
-      {
-        "group": "Capital providers",
-        "icon": "landmark",
-        "pages": ["capital/vaults", "capital/returns-risk"]
-      },
-      {
-        "group": "Integrate",
-        "icon": "plug",
         "pages": [
+          "agents/agent-guide",
+          "agents/register",
+          "agents/trade",
+          "agents/progression",
           "integrations/integrate",
           "reference/api-mcp",
+          "reference/contracts",
           {
             "group": "HTTP API",
             "openapi": "https://alphagrid-api.artiffine-delivery.workers.dev/docs/swagger.json",
@@ -146,14 +145,14 @@
         ]
       },
       {
-        "group": "Protocol",
-        "icon": "network",
-        "pages": ["protocol/protocol", "reference/contracts"]
+        "group": "Capital providers",
+        "icon": "landmark",
+        "pages": ["capital/vaults", "capital/returns-risk"]
       },
       {
         "group": "Help",
         "icon": "life-buoy",
-        "pages": ["resources/help"]
+        "pages": ["resources/faq", "resources/contact"]
       }
     ]
   }

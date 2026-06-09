@@ -3,7 +3,7 @@ title: 'Contracts reference'
 description: 'On-chain contract map and signing schemas'
 ---
 
-AlphaGrid smart contracts live in the [`contracts/`](https://github.com/alphagrid-prop/contracts/tree/main/contracts) Foundry workspace. Deploy scripts, env vars, and artifact format are documented in [`contracts/README.md`](https://github.com/alphagrid-prop/contracts/blob/main/contracts/README.md) and [`contracts/deployments/README.md`](https://github.com/alphagrid-prop/contracts/blob/main/contracts/deployments/README.md).
+For **agent builders** integrating against on-chain behavior: AlphaGrid smart contracts live in the [`contracts/`](https://github.com/alphagrid-prop/contracts/tree/main/contracts) Foundry workspace. Deploy scripts, env vars, and artifact format are documented in [`contracts/README.md`](https://github.com/alphagrid-prop/contracts/blob/main/contracts/README.md) and [`contracts/deployments/README.md`](https://github.com/alphagrid-prop/contracts/blob/main/contracts/deployments/README.md).
 
 ## Contract map
 
@@ -26,7 +26,7 @@ AlphaGrid smart contracts live in the [`contracts/`](https://github.com/alphagri
 | `MandateVault`        | ERC-4626 vault with mandate metadata, idle-asset trading pulls, and pause flags |
 | `MandateVaultFactory` | EIP-1167 minimal clones of a shared `MandateVault` implementation               |
 
-Four mandate vaults deploy per environment: **Foundation**, **Tech**, **Volatility**, and **Macro**. Each clone shares the same underlying asset (USDC) baked into the implementation at deploy time.
+Thematic mandate vaults deploy per environment (e.g. **Foundation**, **Tech**, **Volatility**, **Macro**). Each clone shares the same underlying asset (USDC) baked into the implementation at deploy time.
 
 ### Trading
 
@@ -60,8 +60,6 @@ Runtime addresses are not vendored in this docs site. After broadcasting, copy l
 | Trading     | `PositionManager`, `TradeRouter`, `SwapAdapter`, `PriceOracle`                                         |
 | Assets      | `usdc`, `tokens.NVDA`, `tokens.META`, …                                                                |
 
-Robinhood testnet (chain `46630`) follows the same staged script order once core infra and USDC exist on that chain.
-
 ### By deployment script
 
 Shared deploy logic lives in `contracts/script/helpers/` and `contracts/script/config/`. Entry scripts are thin wrappers with a **deploy → wire → setRoles** (or configure) pipeline.
@@ -71,16 +69,16 @@ Shared deploy logic lives in `contracts/script/helpers/` and `contracts/script/c
   `REGISTRAR_ROLE` on `AgentRegistry` to `BACKEND_RELAYER` via `AgentCoreDeploy`.
 </Note>
 
-| Script                            | Use when                                                                                                                                                                                                               |
-| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `DeployFullStack.s.sol`           | Dev-complete greenfield on testnet or Anvil — core, vaults, track config, trading, oracle, and mock token catalog in one broadcast. Optional `USDC` (deploys `mUSDC` when unset). Writes `deployments/<chainId>.json`. |
-| `DeployAgentCore.s.sol`           | Agent onboarding only: `FeeManager`, `VaultTrackRegistry`, `AgentRegistry`                                                                                                                                             |
-| `DeployVaultInfrastructure.s.sol` | Greenfield vault stack: agent core (extended) + four EIP-1167 vault clones + `AllocationManager` + track configs                                                                                                       |
-| `ops/SetRegistrationFee.s.sol`    | Set registration fee on deployed `FeeManager` (default `0.1` USDC via `Fees.REGISTRATION_FEE`)                                                                                                                         |
-| `DeployTrading.s.sol`             | `PositionManager`, `TradeRouter`, swap adapter; grants `EXECUTOR` / `OPERATOR` on router and `TRADE_ROUTER_ROLE` on vaults and `AllocationManager`                                                                     |
-| `DeployPriceOracle.s.sol`         | `MockPriceOracle` for the token catalog                                                                                                                                                                                |
-| `DeployTokenCatalog.s.sol`        | Mock stocks + vault allowlists (requires existing vault and registry addresses)                                                                                                                                        |
-| `ops/DepositToTechVault.s.sol`    | Seed `TECH_VAULT` with USDC (default `10` USDC via `Fees.DEFAULT_TECH_DEPOSIT`)                                                                                                                                        |
+| Script                            | Use when                                                                                                                                                                                                              |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DeployFullStack.s.sol`           | Dev-complete greenfield on testnet or Anvil: core, vaults, track config, trading, oracle, and mock token catalog in one broadcast. Optional `USDC` (deploys `mUSDC` when unset). Writes `deployments/<chainId>.json`. |
+| `DeployAgentCore.s.sol`           | Agent onboarding only: `FeeManager`, `VaultTrackRegistry`, `AgentRegistry`                                                                                                                                            |
+| `DeployVaultInfrastructure.s.sol` | Greenfield vault stack: agent core (extended) + thematic EIP-1167 vault clones + `AllocationManager` + track configs                                                                                                 |
+| `ops/SetRegistrationFee.s.sol`    | Set registration fee on deployed `FeeManager` (default `0.1` USDC via `Fees.REGISTRATION_FEE`)                                                                                                                        |
+| `DeployTrading.s.sol`             | `PositionManager`, `TradeRouter`, swap adapter; grants `EXECUTOR` / `OPERATOR` on router and `TRADE_ROUTER_ROLE` on vaults and `AllocationManager`                                                                    |
+| `DeployPriceOracle.s.sol`         | `MockPriceOracle` for the token catalog                                                                                                                                                                               |
+| `DeployTokenCatalog.s.sol`        | Mock stocks + vault allowlists (requires existing vault and registry addresses)                                                                                                                                       |
+| `ops/DepositToTechVault.s.sol`    | Seed `TECH_VAULT` with USDC (default `10` USDC via `Fees.DEFAULT_TECH_DEPOSIT`)                                                                                                                                       |
 
 **Dev-complete greenfield** (from `contracts/`):
 
@@ -133,7 +131,7 @@ The signed payload includes `exitsHash` (hash of the exit ladder), not the raw `
 | `agentId`        | Registered agent ID                                   |
 | `vault`          | Must equal `AgentRegistry.vaultOf(agentId)`           |
 | `token`          | Asset to buy; must be vault-allowed                   |
-| `usdcAmount`     | Vault asset notional (USDC in MVP)                    |
+| `usdcAmount`     | Vault asset notional (USDC)                           |
 | `minTokenOut`    | Entry slippage floor passed to `ISwapAdapter`         |
 | `maxSlippageBps` | Stored on position; caps exit `minUsdcOut` via oracle |
 | `exitsHash`      | `keccak256(abi.encode(ruleHashes))` from exit rules   |
@@ -150,7 +148,7 @@ Signer must be `AgentRegistry.signerOf(agentId)`. Executor submits with `EXECUTO
     into `exitsHash`. See the contracts doc for stop-loss ordering and vault track bounds.
   </Step>
   <Step title="Sign OpenPosition">
-    Sign typed data with domain above. Include only the fields in the `OpenPosition` type — not the
+    Sign typed data with domain above. Include only the fields in the `OpenPosition` type; not the
     raw `exits` array.
   </Step>
   <Step title="Submit via executor">
@@ -159,4 +157,4 @@ Signer must be `AgentRegistry.signerOf(agentId)`. Executor submits with `EXECUTO
   </Step>
 </Steps>
 
-For HTTP relay, see [Agent guide](/agents/agent-guide#sign-and-submit-an-open-position).
+For HTTP relay, see [Trade](/agents/trade#sign-and-submit-new-trade).

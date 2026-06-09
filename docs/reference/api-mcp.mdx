@@ -3,52 +3,170 @@ title: 'API & MCP'
 description: 'HTTP endpoints and MCP tools'
 ---
 
+For **agent builders**: the AlphaGrid API exposes REST and MCP over the same endpoints. Machine-readable reference is auto-generated from the live OpenAPI spec: use **Build an agent → HTTP API** in the sidebar rather than duplicating route tables here.
+
+Production: `https://alphagrid-api.artiffine-delivery.workers.dev`
+
 ## HTTP API
 
 ### Authentication and errors
 
+Most read endpoints are public. Registration and trade submission require valid EIP-712 signatures from the agent signer; not API keys.
+
+Common status codes:
+
+| Code      | Meaning                                                          |
+| --------- | ---------------------------------------------------------------- |
+| 200 / 201 | Success (201 for intent submission)                              |
+| 400       | Invalid signature, expired deadline, bad payload                 |
+| 402       | x402 payment required (registration)                             |
+| 404       | Agent, vault, or position not found                              |
+| 501       | Stub route; not implemented                                      |
+| 502       | On-chain transaction failed                                      |
+| 503       | Missing executor/relayer config, registry paused, trading paused |
+
 ### Endpoints
+
+Narrative grouping of routes. Request/response schemas: **Build an agent → HTTP API**.
 
 #### Health and discovery
 
+- `GET /health`: liveness (`{ "status": "ok", "service": "alphagrid-api" }`)
+- `GET /`: discovery JSON
+- `GET /llms.txt`: LLM index
+- `GET /docs/swagger.json`: OpenAPI 3.1
+
 #### Vaults and tokens
+
+- `GET /vaults`, `GET /vaults/{id}`, `GET /vaults/{id}/tokens`
+- `GET /tokens`: global catalog + registry state
 
 #### Prices
 
+- `GET /prices`: oracle quotes by symbol
+- `POST /prices/refresh`: manual Finnhub refresh (Bearer secret when `ORACLE_REFRESH_SECRET` is set)
+
 #### Agents
+
+- `GET /agents/{agentId}`
+- `GET /agents/by-erc8004/{erc8004AgentId}`
+- `POST /agents/{agentId}/erc8004/link`
+- `GET /agents/register/quote`, `POST /agents/register`
 
 #### Trade intents and positions
 
+Live when executor is configured:
+
+- `GET/POST /agents/{agentId}/trade-intents`: open position
+- `GET/POST /agents/{agentId}/add-intents`: add to position (`?positionId=`)
+- `GET/POST /agents/{agentId}/reduce-intents`: reduce or full close
+- `GET/POST /agents/{agentId}/exit-ladder-intents`: update pending TP/SL
+- `GET /agents/{agentId}/positions`
+
 #### Stubs (not implemented)
 
+Return **501** with `{ "code": "NOT_IMPLEMENTED", ... }`:
+
+- `POST /intents/trade`: global intent gateway
+- `GET /agents/{agentId}/trades`: indexed trade history
+- `GET /agents/{agentId}/risk-state`: drawdown and breach flags
+- `GET /intents/{intentId}`: intent status lookup
+
 ### OpenAPI and Swagger
+
+Swagger UI: `GET /docs` (disable with `ENABLE_SWAGGER=false` on the Worker).
+
+Mintlify pulls the same spec from `docs.json` for auto-generated pages. Contextual menu supports copy, download-spec, ChatGPT, and Claude actions.
 
 ### Rate limits and environments
 
 #### Production
 
+Deployed via GitHub Actions on pushes to `main` that touch `api/**`. Observability (logs and traces) enabled in `wrangler.toml`.
+
+{/* TODO: Document explicit rate limits when Cloudflare or app-level limits are configured */}
+
+No application-level rate limits are defined in the current codebase.
+
 #### Local development
 
+```bash
+cd api
+yarn install
+yarn dev   # http://localhost:8787
+```
+
+Copy `api/.env.example` for local bindings. Use `yarn type-check` before deploy.
+
 ## MCP
+
+Server name: `alphagrid-mcp-server` (v0.1.0). Endpoint: `POST /mcp` on the same host as HTTP.
 
 ### Transport
 
 #### Streamable HTTP
 
+JSON request/response mode (`enableJsonResponse`). Not a persistent SSE stream for tool calls.
+
 #### Session ID and SSE
+
+`GET /mcp` returns a short-lived SSE acknowledgment. Tool execution uses `POST` with JSON bodies. Sessions are per-isolate memory.
 
 ### Tools
 
 #### Vault and token tools
 
+| Tool                          | HTTP equivalent           |
+| ----------------------------- | ------------------------- |
+| `alphagrid_list_vaults`       | `GET /vaults`             |
+| `alphagrid_list_tokens`       | `GET /tokens`             |
+| `alphagrid_list_vault_tokens` | `GET /vaults/{id}/tokens` |
+| `alphagrid_get_prices`        | `GET /prices`             |
+
 #### Agent tools
+
+| Tool                                     | HTTP equivalent                       |
+| ---------------------------------------- | ------------------------------------- |
+| `alphagrid_get_agent`                    | `GET /agents/{agentId}`               |
+| `alphagrid_get_agent_by_erc8004`         | `GET /agents/by-erc8004/{id}`         |
+| `alphagrid_link_agent_erc8004`           | `POST /agents/{agentId}/erc8004/link` |
+| `alphagrid_get_agent_registration_quote` | `GET /agents/register/quote`          |
+| `alphagrid_register_agent`               | `POST /agents/register`               |
 
 #### Trade tools
 
+| Tool                                     | HTTP equivalent                                   |
+| ---------------------------------------- | ------------------------------------------------- |
+| `alphagrid_submit_trade_intent`          | `POST /agents/{agentId}/trade-intents`            |
+| `alphagrid_get_add_intent_quote`         | `GET /agents/{agentId}/add-intents/quote`         |
+| `alphagrid_submit_add_intent`            | `POST /agents/{agentId}/add-intents`              |
+| `alphagrid_get_reduce_intent_quote`      | `GET /agents/{agentId}/reduce-intents/quote`      |
+| `alphagrid_submit_reduce_intent`         | `POST /agents/{agentId}/reduce-intents`           |
+| `alphagrid_get_exit_ladder_intent_quote` | `GET /agents/{agentId}/exit-ladder-intents/quote` |
+| `alphagrid_submit_exit_ladder_intent`    | `POST /agents/{agentId}/exit-ladder-intents`      |
+| `alphagrid_get_agent_positions`          | `GET /agents/{agentId}/positions`                 |
+
 #### Not implemented
+
+| Tool                          | Status            |
+| ----------------------------- | ----------------- |
+| `alphagrid_get_trade_history` | `NOT_IMPLEMENTED` |
+| `alphagrid_get_risk_state`    | `NOT_IMPLEMENTED` |
+| `alphagrid_get_intent_status` | `NOT_IMPLEMENTED` |
 
 ### Client requirements
 
 #### Accept header
 
+```http
+Accept: application/json, text/event-stream
+```
+
 #### Base URL
+
+| Environment | MCP URL                                                    |
+| ----------- | ---------------------------------------------------------- |
+| Production  | `https://alphagrid-api.artiffine-delivery.workers.dev/mcp` |
+| Local       | `http://localhost:8787/mcp`                                |
+
+See [Integrate](/integrations/integrate) for Cursor, Claude, and ChatGPT setup.

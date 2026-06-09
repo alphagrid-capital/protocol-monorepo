@@ -1,7 +1,8 @@
 # AlphaGrid Landing Page Structure
 
-**Live reference:** [https://alpha-grid-prop-trading.lovable.app/](https://alpha-grid-prop-trading.lovable.app/)  
-**Last synced:** 2026-05-28  
+**Live reference:** [https://alphagrid-prop-trading.lovable.app](https://alphagrid-prop-trading.lovable.app)  
+**Last synced:** 2026-06-09  
+**Page title (live):** AlphaGrid — Decentralized prop trading for autonomous agents  
 **PRD alignment:** Thematic ERC-4626 vaults; agent lifecycle Challenge → Funded → Prime **within one vault**; registration + promotion fees via FeeManager.
 
 ---
@@ -46,7 +47,7 @@ CTA: Open app
 4. Agent Lifecycle (Challenge → Funded → Prime)
 5. Risk Engine
 6. Tradable Universe (Robinhood Chain)
-7. Dashboard / Leaderboard Preview
+7. Verifiable Performance (Leaderboard Preview)
 8. For Agents
 9. For Capital Providers
 10. Final CTA
@@ -66,7 +67,7 @@ Explain the category in under 5 seconds and split CTAs by audience.
 
 ## Eyebrow
 
-> Decentralized prop trading · for autonomous agents
+> Decentralized prop trading for autonomous agents
 
 ## Headline (Live)
 
@@ -90,13 +91,12 @@ Explain the category in under 5 seconds and split CTAs by audience.
 
 ## Hero Stats (Live — replace with real metrics post-launch)
 
-| Stat | Example (live) | Notes |
-|---|---|---|
-| Active agents | `14 / 20 slots` | Scarcity / capacity narrative |
-| Agents competing | `20` | |
-| Stocks / universe | `20` · Stocks across 4 vaults | Tied to vault mandates |
-| Last year return | `+12%` · ▲ 3.4% | Protocol or vault aggregate — label clearly |
-| Total vault TVL | `$250k` · ▲ 8.1% | Sum of ERC-4626 vault TVL |
+| Stat | Example (live) | Label (live) | Notes |
+|---|---|---|---|
+| Active agents | `14 / 20 slots` | Active agents | Scarcity / capacity narrative |
+| Universe size | `20` | Stocks across 4 vaults | Tied to vault mandates |
+| Last year return | `+12%` · ▲ 3.4% | Last year return | Protocol or vault aggregate — label clearly |
+| Total vault TVL | `$250k` · ▲ 8.1% | Total value of vaults | Sum of ERC-4626 vault TVL |
 
 ## Hero Visual
 
@@ -111,6 +111,10 @@ Avoid generic AI robot imagery. Prefer leaderboard, vault cards, risk scores.
 ---
 
 # 2. How It Works
+
+## Section Label (Live)
+
+> How it works
 
 ## Headline (Live)
 
@@ -142,7 +146,7 @@ Avoid generic AI robot imagery. Prefer leaderboard, vault cards, risk scores.
 
 ## Inline CTA
 
-> Register your agent · or read the builder guide →
+> Register your agent or read the builder guide →
 
 ## Diagram (PRD-accurate)
 
@@ -156,6 +160,10 @@ Register (fee) → Pick vault → Challenge (simulated)
 ---
 
 # 3. Capital Vaults
+
+## Section Label (Live)
+
+> Capital vaults
 
 ## Goal
 
@@ -171,7 +179,7 @@ Explain thematic ERC-4626 vaults and capital-provider entry point. This is a **p
 
 ## Vault Cards (Live — MVP: 4 vaults)
 
-Each card includes: name, return badge, tagline, description, example tickers, TVL, agent count, **Deposit into [Vault]** CTA.
+Each card includes: `Vault` label, name, return badge, tagline, description, example ticker chips, TVL, agent count, **Deposit into [Vault]** CTA.
 
 ### Foundation
 
@@ -234,6 +242,10 @@ Each card includes: name, return badge, tagline, description, example tickers, T
 
 # 4. Agent Lifecycle (Tracks)
 
+## Section Label (Live)
+
+> Agent lifecycle
+
 ## Goal
 
 Show Challenge → Funded → Prime as **the same path inside every vault** (not separate global tracks).
@@ -248,7 +260,9 @@ Show Challenge → Funded → Prime as **the same path inside every vault** (not
 
 ## Track Cards (Live — align with `05_risk_model.md`)
 
-### Challenge — Tier 1 · Simulated
+Each card uses a track label (`Challenge track`, `Funded track`, `Prime track`), tier badge, and bullet list with `→` prefix.
+
+### Challenge track — Tier 1 · Simulated
 
 > The entry gate. Filters out weak or unsafe agents before any real capital is at risk.
 
@@ -263,7 +277,7 @@ Show Challenge → Funded → Prime as **the same path inside every vault** (not
 
 **CTA:** Register your agent
 
-### Funded — Tier 2 · Medium
+### Funded track — Tier 2 · Medium
 
 > Agents that clear the Challenge graduate here to prove consistency with real, medium-sized capital.
 
@@ -278,7 +292,7 @@ Show Challenge → Funded → Prime as **the same path inside every vault** (not
 
 **CTA:** Provide Capital · See agents
 
-### Prime — Tier 3 · Highest
+### Prime track — Tier 3 · Highest
 
 > Reserved for durable top performers. Largest allocations, continuous review, mandate-driven rules.
 
@@ -307,6 +321,10 @@ Trial Grid / Growth Grid / Alpha Grid  →  use Challenge / Funded / Prime
 ---
 
 # 5. Risk Engine
+
+## Section Label (Live)
+
+> Risk engine
 
 ## Headline (Live)
 
@@ -348,6 +366,10 @@ Rule violation tracking · Vault mandate enforcement
 
 # 6. Tradable Universe
 
+## Section Label (Live)
+
+> Tradable universe
+
 ## Goal
 
 Anchor execution venue and asset class (live site emphasis).
@@ -368,7 +390,20 @@ Anchor execution venue and asset class (live site emphasis).
 
 ## Example Tickers (Live)
 
-AAPL · NVDA · TSLA · MSFT · GOOGL · META · AMZN · COIN · HOOD · SPY
+Ticker chips with logo + symbol + company name. Scrolling marquee (triplicated row).
+
+| Ticker | Company |
+|---|---|
+| AAPL | Apple |
+| NVDA | Nvidia |
+| TSLA | Tesla |
+| MSFT | Microsoft |
+| GOOGL | Alphabet |
+| META | Meta |
+| AMZN | Amazon |
+| COIN | Coinbase |
+| HOOD | Robinhood |
+| SPY | S&P 500 |
 
 ## PRD Note
 
@@ -376,7 +411,11 @@ AAPL · NVDA · TSLA · MSFT · GOOGL · META · AMZN · COIN · HOOD · SPY
 
 ---
 
-# 7. Dashboard / Leaderboard Preview
+# 7. Verifiable Performance (Leaderboard Preview)
+
+## Section Label (Live)
+
+> Verifiable performance
 
 ## Headline (Live)
 
@@ -403,7 +442,7 @@ AAPL · NVDA · TSLA · MSFT · GOOGL · META · AMZN · COIN · HOOD · SPY
 
 | Rank | Agent | Vault · Track | PnL | Max DD | Risk | Allocation |
 |---:|---|---|---:|---:|---:|---:|
-| 1 | Vector-17 | Tech · Prime | +12.8% | 4.2% | 88 | $250k |
+| 1 | Vector-17 · Promotion eligible | Tech · Prime | +12.8% | 4.2% | 88 | $250k |
 | 2 | OrbitQuant | Foundation · Funded | +18.6% | 6.5% | 84 | $1.2M |
 | 3 | DeltaMind | Volatility · Challenge | +7.4% | 2.1% | 91 | $25k |
 | 4 | Helix Capital | Macro · Funded | +9.1% | 3.8% | 86 | $180k |
@@ -423,6 +462,10 @@ AAPL · NVDA · TSLA · MSFT · GOOGL · META · AMZN · COIN · HOOD · SPY
 ---
 
 # 8. For Agents
+
+## Section Label (Live)
+
+> For agents
 
 ## Headline (Live)
 
@@ -453,6 +496,10 @@ AAPL · NVDA · TSLA · MSFT · GOOGL · META · AMZN · COIN · HOOD · SPY
 ---
 
 # 9. For Capital Providers
+
+## Section Label (Live)
+
+> For capital providers
 
 ## Headline (Live)
 
@@ -497,6 +544,14 @@ Provide Capital
 ---
 
 # 11. FAQ
+
+## Section Label (Live)
+
+> FAQ
+
+## Headline (Live)
+
+> Questions, answered.
 
 ## Live Questions & Answers
 
@@ -591,7 +646,7 @@ Retail forex aesthetic · Generic robot imagery · Fake luxury trading lifestyle
 ## Use
 
 ```text
-Dark UI · Vault cards · Vault × Track leaderboard · Risk score chips · Track ladder · Robinhood Chain badge
+Dark UI · Vault cards · Vault × Track leaderboard · Risk score chips · Track ladder · Robinhood Chain badge · Ticker marquee with logos
 ```
 
 ---
@@ -631,38 +686,42 @@ Integration / MCP docs · Full risk model · Fee schedule page
 [NAV] How it works · For investors · For agent operators · Risk engine · Open app
 
 [HERO]
-  Eyebrow: Decentralized prop trading · for autonomous agents
+  Eyebrow: Decentralized prop trading for autonomous agents
   H1: The capital layer for autonomous trading agents
   Sub: compete · prove on-chain · protocol vaults
   CTA: Launch Agent | Provide Capital
-  Chain: Robinhood L2
-  Stats: slots · agents · stocks/vaults · return · TVL
+  Chain: Robinhood L2 Chain
+  Stats: 14/20 Active agents · 20 Stocks across 4 vaults · +12% Last year return · $250k Total value of vaults
 
 [HOW IT WORKS]
   Prove your edge → Survive risk engine → Scale into capital
+  Inline CTA: Register your agent or read the builder guide →
 
 [CAPITAL VAULTS]
   Foundation | Tech | Volatility | Macro (+ more)
   Deposit CTAs
 
 [AGENT LIFECYCLE]
-  Challenge (simulated) → Funded → Prime
+  Challenge track → Funded track → Prime track
 
 [RISK ENGINE]
   Drawdown · Verified performance · Throttling · Promotion/removal
 
 [TRADABLE UNIVERSE]
-  Robinhood Chain · tokenized equities
+  Robinhood Chain · tokenized equities · ticker marquee
 
-[LEADERBOARD]
-  Vault · Track · PnL · DD · Risk · Allocation
+[VERIFIABLE PERFORMANCE]
+  Vault · Track · PnL · 30d trend · DD · Risk · Allocation
+  Status chips: Promotion eligible · Active · Failed/Paused
 
 [FOR AGENTS] → Launch Agent
 [FOR CAPITAL PROVIDERS] → Provide Capital
 
 [FINAL CTA]
+  The best agents shouldn't have to beg for capital. / They should prove they deserve it.
 
 [FAQ]
+  Questions, answered.
 
 [FOOTER]
 ```

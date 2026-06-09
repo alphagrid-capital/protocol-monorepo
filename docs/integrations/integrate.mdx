@@ -1,100 +1,272 @@
 ---
 title: 'Integrate'
-description: 'Connect an autonomous agent via API, MCP, or wallet'
+description: 'Connect an autonomous agent via API or MCP'
 ---
+
+For **agent builders**: you connect an **agent signer** (wallet) to AlphaGrid over **HTTP API** or **MCP**. Both transports expose the same operations. The signer signs registration and trade intents off-chain in either case.
 
 ## Choose your integration path
 
+### Agent signer (required)
+
+Every integration needs a wallet that supports EIP-712 signing and USDC payments (x402 registration fee). Use your own key management, a third-party agent wallet, or any compatible MCP signer. Browse options at [agentwallet.md](https://agentwallet.md/).
+
+For local testing only, AlphaGrid ships a [local wallet MCP](/integrations/integrate#local-wallet-mcp-for-testing) (not for production). Details: [Register an agent → Agent signer](/agents/register#agent-signer).
+
 ### HTTP API
+
+Best for custom agents, backends, and Custom GPT Actions. REST endpoints return JSON; OpenAPI drives auto-generated reference pages under **Build an agent → HTTP API**.
+
+Production base URL: `https://alphagrid-api.artiffine-delivery.workers.dev`
 
 ### MCP server
 
-### Local wallet MCP
+Best for Cursor, Claude Desktop, and other MCP-native clients. Streamable HTTP at `POST /mcp` on the same host. Tools mirror HTTP routes one-to-one. You still sign with your agent signer; MCP does not replace the wallet.
 
 ## Typical agent stack
+
+```text
+┌─────────────────────┐     ┌──────────────────────┐
+│  Agent logic        │────▶│  AlphaGrid API / MCP   │
+│  (your code)        │     │  quotes, register,     │
+└─────────┬───────────┘     │  submit intents        │
+          │                 └──────────────────────┘
+          │ sign EIP-712
+          ▼
+┌─────────────────────┐
+│  Agent signer       │
+│  (your wallet)      │
+└─────────────────────┘
+```
+
+1. List vaults and tokens via API or MCP.
+2. Register agent (quote → sign → x402 pay → submit).
+3. Quote trade intent → sign with agent signer → submit.
+4. Poll positions via `GET /agents/{agentId}/positions`.
 
 ## Discovery endpoints
 
 ### API root
 
+`GET /` returns a JSON discovery document generated from OpenAPI. Use it to enumerate available routes programmatically.
+
 ### llms.txt
+
+`GET /llms.txt` returns an LLM-oriented index ([llms.txt spec](https://llmstxt.org/)) derived from the same OpenAPI spec. Paste this URL into chat tools that support URL fetching.
 
 ### OpenAPI
 
+`GET /docs/swagger.json`: OpenAPI 3.1 for Custom GPT Actions and code generation. Human Swagger UI lives at `GET /docs` (HTML, not suitable for paste-into-chat workflows).
+
 ## AlphaGrid API
+
+Read endpoints (`/vaults`, `/tokens`, `/prices`, `/agents/{id}`) work when RPC and contract addresses are configured for the deployment chain.
+
+Write paths need secrets on the Worker:
+
+| Operation     | Required secrets / vars                                                                      |
+| ------------- | -------------------------------------------------------------------------------------------- |
+| Registration  | `RELAYER_PRIVATE_KEY`, `RPC_URL`, `CHAIN_ID`, contract addresses, x402 vars                  |
+| Trade intents | `EXECUTOR_PRIVATE_KEY`, `TRADE_ROUTER_ADDRESS` (or in `contracts.ts`), `RPC_URL`, `CHAIN_ID` |
+
+See [API & MCP](/reference/api-mcp) for error codes. Full endpoint list: **Build an agent → HTTP API** (auto-generated).
 
 ## MCP server
 
 ### Streamable HTTP transport
 
+Connect to `POST https://alphagrid-api.artiffine-delivery.workers.dev/mcp`.
+
+Clients must send:
+
+```http
+Accept: application/json, text/event-stream
+```
+
+The server uses JSON responses (`enableJsonResponse`). `GET /mcp` returns a short-lived SSE ack; not a hanging stream. Opening `/mcp` in a browser will fail; use an MCP client or [MCP Inspector](https://github.com/modelcontextprotocol/inspector).
+
 ### Tool parity with HTTP
 
-## Local wallet MCP (AgentKit)
+Every live MCP tool maps to an HTTP route. Example: `alphagrid_list_vaults` → `GET /vaults`. Stub tools return `NOT_IMPLEMENTED` for trade history, risk state, and intent status.
 
-### viem vs CDP provider
+## Local wallet MCP (for testing)
 
-### Signing and x402
+Optional stdio MCP in `agents/wallet-mcp/` for signing EIP-712 payloads and paying x402 registration fees during local development. Add it alongside the AlphaGrid protocol MCP in `.cursor/mcp.json`. Not for production; use your own signer or a third-party agent wallet instead. Setup: [Register an agent → Agent signer](/agents/register#agent-signer).
 
 ## EIP-712 signing
 
+Two domains matter:
+
+| Purpose      | Domain name               | Spec                                                             |
+| ------------ | ------------------------- | ---------------------------------------------------------------- |
+| Registration | `AlphaGrid AgentRegistry` | [Register an agent](/agents/register#self-registration)          |
+| Trading      | `AlphaGrid TradeRouter`   | [Contracts reference](/reference/contracts#eip-712-openposition) |
+
+Always fetch a fresh quote: `nonce` and `deadline` must match on-chain state at execution time.
+
 ## ERC-8004 identity (optional)
+
+Link after registration:
+
+```http
+POST /agents/{agentId}/erc8004/link
+```
+
+Or include `linkERC8004` and `erc8004AgentId` in `SelfRegister`. Lookup: `GET /agents/by-erc8004/{erc8004AgentId}`.
 
 ## Register via API
 
 ### Prerequisites
 
+- Signer wallet with USDC for registration fee (when non-zero)
+- Chosen vault slug (`foundation`, `tech`, `volatility`, `macro`)
+- Agent name and metadata URI
+
 ### Get registration quote
+
+```bash
+curl "https://alphagrid-api.artiffine-delivery.workers.dev/agents/register/quote?vault=tech&name=my-agent&signer=0xYourSigner&metadataURI=ipfs://..."
+```
 
 ### Pay registration fee (x402)
 
+When the quote includes x402 payment details, pay USDC to the treasury before or as part of `POST /agents/register` from your agent signer.
+
 ### Submit registration
+
+```bash
+curl -X POST "https://alphagrid-api.artiffine-delivery.workers.dev/agents/register" \
+  -H "Content-Type: application/json" \
+  -d '{"vault":"tech","name":"my-agent","signer":"0x...","signature":"0x...","deadline":...,"nonce":0}'
+```
+
+Include x402 payment headers when required by the x402 middleware.
 
 ### Verify agent record
 
+```bash
+curl "https://alphagrid-api.artiffine-delivery.workers.dev/agents/1"
+```
+
 ### Link ERC-8004 (optional)
+
+```bash
+curl -X POST "https://alphagrid-api.artiffine-delivery.workers.dev/agents/1/erc8004/link" \
+  -H "Content-Type: application/json" \
+  -d '{"erc8004AgentId":1,"signature":"0x..."}'
+```
 
 ## Open a position via API
 
 ### Prerequisites
 
+- Registered agent with known `agentId`
+- Signer key matching `AgentRegistry.signerOf(agentId)`
+- Executor configured on the API (otherwise 503)
+
 ### List vault tokens and prices
+
+```bash
+curl "https://alphagrid-api.artiffine-delivery.workers.dev/vaults/tech/tokens"
+curl "https://alphagrid-api.artiffine-delivery.workers.dev/prices"
+```
 
 ### Get trade intent quote
 
+```bash
+curl "https://alphagrid-api.artiffine-delivery.workers.dev/agents/1/trade-intents/quote?symbol=NVDA&usdcAmount=100"
+```
+
 ### Sign OpenPosition (EIP-712)
+
+Hash exit rules into `exitsHash`, sign typed data with the agent signer. See [Contracts reference](/reference/contracts#signing-flow).
 
 ### Submit trade intent
 
+```bash
+curl -X POST "https://alphagrid-api.artiffine-delivery.workers.dev/agents/1/trade-intents" \
+  -H "Content-Type: application/json" \
+  -d '{"symbol":"NVDA","usdcAmount":"100","minTokenOut":"0","maxSlippageBps":100,"exits":[...],"deadline":...,"nonce":0,"signature":"0x..."}'
+```
+
 ### Confirm position on-chain
+
+```bash
+curl "https://alphagrid-api.artiffine-delivery.workers.dev/agents/1/positions"
+```
 
 ## Connect Cursor / Claude
 
 ### Deployed MCP endpoint
 
+```json
+{
+  "mcpServers": {
+    "alphagrid": {
+      "url": "https://alphagrid-api.artiffine-delivery.workers.dev/mcp"
+    }
+  }
+}
+```
+
 ### Local development
+
+```json
+{
+  "mcpServers": {
+    "alphagrid": {
+      "url": "http://localhost:8787/mcp"
+    }
+  }
+}
+```
+
+Run `yarn dev` in `api/` first.
 
 ### Configure mcp.json
 
+Add the server block to `.cursor/mcp.json` (project) or user MCP settings. Optionally add the [local wallet MCP](/integrations/integrate#local-wallet-mcp-for-testing) for signing during development.
+
 ### Required headers
+
+MCP clients should send `Accept: application/json, text/event-stream`. Most MCP SDKs set this automatically.
 
 ### Available tools
 
+Live tools: vault/token/price reads, agent CRUD, registration quote/register, trade intent quote/submit (open, add, reduce, exit-ladder), positions.
+
+Not implemented: `alphagrid_get_trade_history`, `alphagrid_get_risk_state`, `alphagrid_get_intent_status`.
+
 ### Session handling
+
+Sessions are in-memory per Worker isolate. For long-lived SSE or multi-instance affinity, Durable Objects would be required; not supported today.
 
 ## Connect ChatGPT
 
 ### What ChatGPT can and cannot do
 
+ChatGPT browsing performs simple **GET** on public URLs. It cannot call `POST /mcp`, run your local dev server, or parse Swagger UI HTML.
+
 ### Public GET endpoints
 
 #### Vault catalog
 
+`GET /vaults` or `GET /vaults?format=md` for markdown-friendly output.
+
 #### Token and price data
+
+`GET /tokens`, `GET /vaults/{id}/tokens`, `GET /prices`.
 
 ### Custom GPT Actions
 
 #### Import OpenAPI schema
 
+Import `https://alphagrid-api.artiffine-delivery.workers.dev/docs/swagger.json` when creating Actions.
+
 #### Supported operations
 
+All documented GET routes and POST routes that do not require local signing can be wired as Actions. Registration and trade submission still need a signer: use Actions for quotes and reads; handle signing in your backend or a separate tool.
+
 ### llms.txt discovery
+
+Point Custom GPT instructions at `GET /llms.txt` for endpoint discovery without importing the full OpenAPI file.

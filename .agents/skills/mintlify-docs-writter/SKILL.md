@@ -3,14 +3,14 @@ name: mintlify-docs-writter
 description: >-
   Write and maintain documentation collaboratively or autonomously. Use when
   drafting, editing, or reviewing docs pages, especially Mintlify MDX content.
-  Docs follow the codebase as source of truth — not the reverse. Covers voice,
+  Docs follow the codebase as source of truth; not the reverse. Covers voice,
   verification guardrails, collaboration patterns, and PR-based workflows.
   Pair with mintlify-docs for Mintlify platform mechanics.
 ---
 
 # Write and maintain documentation
 
-This skill guides documentation work—from collaborative drafting with a human to autonomous writing with PR-based review.
+This skill guides documentation work from collaborative drafting with a human to autonomous writing with PR-based review.
 
 ## Project context
 
@@ -22,7 +22,7 @@ Before writing in a specific repo:
 
 ## Code is the source of truth
 
-Documentation describes what the system **does**, not what we wish it did. **Never change code to match docs.** When docs and code disagree, update docs or escalate — treat implementation and generated artifacts as authoritative.
+Documentation describes what the system **does**, not what we wish it did. **Never change code to match docs.** When docs and code disagree, update docs or escalate: treat implementation and generated artifacts as authoritative.
 
 ### Discover sources of truth
 
@@ -40,15 +40,15 @@ Planning docs and specs inform *why*; **code, tests, and generated specs** defin
 
 ### Generated vs hand-written
 
-- **Generated from code (do not duplicate in MDX):** OpenAPI endpoint pages, protobuf/OpenAPI exports, type-generated reference — link to them instead of copying tables.
-- **Hand-written MDX:** concepts, workflows, tutorials, glossary, FAQ — but every factual claim must trace to code, tests, or observable behavior.
+- **Generated from code (do not duplicate in MDX):** OpenAPI endpoint pages, protobuf/OpenAPI exports, type-generated reference: link to them instead of copying tables.
+- **Hand-written MDX:** concepts, workflows, tutorials, glossary, FAQ: but every factual claim must trace to code, tests, or observable behavior.
 
 ### When writing or reviewing
 
 1. Read the implementation before drafting prose.
 2. Prefer links to auto-generated reference over copying endpoint or schema tables.
-3. When code changes, update docs — don't leave stale reference material.
-4. When docs describe behavior the code lacks, flag it (TODO or escalation) — don't invent features.
+3. When code changes, update docs: don't leave stale reference material.
+4. When docs describe behavior the code lacks, flag it (TODO or escalation): don't invent features.
 
 ## Operating modes
 
@@ -77,7 +77,7 @@ In autonomous mode:
 - Write complete documentation and open a PR
 - Add TODO comments for anything you can't verify
 - Note uncertainties in the PR description
-- Never commit directly—always open a PR for review
+- Never commit directly; always open a PR for review
 
 When in doubt about which mode to use, default to collaborative.
 
@@ -125,7 +125,7 @@ Before writing, read 2-3 similar pages to understand:
 
 ## Working with humans
 
-These practices apply in both modes—collaborative work is more interactive, but even autonomous work benefits from clear communication.
+These practices apply in both modes; collaborative work is more interactive, but even autonomous work benefits from clear communication.
 
 ### When to ask questions
 
@@ -138,7 +138,7 @@ Ask before writing when:
 
 Good questions:
 
-- "Who's the primary audience for this page—developers integrating the API or admins configuring the product?"
+- "Who's the primary audience for this page: developers integrating the API or admins configuring the product?"
 - "Should this be a separate page or a new section on the existing [page name]?"
 - "What should people be able to accomplish after they read the documentation?"
 - "The codebase shows two ways to do this. Which should we document, or both?"
@@ -193,7 +193,7 @@ Be direct but not blocking:
 - Second-person voice ("you")
 - Active voice, direct language
 - Sentence case for headings ("Getting started", not "Getting Started")
-- Lead with context when helpful—explain what before how
+- Lead with context when helpful; explain what before how
 - Prerequisites at the start of procedural content
 
 ### What to avoid
@@ -204,6 +204,7 @@ Be direct but not blocking:
 - Filler phrases ("it's important to note", "in order to")
 - Excessive conjunctions ("moreover", "furthermore", "additionally")
 - Editorializing ("obviously", "simply", "just", "easily")
+- Em dashes (`—`). Use commas, periods, colons, or parentheses instead
 - Emoji in documentation
 
 **Watch for AI-typical patterns:**
@@ -237,7 +238,7 @@ description: "Concise summary for SEO and navigation."
 Content starts here.
 ```
 
-Use sentence case for headings and titles. Do not repeat the frontmatter `title` as an `#` H1 — Mintlify renders the page title from frontmatter.
+Use sentence case for headings and titles. Do not repeat the frontmatter `title` as an `#` H1: Mintlify renders the page title from frontmatter.
 
 ### File naming
 
@@ -310,7 +311,7 @@ Stop and escalate when you encounter:
 **Content uncertainty:**
 
 - You don't understand the feature well enough to document it accurately
-- Existing docs contradict the codebase (default: fix docs, not code — unless the user explicitly wants an implementation change)
+- Existing docs contradict the codebase (default: fix docs, not code: unless the user explicitly wants an implementation change)
 - The feature seems incomplete or broken
 
 **Scope concerns:**
@@ -382,7 +383,7 @@ Before presenting work (collaborative) or creating a PR (autonomous), verify:
 
 **Collaborative mode:** Present drafts as starting points:
 
-> "Here's a draft based on what I found in the codebase. I've marked two spots where I wasn't sure about the exact behavior—can you verify those?"
+> "Here's a draft based on what I found in the codebase. I've marked two spots where I wasn't sure about the exact behavior; can you verify those?"
 
 **Autonomous mode:** Always open a pull request. Never commit directly. PR description should include:
 
@@ -411,9 +412,9 @@ Be specific:
 
 > "I'd suggest three changes:
 >
-> 1. Move the prerequisites to the top—right now users don't see them until they're mid-process
-> 2. Shorten the intro paragraph—it repeats information from the description
-> 3. Add a code example after step 3—currently it's abstract without showing the actual syntax"
+> 1. Move the prerequisites to the top; right now users don't see them until they're mid-process
+> 2. Shorten the intro paragraph; it repeats information from the description
+> 3. Add a code example after step 3; currently it's abstract without showing the actual syntax"
 
 ### Reviewing documentation
 

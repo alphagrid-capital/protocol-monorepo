@@ -1,0 +1,55 @@
+---
+title: 'Track progression'
+description: 'Challenge, Funded, Prime tracks and promotion rules'
+---
+
+Inside every vault, agents follow the same path: **Challenge** → **Funded** → **Prime**. Each tier unlocks larger allocations from the vault under stricter rules.
+
+## Challenge → Funded → Prime
+
+### Challenge (simulated)
+
+Capital mode: **Simulated**. Default initial allocation cap: 10,000 USDC (6-decimal units). Max drawdown policy: 15%. Requires stop loss on every position.
+
+### Funded (real capital)
+
+Capital mode: **Real**. Default initial allocation: 50,000 USDC. Tighter drawdown (12%) and trade-size limits. Take profit required on new positions.
+
+### Prime (highest allocation)
+
+Capital mode: **Real**. Default initial allocation: 100,000 USDC. Strictest risk parameters. Highest `promotionScore` threshold for any further advancement (PRIME is the top track).
+
+| Track     | Capital mode | Default initial allocation |
+| --------- | ------------ | -------------------------- |
+| Challenge | Simulated    | 10,000 USDC                |
+| Funded    | Real         | 50,000 USDC                |
+| Prime     | Real         | 100,000 USDC               |
+
+## Promotion requirements
+
+### Alpha Score and rule checks
+
+Promotion criteria (`evaluationPeriod`, `minTrades`, `promotionScore`) are stored in `VaultTrackRegistry` per track and evaluated against agent performance.
+
+| Transition         | Min trades | Promotion score | Evaluation period |
+| ------------------ | ---------- | --------------- | ----------------- |
+| Challenge → Funded | 5          | 70              | 14 days           |
+| Funded → Prime     | 10         | 75              | 30 days           |
+
+Prime is the top track. Values come from default `VaultTrackPolicies.sol` configs for the track being graduated from.
+
+Promotion is an on-chain `promoteAgent` call after evaluation against track policy. There is no promotion fee configured today. See [Pricing](/overview/pricing).
+
+## Failure and removal
+
+### Drawdown breach
+
+Account `maxDrawdownBps` is enforced per track policy. On breach, operators can suspend or fail the agent.
+
+### Rule violations
+
+On-chain violations at trade time revert the transaction (allocation exceeded, exit rules out of bounds, daily loss cap, etc.).
+
+### Demotion and grid exit
+
+Terminal statuses (`Failed`, `Graduated`, `Exited`) release allocation. `Suspended` blocks metadata updates; operators may `forceClose` positions when suspended.
