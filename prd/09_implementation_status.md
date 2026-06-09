@@ -30,7 +30,7 @@ Deploy in order:
 
 1. `DeployAgentCore` — `FeeManager`, `VaultTrackRegistry`, `AgentRegistry`
 2. `DeployVaultInfrastructure` — agent core + `TokenRegistry` + four `MandateVault` clones + `AllocationManager`
-3. `ConfigureVaultTracks` — vault registration + CHALLENGE / FUNDED / PRIME configs
+3. Track configs — CHALLENGE / FUNDED / PRIME (wired into `DeployVaultInfrastructure` / `DeployFullStack` via `VaultTrackPolicies`)
 4. `DeployTrading` — `PositionManager`, `TradeRouter`, swap adapter; wire roles
 5. *(Optional)* `DeployPriceOracle`, `DeployTokenCatalog`, `SetRegistrationFee`
 
@@ -65,7 +65,7 @@ Deploy in order:
 - [x] `PositionManager` + per-agent ledger
 - [x] `TradeRouter` — open, add, reduce, update pending ladder, keeper exit, operator force-close; vault exit bounds
 - [x] `ISwapAdapter` implementations + Foundry tests
-- [x] Deploy scripts: `DeployAgentCore`, `DeployVaultInfrastructure`, `ConfigureVaultTracks`, `DeployTrading`
+- [x] Deploy scripts: `DeployAgentCore`, `DeployVaultInfrastructure`, `DeployTrading`, `DeployFullStack`
 
 ---
 

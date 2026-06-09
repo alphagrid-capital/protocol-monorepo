@@ -241,7 +241,7 @@ struct VaultTrackConfig {
 }
 ```
 
-`TradeRouter._validateExitRulesForTrack` enforces exit-bound fields on `openPosition` and `updateExitLadder`. Defaults in `ConfigureVaultTracks.s.sol`: Challenge SL ≤15%, TP uncapped, `requireTakeProfit` false; Funded SL ≤12%, TP +2%–+80%, `requireTakeProfit` true; Prime SL ≤10%, TP +5%–+50%, `requireTakeProfit` true; all tracks require at least one stop-loss on open/update.
+`TradeRouter._validateExitRulesForTrack` enforces exit-bound fields on `openPosition` and `updateExitLadder`. Defaults in `script/config/VaultTrackPolicies.sol` (applied by `DeployVaultInfrastructure` / `DeployFullStack`): Challenge SL ≤15%, TP uncapped, `requireTakeProfit` false; Funded SL ≤12%, TP +2%–+80%, `requireTakeProfit` true; Prime SL ≤10%, TP +5%–+50%, `requireTakeProfit` true; all tracks require at least one stop-loss on open/update.
 
 Promotion fees are configured in `FeeManager` per `(vault, fromTrack, toTrack)`, not in `VaultTrackConfig`. Tradable assets are enforced via vault + `TokenRegistry` allowlists, not per-track asset lists.
 

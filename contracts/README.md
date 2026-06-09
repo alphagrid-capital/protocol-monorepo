@@ -58,59 +58,62 @@ contracts/
 │   ├── integration/                # Agent, vault, and trading flow integration tests
 │   └── helpers/                    # BaseTest, TradingTestBase
 └── script/
+    ├── helpers/                    # DeploymentEnv, AgentCoreDeploy, VaultDeploy, DeploymentArtifacts
+    ├── config/                     # VaultTrackPolicies, Fees, TokenCatalog
+    ├── ops/                        # SetRegistrationFee, DepositToTechVault
     ├── DeployAgentCore.s.sol
     ├── DeployVaultInfrastructure.s.sol
+    ├── DeployFullStack.s.sol       # dev-complete greenfield orchestrator
     ├── DeployTrading.s.sol
-    ├── ConfigureVaultTracks.s.sol
     ├── DeployPriceOracle.s.sol
     ├── DeployTokenCatalog.s.sol
-    ├── SetRegistrationFee.s.sol
     └── DeployMockERC20.s.sol
 ```
 
 ## Deployment
 
-Deploy scripts share a **deploy → wire → setRoles** pipeline inside `run()`:
+Shared logic lives in `script/helpers/` and `script/config/`. Entry scripts are thin wrappers with a **deploy → wire → setRoles** (or configure) pipeline.
 
-| Step | Purpose |
-|------|---------|
-| `_deploy` | `new` contracts only |
-| `_wire` | Cross-contract setters (registry links, adapter/router, fees) |
-| `_setRoles` | `grantRole` on deployed or existing contracts |
+`DeployMockERC20` is deploy-only. `DeployAgentCore` and `DeployVaultInfrastructure` grant `REGISTRAR_ROLE` to `BACKEND_RELAYER` via `AgentCoreDeploy`.
 
-`DeployMockERC20` is deploy-only. `DeployAgentCore` and `DeployVaultInfrastructure` grant `REGISTRAR_ROLE` to `BACKEND_RELAYER` in `setRoles`.
+Copy `.env.example` to `.env` and fill values.
 
-Copy `.env.example` to `.env` and fill values. Deploy in order:
+### Dev-complete greenfield (testnet/anvil)
 
 ```bash
-# Agent onboarding only (incremental)
+forge script script/DeployFullStack.s.sol:DeployFullStack --rpc-url $RPC_URL --broadcast
+```
+
+Deploys core + vaults + track config + trading + oracle + mock token catalog in one broadcast. Writes `deployments/<chainId>.json`. `USDC` env is optional (deploys mUSDC when unset). For production, use staged scripts below.
+
+### Staged deploy (incremental / mainnet)
+
+```bash
+# Agent onboarding only
 forge script script/DeployAgentCore.s.sol:DeployAgentCore --rpc-url $RPC_URL --broadcast
 
-# Greenfield: agent core + four vaults + allocation (full base stack)
+# Greenfield: agent core + four vaults + allocation + track configs
 forge script script/DeployVaultInfrastructure.s.sol:DeployVaultInfrastructure --rpc-url $RPC_URL --broadcast
 
-# Register vaults + CHALLENGE/FUNDED/PRIME track configs (after vault deploy)
-forge script script/ConfigureVaultTracks.s.sol:ConfigureVaultTracks --rpc-url $RPC_URL --broadcast
-
 # Set registration fee to 0.1 USDC on FeeManager
-forge script script/SetRegistrationFee.s.sol:SetRegistrationFee --rpc-url $RPC_URL --broadcast
+forge script script/ops/SetRegistrationFee.s.sol:SetRegistrationFee --rpc-url $RPC_URL --broadcast
 
-# Trading: position manager, trade router, swap adapter (on existing vault stack)
+# Trading: position manager, trade router, swap adapter
 forge script script/DeployTrading.s.sol:DeployTrading --rpc-url $RPC_URL --broadcast
 
-# Token catalog: unified MockPriceOracle + mock stocks + vault allowlists
+# Token catalog: MockPriceOracle + mock stocks + vault allowlists
 forge script script/DeployPriceOracle.s.sol:DeployPriceOracle --rpc-url $RPC_URL --broadcast
 forge script script/DeployTokenCatalog.s.sol:DeployTokenCatalog --rpc-url $RPC_URL --broadcast
 ```
 
 See [`deployments/README.md`](deployments/README.md) and [`../config/token-catalog.json`](../config/token-catalog.json).
 
-`DeployTrading` env vars: `ADMIN`, `EXECUTOR`, `OPERATOR` (optional), `AGENT_REGISTRY`, `ALLOCATION_MANAGER`, `TRACK_CONFIG`, `VAULT`, `DEPLOY_MOCK_SWAP_ADAPTER`.
+`DeployTrading` env vars: `ADMIN`, `EXECUTOR`, `OPERATOR` (optional), `AGENT_REGISTRY`, `ALLOCATION_MANAGER`, `VAULT_TRACK_REGISTRY`, `FOUNDATION_VAULT`, `TECH_VAULT`, `VOLATILITY_VAULT`, `MACRO_VAULT`, `DEPLOY_MOCK_SWAP_ADAPTER`.
 
 - `DEPLOY_MOCK_SWAP_ADAPTER=true` — test/dev adapter (mints mock tokens)
 - `DEPLOY_MOCK_SWAP_ADAPTER=false` — `InventorySwapAdapter` (pre-funded ERC-20 inventory)
 
-`DeployTrading` `setRoles` grants `EXECUTOR` / `OPERATOR` on `TradeRouter`, and grants `TRADE_ROUTER_ROLE` **to the TradeRouter contract** on each `VAULT` (MandateVault) and on `AllocationManager`. Env `VAULT` is the vault address; the role member is always `TradeRouter`. Repeat with each vault address for a full four-vault setup.
+`DeployTrading` grants `EXECUTOR` / `OPERATOR` on `TradeRouter`, and grants `TRADE_ROUTER_ROLE` on each mandate vault and on `AllocationManager`.
 
 ## Vault deployment
 

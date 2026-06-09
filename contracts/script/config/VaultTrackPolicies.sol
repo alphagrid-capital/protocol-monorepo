@@ -1,40 +1,23 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import { Script, console2 } from "forge-std/Script.sol";
-import { VaultTrackRegistry } from "../src/core/VaultTrackRegistry.sol";
-import { IVaultTrackRegistry } from "../src/interfaces/IVaultTrackRegistry.sol";
+import { VaultTrackRegistry } from "../../src/core/VaultTrackRegistry.sol";
+import { IVaultTrackRegistry } from "../../src/interfaces/IVaultTrackRegistry.sol";
 
-/// @notice Registers all mandate vaults in VaultTrackRegistry and applies the same track policy on each.
-/// @dev Pipeline: configure (single step). Broadcaster needs CONFIG_ADMIN_ROLE. Edit caps/bps below before mainnet.
-contract ConfigureVaultTracks is Script {
-    uint256 private constant TRACK_CHALLENGE = 0;
-    uint256 private constant TRACK_FUNDED = 1;
-    uint256 private constant TRACK_PRIME = 2;
+/// @notice Vault track policy configs (CHALLENGE / FUNDED / PRIME).
+library VaultTrackPolicies {
+    uint256 internal constant TRACK_CHALLENGE = 0;
+    uint256 internal constant TRACK_FUNDED = 1;
+    uint256 internal constant TRACK_PRIME = 2;
 
-    function run() external {
-        VaultTrackRegistry registry = VaultTrackRegistry(vm.envAddress("VAULT_TRACK_REGISTRY"));
-        address[] memory vaults = _vaultAddresses();
-
-        vm.startBroadcast();
-        for (uint256 i = 0; i < vaults.length; i++) {
-            _configureVault(registry, vaults[i]);
-        }
-        vm.stopBroadcast();
-
-        console2.log("VaultTrackRegistry:", address(registry));
-        console2.log("Vaults configured:", vaults.length);
-    }
-
-    function _configureVault(VaultTrackRegistry registry, address vault) private {
-        registry.setVaultTrackConfig(vault, TRACK_CHALLENGE, _challengeConfig(vault));
-        registry.setVaultTrackConfig(vault, TRACK_FUNDED, _fundedConfig(vault));
-        registry.setVaultTrackConfig(vault, TRACK_PRIME, _primeConfig(vault));
-        console2.log("Configured tracks 0-2 for vault:", vault);
+    function configureVault(VaultTrackRegistry registry, address vault) internal {
+        registry.setVaultTrackConfig(vault, TRACK_CHALLENGE, challenge(vault));
+        registry.setVaultTrackConfig(vault, TRACK_FUNDED, funded(vault));
+        registry.setVaultTrackConfig(vault, TRACK_PRIME, prime(vault));
     }
 
     /// @dev CHALLENGE — agent onboarding + simulated capital (USDC 6 decimals).
-    function _challengeConfig(address vault) private pure returns (IVaultTrackRegistry.VaultTrackConfig memory) {
+    function challenge(address vault) internal pure returns (IVaultTrackRegistry.VaultTrackConfig memory) {
         return IVaultTrackRegistry.VaultTrackConfig({
             vault: vault,
             trackId: TRACK_CHALLENGE,
@@ -57,7 +40,7 @@ contract ConfigureVaultTracks is Script {
     }
 
     /// @dev FUNDED — first real-capital promotion target.
-    function _fundedConfig(address vault) private pure returns (IVaultTrackRegistry.VaultTrackConfig memory) {
+    function funded(address vault) internal pure returns (IVaultTrackRegistry.VaultTrackConfig memory) {
         return IVaultTrackRegistry.VaultTrackConfig({
             vault: vault,
             trackId: TRACK_FUNDED,
@@ -80,7 +63,7 @@ contract ConfigureVaultTracks is Script {
     }
 
     /// @dev PRIME — top track; tighten risk vs FUNDED.
-    function _primeConfig(address vault) private pure returns (IVaultTrackRegistry.VaultTrackConfig memory) {
+    function prime(address vault) internal pure returns (IVaultTrackRegistry.VaultTrackConfig memory) {
         return IVaultTrackRegistry.VaultTrackConfig({
             vault: vault,
             trackId: TRACK_PRIME,
@@ -100,13 +83,5 @@ contract ConfigureVaultTracks is Script {
             requireStopLoss: true,
             requireTakeProfit: true
         });
-    }
-
-    function _vaultAddresses() private view returns (address[] memory vaults) {
-        vaults = new address[](4);
-        vaults[0] = vm.envAddress("FOUNDATION_VAULT");
-        vaults[1] = vm.envAddress("TECH_VAULT");
-        vaults[2] = vm.envAddress("VOLATILITY_VAULT");
-        vaults[3] = vm.envAddress("MACRO_VAULT");
     }
 }
