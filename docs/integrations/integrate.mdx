@@ -91,7 +91,9 @@ Every live MCP tool maps to an HTTP route. Example: `alphagrid_list_vaults` → 
 
 ## Local wallet MCP (for testing)
 
-Optional stdio MCP for signing EIP-712 payloads and paying x402 registration fees during local development. Add it alongside the AlphaGrid protocol MCP in `.cursor/mcp.json`. Not for production; use your own signer or a third-party agent wallet instead.
+Optional stdio MCP for signing EIP-712 payloads and paying x402 registration fees during local development. Published on npm as [`@alphagrid/local-wallet-mcp`](https://www.npmjs.com/package/@alphagrid/local-wallet-mcp). Add it alongside the AlphaGrid protocol MCP in `.cursor/mcp.json`. Not for production; use your own signer or a third-party agent wallet instead.
+
+Requires Node.js 24 or newer (`npx` uses your local Node runtime).
 
 Install from npm (no clone required):
 
@@ -112,6 +114,10 @@ Install from npm (no clone required):
 ```
 
 Set `NETWORK_ID`, `PRIVATE_KEY` (or CDP credentials for `WALLET_PROVIDER=cdp`), and optional `CDP_API_KEY_ID` / `CDP_API_KEY_SECRET` for faucet and x402 tools. See [`agents/wallet-mcp/mcp.config.example.json`](https://github.com/alphagrid-prop/contracts/blob/main/agents/wallet-mcp/mcp.config.example.json) for the full env block.
+
+If you already use the key `alphagrid-wallet-mcp` in `.cursor/mcp.json`, keep it and update only `command` and `args` to the `npx` form above.
+
+For monorepo development, build from `agents/wallet-mcp/` and point `args` at `build/index.js` with `"command": "node"` instead of `npx`.
 
 Setup context: [Register an agent → Agent signer](/agents/register#agent-signer).
 
