@@ -3,13 +3,52 @@ name: mintlify-docs-writter
 description: >-
   Write and maintain documentation collaboratively or autonomously. Use when
   drafting, editing, or reviewing docs pages, especially Mintlify MDX content.
-  Covers voice and tone, verification guardrails, human collaboration patterns,
-  and PR-based autonomous workflows.
+  Docs follow the codebase as source of truth — not the reverse. Covers voice,
+  verification guardrails, collaboration patterns, and PR-based workflows.
+  Pair with mintlify-docs for Mintlify platform mechanics.
 ---
 
 # Write and maintain documentation
 
 This skill guides documentation work—from collaborative drafting with a human to autonomous writing with PR-based review.
+
+## Project context
+
+Before writing in a specific repo:
+
+1. Read `docs.json` (or equivalent) for site structure and navigation.
+2. Read any **project overlay** shipped with this skill (e.g. `alphagrid.md` in this directory) for repo-specific paths, generated artifacts, and conventions.
+3. Use the **mintlify-docs** skill for Mintlify CLI, components, and `docs.json` schema.
+
+## Code is the source of truth
+
+Documentation describes what the system **does**, not what we wish it did. **Never change code to match docs.** When docs and code disagree, update docs or escalate — treat implementation and generated artifacts as authoritative.
+
+### Discover sources of truth
+
+Map each doc topic to where behavior is defined in **this** repo:
+
+| Doc type | Usually defined in | Usually documented as |
+|----------|-------------------|------------------------|
+| HTTP/REST API | Route handlers, schemas, OpenAPI/Swagger output | Auto-generated reference pages + narrative guides |
+| RPC / MCP / CLI | Server tool definitions, command implementations | Setup guides; don't duplicate machine-readable catalogs |
+| Libraries / SDKs | Source + package exports | API reference from types or generated docs |
+| Config / env | Schema files, `.env.example`, defaults in code | Reference tables verified against code |
+| Product specs | May live in PRDs or issues | Prose only after verifying against implementation |
+
+Planning docs and specs inform *why*; **code, tests, and generated specs** define *what happens*.
+
+### Generated vs hand-written
+
+- **Generated from code (do not duplicate in MDX):** OpenAPI endpoint pages, protobuf/OpenAPI exports, type-generated reference — link to them instead of copying tables.
+- **Hand-written MDX:** concepts, workflows, tutorials, glossary, FAQ — but every factual claim must trace to code, tests, or observable behavior.
+
+### When writing or reviewing
+
+1. Read the implementation before drafting prose.
+2. Prefer links to auto-generated reference over copying endpoint or schema tables.
+3. When code changes, update docs — don't leave stale reference material.
+4. When docs describe behavior the code lacks, flag it (TODO or escalation) — don't invent features.
 
 ## Operating modes
 
@@ -44,12 +83,13 @@ When in doubt about which mode to use, default to collaborative.
 
 ## Core principles
 
-1. **Only document what you can verify.** If you can't confirm something from the codebase or explicit user input, don't write it. Leave a TODO instead.
-2. **Write just enough.** Help users succeed and get back to their work. More docs isn't better docs.
-3. **Match existing patterns.** Read surrounding content before writing. Consistency beats personal preference.
-4. **Flag uncertainty.** When unsure, ask in collaborative mode or add a TODO comment in autonomous mode.
-5. **Ask before assuming.** If something is unclear, ask. Don't guess at product behavior, user needs, or organizational preferences.
-6. **Explain your reasoning.** When you suggest changes, say why. This helps people learn and make better decisions.
+1. **Code before docs.** Read the implementation (and generated specs) before writing. Docs follow the codebase; the codebase does not follow docs.
+2. **Only document what you can verify.** If you can't confirm something from the codebase, tests, or explicit user input, don't write it. Leave a TODO instead.
+3. **Write just enough.** Help users succeed and get back to their work. More docs isn't better docs.
+4. **Don't duplicate generated reference.** Link to OpenAPI/auto-generated pages instead of copying endpoint tables into narrative MDX.
+5. **Match existing patterns.** Read surrounding content before writing. Consistency beats personal preference.
+6. **Flag uncertainty.** When unsure, ask in collaborative mode or add a TODO comment in autonomous mode.
+7. **Explain your reasoning.** When you suggest changes, say why. This helps people learn and make better decisions.
 
 ## Before you write
 
@@ -142,9 +182,9 @@ Be direct but not blocking:
 
 > "The existing docs use sentence case for headings, but you've written this in title case. Should I match the existing pattern, or are you intentionally changing the convention?"
 
-**When there's conflicting information:**
+**When there's conflicting information (docs vs code):**
 
-> "The README says the timeout is 30 seconds, but the code defaults to 60. Which is correct?"
+> "The docs say the timeout is 30 seconds, but the code defaults to 60. I'll update the docs to match the code unless you want to change the implementation."
 
 ## Writing standards
 
@@ -182,29 +222,28 @@ Be direct but not blocking:
 
 ## For Mintlify-powered docs
 
-If you're working with a Mintlify-powered documentation site, follow these conventions. For site configuration, CLI commands, and component reference, also consult the `mintlify-docs` skill.
+For site configuration, CLI commands, and component reference, use the **mintlify-docs** skill. Site config is `docs.json` (not deprecated `mint.json`).
 
 ### File format
 
-MDX files with YAML frontmatter:
+MDX with YAML frontmatter. At minimum include `title`; add `description` for SEO and navigation. `keywords` are optional:
 
 ```mdx
 ---
 title: "Clear, descriptive title"
 description: "Concise summary for SEO and navigation."
-keywords: ["relevant", "search", "terms"]
 ---
 
 Content starts here.
 ```
 
-Every page requires title, description, and keywords in frontmatter.
+Use sentence case for headings and titles. Do not repeat the frontmatter `title` as an `#` H1 — Mintlify renders the page title from frontmatter.
 
 ### File naming
 
-- Use kebab-case: `getting-started.mdx`, `api-reference.mdx`
-- Be descriptive but concise
+- Kebab-case: `getting-started.mdx`, `api-reference.mdx`
 - Match existing naming patterns in the directory
+- New pages must be added to `docs.json` navigation or they won't appear in the sidebar
 
 ### Components
 
@@ -240,16 +279,16 @@ const example = "always specify language";
 
 ### Internal links
 
-Use root-relative paths: `/content/components/accordions`, not `../components/accordions` or full URLs.
+Root-relative paths without file extensions: `/getting-started/quickstart`, not `../pages/quickstart` or full URLs for internal pages.
 
 ## Verification guardrails
 
 ### What you can document
 
-- Behavior you can verify in the codebase
-- Information explicitly provided by the user
+- Behavior you can verify in the codebase or tests
+- Behavior reflected in generated specs (OpenAPI, protobuf, etc.)
+- Information explicitly provided or confirmed by the user
 - Patterns consistent with existing documentation
-- Standard usage based on documented APIs
 
 ### What requires a TODO
 
@@ -271,7 +310,7 @@ Stop and escalate when you encounter:
 **Content uncertainty:**
 
 - You don't understand the feature well enough to document it accurately
-- Existing docs contradict what you see in the codebase
+- Existing docs contradict the codebase (default: fix docs, not code — unless the user explicitly wants an implementation change)
 - The feature seems incomplete or broken
 
 **Scope concerns:**
@@ -300,9 +339,11 @@ Read the issue or request carefully. Identify:
 
 ### 2. Research
 
-- Search existing docs for related content
-- Read the relevant source code
-- Check for patterns in similar documentation
+- Read the source code and tests for the feature being documented
+- Check generated artifacts (OpenAPI, etc.) before writing reference material
+- Read the project overlay file (if present) for repo-specific source-of-truth paths
+- Search existing docs for related content to update instead of duplicating
+- Read 2–3 similar pages for voice and structure
 
 ### 3. Plan your changes
 
@@ -326,13 +367,16 @@ In collaborative mode, share this plan with the human before writing.
 Before presenting work (collaborative) or creating a PR (autonomous), verify:
 
 - [ ] All code blocks have language tags
-- [ ] Frontmatter includes title, description, keywords (if using MDX)
-- [ ] Internal links are correct
+- [ ] Facts verified against code, tests, or generated specs
+- [ ] Frontmatter includes `title` and `description`
+- [ ] No duplicate `#` H1 matching frontmatter title
+- [ ] Generated reference not duplicated in narrative MDX
+- [ ] Internal links are correct (root-relative for Mintlify)
 - [ ] No marketing language or filler phrases
 - [ ] Content matches style of surrounding pages
-- [ ] TODOs are clearly marked for uncertain content
-- [ ] New pages are added to navigation (if applicable)
-- [ ] Noted any areas of uncertainty
+- [ ] New pages added to navigation (`docs.json` or equivalent)
+- [ ] Build checks pass if the project has them (`mint validate`, link checker, etc.)
+- [ ] TODOs clearly marked for uncertain content
 
 ### 6. Submit
 
