@@ -21,7 +21,7 @@
     "decoration": "gradient",
     "color": {
       "dark": "#000000",
-      "light": "#F0FDF9"
+      "light": "#FFFFFF"
     }
   },
   "icons": {
@@ -106,6 +106,15 @@
   "interaction": {
     "drilldown": false
   },
+  "contextual": {
+    "options": ["copy", "download-spec", "chatgpt", "claude"]
+  },
+  "api": {
+    "openapi": "https://alphagrid-api.artiffine-delivery.workers.dev/docs/swagger.json",
+    "playground": {
+      "display": "interactive"
+    }
+  },
   "navigation": {
     "groups": [
       {
@@ -126,7 +135,15 @@
       {
         "group": "Integrate",
         "icon": "plug",
-        "pages": ["integrations/integrate", "reference/api-mcp"]
+        "pages": [
+          "integrations/integrate",
+          "reference/api-mcp",
+          {
+            "group": "HTTP API",
+            "openapi": "https://alphagrid-api.artiffine-delivery.workers.dev/docs/swagger.json",
+            "expanded": false
+          }
+        ]
       },
       {
         "group": "Protocol",

@@ -22,7 +22,19 @@ Uses [`@mintlify/prettier-config`](https://www.npmjs.com/package/@mintlify/prett
 cd docs
 yarn format        # write
 yarn format:check  # CI check
+yarn validate      # Mintlify build
+yarn broken-links  # internal link check
 ```
+
+## OpenAPI
+
+Mintlify loads the live spec from:
+
+```text
+https://alphagrid-api.artiffine-delivery.workers.dev/docs/swagger.json
+```
+
+Interactive endpoint pages appear under **Integrate → HTTP API**. Visitors can download the spec from the contextual menu on API reference pages (`download-spec` in `docs.json`).
 
 ## Deploy
 

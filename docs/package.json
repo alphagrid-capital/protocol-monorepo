@@ -10,7 +10,9 @@
   "scripts": {
     "dev": "mint dev",
     "format": "prettier \"**/*.{css,js,json,md,mdx,ts,tsx}\" --write",
-    "format:check": "prettier \"**/*.{css,js,json,md,mdx,ts,tsx}\" --check"
+    "format:check": "prettier \"**/*.{css,js,json,md,mdx,ts,tsx}\" --check",
+    "validate": "mint validate",
+    "broken-links": "mint broken-links"
   },
   "devDependencies": {
     "@mintlify/prettier-config": "^1.0.6",
