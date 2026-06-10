@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/alphagrid-prop/contracts.git",
+    "url": "https://github.com/alphagrid-capital/protocol-monorepo.git",
     "directory": "agents/wallet-mcp"
   },
   "keywords": [
