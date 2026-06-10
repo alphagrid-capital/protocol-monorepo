@@ -89,13 +89,17 @@ contract FeeManagerTest is BaseTest {
     }
 
     function test_PayPromotionFee_TransfersToTreasury() public {
-        vm.startPrank(operator);
+        usdc.mint(alice, PROMOTION_FEE);
+        vm.prank(alice);
         usdc.approve(address(feeManager), PROMOTION_FEE);
+
+        vm.startPrank(operator);
         uint256 agentId = _registerAlice();
-        registry.promoteAgent(agentId, IAgentRegistry.Track.FUNDED);
+        registry.promoteAgent(agentId, IAgentRegistry.Track.FUNDED, alice, false);
         vm.stopPrank();
 
         assertEq(usdc.balanceOf(treasury), PROMOTION_FEE);
+        assertEq(usdc.balanceOf(operator), 10_000e6);
     }
 
     function test_ZeroRegistrationFeeSkipsTransfer() public {
@@ -109,13 +113,26 @@ contract FeeManagerTest is BaseTest {
         assertEq(usdc.balanceOf(treasury), 0);
     }
 
+    function test_PromoteSkipsOnChainFeeWhenAlreadyPaid() public {
+        usdc.mint(alice, PROMOTION_FEE);
+
+        vm.startPrank(operator);
+        uint256 agentId = _registerAlice();
+        registry.promoteAgent(agentId, IAgentRegistry.Track.FUNDED, address(0), true);
+        vm.stopPrank();
+
+        assertEq(usdc.balanceOf(treasury), 0);
+        assertEq(usdc.balanceOf(alice), PROMOTION_FEE);
+        assertEq(uint256(registry.trackOf(agentId)), uint256(IAgentRegistry.Track.FUNDED));
+    }
+
     function test_ZeroPromotionFeeSkipsTransfer() public {
         vm.prank(deployer);
         feeManager.setPromotionFee(vault, 0, 1, 0);
 
         vm.startPrank(operator);
         uint256 agentId = _registerAlice();
-        registry.promoteAgent(agentId, IAgentRegistry.Track.FUNDED);
+        registry.promoteAgent(agentId, IAgentRegistry.Track.FUNDED, alice, false);
         vm.stopPrank();
         assertEq(usdc.balanceOf(treasury), 0);
     }

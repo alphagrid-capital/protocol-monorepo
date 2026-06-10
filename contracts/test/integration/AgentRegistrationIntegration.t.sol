@@ -76,15 +76,33 @@ contract AgentRegistrationIntegrationTest is BaseTest {
         registry.registerAgent(alice, unconfiguredVault, "Alpha Bot", "ipfs://alpha", alice, false, 0);
     }
 
-    function test_PromotionCollectsFeeFromOperator() public {
+    function test_PromoteSkipsOnChainFeeWhenAlreadyPaid() public {
+        usdc.mint(alice, CHALLENGE_TO_FUNDED_FEE);
+
         vm.startPrank(operator);
-        usdc.approve(address(feeManager), CHALLENGE_TO_FUNDED_FEE);
         uint256 agentId = _registerAlice();
-        registry.promoteAgent(agentId, IAgentRegistry.Track.FUNDED);
+        registry.promoteAgent(agentId, IAgentRegistry.Track.FUNDED, address(0), true);
+        vm.stopPrank();
+
+        assertEq(uint256(registry.trackOf(agentId)), uint256(IAgentRegistry.Track.FUNDED));
+        assertEq(usdc.balanceOf(treasury), 0);
+        assertEq(usdc.balanceOf(alice), CHALLENGE_TO_FUNDED_FEE);
+        assertEq(usdc.balanceOf(operator), 10_000e6);
+    }
+
+    function test_PromotionCollectsFeeFromAgentOwner() public {
+        usdc.mint(alice, CHALLENGE_TO_FUNDED_FEE);
+        vm.prank(alice);
+        usdc.approve(address(feeManager), CHALLENGE_TO_FUNDED_FEE);
+
+        vm.startPrank(operator);
+        uint256 agentId = _registerAlice();
+        registry.promoteAgent(agentId, IAgentRegistry.Track.FUNDED, alice, false);
         vm.stopPrank();
 
         assertEq(uint256(registry.trackOf(agentId)), uint256(IAgentRegistry.Track.FUNDED));
         assertEq(usdc.balanceOf(treasury), CHALLENGE_TO_FUNDED_FEE);
+        assertEq(usdc.balanceOf(operator), 10_000e6);
     }
 
     function _setVaultChallengeConfig(address vault_, bool active) internal {

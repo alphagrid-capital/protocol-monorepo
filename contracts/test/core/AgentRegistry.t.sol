@@ -305,10 +305,10 @@ contract AgentRegistryTest is BaseTest {
         assertFalse(registry.isPayoutEligible(agentId));
 
         vm.startPrank(operator);
-        registry.promoteAgent(agentId, IAgentRegistry.Track.FUNDED);
+        registry.promoteAgent(agentId, IAgentRegistry.Track.FUNDED, agentOwner, false);
         assertTrue(registry.isPayoutEligible(agentId));
 
-        registry.promoteAgent(agentId, IAgentRegistry.Track.PRIME);
+        registry.promoteAgent(agentId, IAgentRegistry.Track.PRIME, agentOwner, false);
         assertTrue(registry.isPayoutEligible(agentId));
         vm.stopPrank();
     }
@@ -317,7 +317,7 @@ contract AgentRegistryTest is BaseTest {
         uint256 agentId = _registerAgent();
 
         vm.startPrank(operator);
-        registry.promoteAgent(agentId, IAgentRegistry.Track.FUNDED);
+        registry.promoteAgent(agentId, IAgentRegistry.Track.FUNDED, agentOwner, false);
         registry.setAgentStatus(agentId, IAgentRegistry.AgentStatus.Suspended);
         vm.stopPrank();
 
@@ -379,11 +379,11 @@ contract AgentRegistryTest is BaseTest {
         uint256 agentId = _registerAgent();
 
         vm.startPrank(operator);
-        registry.promoteAgent(agentId, IAgentRegistry.Track.FUNDED);
+        registry.promoteAgent(agentId, IAgentRegistry.Track.FUNDED, agentOwner, false);
         assertEq(uint256(registry.trackOf(agentId)), uint256(IAgentRegistry.Track.FUNDED));
         assertEq(feeManager.promotionPaymentCount(), 1);
 
-        registry.promoteAgent(agentId, IAgentRegistry.Track.PRIME);
+        registry.promoteAgent(agentId, IAgentRegistry.Track.PRIME, agentOwner, false);
         assertEq(uint256(registry.trackOf(agentId)), uint256(IAgentRegistry.Track.PRIME));
         assertEq(feeManager.promotionPaymentCount(), 2);
         vm.stopPrank();
@@ -401,14 +401,14 @@ contract AgentRegistryTest is BaseTest {
                 IAgentRegistry.Track.PRIME
             )
         );
-        registry.promoteAgent(agentId, IAgentRegistry.Track.PRIME);
+        registry.promoteAgent(agentId, IAgentRegistry.Track.PRIME, agentOwner, false);
     }
 
     function test_RevertWhen_PromoteDemotion() public {
         uint256 agentId = _registerAgent();
 
         vm.startPrank(operator);
-        registry.promoteAgent(agentId, IAgentRegistry.Track.FUNDED);
+        registry.promoteAgent(agentId, IAgentRegistry.Track.FUNDED, agentOwner, false);
 
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -418,7 +418,7 @@ contract AgentRegistryTest is BaseTest {
                 IAgentRegistry.Track.CHALLENGE
             )
         );
-        registry.promoteAgent(agentId, IAgentRegistry.Track.CHALLENGE);
+        registry.promoteAgent(agentId, IAgentRegistry.Track.CHALLENGE, agentOwner, false);
         vm.stopPrank();
     }
 
@@ -431,7 +431,36 @@ contract AgentRegistryTest is BaseTest {
             )
         );
         vm.prank(bob);
-        registry.promoteAgent(agentId, IAgentRegistry.Track.FUNDED);
+        registry.promoteAgent(agentId, IAgentRegistry.Track.FUNDED, agentOwner, false);
+    }
+
+    function test_RevertWhen_PromotionFeePayerNotOwnerOrSigner() public {
+        uint256 agentId = _registerAgent();
+
+        vm.prank(operator);
+        vm.expectRevert(abi.encodeWithSelector(AgentRegistry.InvalidPromotionFeePayer.selector, agentId, bob));
+        registry.promoteAgent(agentId, IAgentRegistry.Track.FUNDED, bob, false);
+    }
+
+    function test_PromoteCollectsFeeFromSigner() public {
+        uint256 agentId = _registerAgent();
+
+        vm.prank(operator);
+        registry.promoteAgent(agentId, IAgentRegistry.Track.FUNDED, agentSigner, false);
+
+        assertEq(feeManager.promotionPaymentCount(), 1);
+        (address payer,,,,) = feeManager.promotionPayments(0);
+        assertEq(payer, agentSigner);
+    }
+
+    function test_PromoteSkipsFeeWhenAlreadyPaid() public {
+        uint256 agentId = _registerAgent();
+
+        vm.prank(operator);
+        registry.promoteAgent(agentId, IAgentRegistry.Track.FUNDED, address(0), true);
+
+        assertEq(feeManager.promotionPaymentCount(), 0);
+        assertEq(uint256(registry.trackOf(agentId)), uint256(IAgentRegistry.Track.FUNDED));
     }
 
     function test_RevertWhen_UnapprovedVault() public {

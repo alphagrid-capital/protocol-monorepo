@@ -64,6 +64,7 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
     error AgentNotFound(uint256 agentId);
     error NotAgentOwner(uint256 agentId, address caller);
     error InvalidPromotion(uint256 agentId, Track fromTrack, Track toTrack);
+    error InvalidPromotionFeePayer(uint256 agentId, address payer);
     error InvalidSignature();
     error MetadataUpdateNotAllowed(uint256 agentId);
     error ExpiredDeadline();
@@ -218,7 +219,11 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
     }
 
     /// @inheritdoc IAgentRegistry
-    function promoteAgent(uint256 agentId, Track targetTrack) external onlyRole(OPERATOR_ROLE) whenNotPaused {
+    function promoteAgent(uint256 agentId, Track targetTrack, address payer, bool feeAlreadyPaid)
+        external
+        onlyRole(OPERATOR_ROLE)
+        whenNotPaused
+    {
         Agent storage agent = _requireAgentExists(agentId);
 
         Track fromTrack = agent.track;
@@ -226,7 +231,12 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
             revert InvalidPromotion(agentId, fromTrack, targetTrack);
         }
 
-        feeManager.payPromotionFee(msg.sender, agentId, agent.vault, uint256(fromTrack), uint256(targetTrack));
+        if (!feeAlreadyPaid) {
+            if (payer != agent.owner && payer != agent.signer) {
+                revert InvalidPromotionFeePayer(agentId, payer);
+            }
+            feeManager.payPromotionFee(payer, agentId, agent.vault, uint256(fromTrack), uint256(targetTrack));
+        }
 
         if (address(allocationManager) != address(0)) {
             allocationManager.onAgentPromoted(agentId, agent.vault, uint256(fromTrack), uint256(targetTrack));

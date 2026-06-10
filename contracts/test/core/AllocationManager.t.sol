@@ -108,7 +108,7 @@ contract AllocationManagerTest is BaseTest {
         vm.startPrank(operator);
         uint256 agentId = _registerAgent(alice, "Bot", "ipfs://bot");
         allocationManager.setAllocationUsed(agentId, used);
-        registry.promoteAgent(agentId, IAgentRegistry.Track.FUNDED);
+        registry.promoteAgent(agentId, IAgentRegistry.Track.FUNDED, alice, false);
         vm.stopPrank();
 
         IAllocationManager.Allocation memory allocation = allocationManager.getAllocation(agentId);
@@ -124,7 +124,7 @@ contract AllocationManagerTest is BaseTest {
 
         vm.startPrank(operator);
         uint256 agentId = _registerAgent(alice, "Bot", "ipfs://bot");
-        registry.promoteAgent(agentId, IAgentRegistry.Track.FUNDED);
+        registry.promoteAgent(agentId, IAgentRegistry.Track.FUNDED, alice, false);
         vm.stopPrank();
 
         IAllocationManager.Allocation memory allocation = allocationManager.getAllocation(agentId);
@@ -145,7 +145,7 @@ contract AllocationManagerTest is BaseTest {
     function test_OnAgentPromotedUpdatesCap() public {
         vm.startPrank(operator);
         uint256 agentId = _registerAgent(alice, "Bot", "ipfs://bot");
-        registry.promoteAgent(agentId, IAgentRegistry.Track.FUNDED);
+        registry.promoteAgent(agentId, IAgentRegistry.Track.FUNDED, alice, false);
         vm.stopPrank();
 
         IAllocationManager.Allocation memory allocation = allocationManager.getAllocation(agentId);

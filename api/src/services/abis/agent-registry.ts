@@ -585,6 +585,16 @@ export const agentRegistryAbi = [
         type: 'uint8',
         internalType: 'enum IAgentRegistry.Track',
       },
+      {
+        name: 'payer',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
+        name: 'feeAlreadyPaid',
+        type: 'bool',
+        internalType: 'bool',
+      },
     ],
     outputs: [],
     stateMutability: 'nonpayable',
@@ -1487,6 +1497,22 @@ export const agentRegistryAbi = [
         name: 'toTrack',
         type: 'uint8',
         internalType: 'enum IAgentRegistry.Track',
+      },
+    ],
+  },
+  {
+    type: 'error',
+    name: 'InvalidPromotionFeePayer',
+    inputs: [
+      {
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+      {
+        name: 'payer',
+        type: 'address',
+        internalType: 'address',
       },
     ],
   },

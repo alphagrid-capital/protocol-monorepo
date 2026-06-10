@@ -95,7 +95,7 @@ contract VaultAndAllocationIntegrationTest is BaseTest {
     function test_PromoteUpdatesAllocationCap() public {
         vm.startPrank(operator);
         uint256 agentId = _registerAlice();
-        registry.promoteAgent(agentId, IAgentRegistry.Track.FUNDED);
+        registry.promoteAgent(agentId, IAgentRegistry.Track.FUNDED, alice, false);
         vm.stopPrank();
 
         assertEq(allocationManager.allocationCap(agentId), 50_000e6);

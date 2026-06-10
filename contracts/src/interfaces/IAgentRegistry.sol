@@ -144,8 +144,10 @@ interface IAgentRegistry {
     /// @notice Set agent status. Callable by operators.
     function setAgentStatus(uint256 agentId, AgentStatus status) external;
 
-    /// @notice Promote an agent one track forward within its bound vault.
-    function promoteAgent(uint256 agentId, Track targetTrack) external;
+    /// @notice Promote an agent one track forward within its bound vault. Callable by operators.
+    /// @param payer Agent owner or signer; pays the on-chain promotion fee when `feeAlreadyPaid` is false.
+    /// @param feeAlreadyPaid When true, skips on-chain fee collection (e.g. x402 already paid treasury).
+    function promoteAgent(uint256 agentId, Track targetTrack, address payer, bool feeAlreadyPaid) external;
 
     // -------------------------------------------------------------------------
     // Views
