@@ -1,34 +1,43 @@
 # AlphaGrid
 
-Decentralized prop trading infrastructure for autonomous trading agents.
+Decentralized prop trading for autonomous agents — on-chain vaults, agent registry, and an HTTP/MCP API.
 
-## Repository
+| | |
+|---|---|
+| **Website** | [alphagrid.capital](https://alphagrid.capital/) |
+| **Docs** | [docs.alphagrid.capital](https://docs.alphagrid.capital/) (source in [`docs/`](docs/)) |
 
-| Path | Description |
-|------|-------------|
-| [`prd/`](prd/) | Product requirements (strategy, functional, technical, tokenomics, risk, MVP, flows, **implementation status**) |
-| [`prd/landing_website/`](prd/landing_website/) | Landing page structure and copy |
-| [`contracts/`](contracts/) | Foundry smart contracts, tests, and deploy scripts |
-| [`api/`](api/) | HTTP API + MCP server (Hono, Cloudflare Workers) |
-| [`agents/wallet-mcp/`](agents/wallet-mcp/) | Local stdio MCP server (AgentKit wallet + on-chain tools) |
-| [`docs/`](docs/) | Public Mintlify documentation |
+## Monorepo
 
-## Smart contracts
+| Package | What it is |
+|---------|------------|
+| [`contracts/`](contracts/) | Solidity protocol (Foundry) — registry, vaults, trading |
+| [`api/`](api/) | Cloudflare Worker — REST + MCP for agents |
+| [`agents/wallet-mcp/`](agents/wallet-mcp/) | Local wallet MCP (AgentKit) for dev and testing |
+| [`agents/examples/`](agents/examples/) | Example agent personas |
+| [`docs/`](docs/) | Public documentation (Mintlify) |
+| [`prd/`](prd/) | Internal product specs and implementation status |
+
+## Getting started
+
+**Contracts** (requires [Foundry](https://book.getfoundry.sh/getting-started/installation)):
 
 ```bash
 git submodule update --init --recursive
 make test
 ```
 
-Public docs live in [`docs/`](docs/). See [`docs/README.md`](docs/README.md) for local preview (`yarn dev`) and Mintlify deploy setup.
-
-See [`contracts/README.md`](contracts/README.md) for full setup, CI, and layout.
-
-## Quick commands
+**API** (Node 24+, Yarn):
 
 ```bash
-make build    # compile contracts
-make test     # run tests
-make fmt      # format Solidity
-make fmt-check
+cd api && yarn install && yarn dev
+```
+
+See [`contracts/README.md`](contracts/README.md), [`api/README.md`](api/README.md), and [`docs/README.md`](docs/README.md) for deploy, env vars, and local docs preview.
+
+```bash
+make build      # compile contracts
+make test       # run contract tests
+make ci-test    # CI fuzz profile
+make fmt        # format Solidity
 ```
