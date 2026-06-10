@@ -45,37 +45,6 @@ jobs:
       - name: Build
         run: yarn build
 
-  deploy:
-    name: Deploy to Cloudflare
-    needs: check
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: "24"
-          cache: yarn
-          cache-dependency-path: agents/wallet-mcp/yarn.lock
-
-      - name: Install dependencies
-        run: yarn install --frozen-lockfile
-
-      - name: Deploy Worker
-        uses: cloudflare/wrangler-action@v4
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: agents/wallet-mcp
-          wranglerVersion: "4"
-          secrets: |
-            PRIVATE_KEY
-        env:
-          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
-
   publish:
     name: Publish to npm
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/local-wallet-mcp-v')

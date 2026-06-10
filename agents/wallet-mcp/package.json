@@ -38,9 +38,7 @@
     "build": "tsup && node -e \"require('fs').chmodSync('build/index.js', '755')\"",
     "clean": "rm -rf build",
     "prepublishOnly": "yarn build",
-    "dev": "wrangler dev",
-    "dev:stdio": "node --env-file-if-exists=.env --import tsx src/index.ts",
-    "deploy": "wrangler deploy",
+    "dev": "node --env-file-if-exists=.env --import tsx src/index.ts",
     "format": "prettier --write .",
     "type-check": "tsc --noEmit"
   },
@@ -58,7 +56,6 @@
     "prettier": "^3.8.3",
     "tsup": "^8.4.0",
     "tsx": "^4.19.3",
-    "typescript": "^5.8.2",
-    "wrangler": "^4.19.1"
+    "typescript": "^5.8.2"
   }
 }
