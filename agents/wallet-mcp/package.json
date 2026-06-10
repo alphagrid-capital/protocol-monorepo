@@ -1,6 +1,6 @@
 {
   "name": "@alphagrid/local-wallet-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Local stdio MCP server (AgentKit wallet + on-chain tools) for AlphaGrid dev/testing",
   "license": "MIT",
   "main": "build/index.js",

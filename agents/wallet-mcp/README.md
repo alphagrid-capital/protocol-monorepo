@@ -16,6 +16,13 @@ No global install required. Merge `mcp.config.example.json` into your MCP client
 
 **Claude Desktop** — `~/Library/Application Support/Claude/claude_desktop_config.json`
 
+### Local private key (`viem`)
+
+**Why choose this:**
+
+- No Coinbase Developer Platform account — fastest setup for local testing with a testnet key.
+- Supports custom chains (e.g. `robinhood-testnet`) that CDP smart wallets do not.
+
 ```json
 {
   "mcpServers": {
@@ -32,20 +39,34 @@ No global install required. Merge `mcp.config.example.json` into your MCP client
 }
 ```
 
-Set `NETWORK_ID`, `PRIVATE_KEY` (or CDP credentials for `WALLET_PROVIDER=cdp`), and optional CDP API keys for faucet/x402 tools. Restart the MCP server in your client after changing config.
+Optional: add `CDP_API_KEY_ID` and `CDP_API_KEY_SECRET` to unlock faucet and x402 tools while staying on `viem`.
 
-If you already use the key `alphagrid-wallet-mcp` in `.cursor/mcp.json`, you can keep it — only update `command` and `args` to the `npx` form above.
+### CDP smart wallet (`cdp`)
 
-## Monorepo development
+**Why choose this:**
 
-From this directory:
+- No raw private key in MCP config — signing uses CDP API credentials and a wallet secret.
+- Smart-wallet features on supported networks: gas sponsorship (`PAYMASTER_URL`), faucet, and x402 without extra setup.
 
-```sh
-yarn install
-yarn build
+```json
+{
+  "mcpServers": {
+    "alphagrid-local-wallet-mcp": {
+      "command": "npx",
+      "args": ["-y", "@alphagrid/local-wallet-mcp"],
+      "env": {
+        "WALLET_PROVIDER": "cdp",
+        "NETWORK_ID": "base-sepolia",
+        "CDP_API_KEY_ID": "...",
+        "CDP_API_KEY_SECRET": "...",
+        "CDP_WALLET_SECRET": "..."
+      }
+    }
+  }
+}
 ```
 
-For local iteration without publishing, point `args` at `build/index.js` with `"command": "node"` instead of `npx`.
+Set `NETWORK_ID` (see options below). Restart the MCP server in your client after changing config.
 
 ## Wallet providers
 
@@ -55,6 +76,24 @@ Set `WALLET_PROVIDER` in env:
 | ---------------- | -------------------------------------------------------------------------------------- |
 | `viem` (default) | Local key via viem; optional CDP API actions if API keys are set                       |
 | `cdp`            | CDP smart wallet; requires `CDP_API_KEY_ID`, `CDP_API_KEY_SECRET`, `CDP_WALLET_SECRET` |
+
+### `NETWORK_ID`
+
+Required for `viem`. Defaults to `base-sepolia` for `cdp`.
+
+| `NETWORK_ID`       | Chain            |
+| ------------------ | ---------------- |
+| `ethereum-mainnet` | Ethereum         |
+| `ethereum-sepolia` | Ethereum Sepolia |
+| `polygon-mainnet`  | Polygon          |
+| `polygon-mumbai`   | Polygon Mumbai   |
+| `base-mainnet`     | Base             |
+| `base-sepolia`     | Base Sepolia     |
+| `arbitrum-mainnet` | Arbitrum One     |
+| `arbitrum-sepolia` | Arbitrum Sepolia |
+| `optimism-mainnet`   | Optimism               |
+| `optimism-sepolia`   | Optimism Sepolia       |
+| `robinhood-testnet`  | Robinhood Chain Testnet |
 
 Configuration lives in `src/getAgentKit.ts` and `src/wallets/`. MCP server wiring is in `src/index.ts`.
 
@@ -81,29 +120,33 @@ Configuration lives in `src/getAgentKit.ts` and `src/wallets/`. MCP server wirin
 
 Faucet, x402, and some CDP actions require `CDP_API_KEY_ID` and `CDP_API_KEY_SECRET` (available with `viem` or required for `cdp`).
 
-## Publishing (maintainers)
+## Development and publishing
 
-### First publish
+From this directory:
 
-1. Create the npm org **`@alphagrid`** (if not already owned).
-2. Add GitHub repo secret **`NPM_TOKEN`** (automation token with publish rights to `@alphagrid`).
-3. From this directory:
+```sh
+yarn install
+yarn build
+```
+
+For local iteration without publishing, point `args` at `build/index.js` with `"command": "node"` instead of `npx`.
+
+### Releases
+
+1. Bump `version` in `package.json`.
+2. Commit and tag: `local-wallet-mcp-vX.Y.Z` (tag must match package version).
+3. Push the tag — CI publishes via `.github/workflows/wallet-mcp.yml` (requires repo secret **`NPM_TOKEN`**).
+
+### Manual publish
 
 ```sh
 yarn install --frozen-lockfile
 yarn build
-npm login
 npm publish --access public
 ```
-
-### Subsequent releases
-
-1. Bump `version` in `package.json`.
-2. Commit and tag: `local-wallet-mcp-vX.Y.Z` (tag must match package version).
-3. Push the tag — CI publishes via `.github/workflows/wallet-mcp.yml`.
 
 ## Learn more
 
 - [AgentKit](https://docs.cdp.coinbase.com/agentkit/docs/welcome)
 - [CDP](https://docs.cdp.coinbase.com/)
-- [AlphaGrid docs — Local wallet MCP](https://docs.alphagrid.io/integrations/integrate#local-wallet-mcp-for-testing)
+- [AlphaGrid docs — Local wallet MCP](https://docs.alphagrid.capital/agents/register#agent-signer)

@@ -3,7 +3,6 @@ import {
   AgentKit,
   cdpApiActionProvider,
   erc20ActionProvider,
-  NETWORK_ID_TO_VIEM_CHAIN,
   pythActionProvider,
   ViemWalletProvider,
   walletActionProvider,
@@ -12,7 +11,7 @@ import {
 } from '@coinbase/agentkit'
 import { createWalletClient, Hex, http } from 'viem'
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts'
-import type { Chain } from 'viem'
+import { getViemChainForNetworkId } from '../chains/networks.js'
 
 export async function createAgentKitWithViem(): Promise<AgentKit> {
   try {
@@ -23,10 +22,11 @@ export async function createAgentKitWithViem(): Promise<AgentKit> {
 
     const account = privateKeyToAccount(privateKey)
     const networkId = process.env.NETWORK_ID as string
+    const chain = getViemChainForNetworkId(networkId)
 
     const client = createWalletClient({
       account,
-      chain: NETWORK_ID_TO_VIEM_CHAIN[networkId] as Chain,
+      chain,
       transport: http(),
     })
 

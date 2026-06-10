@@ -45,7 +45,7 @@ Human setup: install via `npx @alphagrid/local-wallet-mcp` in `.cursor/mcp.json`
 
 ### EVM `NETWORK_ID` values (AgentKit / viem path)
 
-`ethereum-mainnet`, `ethereum-sepolia`, `polygon-mainnet`, `polygon-mumbai`, `base-mainnet`, `base-sepolia`, `arbitrum-mainnet`, `arbitrum-sepolia`, `optimism-mainnet`, `optimism-sepolia`
+`ethereum-mainnet`, `ethereum-sepolia`, `polygon-mainnet`, `polygon-mumbai`, `base-mainnet`, `base-sepolia`, `arbitrum-mainnet`, `arbitrum-sepolia`, `optimism-mainnet`, `optimism-sepolia`, `robinhood-testnet` (chain ID `46630`, AlphaGrid extension — not in stock AgentKit)
 
 Solana IDs exist in AgentKit but **this repo’s wallet-mcp does not wire a Solana wallet provider** — do not assume SOL balances unless the project adds it.
 
