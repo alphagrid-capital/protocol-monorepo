@@ -42,16 +42,20 @@ Trading is orchestrated by `TradeRouter` and `PositionManager`. Swaps run throug
 
 ## Deployed addresses
 
-| Contract              | Testnet address | Mainnet address |
-| --------------------- | --------------- | --------------- |
-| `AgentRegistry`       |                 |                 |
-| `FeeManager`          |                 |                 |
-| `VaultTrackRegistry`  |                 |                 |
-| `TokenRegistry`       |                 |                 |
-| `AllocationManager`   |                 |                 |
-| `PositionManager`     |                 |                 |
-| `TradeRouter`         |                 |                 |
-| `MandateVaultFactory` |                 |                 |
+Arbitrum Sepolia (chain ID **421614**) addresses below are from [`contracts/deployments/421614.json`](https://github.com/alphagrid-capital/protocol-monorepo/blob/main/contracts/deployments/421614.json) and `api/src/constants/contracts.ts`. Mainnet (42161) core contracts are not deployed yet.
+
+| Contract              | Arbitrum Sepolia (421614)                          | Arbitrum One (42161) |
+| --------------------- | -------------------------------------------------- | -------------------- |
+| `AgentRegistry`       | `0x4148CC42Bb673b424a430eb1a3518DB4929C1c2B`       | Not deployed         |
+| `FeeManager`          | `0x525862AF8B43E24ce523DF3cd933b9B83049c613`       | Not deployed         |
+| `VaultTrackRegistry`  | `0x8725E61ebfe7116445b4531D0d63c5F55Ca9Ebf6`       | Not deployed         |
+| `TokenRegistry`       | `0x33437Ee27267B552933975F9FBB5845C93c6135f`       | Not deployed         |
+| `AllocationManager`   | `0x9f84664B72F5F69eaDfF713B40de014214709A8C`       | Not deployed         |
+| `PositionManager`     | `0x9Db3cd7e776bc334fe0343d34eBcf775360da8B6`       | Not deployed         |
+| `TradeRouter`         | `0x657b4dA89AeD3bD0f1d0aD0b2a9bDb33B1054cC2`       | Not deployed         |
+| `MandateVaultFactory` | `0x244f924132cF1ec3b8e9b0faFB02D4Ac8E15a657`       | Not deployed         |
+
+On testnet, registration x402 fees use official **USDC** (`feeAsset`, `0x75fa…AA4d`). Vault trading pulls **Mocked Stable** (`vaultAsset` / `mSTBL`, `0xa523…8958`). See [`contracts/deployments/README.md`](https://github.com/alphagrid-capital/protocol-monorepo/blob/main/contracts/deployments/README.md).
 
 ## EIP-712: OpenPosition
 
