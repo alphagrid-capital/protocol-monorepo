@@ -45,3 +45,5 @@ All make targets `cd` into `contracts/` automatically.
 ### Wallet MCP
 
 Local AgentKit wallet server lives in `agents/wallet-mcp/`. Before using on-chain MCP tools (balances, transfers, faucet, Pyth, x402), read `.agents/skills/alphagrid-wallet-mcp/SKILL.md`. For vaults, registration, trade intents, and positions via the protocol MCP, read `.agents/skills/alphagrid-mcp/SKILL.md`.
+
+`.cursor/mcp.json` registers the wallet MCP via the published package (`npx -y @alphagrid/local-wallet-mcp`, `viem`/`base-sepolia` to match the API chain `84532`). It boots with no secrets (ephemeral key; wallet/ERC20/Pyth/WETH tools only). To unlock more, set these in that server's `env` (use a personal/uncommitted copy — never commit keys): `PRIVATE_KEY` for a persistent funded wallet; `CDP_API_KEY_ID` + `CDP_API_KEY_SECRET` to add the faucet and x402 tools (required for x402 registration). For local iteration instead of the npm package, swap the entry to `"command": "node", "args": ["agents/wallet-mcp/build/index.js"]` after `yarn build`.
