@@ -31,10 +31,11 @@ contract DeployVaultInfrastructure is AgentCoreDeploy, VaultDeploy {
         )
     {
         CoreAddresses memory env = loadCoreAddresses();
+        address vaultAsset = requireVaultAsset();
 
         vm.startBroadcast();
-        AgentCoreDeployed memory core = deployAgentCore(env.admin, env.treasury, env.usdc, true);
-        VaultSet memory vaults = deployVaults(env.usdc, core.tokenRegistry, env.admin, env.treasury);
+        AgentCoreDeployed memory core = deployAgentCore(env.admin, env.treasury, env.feeAsset, true);
+        VaultSet memory vaults = deployVaults(vaultAsset, core.tokenRegistry, env.admin, env.treasury);
         wireAgentCore(core, 0);
         grantRegistrarRole(core.registry, env.backendRelayer);
         configureVaultTracks(core.vaultTrackRegistry, vaults);
@@ -51,10 +52,15 @@ contract DeployVaultInfrastructure is AgentCoreDeploy, VaultDeploy {
         volatilityVault = vaults.volatilityVault;
         macroVault = vaults.macroVault;
 
-        _log(core, vaults);
+        _log(core, vaults, env, vaultAsset);
     }
 
-    function _log(AgentCoreDeployed memory core, VaultSet memory vaults) private view {
+    function _log(AgentCoreDeployed memory core, VaultSet memory vaults, CoreAddresses memory env, address vaultAsset)
+        private
+        view
+    {
+        console2.log("Fee asset:", env.feeAsset);
+        console2.log("Vault asset:", vaultAsset);
         console2.log("FeeManager:", address(core.feeManager));
         console2.log("VaultTrackRegistry:", address(core.vaultTrackRegistry));
         console2.log("TokenRegistry:", address(core.tokenRegistry));

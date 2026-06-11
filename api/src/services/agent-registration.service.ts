@@ -74,6 +74,7 @@ export class AgentRegistrationService {
       registrationFee: {
         amount: feeAtomic.toString(),
         assetSymbol: this.config.registrationFee.assetSymbol,
+        tokenAddress: feeState.feeAsset,
         decimals: this.config.registrationFee.decimals,
         displayUsd: feeState.displayUsd,
       },

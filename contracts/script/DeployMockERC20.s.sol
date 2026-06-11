@@ -16,6 +16,6 @@ contract DeployMockERC20 is Script {
     }
 
     function _deploy() private returns (MockERC20 token) {
-        token = new MockERC20("Mock USDC", "mUSDC", 6);
+        token = new MockERC20("Mocked Stable", "mSTBL", 6);
     }
 }

@@ -120,6 +120,12 @@ Configuration lives in `src/getAgentKit.ts` and `src/wallets/`. MCP server wirin
 
 Faucet, x402, and some CDP actions require `CDP_API_KEY_ID` and `CDP_API_KEY_SECRET` (available with `viem` or required for `cdp`).
 
+### Arbitrum x402 (AlphaGrid)
+
+Stock AgentKit only registers x402 tools on Base and Solana. This server patches AgentKit at startup (`src/agentkit/extendArbitrumX402.ts`) so x402 works on **`arbitrum-sepolia`** and **`arbitrum-mainnet`** (`eip155:421614` / `eip155:42161`), matching AlphaGrid API registration. It also maps **USDC** on Arbitrum Sepolia to the AlphaGrid mock token (`0x54A4…60FA`).
+
+Use `NETWORK_ID=arbitrum-sepolia` with CDP API keys, rebuild (`yarn build`), and restart the MCP server in Cursor.
+
 ## Development and publishing
 
 From this directory:

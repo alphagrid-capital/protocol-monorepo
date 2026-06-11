@@ -57,6 +57,6 @@ export function loadTradingConfig(
     agentRegistryAddress: chainContracts.AgentRegistry,
     allocationManagerAddress: chainContracts.AllocationManager,
     executorPrivateKey: parsePrivateKey(env.EXECUTOR_PRIVATE_KEY),
-    usdcDecimals: chainContracts.usdc.decimals,
+    usdcDecimals: chainContracts.vaultAsset.decimals,
   }
 }

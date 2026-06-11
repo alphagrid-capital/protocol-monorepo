@@ -10,6 +10,7 @@ const REGISTER_METHOD = 'POST'
 interface RegistrationFeeState {
   amount: bigint
   treasury: `0x${string}` | null
+  feeAsset: `0x${string}`
   displayUsd: string
 }
 const REGISTER_DESCRIPTION =
@@ -35,7 +36,14 @@ function buildRegistrationPaymentConfig(
     path: ROUTE_PATHS.agentRegister,
     description: REGISTER_DESCRIPTION,
     mimeType: 'application/json',
-    priceUsd: feeState.displayUsd,
+    price: {
+      asset: feeState.feeAsset,
+      amount: feeState.amount.toString(),
+      extra: {
+        name: config.registrationFee.assetName,
+        version: '2',
+      },
+    },
     payTo: feeState.treasury!,
     network: config.x402.network,
     facilitatorUrl: config.x402.facilitatorUrl,

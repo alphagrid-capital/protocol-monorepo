@@ -1,6 +1,10 @@
 CONTRACTS := contracts
 
-.PHONY: build sync-abis test fmt fmt-check clean
+.PHONY: build sync-abis test fmt fmt-check clean export-deployment
+
+export-deployment:
+	@test -n "$(CHAIN)" || (echo "Usage: make export-deployment CHAIN=<chainId>"; exit 1)
+	node scripts/export-deployment.mjs $(CHAIN)
 
 build:
 	cd $(CONTRACTS) && forge build

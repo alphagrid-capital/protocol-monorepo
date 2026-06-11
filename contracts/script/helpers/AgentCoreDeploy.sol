@@ -20,12 +20,12 @@ abstract contract AgentCoreDeploy is DeploymentEnv {
         bool extended;
     }
 
-    function deployAgentCore(address admin, address treasury, address usdc, bool includeExtended)
+    function deployAgentCore(address admin, address treasury, address feeAsset, bool includeExtended)
         internal
         returns (AgentCoreDeployed memory deployed)
     {
         deployed.extended = includeExtended;
-        deployed.feeManager = new FeeManager(admin, treasury, usdc);
+        deployed.feeManager = new FeeManager(admin, treasury, feeAsset);
         deployed.vaultTrackRegistry = new VaultTrackRegistry(admin);
 
         if (includeExtended) {

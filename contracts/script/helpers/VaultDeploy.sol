@@ -25,11 +25,11 @@ abstract contract VaultDeploy is DeploymentEnv {
         MandateVault macroVault;
     }
 
-    function deployVaults(address usdc, TokenRegistry tokenRegistry_, address admin, address treasury)
+    function deployVaults(address vaultAsset, TokenRegistry tokenRegistry_, address admin, address treasury)
         internal
         returns (VaultSet memory vaults)
     {
-        IERC20 asset = IERC20(usdc);
+        IERC20 asset = IERC20(vaultAsset);
         vaults.factory = new MandateVaultFactory(address(0), asset);
         vaults.foundationVault = deployVaultClone(
             vaults.factory,

@@ -2,8 +2,6 @@
 contracts/cache/
 contracts/out/
 contracts/broadcast/
-contracts/deployments/*.json
-!contracts/deployments/*.example.json
 contracts/.env
 
 # API (api/)

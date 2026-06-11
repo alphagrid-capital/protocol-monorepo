@@ -7,13 +7,15 @@ import { MandateVault } from "../../src/vaults/MandateVault.sol";
 import { Fees } from "../config/Fees.sol";
 import { DeploymentEnv } from "../helpers/DeploymentEnv.sol";
 
-/// @notice Deposits USDC into the Tech vault (ERC-4626).
-/// @dev Requires USDC, TECH_VAULT, DEPOSITOR, and PRIVATE_KEY in `.env`.
+/// @notice Deposits vault stablecoin into the Tech vault (ERC-4626).
+/// @dev Requires VAULT_ASSET (or legacy USDC), TECH_VAULT, DEPOSITOR, and PRIVATE_KEY in `.env`.
 ///      forge script script/ops/DepositToTechVault.s.sol:DepositToTechVault \
 ///        --rpc-url $RPC_URL --broadcast
 contract DepositToTechVault is DeploymentEnv {
     function run() external {
-        IERC20 usdc = IERC20(vm.envAddress("USDC"));
+        address vaultAsset = tryLoadVaultAsset();
+        if (vaultAsset == address(0)) revert("VAULT_ASSET or USDC required");
+        IERC20 usdc = IERC20(vaultAsset);
         MandateVault vault = MandateVault(vm.envAddress("TECH_VAULT"));
         address depositor = vm.envAddress("DEPOSITOR");
         uint256 depositAmount = vm.envOr("DEPOSIT_AMOUNT", Fees.DEFAULT_TECH_DEPOSIT);

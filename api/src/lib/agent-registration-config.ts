@@ -9,7 +9,9 @@ export interface AgentRegistrationConfig {
   rpcUrl: string
   relayerPrivateKey: `0x${string}` | null
   registrationFee: {
+    assetAddress: `0x${string}`
     assetSymbol: string
+    assetName: string
     decimals: number
   }
   x402: {
@@ -52,8 +54,10 @@ export function loadAgentRegistrationConfig(
     rpcUrl: requireEnv(env, 'RPC_URL'),
     relayerPrivateKey: parsePrivateKey(env.RELAYER_PRIVATE_KEY),
     registrationFee: {
-      assetSymbol: chainContracts.usdc.symbol,
-      decimals: chainContracts.usdc.decimals,
+      assetAddress: chainContracts.feeAsset.address,
+      assetSymbol: chainContracts.feeAsset.symbol,
+      assetName: chainContracts.feeAsset.name,
+      decimals: chainContracts.feeAsset.decimals,
     },
     x402: {
       networkName: chainContracts.networkName,

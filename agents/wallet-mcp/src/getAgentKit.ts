@@ -1,4 +1,5 @@
 import type { AgentKit } from '@coinbase/agentkit'
+import { extendAgentKitForArbitrumX402 } from './agentkit/extendArbitrumX402.js'
 import { createAgentKitWithCdp } from './wallets/cdp.js'
 import { createAgentKitWithViem } from './wallets/viem.js'
 
@@ -15,6 +16,8 @@ export function getWalletProviderKind(): WalletProviderKind {
 }
 
 export async function getAgentKit(): Promise<AgentKit> {
+  extendAgentKitForArbitrumX402()
+
   switch (getWalletProviderKind()) {
     case 'viem':
       return createAgentKitWithViem()

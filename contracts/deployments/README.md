@@ -11,12 +11,13 @@ Record addresses after broadcasting deploy scripts. Update `config/token-catalog
 | `chainId` | Broadcast chain ID |
 | `deployedAt` | Unix timestamp at write time |
 | `FeeManager` … `SwapAdapter` | Core contract addresses (matches `ChainContracts` in API) |
-| `usdc` | Fee asset / vault underlying |
+| `feeAsset` | FeeManager / x402 payment asset (official USDC) |
+| `vaultAsset` | Vault + trading underlying (Mocked Stable); `usdc` is an alias |
 | `tokens` | Mock stock addresses keyed by symbol (`NVDA`, `META`, …) |
 
 ## Dev-complete greenfield
 
-Single broadcast for testnet/anvil — deploys mock USDC when `USDC` env is unset:
+Single broadcast for testnet/anvil — deploys Mocked Stable (`mSTBL`) for vaults when `VAULT_ASSET` is unset:
 
 ```bash
 cd contracts
@@ -24,7 +25,7 @@ forge script script/DeployFullStack.s.sol:DeployFullStack \
   --rpc-url $RPC_URL --broadcast
 ```
 
-Required env: `ADMIN`, `TREASURY`, `BACKEND_RELAYER`, `ERC8004_IDENTITY_REGISTRY`, `EXECUTOR`. Optional: `USDC`, `OPERATOR`, `ORACLE_KEEPER`, `DEPLOY_MOCK_SWAP_ADAPTER`.
+Required env: `ADMIN`, `TREASURY`, `BACKEND_RELAYER`, `ERC8004_IDENTITY_REGISTRY`, `EXECUTOR`. Optional: `FEE_ASSET`, `VAULT_ASSET`, legacy `USDC` (sets both), `OPERATOR`, `ORACLE_KEEPER`, `DEPLOY_MOCK_SWAP_ADAPTER`.
 
 Copy logged addresses into `config/token-catalog.json` and `api/src/constants/contracts.ts`.
 

@@ -19,7 +19,7 @@ contract DeployAgentCore is AgentCoreDeploy {
         uint256 registrationFeeAmount = vm.envOr("REGISTRATION_FEE_AMOUNT", Fees.REGISTRATION_FEE);
 
         vm.startBroadcast();
-        AgentCoreDeployed memory deployed = deployAgentCore(env.admin, env.treasury, env.usdc, false);
+        AgentCoreDeployed memory deployed = deployAgentCore(env.admin, env.treasury, env.feeAsset, false);
         wireAgentCore(deployed, registrationFeeAmount);
         grantRegistrarRole(deployed.registry, env.backendRelayer);
         vm.stopBroadcast();
@@ -37,6 +37,6 @@ contract DeployAgentCore is AgentCoreDeploy {
         console2.log("AgentRegistry:", address(deployed.registry));
         console2.log("Admin:", env.admin);
         console2.log("Treasury:", env.treasury);
-        console2.log("Fee asset (USDC):", env.usdc);
+        console2.log("Fee asset:", env.feeAsset);
     }
 }

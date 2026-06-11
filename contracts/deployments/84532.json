@@ -1,0 +1,30 @@
+{
+  "chainId": 84532,
+  "deployedAt": 1781091414,
+  "FeeManager": "0xa4d40dcfeb2915bf5e709b88b6b177d962422a4a",
+  "VaultTrackRegistry": "0xfe7843a9c59aa7f273d8567e47942c8a2f55e8e6",
+  "TokenRegistry": "0xd91015f3352f91208e98acd1f2438066d5f7effc",
+  "AgentRegistry": "0x5b8a93b13cd4939fb52bee581778081a7a2f1084",
+  "AllocationManager": "0xdd26d53baa2d2b6dc34dd87d1aa4b17a651c1292",
+  "VaultFactory": "0x46ceb0beff662f2fdf48957d6fc9101f8cbe8977",
+  "VaultImplementation": "0xc2eadc2c832bed921213480d495cdbbb2051f7c0",
+  "FoundationVault": "0x0665b5ebc6692a2f770369ed6e4c652d0a460292",
+  "TechVault": "0xea3895c279bcab7f3d2fd18416500f781accebed",
+  "VolatilityVault": "0x6caf45c8c5a6c3765f3ffc91d830ce16f7507cb1",
+  "MacroVault": "0x87f9be8f34ee7784747b77d77b6d2ac9afe909a8",
+  "PositionManager": "0xc27558d2773a391a494cc7899831b304fbd2c2fb",
+  "TradeRouter": "0x12b0548e204c6d832b29d307e3c6154d029c4277",
+  "SwapAdapter": "0xf645850781a781ab4583f7dcd03a3b9ac1192a22",
+  "PriceOracle": "0x87c482ccdd60df9da3b3f02c6ad500587fa92c98",
+  "usdc": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+  "tokens": {
+    "NVDA": "0xb5952db9a97b44a00bf27fda14fdeb95b8058b80",
+    "META": "0x4cf18cc3628bce11795664dcc3f1df7cf5331844",
+    "TSLA": "0xe83b2c47863aae0f4686225a372160729449ece1",
+    "AAPL": "0x5f2aea13d3da5bdf101318b94c203185650c39d7",
+    "MSFT": "0xa8e1df5b0270299893777ad95a267609744bdab3",
+    "COIN": "0xfe01b43ca5e520533a1f9c49b1395780cf494ae4",
+    "HOOD": "0xd559bd698accabbe9a95eabcd4b3f082326a41c4",
+    "SPY": "0x1202a5ea96dcc516e4ffce5457bb3577173c59a7"
+  }
+}

@@ -19,8 +19,12 @@ deny = "warnings"
 
 [rpc_endpoints]
 local = "http://127.0.0.1:8545"
-robinhood = "${ROBINHOOD_RPC_URL}"
 sepolia = "${SEPOLIA_RPC_URL}"
+base-sepolia = "${BASE_SEPOLIA_RPC_URL}"
+arbitrum-sepolia = "${ARBITRUM_SEPOLIA_RPC_URL}"
+arbitrum = "${ARBITRUM_RPC_URL}"
+robinhood-testnet = "${ROBINHOOD_TESTNET_RPC_URL}"
+robinhood = "${ROBINHOOD_RPC_URL}"
 
 [fmt]
 line_length = 120

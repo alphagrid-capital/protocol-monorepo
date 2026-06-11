@@ -84,7 +84,7 @@ Copy `.env.example` to `.env` and fill values.
 forge script script/DeployFullStack.s.sol:DeployFullStack --rpc-url $RPC_URL --broadcast
 ```
 
-Deploys core + vaults + track config + trading + oracle + mock token catalog in one broadcast. Writes `deployments/<chainId>.json`. `USDC` env is optional (deploys mUSDC when unset). For production, use staged scripts below.
+Deploys core + vaults + track config + trading + oracle + mock token catalog in one broadcast. Writes `deployments/<chainId>.json`. `FEE_ASSET` (x402 USDC) and `VAULT_ASSET` (Mocked Stable for vaults/trading) are separate; legacy `USDC` sets both. When `VAULT_ASSET` is unset, deploys `mSTBL`. For production, use staged scripts below.
 
 ### Staged deploy (incremental / mainnet)
 

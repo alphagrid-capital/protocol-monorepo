@@ -13,13 +13,16 @@ import { MandateVault } from "../src/vaults/MandateVault.sol";
 import { Fees } from "./config/Fees.sol";
 import { TokenCatalog } from "./config/TokenCatalog.sol";
 import { AgentCoreDeploy } from "./helpers/AgentCoreDeploy.sol";
+import { AssetDeploy } from "./helpers/AssetDeploy.sol";
 import { DeploymentArtifacts } from "./helpers/DeploymentArtifacts.sol";
 import { VaultDeploy } from "./helpers/VaultDeploy.sol";
 
 /// @notice Dev-complete greenfield deploy: core + tracks + trading + oracle + mock token catalog.
-/// @dev USDC env optional — deploys MockERC20 (mUSDC, 6 decimals) when unset.
+/// @dev `FEE_ASSET` (x402 USDC) and `VAULT_ASSET` (Mocked Stable for vaults/trading) are separate.
+///      When `VAULT_ASSET` is unset, deploys MockERC20 (`mSTBL`). When `FEE_ASSET` is unset, defaults
+///      to `VAULT_ASSET`. Legacy `USDC` sets both when the newer vars are omitted.
 ///      Production rollouts should use staged individual scripts instead.
-contract DeployFullStack is AgentCoreDeploy, VaultDeploy, DeploymentArtifacts {
+contract DeployFullStack is AgentCoreDeploy, VaultDeploy, AssetDeploy, DeploymentArtifacts {
     function run() external {
         address admin = vm.envAddress("ADMIN");
         address treasury = vm.envAddress("TREASURY");
@@ -30,14 +33,10 @@ contract DeployFullStack is AgentCoreDeploy, VaultDeploy, DeploymentArtifacts {
 
         vm.startBroadcast();
 
-        address usdc = tryLoadUsdc();
-        if (usdc == address(0)) {
-            usdc = address(new MockERC20("Mock USDC", "mUSDC", 6));
-            console2.log("Deployed Mock USDC:", usdc);
-        }
+        ResolvedAssets memory assets = resolveAssets(true);
 
-        AgentCoreDeployed memory core = deployAgentCore(admin, treasury, usdc, true);
-        VaultSet memory vaults = deployVaults(usdc, core.tokenRegistry, admin, treasury);
+        AgentCoreDeployed memory core = deployAgentCore(admin, treasury, assets.feeAsset, true);
+        VaultSet memory vaults = deployVaults(assets.vaultAsset, core.tokenRegistry, admin, treasury);
         wireAgentCore(core, Fees.REGISTRATION_FEE);
         grantRegistrarRole(core.registry, backendRelayer);
         configureVaultTracks(core.vaultTrackRegistry, vaults);
@@ -113,7 +112,8 @@ contract DeployFullStack is AgentCoreDeploy, VaultDeploy, DeploymentArtifacts {
                 tradeRouter: address(tradeRouter),
                 swapAdapter: address(swapAdapter),
                 priceOracle: address(oracle),
-                usdc: usdc,
+                feeAsset: assets.feeAsset,
+                vaultAsset: assets.vaultAsset,
                 tokenNvda: tokens[0],
                 tokenMeta: tokens[1],
                 tokenTsla: tokens[2],
@@ -126,6 +126,8 @@ contract DeployFullStack is AgentCoreDeploy, VaultDeploy, DeploymentArtifacts {
         );
 
         console2.log("Full stack deployed. Artifact: deployments/", block.chainid, ".json");
+        console2.log("Fee asset (FeeManager):", assets.feeAsset);
+        console2.log("Vault asset (trading):", assets.vaultAsset);
         console2.log("Copy token addresses into config/token-catalog.json and update api/src/constants/contracts.ts");
     }
 }

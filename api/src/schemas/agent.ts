@@ -45,6 +45,7 @@ export const AgentRegistrationQuoteSchema = z.object({
   registrationFee: z.object({
     amount: z.string(),
     assetSymbol: z.string(),
+    tokenAddress: z.string().regex(/^0x[a-fA-F0-9]{40}$/),
     decimals: z.number(),
     displayUsd: z.string(),
   }),

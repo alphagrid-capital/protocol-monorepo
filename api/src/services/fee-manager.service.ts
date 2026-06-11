@@ -7,6 +7,7 @@ import { ProviderService } from './provider.service.js'
 export interface RegistrationFeeDetails {
   amount: bigint
   treasury: `0x${string}` | null
+  feeAsset: `0x${string}`
   displayUsd: string
 }
 
@@ -21,7 +22,7 @@ export class FeeManagerService {
   }
 
   async getRegistrationFee(): Promise<RegistrationFeeDetails> {
-    const [amount, treasury] = await Promise.all([
+    const [amount, treasury, feeAsset] = await Promise.all([
       this.publicClient.readContract({
         address: this.feeManagerAddress,
         abi: feeManagerAbi,
@@ -32,11 +33,17 @@ export class FeeManagerService {
         abi: feeManagerAbi,
         functionName: 'treasury',
       }),
+      this.publicClient.readContract({
+        address: this.feeManagerAddress,
+        abi: feeManagerAbi,
+        functionName: 'feeAsset',
+      }),
     ])
 
     return {
       amount,
       treasury,
+      feeAsset,
       displayUsd: atomicUsdcToUsdString(amount),
     }
   }

@@ -20,7 +20,11 @@ export interface X402PaymentConfig {
   path: string
   description: string
   mimeType?: string
-  priceUsd: string
+  price: {
+    asset: `0x${string}`
+    amount: string
+    extra?: Record<string, unknown>
+  }
   payTo: `0x${string}`
   network: Network
   facilitatorUrl: string
@@ -43,7 +47,7 @@ function buildRoutes(payment: X402PaymentConfig): RoutesConfig {
       accepts: [
         {
           scheme: 'exact',
-          price: payment.priceUsd,
+          price: payment.price,
           network: payment.network,
           payTo: payment.payTo,
         },
