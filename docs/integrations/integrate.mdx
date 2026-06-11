@@ -91,7 +91,9 @@ Every live MCP tool maps to an HTTP route. Example: `alphagrid_list_vaults` → 
 
 ## Local wallet MCP (for testing)
 
-Optional stdio MCP for signing EIP-712 payloads and paying x402 registration fees during local development. Add it alongside the AlphaGrid protocol MCP in `.cursor/mcp.json`. Not for production; use your own signer or a third-party agent wallet instead.
+Optional stdio MCP for signing EIP-712 payloads and paying x402 registration fees during local development. Published on npm as [`@alphagrid/local-wallet-mcp`](https://www.npmjs.com/package/@alphagrid/local-wallet-mcp). Add it alongside the AlphaGrid protocol MCP in `.cursor/mcp.json`. Not for production; use your own signer or a third-party agent wallet instead.
+
+Requires Node.js 24 or newer (`npx` uses your local Node runtime).
 
 Install from npm (no clone required):
 
@@ -112,6 +114,22 @@ Install from npm (no clone required):
 ```
 
 Set `NETWORK_ID`, `PRIVATE_KEY` (or CDP credentials for `WALLET_PROVIDER=cdp`), and optional `CDP_API_KEY_ID` / `CDP_API_KEY_SECRET` for faucet and x402 tools. See [`agents/wallet-mcp/mcp.config.example.json`](https://github.com/alphagrid-capital/protocol-monorepo/blob/main/agents/wallet-mcp/mcp.config.example.json) for the full env block.
+
+If you already use the key `alphagrid-wallet-mcp` in `.cursor/mcp.json`, keep it and update only `command` and `args` to the `npx` form above.
+
+For monorepo development, build from `agents/wallet-mcp/` and point `args` at `build/index.js` with `"command": "node"` instead of `npx`.
+
+### Arbitrum x402 for registration
+
+AlphaGrid registration fees use x402 on Arbitrum (`eip155:421614` testnet, `eip155:42161` mainnet). Stock AgentKit x402 tools only cover Base and Solana; the local wallet MCP patches AgentKit at startup so x402 works on **`arbitrum-sepolia`** and **`arbitrum-mainnet`**.
+
+For registration testing against the deployed API:
+
+1. Set `NETWORK_ID` to `arbitrum-sepolia`.
+2. Set `CDP_API_KEY_ID` and `CDP_API_KEY_SECRET` (required for x402 payment tools).
+3. Restart the MCP server after config changes.
+
+The patch maps Arbitrum Sepolia **USDC** to the AlphaGrid fee asset (`0x75fa…AA4d` on chain 421614), matching `api/src/constants/contracts.ts`.
 
 Setup context: [Register an agent → Agent signer](/agents/register#agent-signer).
 
@@ -243,11 +261,11 @@ curl "https://alphagrid-api.artiffine-delivery.workers.dev/agents/1/positions"
 }
 ```
 
-Run `yarn dev` in `api/` first.
+Run `yarn dev` in `api/` first (Node.js 24+). Set `CHAIN_ID` and `RPC_URL` in `api/.dev.vars` for on-chain reads; see [API & MCP → Local development](/reference/api-mcp#local-development).
 
 ### Configure mcp.json
 
-Add the server block to `.cursor/mcp.json` (project) or user MCP settings. Optionally add the [local wallet MCP](/integrations/integrate#local-wallet-mcp-for-testing) for signing during development.
+Add the protocol server block to `.cursor/mcp.json` (project) or user MCP settings. For local development, add **both** servers: `alphagrid` (protocol quotes and relay) and `alphagrid-local-wallet-mcp` (EIP-712 signing and x402 payment). The protocol MCP does not hold your private key.
 
 ### Required headers
 
@@ -261,7 +279,7 @@ Not implemented: `alphagrid_get_trade_history`, `alphagrid_get_risk_state`, `alp
 
 ### Session handling
 
-Connect once per MCP client session: the server returns `mcp-session-id` after initialize, and the client must send that header on later tool calls. Cursor, Claude Desktop, and other MCP clients do this automatically.
+Connect once per MCP client session. The server returns `mcp-session-id` after initialize, and the client must send that header on later requests. Each session runs in a Cloudflare Durable Object so initialize, tool calls, and SSE listen streams stay on the same connection across Worker isolates. Cursor, Claude Desktop, and other MCP clients handle this automatically.
 
 ## Connect ChatGPT
 
