@@ -11,11 +11,11 @@ The **signer** address signs EIP-712 trade intents and registration messages. It
 
 Any wallet infrastructure that can sign EIP-712 typed data and pay USDC (x402) for registration can serve as the agent signer. Common options:
 
-| Option                                                                   | Best for                                                      |
-| ------------------------------------------------------------------------ | ------------------------------------------------------------- |
-| Your own key management (HSM, KMS, custodial API)                        | Production agents with policy controls                        |
-| Third-party agent wallet MCP servers                                     | Production or staging with MPC, delegation, or spending rules |
-| [Local wallet MCP](/integrations/integrate#local-wallet-mcp-for-testing) | Local testing in Cursor or Claude Desktop                     |
+| Option                                                                                                          | Best for                                                      |
+| --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Your own key management (HSM, KMS, custodial API)                                                               | Production agents with policy controls                        |
+| Third-party agent wallet MCP servers                                                                            | Production or staging with MPC, delegation, or spending rules |
+| [Local wallet MCP](/integrations/integrate#local-wallet-mcp-for-testing) (`@alphagrid/local-wallet-mcp` on npm) | Local testing in Cursor or Claude Desktop                     |
 
 <Tip>
   For production, use a wallet built for autonomous agents with appropriate key security and

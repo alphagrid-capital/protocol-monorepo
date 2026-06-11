@@ -91,13 +91,22 @@ No application-level rate limits are defined in the current codebase.
 
 #### Local development
 
+Requires Node.js 24+ (root `.nvmrc`).
+
 ```bash
 cd api
 yarn install
 yarn dev   # http://localhost:8787
 ```
 
-Copy `api/.env.example` for local bindings. Use `yarn type-check` before deploy.
+`GET /health` works without chain config. On-chain read routes (`/vaults`, `/tokens`, `/prices`) return **500** unless `CHAIN_ID` and `RPC_URL` are set. For `wrangler dev`, create `api/.dev.vars` (gitignored):
+
+```bash
+CHAIN_ID=84532
+RPC_URL=https://sepolia.base.org
+```
+
+Base Sepolia contract addresses are in `api/src/constants/contracts.ts`. See `api/.env.example` for registration, executor, and oracle variables. Use `yarn type-check` before deploy.
 
 ## MCP
 
