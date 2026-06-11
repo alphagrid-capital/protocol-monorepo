@@ -51,7 +51,7 @@ yarn deploy      # Deploy to Cloudflare (requires account auth)
 | `GET`  | `/intents/{intentId}`                         | Intent status lookup (**501** stub)                                            |
 | `GET`  | `/docs`                                       | Swagger UI (humans; poor fit for URL paste in chat)                            |
 | `GET`  | `/docs/swagger.json`                          | OpenAPI 3.1 (Custom GPT Actions)                                               |
-| `POST` | `/mcp`                                        | MCP Streamable HTTP (stateless JSON)                                           |
+| `POST` | `/mcp`                                        | MCP Streamable HTTP (Durable Object sessions)                                  |
 
 ## Using with ChatGPT and other LLMs
 
@@ -95,7 +95,7 @@ Trade history, risk state, and intent status stubs return HTTP **501** or MCP `N
 
 Connect MCP clients to `http://localhost:8787/mcp` in development (or your deployed Worker URL). Clients must send `Accept: application/json, text/event-stream` on MCP requests.
 
-**Cursor custom MCP:** use your deployed `https://<worker-host>/mcp` URL (Streamable HTTP). Tool calls use **POST with JSON responses** (`enableJsonResponse`); `GET /mcp` returns a short-lived SSE ack (not a hanging stream). Opening `/mcp` in a browser will fail — use an MCP client or [MCP Inspector](https://github.com/modelcontextprotocol/inspector). Sessions are in-memory per isolate; for long-lived SSE or multi-instance affinity, use Durable Objects.
+**Cursor custom MCP:** use your deployed `https://<worker-host>/mcp` URL (Streamable HTTP). Each client session is backed by a Cloudflare Durable Object (`McpAgent`), so initialize and tool calls stay on the same session across Worker isolates. Transport uses Streamable HTTP with SSE (including `GET /mcp` listen streams). Opening `/mcp` in a browser will fail — use an MCP client or [MCP Inspector](https://github.com/modelcontextprotocol/inspector).
 
 ## Layout
 
@@ -104,7 +104,8 @@ api/
   src/
     index.ts           # Worker entry (exports fetch handler)
     app.ts             # Hono app, OpenAPI, MCP transport
-    mcp/server.ts      # MCP tool registration
+    mcp/alphagrid-mcp-agent.ts  # McpAgent (Durable Object per session)
+    mcp/server.ts               # MCP tool registration
     routes/            # OpenAPI HTTP routes
     services/          # Shared business logic (used by HTTP + MCP)
     schemas/           # Zod / OpenAPI schemas

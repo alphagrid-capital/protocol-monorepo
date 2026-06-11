@@ -1,7 +1,6 @@
 import { swaggerUI } from '@hono/swagger-ui'
 import { OpenAPIHono } from '@hono/zod-openapi'
 import { cors } from 'hono/cors'
-import { handleMcpRequest } from './mcp/handler.js'
 import { openApiJsonResponse } from './openapi.js'
 import { registerDiscoveryRoutes } from './routes/discovery.js'
 import { agentRoutes } from './routes/agents.js'
@@ -60,16 +59,11 @@ function registerHttpRoutes(app: OpenAPIHono): void {
   registerDiscoveryRoutes(app)
 }
 
-function registerMcpRoutes(app: OpenAPIHono): void {
-  app.all('/mcp', (c) => handleMcpRequest(c.req.raw, c.env as WorkerEnv))
-}
-
 export function createApp(): OpenAPIHono {
   const app = new OpenAPIHono()
 
   registerGlobalMiddleware(app)
   registerHttpRoutes(app)
-  registerMcpRoutes(app)
 
   app.get('/docs/swagger.json', (c) =>
     c.json(openApiJsonResponse(app, c.req.url), 200, {

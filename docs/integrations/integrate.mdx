@@ -83,7 +83,7 @@ Clients must send:
 Accept: application/json, text/event-stream
 ```
 
-The server uses JSON responses (`enableJsonResponse`). `GET /mcp` returns a short-lived SSE ack; not a hanging stream. Opening `/mcp` in a browser will fail; use an MCP client or [MCP Inspector](https://github.com/modelcontextprotocol/inspector).
+The server uses Streamable HTTP on `/mcp`. Use an MCP-native client — opening the URL in a browser will not work. For quick testing, try [MCP Inspector](https://github.com/modelcontextprotocol/inspector).
 
 ### Tool parity with HTTP
 
@@ -261,7 +261,7 @@ Not implemented: `alphagrid_get_trade_history`, `alphagrid_get_risk_state`, `alp
 
 ### Session handling
 
-Sessions are in-memory per Worker isolate. For long-lived SSE or multi-instance affinity, Durable Objects would be required; not supported today.
+Connect once per MCP client session: the server returns `mcp-session-id` after initialize, and the client must send that header on later tool calls. Cursor, Claude Desktop, and other MCP clients do this automatically.
 
 ## Connect ChatGPT
 

@@ -107,11 +107,23 @@ Server name: `alphagrid-mcp-server` (v0.1.0). Endpoint: `POST /mcp` on the same 
 
 #### Streamable HTTP
 
-JSON request/response mode (`enableJsonResponse`). Not a persistent SSE stream for tool calls.
+The server uses [Streamable HTTP](https://modelcontextprotocol.io/specification/2025-03-26/basic/transports#streamable-http) on `/mcp`. Send this header on every MCP request:
 
-#### Session ID and SSE
+```http
+Accept: application/json, text/event-stream
+```
 
-`GET /mcp` returns a short-lived SSE acknowledgment. Tool execution uses `POST` with JSON bodies. Sessions are per-isolate memory.
+Tool calls use `POST /mcp`. MCP-native clients (Cursor, Claude Desktop, MCP Inspector) handle transport and streaming for you.
+
+Opening `/mcp` in a web browser will not work — use an MCP client.
+
+#### Sessions
+
+1. The client sends an **initialize** request (`POST /mcp`).
+2. The server responds with an `mcp-session-id` header.
+3. The client includes that header on all later MCP requests for the same connection.
+
+Standard MCP clients manage sessions automatically. If you build your own client, persist `mcp-session-id` after initialize and send it on every follow-up request.
 
 ### Tools
 

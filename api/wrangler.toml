@@ -30,5 +30,13 @@ ENABLE_SWAGGER="true"
 # ORACLE_KEEPER_PRIVATE_KEY — `wrangler secret put ORACLE_KEEPER_PRIVATE_KEY` (ORACLE_UPDATER on MockPriceOracle)
 # ORACLE_REFRESH_SECRET — optional; `wrangler secret put ORACLE_REFRESH_SECRET` for POST /prices/refresh
 
+[[durable_objects.bindings]]
+name = "MCP_OBJECT"
+class_name = "AlphagridMcp"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["AlphagridMcp"]
+
 [triggers]
 crons = ["*/15 * * * *"]

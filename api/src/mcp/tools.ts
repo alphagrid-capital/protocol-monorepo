@@ -1,4 +1,4 @@
-import type { McpServer } from '@modelcontextprotocol/server'
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
 import { runRegistrationWithPayment } from '../lib/x402-agent-registration.js'
 import { getWorkerEnv } from '../lib/worker-env.js'
