@@ -4,7 +4,7 @@ Public-facing documentation site powered by [Mintlify](https://mintlify.com).
 
 ## Local preview
 
-Requires Node.js 20.17+:
+Requires Node.js 24+ (see root `.nvmrc`):
 
 ```bash
 cd docs
