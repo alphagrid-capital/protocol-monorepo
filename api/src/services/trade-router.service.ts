@@ -55,7 +55,11 @@ export class TradeRouterService {
   }
 
   private async writeAndWait(
-    functionName: 'openPosition' | 'addToPosition' | 'reducePosition' | 'updateExitLadder',
+    functionName:
+      | 'openPosition'
+      | 'addToPosition'
+      | 'reducePosition'
+      | 'updateExitLadder',
     args: readonly unknown[]
   ): Promise<Hex> {
     if (!this.config.executorPrivateKey) {

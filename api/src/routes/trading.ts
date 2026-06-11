@@ -183,7 +183,9 @@ const submitAddIntentRoute = createRoute({
   summary: 'Submit add-to-position intent',
   request: {
     params: agentIdParams,
-    body: { content: { 'application/json': { schema: AddPositionRequestSchema } } },
+    body: {
+      content: { 'application/json': { schema: AddPositionRequestSchema } },
+    },
   },
   responses: {
     201: {

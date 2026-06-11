@@ -24,6 +24,11 @@ export interface ChainContracts {
   feeAsset: TokenConfig
   /** Vault + trading underlying (Mocked Stable on testnet). */
   vaultAsset: TokenConfig
+  // Thematic vaults
+  FoundationVault: `0x${string}` | null
+  TechVault: `0x${string}` | null
+  VolatilityVault: `0x${string}` | null
+  MacroVault: `0x${string}` | null
 }
 
 export const contracts: Record<number, ChainContracts> = {
@@ -40,6 +45,10 @@ export const contracts: Record<number, ChainContracts> = {
     PositionManager: '0xc27558d2773a391a494cc7899831b304fbd2c2fb',
     TradeRouter: '0x12b0548e204c6d832b29d307e3c6154d029c4277',
     SwapAdapter: '0xf645850781a781ab4583f7dcd03a3b9ac1192a22',
+    FoundationVault: '0x0665b5ebc6692a2f770369ed6e4c652d0a460292',
+    TechVault: '0xea3895c279bcab7f3d2fd18416500f781accebed',
+    VolatilityVault: '0x6caf45c8c5a6c3765f3ffc91d830ce16f7507cb1',
+    MacroVault: '0x87f9be8f34ee7784747b77d77b6d2ac9afe909a8',
     feeAsset: {
       address: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
       symbol: 'USDC',
@@ -66,6 +75,10 @@ export const contracts: Record<number, ChainContracts> = {
     PositionManager: null,
     TradeRouter: null,
     SwapAdapter: null,
+    FoundationVault: null,
+    TechVault: null,
+    VolatilityVault: null,
+    MacroVault: null,
     feeAsset: {
       address: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
       symbol: 'USDC',
@@ -92,6 +105,10 @@ export const contracts: Record<number, ChainContracts> = {
     PositionManager: '0x9Db3cd7e776bc334fe0343d34eBcf775360da8B6',
     TradeRouter: '0x657b4dA89AeD3bD0f1d0aD0b2a9bDb33B1054cC2',
     SwapAdapter: '0xb81eeEC997C5F6B8F858C0f70E7307109BA4F0F3',
+    FoundationVault: '0x5187d55578BD7a7cD44FfBDF47cB43b7D10E8C4d',
+    TechVault: '0xE7164E3eEb4F83ddb6149D06C8859DD3B763939d',
+    VolatilityVault: '0x656a16dDc7420Aa53EBfcE79DD556453964356eC',
+    MacroVault: '0x8bF7B28B7134Ae77d00B6f39A7BE963bfC657CaF',
     feeAsset: {
       address: '0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d',
       symbol: 'USDC',
@@ -118,6 +135,10 @@ export const contracts: Record<number, ChainContracts> = {
     PositionManager: null,
     TradeRouter: null,
     SwapAdapter: null,
+    FoundationVault: null,
+    TechVault: null,
+    VolatilityVault: null,
+    MacroVault: null,
     feeAsset: {
       address: '0x0000000000000000000000000000000000000000',
       symbol: 'USDC',

@@ -106,14 +106,19 @@ export class TradingService {
     const signer = agent.signer as Address
     const trackId = BigInt(agent.track)
     const day = BigInt(Math.floor(Date.now() / 1000 / 86400))
-    const [nonce, eip712Domain, exitBounds, accountRiskBounds, dailyRealizedPnlUsdc] =
-      await Promise.all([
-        tradeRouter.nonces(agentId),
-        tradeRouter.getEip712Domain(),
-        this.getExitBounds(vault, trackId),
-        this.getAccountRiskBounds(vault, trackId),
-        tradeRouter.dailyRealizedPnlUsdc(agentId, day),
-      ])
+    const [
+      nonce,
+      eip712Domain,
+      exitBounds,
+      accountRiskBounds,
+      dailyRealizedPnlUsdc,
+    ] = await Promise.all([
+      tradeRouter.nonces(agentId),
+      tradeRouter.getEip712Domain(),
+      this.getExitBounds(vault, trackId),
+      this.getAccountRiskBounds(vault, trackId),
+      tradeRouter.dailyRealizedPnlUsdc(agentId, day),
+    ])
     const allocation = await this.getAllocation(agentId)
     const allowedSymbols = await this.listAllowedSymbols(vault)
 
@@ -259,11 +264,21 @@ export class TradingService {
   }
 
   async getAddQuote(agentIdStr: string, positionIdStr: string) {
-    return this.buildPositionQuote(agentIdStr, positionIdStr, 'AddToPosition', true)
+    return this.buildPositionQuote(
+      agentIdStr,
+      positionIdStr,
+      'AddToPosition',
+      true
+    )
   }
 
   async getReduceQuote(agentIdStr: string, positionIdStr: string) {
-    return this.buildPositionQuote(agentIdStr, positionIdStr, 'ReducePosition', false)
+    return this.buildPositionQuote(
+      agentIdStr,
+      positionIdStr,
+      'ReducePosition',
+      false
+    )
   }
 
   async getExitLadderQuote(agentIdStr: string, positionIdStr: string) {
@@ -458,10 +473,7 @@ export class TradingService {
 
   private async submitAdjustIntent(
     agentIdStr: string,
-    body:
-      | AddPositionRequest
-      | ReducePositionRequest
-      | UpdateExitLadderRequest,
+    body: AddPositionRequest | ReducePositionRequest | UpdateExitLadderRequest,
     kind: 'add' | 'reduce' | 'updateExitLadder'
   ): Promise<SubmitAdjustIntentResponse> {
     if (!this.config.executorPrivateKey) {

@@ -352,8 +352,7 @@ export function registerMcpTools(server: McpServer): void {
     MCP_TOOL_NAMES.getExitLadderIntentQuote,
     {
       title: 'Update exit ladder intent quote',
-      description:
-        'Mirrors GET /agents/{agentId}/exit-ladder-intents/quote.',
+      description: 'Mirrors GET /agents/{agentId}/exit-ladder-intents/quote.',
       inputSchema: PositionAdjustInputSchema,
       annotations: READ_ONLY_TOOL_ANNOTATIONS,
     },

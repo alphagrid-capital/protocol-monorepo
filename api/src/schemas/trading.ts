@@ -77,7 +77,8 @@ export const TradeIntentQuoteSchema = z
     exitBounds: ExitBoundsSchema,
     accountRiskBounds: AccountRiskBoundsSchema,
     dailyRealizedPnlUsdc: z.string().openapi({
-      description: 'Net realized PnL today (negative = loss); from TradeRouter.dailyRealizedPnlUsdc',
+      description:
+        'Net realized PnL today (negative = loss); from TradeRouter.dailyRealizedPnlUsdc',
       example: '0',
     }),
     defaultExit: z.array(ExitRuleInputSchema),
@@ -263,10 +264,11 @@ export const SubmitAddIntentInputSchema = AddPositionRequestSchema.extend({
   agentId: agentIdParamSchema,
 }).strict()
 
-export const SubmitReduceIntentInputSchema =
-  ReducePositionRequestSchema.extend({
+export const SubmitReduceIntentInputSchema = ReducePositionRequestSchema.extend(
+  {
     agentId: agentIdParamSchema,
-  }).strict()
+  }
+).strict()
 
 export const SubmitExitLadderIntentInputSchema =
   UpdateExitLadderRequestSchema.extend({

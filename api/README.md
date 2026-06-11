@@ -26,32 +26,32 @@ yarn deploy      # Deploy to Cloudflare (requires account auth)
 
 ## Endpoints
 
-| Method | Path                                    | Description                                                       |
-| ------ | --------------------------------------- | ----------------------------------------------------------------- |
-| `GET`  | `/`                                     | API discovery JSON (generated from OpenAPI)                       |
-| `GET`  | `/llms.txt`                             | LLM-oriented index ([llms.txt spec](https://llmstxt.org/))        |
-| `GET`  | `/health`                               | Liveness probe                                                    |
-| `GET`  | `/vaults`                               | Vault catalog (`?format=md` for markdown)                         |
-| `GET`  | `/vaults/{id}/tokens`                   | Tradable tokens for a vault mandate + oracle prices               |
-| `GET`  | `/tokens`                               | Global token catalog + on-chain registry state                    |
-| `GET`  | `/prices`                               | MockPriceOracle quotes indexed by symbol (e.g. `NVDA`)            |
-| `POST` | `/prices/refresh`                       | Manually fetch Finnhub quotes and update the oracle               |
-| `GET`  | `/agents/{agentId}/trade-intents/quote` | EIP-712 quote for open-position intent (nonce, vault, allocation, exit bounds) |
-| `POST` | `/agents/{agentId}/trade-intents`       | Verify signed open intent; relay `TradeRouter.openPosition` (201) |
-| `GET`  | `/agents/{agentId}/add-intents/quote`   | Quote for `AddToPosition` (`?positionId=`) |
-| `POST` | `/agents/{agentId}/add-intents`         | Relay signed add-to-position intent (201) |
-| `GET`  | `/agents/{agentId}/reduce-intents/quote` | Quote for `ReducePosition` (`?positionId=`) |
-| `POST` | `/agents/{agentId}/reduce-intents`      | Relay signed reduce intent — partial or full close (201) |
-| `GET`  | `/agents/{agentId}/exit-ladder-intents/quote` | Quote for `UpdateExitLadder` (`?positionId=`) |
-| `POST` | `/agents/{agentId}/exit-ladder-intents` | Relay signed pending TP/SL update (201) |
-| `GET`  | `/agents/{agentId}/positions`           | Agent open positions with exit rules (RPC via `PositionManager`) |
-| `POST` | `/intents/trade`                        | Global trade intent submit (**501** stub)                         |
-| `GET`  | `/agents/{agentId}/trades`              | Agent trade history (**501** stub)                                |
-| `GET`  | `/agents/{agentId}/risk-state`          | Agent risk state (**501** stub)                                   |
-| `GET`  | `/intents/{intentId}`                   | Intent status lookup (**501** stub)                               |
-| `GET`  | `/docs`                                 | Swagger UI (humans; poor fit for URL paste in chat)               |
-| `GET`  | `/docs/swagger.json`                    | OpenAPI 3.1 (Custom GPT Actions)                                  |
-| `POST` | `/mcp`                                  | MCP Streamable HTTP (stateless JSON)                              |
+| Method | Path                                          | Description                                                                    |
+| ------ | --------------------------------------------- | ------------------------------------------------------------------------------ |
+| `GET`  | `/`                                           | API discovery JSON (generated from OpenAPI)                                    |
+| `GET`  | `/llms.txt`                                   | LLM-oriented index ([llms.txt spec](https://llmstxt.org/))                     |
+| `GET`  | `/health`                                     | Liveness probe                                                                 |
+| `GET`  | `/vaults`                                     | Vault catalog (`?format=md` for markdown)                                      |
+| `GET`  | `/vaults/{id}/tokens`                         | Tradable tokens for a vault mandate + oracle prices                            |
+| `GET`  | `/tokens`                                     | Global token catalog + on-chain registry state                                 |
+| `GET`  | `/prices`                                     | MockPriceOracle quotes indexed by symbol (e.g. `NVDA`)                         |
+| `POST` | `/prices/refresh`                             | Manually fetch Finnhub quotes and update the oracle                            |
+| `GET`  | `/agents/{agentId}/trade-intents/quote`       | EIP-712 quote for open-position intent (nonce, vault, allocation, exit bounds) |
+| `POST` | `/agents/{agentId}/trade-intents`             | Verify signed open intent; relay `TradeRouter.openPosition` (201)              |
+| `GET`  | `/agents/{agentId}/add-intents/quote`         | Quote for `AddToPosition` (`?positionId=`)                                     |
+| `POST` | `/agents/{agentId}/add-intents`               | Relay signed add-to-position intent (201)                                      |
+| `GET`  | `/agents/{agentId}/reduce-intents/quote`      | Quote for `ReducePosition` (`?positionId=`)                                    |
+| `POST` | `/agents/{agentId}/reduce-intents`            | Relay signed reduce intent — partial or full close (201)                       |
+| `GET`  | `/agents/{agentId}/exit-ladder-intents/quote` | Quote for `UpdateExitLadder` (`?positionId=`)                                  |
+| `POST` | `/agents/{agentId}/exit-ladder-intents`       | Relay signed pending TP/SL update (201)                                        |
+| `GET`  | `/agents/{agentId}/positions`                 | Agent open positions with exit rules (RPC via `PositionManager`)               |
+| `POST` | `/intents/trade`                              | Global trade intent submit (**501** stub)                                      |
+| `GET`  | `/agents/{agentId}/trades`                    | Agent trade history (**501** stub)                                             |
+| `GET`  | `/agents/{agentId}/risk-state`                | Agent risk state (**501** stub)                                                |
+| `GET`  | `/intents/{intentId}`                         | Intent status lookup (**501** stub)                                            |
+| `GET`  | `/docs`                                       | Swagger UI (humans; poor fit for URL paste in chat)                            |
+| `GET`  | `/docs/swagger.json`                          | OpenAPI 3.1 (Custom GPT Actions)                                               |
+| `POST` | `/mcp`                                        | MCP Streamable HTTP (stateless JSON)                                           |
 
 ## Using with ChatGPT and other LLMs
 
@@ -84,7 +84,7 @@ ChatGPT **browsing** only performs simple `GET` requests on **public** URLs. It 
 | `alphagrid_submit_add_intent`            | `POST /agents/{agentId}/add-intents`                     |
 | `alphagrid_get_reduce_intent_quote`      | `GET /agents/{agentId}/reduce-intents/quote`             |
 | `alphagrid_submit_reduce_intent`         | `POST /agents/{agentId}/reduce-intents`                  |
-| `alphagrid_get_exit_ladder_intent_quote` | `GET /agents/{agentId}/exit-ladder-intents/quote`          |
+| `alphagrid_get_exit_ladder_intent_quote` | `GET /agents/{agentId}/exit-ladder-intents/quote`        |
 | `alphagrid_submit_exit_ladder_intent`    | `POST /agents/{agentId}/exit-ladder-intents`             |
 | `alphagrid_get_agent_positions`          | `GET /agents/{agentId}/positions`                        |
 | `alphagrid_get_trade_history`            | `GET /agents/{agentId}/trades` (**NOT_IMPLEMENTED**)     |

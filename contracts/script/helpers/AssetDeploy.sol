@@ -24,9 +24,7 @@ abstract contract AssetDeploy is DeploymentEnv {
         if (assets.vaultAsset != address(0)) {
             resolved.vaultAsset = assets.vaultAsset;
         } else if (deployVaultMockIfMissing) {
-            resolved.vaultAsset = address(
-                new MockERC20(MOCK_STABLE_NAME, MOCK_STABLE_SYMBOL, MOCK_STABLE_DECIMALS)
-            );
+            resolved.vaultAsset = address(new MockERC20(MOCK_STABLE_NAME, MOCK_STABLE_SYMBOL, MOCK_STABLE_DECIMALS));
             console2.log("Deployed Mocked Stable (vault asset):", resolved.vaultAsset);
         } else {
             revert("VAULT_ASSET or USDC required");
@@ -39,5 +37,4 @@ abstract contract AssetDeploy is DeploymentEnv {
             console2.log("Fee asset defaults to vault asset:", resolved.feeAsset);
         }
     }
-
 }
