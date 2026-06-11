@@ -283,11 +283,28 @@ contract AgentRegistryTest is BaseTest {
         uint256 agentId = _registerAgent();
         address newOwner = makeAddr("newOwner");
 
+        assertEq(registry.agentCountByOwner(agentOwner), 1);
+        assertEq(registry.agentIdByOwnerAt(agentOwner, 0), agentId);
+
         vm.prank(agentOwner);
         registry.transferAgentOwnership(agentId, newOwner);
 
         assertEq(registry.ownerOf(agentId), newOwner);
         assertEq(registry.payoutRecipientOf(agentId), agentOwner);
+        assertEq(registry.agentCountByOwner(agentOwner), 0);
+        assertEq(registry.agentCountByOwner(newOwner), 1);
+        assertEq(registry.agentIdByOwnerAt(newOwner, 0), agentId);
+    }
+
+    function test_AgentCountByOwner_MultipleAgents() public {
+        vm.startPrank(operator);
+        uint256 first = registry.registerAgent(agentOwner, vault, AGENT_NAME, METADATA_URI, agentSigner, false, 0);
+        uint256 second = registry.registerAgent(agentOwner, vault, "Second Bot", "ipfs://second", agentSigner, false, 0);
+        vm.stopPrank();
+
+        assertEq(registry.agentCountByOwner(agentOwner), 2);
+        assertEq(registry.agentIdByOwnerAt(agentOwner, 0), first);
+        assertEq(registry.agentIdByOwnerAt(agentOwner, 1), second);
     }
 
     function test_OwnerSetsPayoutRecipient() public {

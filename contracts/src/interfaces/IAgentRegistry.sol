@@ -181,6 +181,15 @@ interface IAgentRegistry {
 
     function getAgent(uint256 agentId) external view returns (Agent memory);
 
+    /// @notice Returns the next agent id that will be assigned on registration.
+    function nextAgentId() external view returns (uint256);
+
+    /// @notice Number of agents owned by `owner` (includes transferred-away history via index maintenance).
+    function agentCountByOwner(address owner) external view returns (uint256);
+
+    /// @notice Returns the agent id at `index` in `owner`'s registration list (0-based).
+    function agentIdByOwnerAt(address owner, uint256 index) external view returns (uint256);
+
     function erc8004IdentityRegistry() external view returns (address);
 
     function erc8004ChainId() external view returns (uint256);

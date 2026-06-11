@@ -57,6 +57,27 @@ interface ITradeRouter is IPositionTypes {
     /// @notice Net realized PnL from sells on UTC day `day` (negative = net loss vs cost basis released).
     function dailyRealizedPnlUsdc(uint256 agentId, uint256 day) external view returns (int256);
 
+    /// @notice Cumulative net realized PnL from all sells (negative = net loss vs cost basis released).
+    function lifetimeRealizedPnlUsdc(uint256 agentId) external view returns (int256);
+
+    /// @notice Cumulative USDC notional traded across all days.
+    function lifetimeTurnoverUsdc(uint256 agentId) external view returns (uint256);
+
+    /// @notice Mark-to-market PnL in bps vs position entry price (uses vault oracle).
+    function positionPnlBps(uint256 positionId) external view returns (int256);
+
+    /// @notice Mark-to-market unrealized PnL in USDC (uses vault oracle).
+    function positionUnrealizedPnlUsdc(uint256 positionId) external view returns (int256);
+
+    /// @notice Count of executed trades (opens, adds, reduces, exits).
+    function tradeCount(uint256 agentId) external view returns (uint32);
+
+    /// @notice Count of positions opened.
+    function positionsOpened(uint256 agentId) external view returns (uint32);
+
+    /// @notice Count of positions fully closed.
+    function positionsClosed(uint256 agentId) external view returns (uint32);
+
     // -------------------------------------------------------------------------
     // Execution
     // -------------------------------------------------------------------------

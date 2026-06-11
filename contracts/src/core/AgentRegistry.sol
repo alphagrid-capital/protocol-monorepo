@@ -42,6 +42,7 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
 
     mapping(uint256 agentId => Agent agent) private _agents;
     mapping(uint256 erc8004AgentId => uint256 agentId) private _agentIdByErc8004;
+    mapping(address owner => uint256[] agentIds) private _agentIdsByOwner;
 
     struct AgentRegistrationInput {
         address owner;
@@ -192,6 +193,8 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
         if (msg.sender != from) revert NotAgentOwner(agentId, msg.sender);
 
         agent.owner = newOwner;
+        _removeAgentFromOwner(from, agentId);
+        _agentIdsByOwner[newOwner].push(agentId);
         emit AgentOwnershipTransferred(agentId, from, newOwner);
     }
 
@@ -316,9 +319,19 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
         return _requireAgentExists(agentId);
     }
 
-    /// @notice Returns the next agent id that will be assigned.
+    /// @inheritdoc IAgentRegistry
     function nextAgentId() external view returns (uint256) {
         return _nextAgentId;
+    }
+
+    /// @inheritdoc IAgentRegistry
+    function agentCountByOwner(address owner) external view returns (uint256) {
+        return _agentIdsByOwner[owner].length;
+    }
+
+    /// @inheritdoc IAgentRegistry
+    function agentIdByOwnerAt(address owner, uint256 index) external view returns (uint256) {
+        return _agentIdsByOwner[owner][index];
     }
 
     // -------------------------------------------------------------------------
@@ -452,6 +465,8 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
             erc8004AgentId: 0
         });
 
+        _agentIdsByOwner[input.owner].push(agentId);
+
         emit AgentRegistered(agentId, input.vault, input.owner, input.signer, input.metadataURI, Track.CHALLENGE);
 
         if (input.linkERC8004) {
@@ -505,5 +520,18 @@ contract AgentRegistry is IAgentRegistry, AccessControl, EIP712, Nonces, Pausabl
     /// @dev Terminal statuses release allocation cap via AllocationManager.
     function _isTerminalAgentStatus(AgentStatus status) private pure returns (bool) {
         return status == AgentStatus.Failed || status == AgentStatus.Exited || status == AgentStatus.Graduated;
+    }
+
+    /// @dev Removes `agentId` from `owner`'s index (swap-and-pop).
+    function _removeAgentFromOwner(address owner, uint256 agentId) private {
+        uint256[] storage ids = _agentIdsByOwner[owner];
+        uint256 len = ids.length;
+        for (uint256 i = 0; i < len; i++) {
+            if (ids[i] == agentId) {
+                ids[i] = ids[len - 1];
+                ids.pop();
+                return;
+            }
+        }
     }
 }

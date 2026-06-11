@@ -77,6 +77,36 @@ contract TradeRouterTest is TradingTestBase {
         assertTrue(tradeRouter.isTriggerMet(positionId));
     }
 
+    function test_AgentOwnerStats_LifetimeCountersAndPositionPnl() public {
+        uint256 agentId = _registerAgent();
+        uint256 usdcAmount = 10_000e6;
+        IPositionTypes.PositionIntent memory intent = _singleStopIntent(agentId, usdcAmount, -1000);
+        bytes memory sig = _signOpenPosition(intent);
+
+        vm.prank(executor);
+        uint256 positionId = tradeRouter.openPosition(intent, sig);
+
+        assertEq(tradeRouter.tradeCount(agentId), 1);
+        assertEq(tradeRouter.positionsOpened(agentId), 1);
+        assertEq(tradeRouter.positionsClosed(agentId), 0);
+        assertEq(tradeRouter.lifetimeTurnoverUsdc(agentId), usdcAmount);
+        assertEq(tradeRouter.lifetimeRealizedPnlUsdc(agentId), 0);
+
+        _setTokenPrice(address(nvda), 160e8);
+        assertGt(tradeRouter.positionPnlBps(positionId), 0);
+        assertGt(tradeRouter.positionUnrealizedPnlUsdc(positionId), 0);
+
+        _setTokenPrice(address(nvda), 130e8);
+        vm.prank(makeAddr("keeper"));
+        tradeRouter.executeExit(positionId);
+
+        assertEq(tradeRouter.tradeCount(agentId), 2);
+        assertEq(tradeRouter.positionsClosed(agentId), 1);
+        assertGt(tradeRouter.lifetimeTurnoverUsdc(agentId), usdcAmount);
+        assertLt(tradeRouter.lifetimeRealizedPnlUsdc(agentId), 0);
+        assertEq(tradeRouter.positionUnrealizedPnlUsdc(positionId), 0);
+    }
+
     function test_RevertWhen_InvalidExitRules_LastNotFull() public {
         uint256 agentId = _registerAgent();
 

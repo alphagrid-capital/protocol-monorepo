@@ -68,6 +68,11 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
     mapping(uint256 agentId => uint256 nonce) private _nonces;
     mapping(uint256 agentId => mapping(uint256 day => uint256 turnoverUsdc)) private _dailyTurnoverUsdc;
     mapping(uint256 agentId => mapping(uint256 day => int256 realizedPnlUsdc)) private _dailyRealizedPnlUsdc;
+    mapping(uint256 agentId => uint256 turnoverUsdc) private _lifetimeTurnoverUsdc;
+    mapping(uint256 agentId => int256 realizedPnlUsdc) private _lifetimeRealizedPnlUsdc;
+    mapping(uint256 agentId => uint32 trades) private _tradeCount;
+    mapping(uint256 agentId => uint32 opened) private _positionsOpened;
+    mapping(uint256 agentId => uint32 closed) private _positionsClosed;
 
     uint256 public keeperBountyBps;
     uint256 public maxKeeperBounty;
@@ -159,6 +164,54 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
     /// @inheritdoc ITradeRouter
     function dailyRealizedPnlUsdc(uint256 agentId, uint256 day) external view returns (int256) {
         return _dailyRealizedPnlUsdc[agentId][day];
+    }
+
+    /// @inheritdoc ITradeRouter
+    function lifetimeRealizedPnlUsdc(uint256 agentId) external view returns (int256) {
+        return _lifetimeRealizedPnlUsdc[agentId];
+    }
+
+    /// @inheritdoc ITradeRouter
+    function lifetimeTurnoverUsdc(uint256 agentId) external view returns (uint256) {
+        return _lifetimeTurnoverUsdc[agentId];
+    }
+
+    /// @inheritdoc ITradeRouter
+    function positionPnlBps(uint256 positionId) external view returns (int256) {
+        return _positionPnlBps(positionManager.getPosition(positionId));
+    }
+
+    /// @inheritdoc ITradeRouter
+    function positionUnrealizedPnlUsdc(uint256 positionId) external view returns (int256) {
+        Position memory position = positionManager.getPosition(positionId);
+        if (position.status != PositionStatus.Open) return 0;
+
+        IMandateVault vault = IMandateVault(position.vault);
+        uint8 tokenDecimals = vault.tokenRegistry().tokenDecimals(position.token);
+        uint256 currentValue = OracleLib.valueInAsset(
+            position.tokenAmount,
+            vault.tokenRegistry().priceOracle(),
+            position.token,
+            tokenDecimals,
+            vault.assetDecimals(),
+            vault.maxPriceAge()
+        );
+        return SafeCast.toInt256(currentValue) - SafeCast.toInt256(position.usdcCostBasis);
+    }
+
+    /// @inheritdoc ITradeRouter
+    function tradeCount(uint256 agentId) external view returns (uint32) {
+        return _tradeCount[agentId];
+    }
+
+    /// @inheritdoc ITradeRouter
+    function positionsOpened(uint256 agentId) external view returns (uint32) {
+        return _positionsOpened[agentId];
+    }
+
+    /// @inheritdoc ITradeRouter
+    function positionsClosed(uint256 agentId) external view returns (uint32) {
+        return _positionsClosed[agentId];
     }
 
     // -------------------------------------------------------------------------
@@ -386,6 +439,8 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
         allocationManager.setAllocationUsedByRouter(intent.agentId, allocation.used + intent.usdcAmount);
 
         _recordDailyTurnover(intent.agentId, intent.usdcAmount);
+        _recordTrade(intent.agentId);
+        _positionsOpened[intent.agentId]++;
         _assertLedgerInvariant(vault, intent.token);
     }
 
@@ -411,6 +466,7 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
         allocationManager.setAllocationUsedByRouter(intent.agentId, allocation.used + intent.usdcAmount);
 
         _recordDailyTurnover(intent.agentId, intent.usdcAmount);
+        _recordTrade(intent.agentId);
         _assertLedgerInvariant(vault, position.token);
     }
 
@@ -612,6 +668,7 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
         if (usdcNotional == 0) return;
         uint256 day = block.timestamp / 1 days;
         _dailyTurnoverUsdc[agentId][day] += usdcNotional;
+        _lifetimeTurnoverUsdc[agentId] += usdcNotional;
     }
 
     function _validateDailyLoss(uint256 agentId) private view {
@@ -633,8 +690,21 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
 
     function _recordDailyRealizedPnl(uint256 agentId, uint256 usdcReleased, uint256 usdcOut) private {
         if (usdcReleased == usdcOut) return;
+        int256 delta = SafeCast.toInt256(usdcOut) - SafeCast.toInt256(usdcReleased);
         uint256 day = block.timestamp / 1 days;
-        _dailyRealizedPnlUsdc[agentId][day] += SafeCast.toInt256(usdcOut) - SafeCast.toInt256(usdcReleased);
+        _dailyRealizedPnlUsdc[agentId][day] += delta;
+        _lifetimeRealizedPnlUsdc[agentId] += delta;
+    }
+
+    function _recordTrade(uint256 agentId) private {
+        _tradeCount[agentId]++;
+    }
+
+    function _maybeRecordPositionClosed(uint256 positionId) private {
+        Position memory position = positionManager.getPosition(positionId);
+        if (position.status == PositionStatus.Closed) {
+            _positionsClosed[position.agentId]++;
+        }
     }
 
     function _positionPnlBps(Position memory position) private view returns (int256) {
@@ -728,6 +798,8 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
         }
 
         _recordDailyRealizedPnl(position.agentId, usdcReleased, usdcOut);
+        _recordTrade(position.agentId);
+        _maybeRecordPositionClosed(positionId);
 
         _assertLedgerInvariant(vault, position.token);
     }
