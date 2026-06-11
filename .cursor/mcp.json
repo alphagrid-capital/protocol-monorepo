@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "alphagrid-local-wallet-mcp": {
+      "command": "node",
+      "args": ["agents/wallet-mcp/build/index.js"],
+      "env": {
+        "WALLET_PROVIDER": "viem",
+        "NETWORK_ID": "base-sepolia"
+      }
+    },
+    "alphagrid-mcp-server": {
+      "url": "https://alphagrid-api.artiffine-delivery.workers.dev/mcp"
+    }
+  }
+}
