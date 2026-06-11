@@ -10,7 +10,7 @@ AlphaGrid is a monorepo: Foundry smart contracts in `contracts/`, an HTTP API in
 
 - **Foundry** (`forge`, `cast`, `anvil`, `chisel`) — installed via `foundryup`. Binaries live in `~/.foundry/bin` and must be on `$PATH`.
 - **Git submodules** (`forge-std`, `openzeppelin-contracts`) under `contracts/lib/` — initialized via `git submodule update --init --recursive`.
-- **Node.js 24** (via nvm, `nvm alias default 24`) for the JS packages (`api`, `agents/wallet-mcp` need `>=24`; `docs` needs `>=20.17`). **Yarn 1.x** is provided via corepack. The update script runs `yarn install` in each JS package + submodule init.
+- **Node.js 24** (via nvm, `nvm alias default 24`) for all JS packages — version is pinned by the root `.nvmrc` (`24`), `engines` (`>=24`), and CI (`node-version-file: .nvmrc`). **Yarn 1.x** is provided via corepack. The update script runs `yarn install` in each JS package + submodule init.
 
 ### Key commands (run from repo root)
 

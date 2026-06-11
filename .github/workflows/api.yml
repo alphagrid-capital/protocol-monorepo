@@ -30,7 +30,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: "24"
+          node-version-file: .nvmrc
           cache: yarn
           cache-dependency-path: api/yarn.lock
 
@@ -52,7 +52,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: "24"
+          node-version-file: .nvmrc
           cache: yarn
           cache-dependency-path: api/yarn.lock
 
