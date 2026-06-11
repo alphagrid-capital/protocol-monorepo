@@ -5,11 +5,7 @@
       "args": ["-y", "@alphagrid/local-wallet-mcp"],
       "env": {
         "WALLET_PROVIDER": "viem",
-        "NETWORK_ID": "base-sepolia",
-        "PRIVATE_KEY": "",
-        "CDP_API_KEY_ID": "",
-        "CDP_API_KEY_SECRET": "",
-        "CDP_WALLET_SECRET": ""
+        "NETWORK_ID": "arbitrum-sepolia"
       }
     }
   }
