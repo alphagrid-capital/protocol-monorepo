@@ -32,4 +32,4 @@ All make targets `cd` into `contracts/` automatically.
 
 ### Wallet MCP
 
-Local AgentKit wallet server lives in `agents/wallet-mcp/`. Before using on-chain MCP tools (balances, transfers, faucet, Pyth, x402), read `.agents/skills/alphagrid-wallet-mcp/SKILL.md`.
+Local AgentKit wallet server lives in `agents/wallet-mcp/`. Before using on-chain MCP tools (balances, transfers, faucet, Pyth, x402), read `.agents/skills/alphagrid-wallet-mcp/SKILL.md`. For vaults, registration, trade intents, and positions via the protocol MCP, read `.agents/skills/alphagrid-mcp/SKILL.md`.

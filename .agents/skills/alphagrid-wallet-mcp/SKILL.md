@@ -2,13 +2,14 @@
 name: alphagrid-wallet-mcp
 description: >-
   Use the AlphaGrid local wallet MCP (AgentKit) for on-chain reads and writes:
-  wallet details, native/ERC20 transfers, faucet, Pyth prices, x402 HTTP.
-  Use when the user mentions Alpha Wallet, wallet MCP, AgentKit, on-chain
-  balance, USDC/ETH transfer, faucet, or MCP tools like
-  WalletActionProvider_get_wallet_details. Read this skill before calling
-  wallet MCP tools — not for Foundry contract development or trading strategy.
+  wallet details, native/ERC20 transfers, faucet, Pyth prices, x402 HTTP
+  (including AlphaGrid registration fees on Arbitrum). Use when the user
+  mentions Alpha Wallet, wallet MCP, AgentKit, on-chain balance, USDC transfer,
+  x402 registration payment, or tools like
+  WalletActionProvider_get_wallet_details. Pair with alphagrid-mcp for
+  protocol quotes and intent submission. Not for Foundry or trading strategy.
 metadata:
-  version: "0.1.1"
+  version: "0.2.1"
   openclaw:
     homepage: https://github.com/coinbase/agentkit
     requires:
@@ -21,6 +22,8 @@ metadata:
 Local stdio MCP server (`@alphagrid/local-wallet-mcp` on npm) — exposes [AgentKit](https://docs.cdp.coinbase.com/agentkit/docs/welcome) wallet tools to Cursor/Claude. **Not a trading agent**; it is a signing wallet + helpers. There is no Cloudflare/remote deploy — the server runs locally via `npx` or `node build/index.js`.
 
 Human setup: `npx @alphagrid/local-wallet-mcp` in `.cursor/mcp.json` (see `agents/wallet-mcp/mcp.config.example.json` and `agents/wallet-mcp/README.md`).
+
+For AlphaGrid registration and trading, run **both** MCP servers: this wallet MCP plus the protocol MCP (`alphagrid-mcp` skill). Wallet = signer + x402; protocol = quotes, register relay, trade submit.
 
 ## MCP server identity
 
@@ -36,7 +39,9 @@ Human setup: `npx @alphagrid/local-wallet-mcp` in `.cursor/mcp.json` (see `agent
 | Transfers the user explicitly requested                   | Inventing trades or portfolio strategy                     |
 | Testnet faucet (with CDP keys)                            | Assuming multi-chain without checking `get_wallet_details` |
 | Pyth spot prices, x402 paid HTTP (when tools are present) | Live-updating canvas data (canvases are static snapshots)  |
+| x402 payment for `POST /agents/register` (registration fee) | Trade quotes, submit intents, positions (`alphagrid-mcp` skill) |
 | `robinhood-testnet` signing via `viem`                    | Robinhood chain via `cdp` (not supported)                  |
+| EIP-712 `signTypedData` via local viem script (see below) | Assuming wallet MCP can sign trade intents natively       |
 
 ## Wallet providers
 
@@ -63,15 +68,21 @@ AgentKit built-ins: `ethereum-mainnet`, `ethereum-sepolia`, `polygon-mainnet`, `
 
 AlphaGrid extension (**`viem` only**): `robinhood-testnet`
 
-### AlphaGrid default testnet reference (Base Sepolia)
+### AlphaGrid chain alignment
 
-| Asset          | Contract / note                              |
-| -------------- | -------------------------------------------- |
-| USDC           | `0x036cbd53842c5426634e7929541ec2318f3dcf7e` |
-| Chain ID       | `84532`                                      |
-| RPC (fallback) | `https://sepolia.base.org`                   |
+**Wallet `NETWORK_ID` must match the API deployment chain.** Read `chainId` from `alphagrid_get_agent_registration_quote` (`eip712.chainId`) or a trade quote — do not hardcode addresses or chain IDs in agent logic.
 
-Resolve other symbols via `ERC20ActionProvider_get_erc20_token_address` — never invent token addresses.
+For registration USDC balance checks, use `ERC20ActionProvider_get_balance` with `registrationFee.tokenAddress` from that quote (fee asset ≠ vault trading asset).
+
+### Gasless agent path (AlphaGrid API)
+
+On the standard API integration path:
+
+- **Registration:** agent pays **USDC only** via x402; API relayer pays gas for `registerAgent`.
+- **Trades:** agent signs intents off-chain; API executor pays gas for `TradeRouter` calls.
+- **Native ETH** on the signer is optional for API-path agents. Do not block registration/trades on zero ETH balance if x402 and executor are configured.
+
+Faucet ETH is still useful for direct on-chain txs outside the API (debugging with `cast`, manual contract calls).
 
 ## Standard workflow
 
@@ -91,6 +102,8 @@ Resolve other symbols via `ERC20ActionProvider_get_erc20_token_address` — neve
 | Tool missing / server errored                  | MCP offline or misconfigured `env`     | Ask user to enable MCP in Cursor Settings; verify `NETWORK_ID` and provider secrets                                |
 | Wrong USDC balance                             | Wrong network or token address         | Re-run `get_wallet_details`; verify `tokenAddress`                                                                 |
 | Unsupported `NETWORK_ID` at startup            | Typo or `robinhood-testnet` with `cdp` | Fix `NETWORK_ID`; use `viem` for Robinhood testnet                                                                 |
+| x402 payment fails on registration             | Wrong USDC contract or network         | Use `registrationFee.tokenAddress` from quote; Arbitrum needs repo wallet-mcp build with x402 patch                  |
+| x402 tools missing on `arbitrum-sepolia`       | Stock AgentKit networks                | Use monorepo `agents/wallet-mcp` build, not bare npm, until Arbitrum patch is published                            |
 
 ## Tool-specific flows
 
@@ -114,7 +127,22 @@ Prefer the safe two-step flow unless the user explicitly wants auto-pay:
 1. `X402ActionProvider_make_http_request`
 2. On 402 → `X402ActionProvider_retry_http_request_with_x402` with payment details from the response
 
-Avoid `make_http_request_with_x402` unless the user asked to skip confirmation. Discover services with `discover_x402_services` on the **current** network only. Tool is only available when CDP API keys are configured.
+For **AlphaGrid agent registration**, `X402ActionProvider_make_http_request_with_x402` to `POST {API}/agents/register` is the practical one-shot path once `SelfRegister` is signed.
+
+**Arbitrum:** stock AgentKit x402 only enables Base + Solana. The repo's `agents/wallet-mcp` patches `arbitrum-sepolia` / `arbitrum-mainnet` before startup (`extendArbitrumX402.ts`). Published `@alphagrid/local-wallet-mcp` on npm may lack this until released — use a local `node build/index.js` build from the monorepo for Arbitrum x402.
+
+Registration quote includes `registrationFee.tokenAddress` — payment must use that contract (matches `FeeManager.feeAsset()`), not AgentKit's default Base USDC.
+
+Tool requires CDP API keys (`CDP_API_KEY_ID` + `CDP_API_KEY_SECRET` on `viem`, or `cdp` provider). Discover services with `discover_x402_services` on the **current** network only.
+
+### EIP-712 signing (gap)
+
+Wallet MCP exposes **no** `signTypedData` / EIP-712 tool. AlphaGrid registration and trades require off-MCP signing:
+
+1. Sign `SelfRegister` and `OpenPosition` (etc.) with viem/ethers using the same `PRIVATE_KEY` as wallet MCP
+2. Follow `contracts/docs/position-intent-eip712.md` and `api/src/lib/eip712-open-position.ts` (`exitsHash` for trades)
+
+Until a dedicated signing tool ships, agents may run a short local viem script from `api/` (has `viem` in dependencies). Do not commit keys.
 
 ## Safety
 
@@ -132,24 +160,25 @@ Wallet canvases embed **static** numbers (no `fetch` in canvas). To refresh a ca
 If the wallet MCP server is not in the available server list:
 
 1. Tell the user to restart **Alpha Wallet** / `alphagrid-local-wallet-mcp` in Cursor MCP settings.
-2. For **read-only** balances on Base Sepolia, `cast balance` and `cast call` on the USDC contract are acceptable when the user only needs a snapshot and provides or implies the wallet address from prior context.
+2. For **read-only** balances, `cast balance` and `cast call` on `registrationFee.tokenAddress` from a protocol quote are acceptable when MCP is down but the user needs a snapshot.
 3. For **Robinhood testnet**, use RPC `https://rpc.testnet.chain.robinhood.com` with `cast` and chain id `46630`.
 
-## AlphaGrid token catalog (trading universe)
+## AlphaGrid protocol (not this MCP)
 
-Tradable mock stocks and per-vault allowlists are **not** in wallet MCP. Use the AlphaGrid API or MCP server:
+Tradable symbols, vault mandates, quotes, registration, and trades live on the **protocol MCP** — see `.agents/skills/alphagrid-mcp/SKILL.md`.
 
-| Need                             | Source                                                                                              |
-| -------------------------------- | --------------------------------------------------------------------------------------------------- |
-| All listed tokens + oracle price | `GET /tokens` or MCP `alphagrid_list_tokens`                                                        |
-| Tokens for one vault (e.g. tech) | `GET /vaults/tech/tokens` or MCP `alphagrid_list_vault_tokens`                                      |
-| Oracle quotes by symbol only     | `GET /prices` or MCP `alphagrid_get_prices`                                                         |
-| On-chain quote                   | `MockPriceOracle.latestRoundData(token)` at `PriceOracle` from API/`api/src/constants/contracts.ts` |
+| Need | Use protocol MCP / HTTP |
+| ---- | ----------------------- |
+| Vaults, allowlists, prices | `alphagrid_list_vaults`, `alphagrid_list_vault_tokens`, `alphagrid_get_prices` |
+| Register + trade | `alphagrid_get_agent_registration_quote`, `alphagrid_register_agent`, `alphagrid_submit_trade_intent` |
+| Open-position quote | **HTTP only:** `GET /agents/{id}/trade-intents/quote` (no MCP quote tool yet) |
 
-Off-chain catalog: `config/token-catalog.json`. Pyth equity tools remain optional cross-checks only.
+Pyth equity tools here remain optional cross-checks only.
 
 ## Further reading
 
+- `.agents/skills/alphagrid-mcp/SKILL.md` — registration and trade workflows
 - `agents/wallet-mcp/README.md` — install, providers, `NETWORK_ID` table, tool list
+- `docs/integrations/integrate.mdx` — two-MCP stack
 - [AgentKit docs](https://docs.cdp.coinbase.com/agentkit/docs/welcome)
 - [CDP](https://docs.cdp.coinbase.com/)
