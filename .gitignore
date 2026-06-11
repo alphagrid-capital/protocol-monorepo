@@ -1,3 +1,6 @@
+# Cursor MCP (may contain PRIVATE_KEY — do not commit)
+.cursor/mcp.json
+
 # Foundry (contracts/)
 contracts/cache/
 contracts/out/

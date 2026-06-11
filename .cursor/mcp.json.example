@@ -5,7 +5,8 @@
       "args": ["agents/wallet-mcp/build/index.js"],
       "env": {
         "WALLET_PROVIDER": "viem",
-        "NETWORK_ID": "base-sepolia"
+        "NETWORK_ID": "base-sepolia",
+        "PRIVATE_KEY": "0x..."
       }
     },
     "alphagrid-mcp-server": {
