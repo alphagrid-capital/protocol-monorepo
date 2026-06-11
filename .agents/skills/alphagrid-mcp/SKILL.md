@@ -7,7 +7,7 @@ description: >-
   positions, vault mandates, or trading on AlphaGrid. Pair with
   alphagrid-wallet-mcp for EIP-712 signing and x402 registration payment.
 metadata:
-  version: "0.1.1"
+  version: "0.1.2"
 ---
 
 # AlphaGrid Protocol MCP
@@ -24,10 +24,10 @@ Human setup: add `http://localhost:8787/mcp` (dev) or the deployed Worker `/mcp`
 
 ## Two-server agent stack
 
-| Server | Role |
-| ------ | ---- |
-| **AlphaGrid protocol MCP** (this skill) | Quotes, register, submit intents, read positions |
-| **Wallet MCP** (`alphagrid-wallet-mcp` skill) | Balances, x402 USDC payment, optional transfers |
+| Server                                        | Role                                             |
+| --------------------------------------------- | ------------------------------------------------ |
+| **AlphaGrid protocol MCP** (this skill)       | Quotes, register, submit intents, read positions |
+| **Wallet MCP** (`alphagrid-wallet-mcp` skill) | Balances, x402 USDC payment, optional transfers  |
 
 The protocol MCP does **not** sign EIP-712. The agent **signer** (wallet) signs `SelfRegister` and trade intents off-chain; the API **relayer/executor** broadcasts txs and pays gas.
 
@@ -35,13 +35,13 @@ The protocol MCP does **not** sign EIP-712. The agent **signer** (wallet) signs 
 
 **Always fetch from MCP quotes or list tools** — never hardcode deployment addresses.
 
-| Need | Source |
-| ---- | ------ |
+| Need                                                   | Source                                                                                               |
+| ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
 | Registration fee USDC, `AgentRegistry`, EIP-712 domain | `alphagrid_get_agent_registration_quote` → `registrationFee.tokenAddress`, `agentRegistry`, `eip712` |
-| Vault address | `alphagrid_list_vaults` or registration quote input |
-| TradeRouter, vault, token, nonce, signer | Trade quote (`GET /agents/{id}/trade-intents/quote` until MCP quote tool exists) |
-| Allowed symbols per vault | `alphagrid_list_vault_tokens` |
-| Token addresses by symbol | Quote `token` field or vault token list |
+| Vault address                                          | `alphagrid_list_vaults` or registration quote input                                                  |
+| TradeRouter, vault, token, nonce, signer               | Trade quote (`GET /agents/{id}/trade-intents/quote` until MCP quote tool exists)                     |
+| Allowed symbols per vault                              | `alphagrid_list_vault_tokens`                                                                        |
+| Token addresses by symbol                              | Quote `token` field or vault token list                                                              |
 
 Match wallet `NETWORK_ID` to `eip712.chainId` from the latest quote. `api/src/constants/contracts.ts` is for repo developers only — not the agent runtime path.
 
@@ -93,20 +93,20 @@ Submit body fields: `symbol`, human `usdcAmount`, `minTokenOut`, `maxSlippageBps
 
 ### 4. Adjust open position
 
-| Action | Quote MCP tool | Submit MCP tool |
-| ------ | -------------- | --------------- |
-| Add size | `alphagrid_get_add_intent_quote` | `alphagrid_submit_add_intent` |
-| Reduce / close | `alphagrid_get_reduce_intent_quote` | `alphagrid_submit_reduce_intent` |
-| Update TP/SL | `alphagrid_get_exit_ladder_intent_quote` | `alphagrid_submit_exit_ladder_intent` |
+| Action         | Quote MCP tool                           | Submit MCP tool                       |
+| -------------- | ---------------------------------------- | ------------------------------------- |
+| Add size       | `alphagrid_get_add_intent_quote`         | `alphagrid_submit_add_intent`         |
+| Reduce / close | `alphagrid_get_reduce_intent_quote`      | `alphagrid_submit_reduce_intent`      |
+| Update TP/SL   | `alphagrid_get_exit_ladder_intent_quote` | `alphagrid_submit_exit_ladder_intent` |
 
 Always quote → sign → submit. One open position per token per agent.
 
 ## EIP-712 signing (off MCP)
 
-| Intent | Domain | Spec |
-| ------ | ------ | ---- |
-| Registration | `AlphaGrid AgentRegistry` v1 | `docs/agents/register.mdx` |
-| Open / add / reduce / exit ladder | `AlphaGrid TradeRouter` v1 | `contracts/docs/position-intent-eip712.md` |
+| Intent                            | Domain                       | Spec                                       |
+| --------------------------------- | ---------------------------- | ------------------------------------------ |
+| Registration                      | `AlphaGrid AgentRegistry` v1 | `docs/agents/register.mdx`                 |
+| Open / add / reduce / exit ladder | `AlphaGrid TradeRouter` v1   | `contracts/docs/position-intent-eip712.md` |
 
 OpenPosition signs `exitsHash`, not the raw `exits` array. Implement `hashExitRules` per `api/src/lib/eip712-open-position.ts`.
 
@@ -121,22 +121,22 @@ Match `nonce` and `deadline` from the latest quote at sign time.
 
 Return `NOT_IMPLEMENTED` / HTTP 501 — do not retry as transient errors:
 
-| Tool | HTTP |
-| ---- | ---- |
-| `alphagrid_get_trade_history` | `GET /agents/{id}/trades` |
-| `alphagrid_get_risk_state` | `GET /agents/{id}/risk-state` |
-| `alphagrid_get_intent_status` | `GET /intents/{intentId}` |
+| Tool                          | HTTP                          |
+| ----------------------------- | ----------------------------- |
+| `alphagrid_get_trade_history` | `GET /agents/{id}/trades`     |
+| `alphagrid_get_risk_state`    | `GET /agents/{id}/risk-state` |
+| `alphagrid_get_intent_status` | `GET /intents/{intentId}`     |
 
 ## Failure modes
 
-| Symptom | Likely cause | Action |
-| ------- | ------------ | ------ |
-| 503 / executor not configured | Missing `EXECUTOR_PRIVATE_KEY` in API env | Set secrets; restart `yarn dev` |
-| 503 on register | Missing `RELAYER_PRIVATE_KEY` | Same for registration |
-| 400 Invalid signature | Wrong domain, nonce, exitsHash, or signer | Re-quote; re-sign |
-| 402 on register | x402 payment missing/wrong asset | Pay via wallet MCP; verify `tokenAddress` in quote |
-| NOT_FOUND vault | Wrong slug or undeployed vault | `alphagrid_list_vaults` first |
-| MCP offline | API not running | `cd api && yarn dev` |
+| Symptom                       | Likely cause                              | Action                                             |
+| ----------------------------- | ----------------------------------------- | -------------------------------------------------- |
+| 503 / executor not configured | Missing `EXECUTOR_PRIVATE_KEY` in API env | Set secrets; restart `yarn dev`                    |
+| 503 on register               | Missing `RELAYER_PRIVATE_KEY`             | Same for registration                              |
+| 400 Invalid signature         | Wrong domain, nonce, exitsHash, or signer | Re-quote; re-sign                                  |
+| 402 on register               | x402 payment missing/wrong asset          | Pay via wallet MCP; verify `tokenAddress` in quote |
+| NOT_FOUND vault               | Wrong slug or undeployed vault            | `alphagrid_list_vaults` first                      |
+| MCP offline                   | API not running                           | `cd api && yarn dev`                               |
 
 ## Exit ladder quick reference
 
