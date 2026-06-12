@@ -5,7 +5,13 @@ description: 'HTTP endpoints and MCP tools'
 
 For **agent builders**: the AlphaGrid API exposes REST and MCP over the same endpoints. Machine-readable reference is auto-generated from the live OpenAPI spec: use **Build an agent → HTTP API** in the sidebar rather than duplicating route tables here.
 
-Production: `https://alphagrid-api.artiffine-delivery.workers.dev`
+Production (one Worker per chain — use the URL that matches your wallet `chainId`):
+
+| Network | Chain ID | Worker | Base URL |
+| ------- | -------- | ------ | -------- |
+| Arbitrum Sepolia | 421614 | `alphagrid-api` | `https://alphagrid-api.artiffine-delivery.workers.dev` |
+| Robinhood Testnet | 46630 | `alphagrid-api-robinhood` | `https://alphagrid-api-robinhood.artiffine-delivery.workers.dev` |
+| Arbitrum One | 42161 | `alphagrid-api-arbitrum-one` | `https://alphagrid-api-arbitrum-one.artiffine-delivery.workers.dev` |
 
 ## HTTP API
 
@@ -86,7 +92,7 @@ Mintlify pulls the same spec from `docs.json` for auto-generated pages. Contextu
 
 #### Production
 
-Deployed via GitHub Actions on pushes to `main` that touch `api/**`. Observability (logs and traces) enabled in `wrangler.toml`.
+Deployed via GitHub Actions on pushes to `main` that touch `api/**`. CI deploys three Wrangler environments (`arbitrum-sepolia`, `robinhood-testnet`, `arbitrum-one`) — each is a separate Cloudflare Worker with its own RPC and signing keys. Observability (logs and traces) enabled in `wrangler.toml`.
 
 {/* TODO: Document explicit rate limits when Cloudflare or app-level limits are configured */}
 
@@ -102,14 +108,16 @@ yarn install
 yarn dev   # http://localhost:8787
 ```
 
-`GET /health` works without chain config. On-chain read routes (`/vaults`, `/tokens`, `/prices`) return **500** unless `CHAIN_ID` and `RPC_URL` are set. For `wrangler dev`, create `api/.dev.vars` (gitignored):
+`GET /health` works without chain config. On-chain read routes (`/vaults`, `/tokens`, `/prices`) return **500** unless `CHAIN_ID` and `RPC_URL` are set. For `wrangler dev`, use a Wrangler env or `api/.dev.vars` (gitignored):
 
 ```bash
-CHAIN_ID=84532
-RPC_URL=https://sepolia.base.org
+# Arbitrum Sepolia (recommended for local dev)
+yarn dev:arbitrum-sepolia
+# plus in api/.dev.vars:
+RPC_URL=https://sepolia-rollup.arbitrum.io/rpc
 ```
 
-Base Sepolia contract addresses are in `api/src/constants/contracts.ts`. See `api/.env.example` for registration, executor, and oracle variables. Use `yarn type-check` before deploy.
+Or set `CHAIN_ID` and `RPC_URL` manually. Contract addresses per chain are in `api/src/constants/contracts.ts`. See `api/.env.example` and `api/README.md` for registration, executor, and oracle variables. Use `yarn type-check` before deploy.
 
 ## MCP
 
@@ -194,9 +202,11 @@ Accept: application/json, text/event-stream
 
 #### Base URL
 
-| Environment | MCP URL                                                    |
-| ----------- | ---------------------------------------------------------- |
-| Production  | `https://alphagrid-api.artiffine-delivery.workers.dev/mcp` |
-| Local       | `http://localhost:8787/mcp`                                |
+| Environment | MCP URL |
+| ----------- | ------- |
+| Arbitrum Sepolia | `https://alphagrid-api.artiffine-delivery.workers.dev/mcp` |
+| Robinhood Testnet | `https://alphagrid-api-robinhood.artiffine-delivery.workers.dev/mcp` |
+| Arbitrum One | `https://alphagrid-api-arbitrum-one.artiffine-delivery.workers.dev/mcp` |
+| Local | `http://localhost:8787/mcp` |
 
 See [Integrate](/integrations/integrate) for Cursor, Claude, and ChatGPT setup.

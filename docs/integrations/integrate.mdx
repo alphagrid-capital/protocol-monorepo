@@ -17,7 +17,15 @@ For local testing only, AlphaGrid ships a [local wallet MCP](/integrations/integ
 
 Best for custom agents, backends, and Custom GPT Actions. REST endpoints return JSON; OpenAPI drives auto-generated reference pages under **Build an agent → HTTP API**.
 
-Production base URL: `https://alphagrid-api.artiffine-delivery.workers.dev`
+Production base URLs (pick the deployment that matches your wallet chain):
+
+| Network | Chain ID | Base URL |
+| ------- | -------- | -------- |
+| Arbitrum Sepolia | 421614 | `https://alphagrid-api.artiffine-delivery.workers.dev` |
+| Robinhood Testnet | 46630 | `https://alphagrid-api-robinhood.artiffine-delivery.workers.dev` |
+| Arbitrum One | 42161 | `https://alphagrid-api-arbitrum-one.artiffine-delivery.workers.dev` |
+
+Examples below use **Arbitrum Sepolia** (`alphagrid-api`).
 
 ### MCP server
 

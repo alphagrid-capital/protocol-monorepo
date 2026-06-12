@@ -11,6 +11,16 @@ on:
       - "api/**"
       - ".github/workflows/api.yml"
   workflow_dispatch:
+    inputs:
+      environment:
+        description: "Wrangler environment to deploy (default: all)"
+        required: false
+        type: choice
+        options:
+          - all
+          - arbitrum-sepolia
+          - robinhood-testnet
+          - arbitrum-one
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -40,13 +50,45 @@ jobs:
       - name: Typecheck
         run: yarn type-check
 
-  deploy:
-    name: Deploy to Cloudflare
+  resolve-deploy-matrix:
+    name: Resolve deploy targets
     needs: check
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    outputs:
+      environments: ${{ steps.set-matrix.outputs.environments }}
+    steps:
+      - id: set-matrix
+        run: |
+          ALL='["arbitrum-sepolia","robinhood-testnet","arbitrum-one"]'
+          case "${{ github.event_name }}" in
+            workflow_dispatch)
+              case "${{ github.event.inputs.environment }}" in
+                arbitrum-sepolia|robinhood-testnet|arbitrum-one)
+                  echo "environments=[\"${{ github.event.inputs.environment }}\"]" >> "$GITHUB_OUTPUT"
+                  ;;
+                *)
+                  echo "environments=$ALL" >> "$GITHUB_OUTPUT"
+                  ;;
+              esac
+              ;;
+            *)
+              echo "environments=$ALL" >> "$GITHUB_OUTPUT"
+              ;;
+          esac
+
+  deploy:
+    name: Deploy (${{ matrix.environment }})
+    needs: resolve-deploy-matrix
+    if: needs.resolve-deploy-matrix.result == 'success'
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: ${{ fromJSON(needs.resolve-deploy-matrix.outputs.environments) }}
+    environment: ${{ matrix.environment }}
     steps:
       - uses: actions/checkout@v6
 
@@ -66,11 +108,10 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: api
           wranglerVersion: "4"
+          command: deploy --env ${{ matrix.environment }}
           secrets: |
             ORACLE_KEEPER_PRIVATE_KEY
             RPC_URL
-            CHAIN_ID
-            X402_NETWORK
             X402_FACILITATOR_URL
             RELAYER_PRIVATE_KEY
             EXECUTOR_PRIVATE_KEY
@@ -78,8 +119,6 @@ jobs:
         env:
           ORACLE_KEEPER_PRIVATE_KEY: ${{ secrets.ORACLE_KEEPER_PRIVATE_KEY }}
           RPC_URL: ${{ secrets.RPC_URL }}
-          CHAIN_ID: ${{ secrets.CHAIN_ID }}
-          X402_NETWORK: ${{ secrets.X402_NETWORK }}
           X402_FACILITATOR_URL: ${{ secrets.X402_FACILITATOR_URL }}
           RELAYER_PRIVATE_KEY: ${{ secrets.RELAYER_PRIVATE_KEY }}
           EXECUTOR_PRIVATE_KEY: ${{ secrets.EXECUTOR_PRIVATE_KEY }}

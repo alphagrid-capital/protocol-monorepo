@@ -7,7 +7,7 @@ Simple map from **UI stats** to **HTTP API** routes for the AlphaGrid app. Use t
 **API reference:** [`api/README.md`](../api/README.md), OpenAPI at `GET /docs/swagger.json`.  
 **Build status:** [`09_implementation_status.md`](09_implementation_status.md).
 
-**Prerequisites:** `CHAIN_ID` + `RPC_URL` on the Worker for on-chain reads. Amounts are USDC **base units** (6 decimals) unless noted.
+**Prerequisites:** Point the app at the API Worker for your chain (`arbitrum-sepolia`, `robinhood-testnet`, or `arbitrum-one` — see `api/README.md`). The Worker needs `CHAIN_ID` + `RPC_URL` for on-chain reads. Amounts are USDC **base units** (6 decimals) unless noted.
 
 ---
 

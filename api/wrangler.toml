@@ -16,19 +16,16 @@ head_sampling_rate = 1
 enabled = true
 head_sampling_rate = 1
 
-# Agent registration (vars; set secrets in dashboard / `wrangler secret put`)
+# Local dev defaults (override with api/.dev.vars or `wrangler dev --env <name>`).
 [vars]
-# RPC_URL = "https://..."
-# CHAIN_ID = "84532"
-# X402_NETWORK = "eip155:84532"
-# X402_FACILITATOR_URL = "https://x402.org/facilitator"
-# RELAYER_PRIVATE_KEY — use `wrangler secret put RELAYER_PRIVATE_KEY` (never commit)
-# EXECUTOR_PRIVATE_KEY — use `wrangler secret put EXECUTOR_PRIVATE_KEY` (TradeRouter EXECUTOR_ROLE)
-# TRADE_ROUTER_ADDRESS — optional if set in api/src/constants/contracts.ts
-ENABLE_SWAGGER="true"
-# FINNHUB_API_KEY — `wrangler secret put FINNHUB_API_KEY`
-# ORACLE_KEEPER_PRIVATE_KEY — `wrangler secret put ORACLE_KEEPER_PRIVATE_KEY` (ORACLE_UPDATER on MockPriceOracle)
-# ORACLE_REFRESH_SECRET — optional; `wrangler secret put ORACLE_REFRESH_SECRET` for POST /prices/refresh
+ENABLE_SWAGGER = "true"
+# RPC_URL — api/.dev.vars or `wrangler secret put RPC_URL --env <name>`
+# RELAYER_PRIVATE_KEY — `wrangler secret put RELAYER_PRIVATE_KEY --env <name>`
+# EXECUTOR_PRIVATE_KEY — `wrangler secret put EXECUTOR_PRIVATE_KEY --env <name>`
+# ORACLE_KEEPER_PRIVATE_KEY — `wrangler secret put ORACLE_KEEPER_PRIVATE_KEY --env <name>`
+# FINNHUB_API_KEY — `wrangler secret put FINNHUB_API_KEY --env <name>`
+# X402_FACILITATOR_URL — `wrangler secret put X402_FACILITATOR_URL --env <name>`
+# ORACLE_REFRESH_SECRET — optional; protects POST /prices/refresh
 
 [[durable_objects.bindings]]
 name = "MCP_OBJECT"
@@ -40,3 +37,31 @@ new_sqlite_classes = ["AlphagridMcp"]
 
 [triggers]
 crons = ["*/15 * * * *"]
+
+# --- Per-chain deployments (one Worker per network) ---
+# Deploy: wrangler deploy --env <name>
+# CI deploys all three on push to main (see .github/workflows/api.yml).
+
+[env.arbitrum-sepolia]
+name = "alphagrid-api"
+
+[env.arbitrum-sepolia.vars]
+CHAIN_ID = "421614"
+X402_NETWORK = "eip155:421614"
+ENABLE_SWAGGER = "true"
+
+[env.robinhood-testnet]
+name = "alphagrid-api-robinhood"
+
+[env.robinhood-testnet.vars]
+CHAIN_ID = "46630"
+X402_NETWORK = "eip155:46630"
+ENABLE_SWAGGER = "true"
+
+[env.arbitrum-one]
+name = "alphagrid-api-arbitrum-one"
+
+[env.arbitrum-one.vars]
+CHAIN_ID = "42161"
+X402_NETWORK = "eip155:42161"
+ENABLE_SWAGGER = "false"

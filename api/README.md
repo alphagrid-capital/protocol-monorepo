@@ -12,7 +12,21 @@ REST endpoints and MCP tools share the same service layer so agents and classic 
 
 ## Observability
 
-Workers Logs and tracing are enabled in `wrangler.toml` (`observability.enabled`, logs, and traces at 100% head sampling for MVP traffic). After deploy, view invocations in the [Cloudflare dashboard](https://dash.cloudflare.com/) under **Workers & Pages → alphagrid-api → Observability**.
+Workers Logs and tracing are enabled in `wrangler.toml` (`observability.enabled`, logs, and traces at 100% head sampling for MVP traffic). After deploy, view invocations in the [Cloudflare dashboard](https://dash.cloudflare.com/) under **Workers & Pages** for each Worker below.
+
+## Deployments (one Worker per chain)
+
+The same codebase deploys to **three** Cloudflare Workers. Each instance has its own `CHAIN_ID`, RPC, relayer/executor keys, and Durable Object namespace. MCP clients and agents must use the URL that matches their wallet chain.
+
+| Wrangler env          | Worker name                    | Chain ID | Network                 |
+| --------------------- | ------------------------------ | -------- | ----------------------- |
+| `arbitrum-sepolia`    | `alphagrid-api`                | 421614   | Arbitrum Sepolia        |
+| `robinhood-testnet`   | `alphagrid-api-robinhood`      | 46630    | Robinhood Chain Testnet |
+| `arbitrum-one`        | `alphagrid-api-arbitrum-one`   | 42161    | Arbitrum One (mainnet)  |
+
+Worker URLs follow `https://<worker-name>.<account-subdomain>.workers.dev` unless you attach custom routes in Cloudflare.
+
+`CHAIN_ID` and `X402_NETWORK` are set in `wrangler.toml` per env. Contract addresses for each chain are in `src/constants/contracts.ts` (Robinhood and Arbitrum One are placeholders until on-chain deploy).
 
 ## Commands
 
@@ -21,7 +35,11 @@ cd api
 yarn install
 yarn type-check   # TypeScript check (no emit)
 yarn dev         # Local dev server (wrangler dev)
-yarn deploy      # Deploy to Cloudflare (requires account auth)
+yarn dev:arbitrum-sepolia   # Local dev with Arbitrum Sepolia vars
+yarn deploy:arbitrum-sepolia    # Deploy one env
+yarn deploy:robinhood-testnet
+yarn deploy:arbitrum-one
+yarn deploy:all                 # Deploy all three sequentially
 ```
 
 ## Endpoints
@@ -166,9 +184,11 @@ Without executor config, quote/submit/positions return **503** (not configured).
 
 ## CI deployment
 
-Pushes to `main` that touch `api/**` run type-check, then deploy via [wrangler-action](https://github.com/cloudflare/wrangler-action). Pull requests only run type-check.
+Pushes to `main` that touch `api/**` run type-check, then deploy **all three** Wrangler environments via [wrangler-action](https://github.com/cloudflare/wrangler-action). Pull requests only run type-check.
 
-### GitHub repository secrets
+`workflow_dispatch` can deploy all envs or a single env (`arbitrum-sepolia`, `robinhood-testnet`, `arbitrum-one`).
+
+### GitHub repository secrets (shared)
 
 Add these under **Settings → Secrets and variables → Actions → Repository secrets**:
 
@@ -182,7 +202,30 @@ Add these under **Settings → Secrets and variables → Actions → Repository 
 - **Account** → **Workers Scripts** → **Edit**
 - **Account** → **Workers Scripts** → **Read** (included in the template)
 
-`workflow_dispatch` on the API workflow also runs deploy when triggered on `main` (after type-check passes).
+### GitHub Environments (per chain)
+
+Create three [GitHub Environments](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment) with these **exact** names (they match the Wrangler env and CI matrix):
+
+- `arbitrum-sepolia`
+- `robinhood-testnet`
+- `arbitrum-one`
+
+In **each** environment, add secrets with the **same names** but chain-specific values:
+
+| Secret                      | Description                                                        |
+| --------------------------- | ------------------------------------------------------------------ |
+| `RPC_URL`                   | JSON-RPC URL for that chain                                        |
+| `X402_FACILITATOR_URL`      | x402 facilitator for that network                                  |
+| `RELAYER_PRIVATE_KEY`       | EOA with `REGISTRAR_ROLE` on that chain's `AgentRegistry`        |
+| `EXECUTOR_PRIVATE_KEY`      | EOA with `EXECUTOR_ROLE` on that chain's `TradeRouter`             |
+| `ORACLE_KEEPER_PRIVATE_KEY` | EOA with `ORACLE_UPDATER_ROLE` on that chain's `MockPriceOracle`  |
+| `FINNHUB_API_KEY`           | Finnhub API key (can be the same value in every environment)     |
+
+`CHAIN_ID` and `X402_NETWORK` come from `wrangler.toml` — do not set them as secrets.
+
+**Mainnet gate:** add a required reviewer on the `arbitrum-one` environment so production deploys need manual approval.
+
+**Migrating from a single deployment:** copy existing repository secrets (`RPC_URL`, `RELAYER_PRIVATE_KEY`, etc.) into the `arbitrum-sepolia` environment, then remove the old repository-level copies so values do not leak across chains.
 
 ## Mock price oracle (cron)
 
