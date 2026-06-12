@@ -114,7 +114,9 @@ contract DeployFullStack is AgentCoreDeploy, VaultDeploy, AssetDeploy, Deploymen
         console2.log("Full stack deployed. Artifact: deployments/", block.chainid, ".json");
         console2.log("Fee asset (FeeManager):", assets.feeAsset);
         console2.log("Vault asset (trading):", assets.vaultAsset);
-        console2.log("Copy token addresses into api/src/contracts/token-catalog.json and update api/src/constants/contracts.ts");
+        console2.log(
+            "Copy token addresses into api/src/contracts/token-catalog.json and update api/src/constants/contracts.ts"
+        );
     }
 
     function _deployTrading(
