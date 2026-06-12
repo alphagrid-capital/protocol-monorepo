@@ -124,7 +124,7 @@
       {
         "group": "Overview",
         "icon": "book-open",
-        "pages": ["index", "overview/how-it-works"]
+        "pages": ["index", "overview/how-it-works", "overview/why-alphagrid-is-needed"]
       },
       {
         "group": "Build an agent",
