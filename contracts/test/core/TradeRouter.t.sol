@@ -71,10 +71,10 @@ contract TradeRouterTest is TradingTestBase {
         vm.prank(executor);
         uint256 positionId = tradeRouter.openPosition(intent, sig);
 
-        assertFalse(tradeRouter.isTriggerMet(positionId));
+        assertFalse(tradeRouterLens.isTriggerMet(positionId));
 
         _setTokenPrice(address(nvda), 130e8);
-        assertTrue(tradeRouter.isTriggerMet(positionId));
+        assertTrue(tradeRouterLens.isTriggerMet(positionId));
     }
 
     function test_PeakEquityAndDrawdown() public {
@@ -86,19 +86,19 @@ contract TradeRouterTest is TradingTestBase {
         vm.prank(executor);
         uint256 positionId = tradeRouter.openPosition(intent, sig);
 
-        uint256 peakAfterOpen = tradeRouter.peakEquityUsdc(agentId);
+        uint256 peakAfterOpen = tradeRouterLens.peakEquityUsdc(agentId);
         assertGe(peakAfterOpen, CHALLENGE_CAP - 1e6);
-        assertEq(tradeRouter.peakEquityUsdc(agentId), tradeRouter.currentEquityUsdc(agentId));
-        assertEq(tradeRouter.currentDrawdownBps(agentId), 0);
+        assertEq(tradeRouterLens.peakEquityUsdc(agentId), tradeRouterLens.currentEquityUsdc(agentId));
+        assertEq(tradeRouterLens.currentDrawdownBps(agentId), 0);
 
         _setTokenPrice(address(nvda), 130e8);
         vm.prank(makeAddr("keeper"));
         tradeRouter.executeExit(positionId);
 
         assertLt(tradeRouter.lifetimeRealizedPnlUsdc(agentId), 0);
-        assertEq(tradeRouter.peakEquityUsdc(agentId), peakAfterOpen);
-        assertLt(tradeRouter.currentEquityUsdc(agentId), peakAfterOpen);
-        assertGt(tradeRouter.currentDrawdownBps(agentId), 0);
+        assertEq(tradeRouterLens.peakEquityUsdc(agentId), peakAfterOpen);
+        assertLt(tradeRouterLens.currentEquityUsdc(agentId), peakAfterOpen);
+        assertGt(tradeRouterLens.currentDrawdownBps(agentId), 0);
         assertLt(positionManager.realizedPnlUsdc(positionId), 0);
         assertEq(positionManager.getOpenPositionIds(agentId).length, 0);
     }
@@ -121,8 +121,8 @@ contract TradeRouterTest is TradingTestBase {
         tradeRouter.reducePosition(reduce, reduceSig);
 
         assertGt(tradeRouter.lifetimeRealizedPnlUsdc(agentId), 0);
-        assertGt(tradeRouter.peakEquityUsdc(agentId), CHALLENGE_CAP);
-        assertEq(tradeRouter.currentDrawdownBps(agentId), 0);
+        assertGt(tradeRouterLens.peakEquityUsdc(agentId), CHALLENGE_CAP);
+        assertEq(tradeRouterLens.currentDrawdownBps(agentId), 0);
         assertGt(positionManager.realizedPnlUsdc(positionId), 0);
     }
 
@@ -135,25 +135,25 @@ contract TradeRouterTest is TradingTestBase {
         vm.prank(executor);
         uint256 positionId = tradeRouter.openPosition(intent, sig);
 
-        assertEq(tradeRouter.tradeCount(agentId), 1);
-        assertEq(tradeRouter.positionsOpened(agentId), 1);
-        assertEq(tradeRouter.positionsClosed(agentId), 0);
-        assertEq(tradeRouter.lifetimeTurnoverUsdc(agentId), usdcAmount);
+        assertEq(tradeRouterLens.tradeCount(agentId), 1);
+        assertEq(tradeRouterLens.positionsOpened(agentId), 1);
+        assertEq(tradeRouterLens.positionsClosed(agentId), 0);
+        assertEq(tradeRouterLens.lifetimeTurnoverUsdc(agentId), usdcAmount);
         assertEq(tradeRouter.lifetimeRealizedPnlUsdc(agentId), 0);
 
         _setTokenPrice(address(nvda), 160e8);
-        assertGt(tradeRouter.positionPnlBps(positionId), 0);
-        assertGt(tradeRouter.positionUnrealizedPnlUsdc(positionId), 0);
+        assertGt(tradeRouterLens.positionPnlBps(positionId), 0);
+        assertGt(tradeRouterLens.positionUnrealizedPnlUsdc(positionId), 0);
 
         _setTokenPrice(address(nvda), 130e8);
         vm.prank(makeAddr("keeper"));
         tradeRouter.executeExit(positionId);
 
-        assertEq(tradeRouter.tradeCount(agentId), 2);
-        assertEq(tradeRouter.positionsClosed(agentId), 1);
-        assertGt(tradeRouter.lifetimeTurnoverUsdc(agentId), usdcAmount);
+        assertEq(tradeRouterLens.tradeCount(agentId), 2);
+        assertEq(tradeRouterLens.positionsClosed(agentId), 1);
+        assertGt(tradeRouterLens.lifetimeTurnoverUsdc(agentId), usdcAmount);
         assertLt(tradeRouter.lifetimeRealizedPnlUsdc(agentId), 0);
-        assertEq(tradeRouter.positionUnrealizedPnlUsdc(positionId), 0);
+        assertEq(tradeRouterLens.positionUnrealizedPnlUsdc(positionId), 0);
     }
 
     function test_RevertWhen_InvalidExitRules_LastNotFull() public {

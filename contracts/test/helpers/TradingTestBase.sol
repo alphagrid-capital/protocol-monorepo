@@ -10,6 +10,7 @@ import { FeeManager } from "../../src/core/FeeManager.sol";
 import { PositionManager } from "../../src/core/PositionManager.sol";
 import { TokenRegistry } from "../../src/core/TokenRegistry.sol";
 import { TradeRouter } from "../../src/core/TradeRouter.sol";
+import { TradeRouterLens } from "../../src/core/TradeRouterLens.sol";
 import { VaultTrackRegistry } from "../../src/core/VaultTrackRegistry.sol";
 import { IPositionTypes } from "../../src/interfaces/IPositionTypes.sol";
 import { IVaultTrackRegistry } from "../../src/interfaces/IVaultTrackRegistry.sol";
@@ -37,6 +38,7 @@ abstract contract TradingTestBase is BaseTest {
     TokenRegistry internal tokenRegistry;
     PositionManager internal positionManager;
     TradeRouter internal tradeRouter;
+    TradeRouterLens internal tradeRouterLens;
     MockSwapAdapter internal swapAdapter;
     MandateVaultFactory internal vaultFactory;
     MandateVault internal vault;
@@ -86,6 +88,8 @@ abstract contract TradingTestBase is BaseTest {
         swapAdapter = new MockSwapAdapter(address(0));
         tradeRouter =
             new TradeRouter(deployer, registry, allocationManager, positionManager, swapAdapter, vaultTrackRegistry);
+        tradeRouterLens = new TradeRouterLens(tradeRouter, allocationManager, positionManager);
+        tradeRouter.setLens(tradeRouterLens);
         swapAdapter.setTradeRouter(address(tradeRouter));
 
         feeManager.setAgentRegistry(address(registry));

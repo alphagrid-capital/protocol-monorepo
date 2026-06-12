@@ -5,7 +5,7 @@ import { IPositionTypes } from "./IPositionTypes.sol";
 
 /// @title IPositionManager
 /// @notice Stores agent positions and per-agent token ledger balances.
-/// @dev Keeper trigger checks live on `ITradeRouter.isTriggerMet`.
+/// @dev Keeper trigger checks live on `ITradeRouterLens.isTriggerMet`.
 interface IPositionManager is IPositionTypes {
     // -------------------------------------------------------------------------
     // Events

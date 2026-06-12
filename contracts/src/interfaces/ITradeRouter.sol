@@ -49,8 +49,6 @@ interface ITradeRouter is IPositionTypes {
 
     function nonces(uint256 agentId) external view returns (uint256);
 
-    function isTriggerMet(uint256 positionId) external view returns (bool);
-
     /// @notice Cumulative USDC notional traded by `agentId` on UTC day `day` (timestamp / 1 days).
     function dailyTurnoverUsdc(uint256 agentId, uint256 day) external view returns (uint256);
 
@@ -59,33 +57,6 @@ interface ITradeRouter is IPositionTypes {
 
     /// @notice Cumulative net realized PnL from all sells (negative = net loss vs cost basis released).
     function lifetimeRealizedPnlUsdc(uint256 agentId) external view returns (int256);
-
-    /// @notice Cumulative USDC notional traded across all days.
-    function lifetimeTurnoverUsdc(uint256 agentId) external view returns (uint256);
-
-    /// @notice Mark-to-market PnL in bps vs position entry price (uses vault oracle).
-    function positionPnlBps(uint256 positionId) external view returns (int256);
-
-    /// @notice Mark-to-market unrealized PnL in USDC (uses vault oracle).
-    function positionUnrealizedPnlUsdc(uint256 positionId) external view returns (int256);
-
-    /// @notice Count of executed trades (opens, adds, reduces, exits).
-    function tradeCount(uint256 agentId) external view returns (uint32);
-
-    /// @notice Count of positions opened.
-    function positionsOpened(uint256 agentId) external view returns (uint32);
-
-    /// @notice Count of positions fully closed.
-    function positionsClosed(uint256 agentId) external view returns (uint32);
-
-    /// @notice Stored account equity high-water mark (USDC, 6 decimals). Ratchets on trade events only.
-    function peakEquityUsdc(uint256 agentId) external view returns (uint256);
-
-    /// @notice Current account equity: allocation cap + lifetime realized + open unrealized (floored at zero).
-    function currentEquityUsdc(uint256 agentId) external view returns (uint256);
-
-    /// @notice Drawdown from `peakEquityUsdc` in bps; zero when at or above peak or peak unset.
-    function currentDrawdownBps(uint256 agentId) external view returns (uint256);
 
     // -------------------------------------------------------------------------
     // Execution

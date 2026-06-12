@@ -15,6 +15,7 @@ import { IMandateVault } from "../interfaces/IMandateVault.sol";
 import { IPositionManager } from "../interfaces/IPositionManager.sol";
 import { ISwapAdapter } from "../interfaces/ISwapAdapter.sol";
 import { ITradeRouter } from "../interfaces/ITradeRouter.sol";
+import { ITradeRouterLens } from "../interfaces/ITradeRouterLens.sol";
 import { IVaultTrackRegistry } from "../interfaces/IVaultTrackRegistry.sol";
 import { OracleLib } from "../libraries/OracleLib.sol";
 
@@ -68,12 +69,9 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
     mapping(uint256 agentId => uint256 nonce) private _nonces;
     mapping(uint256 agentId => mapping(uint256 day => uint256 turnoverUsdc)) private _dailyTurnoverUsdc;
     mapping(uint256 agentId => mapping(uint256 day => int256 realizedPnlUsdc)) private _dailyRealizedPnlUsdc;
-    mapping(uint256 agentId => uint256 turnoverUsdc) private _lifetimeTurnoverUsdc;
     mapping(uint256 agentId => int256 realizedPnlUsdc) private _lifetimeRealizedPnlUsdc;
-    mapping(uint256 agentId => uint32 trades) private _tradeCount;
-    mapping(uint256 agentId => uint32 opened) private _positionsOpened;
-    mapping(uint256 agentId => uint32 closed) private _positionsClosed;
-    mapping(uint256 agentId => uint256 peakEquity) private _peakEquityUsdc;
+
+    ITradeRouterLens public lens;
 
     uint256 public keeperBountyBps;
     uint256 public maxKeeperBounty;
@@ -108,6 +106,7 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
     error VaultTrackNotActive(address vault, uint256 trackId);
     error BpsOutOfRange(uint256 bps);
     error LedgerExceedsVaultBalance(address token, uint256 ledgerTotal, uint256 vaultBalance);
+    error LensAlreadySet();
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -148,16 +147,6 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
     }
 
     /// @inheritdoc ITradeRouter
-    function isTriggerMet(uint256 positionId) public view returns (bool) {
-        Position memory position = positionManager.getPosition(positionId);
-        if (position.status != PositionStatus.Open) return false;
-
-        ExitRule memory rule = positionManager.getNextExitRule(positionId);
-        int256 pnlBps = _positionPnlBps(position);
-        return _isRuleTriggered(rule, pnlBps);
-    }
-
-    /// @inheritdoc ITradeRouter
     function dailyTurnoverUsdc(uint256 agentId, uint256 day) external view returns (uint256) {
         return _dailyTurnoverUsdc[agentId][day];
     }
@@ -170,55 +159,6 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
     /// @inheritdoc ITradeRouter
     function lifetimeRealizedPnlUsdc(uint256 agentId) external view returns (int256) {
         return _lifetimeRealizedPnlUsdc[agentId];
-    }
-
-    /// @inheritdoc ITradeRouter
-    function lifetimeTurnoverUsdc(uint256 agentId) external view returns (uint256) {
-        return _lifetimeTurnoverUsdc[agentId];
-    }
-
-    /// @inheritdoc ITradeRouter
-    function positionPnlBps(uint256 positionId) external view returns (int256) {
-        return _positionPnlBps(positionManager.getPosition(positionId));
-    }
-
-    /// @inheritdoc ITradeRouter
-    function positionUnrealizedPnlUsdc(uint256 positionId) external view returns (int256) {
-        return _positionUnrealizedPnlUsdc(positionManager.getPosition(positionId));
-    }
-
-    /// @inheritdoc ITradeRouter
-    function peakEquityUsdc(uint256 agentId) external view returns (uint256) {
-        return _peakEquityUsdc[agentId];
-    }
-
-    /// @inheritdoc ITradeRouter
-    function currentEquityUsdc(uint256 agentId) external view returns (uint256) {
-        return _currentEquityUsdc(agentId);
-    }
-
-    /// @inheritdoc ITradeRouter
-    function currentDrawdownBps(uint256 agentId) external view returns (uint256) {
-        uint256 peak = _peakEquityUsdc[agentId];
-        if (peak == 0) return 0;
-        uint256 current = _currentEquityUsdc(agentId);
-        if (current >= peak) return 0;
-        return (peak - current) * MAX_BPS / peak;
-    }
-
-    /// @inheritdoc ITradeRouter
-    function tradeCount(uint256 agentId) external view returns (uint32) {
-        return _tradeCount[agentId];
-    }
-
-    /// @inheritdoc ITradeRouter
-    function positionsOpened(uint256 agentId) external view returns (uint32) {
-        return _positionsOpened[agentId];
-    }
-
-    /// @inheritdoc ITradeRouter
-    function positionsClosed(uint256 agentId) external view returns (uint32) {
-        return _positionsClosed[agentId];
     }
 
     // -------------------------------------------------------------------------
@@ -320,6 +260,12 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
         keeperBountyBps = keeperBountyBps_;
         maxKeeperBounty = maxKeeperBounty_;
         emit KeeperBountyUpdated(keeperBountyBps_, maxKeeperBounty_);
+    }
+
+    function setLens(ITradeRouterLens lens_) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (address(lens) != address(0)) revert LensAlreadySet();
+        if (address(lens_) == address(0)) revert ZeroAddress();
+        lens = lens_;
     }
 
     // -------------------------------------------------------------------------
@@ -446,9 +392,7 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
         allocationManager.setAllocationUsedByRouter(intent.agentId, allocation.used + intent.usdcAmount);
 
         _recordDailyTurnover(intent.agentId, intent.usdcAmount);
-        _recordTrade(intent.agentId);
-        _positionsOpened[intent.agentId]++;
-        _updatePeakEquity(intent.agentId);
+        _notifyLensTrade(intent.agentId, intent.usdcAmount, true, false);
         _assertLedgerInvariant(vault, intent.token);
     }
 
@@ -474,8 +418,7 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
         allocationManager.setAllocationUsedByRouter(intent.agentId, allocation.used + intent.usdcAmount);
 
         _recordDailyTurnover(intent.agentId, intent.usdcAmount);
-        _recordTrade(intent.agentId);
-        _updatePeakEquity(intent.agentId);
+        _notifyLensTrade(intent.agentId, intent.usdcAmount, false, false);
         _assertLedgerInvariant(vault, position.token);
     }
 
@@ -677,7 +620,6 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
         if (usdcNotional == 0) return;
         uint256 day = block.timestamp / 1 days;
         _dailyTurnoverUsdc[agentId][day] += usdcNotional;
-        _lifetimeTurnoverUsdc[agentId] += usdcNotional;
     }
 
     function _validateDailyLoss(uint256 agentId) private view {
@@ -705,17 +647,6 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
         _lifetimeRealizedPnlUsdc[agentId] += delta;
     }
 
-    function _recordTrade(uint256 agentId) private {
-        _tradeCount[agentId]++;
-    }
-
-    function _maybeRecordPositionClosed(uint256 positionId) private {
-        Position memory position = positionManager.getPosition(positionId);
-        if (position.status == PositionStatus.Closed) {
-            _positionsClosed[position.agentId]++;
-        }
-    }
-
     function _positionPnlBps(Position memory position) private view returns (int256) {
         IMandateVault vault = IMandateVault(position.vault);
         uint8 tokenDecimals = vault.tokenRegistry().tokenDecimals(position.token);
@@ -731,47 +662,6 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
         int256 price = SafeCast.toInt256(currentPrice);
         int256 entry = SafeCast.toInt256(position.entryPriceUsdc);
         return (price - entry) * SafeCast.toInt256(MAX_BPS) / entry;
-    }
-
-    function _positionUnrealizedPnlUsdc(Position memory position) private view returns (int256) {
-        if (position.status != PositionStatus.Open) return 0;
-
-        IMandateVault vault = IMandateVault(position.vault);
-        uint8 tokenDecimals = vault.tokenRegistry().tokenDecimals(position.token);
-        uint256 currentValue = OracleLib.valueInAsset(
-            position.tokenAmount,
-            vault.tokenRegistry().priceOracle(),
-            position.token,
-            tokenDecimals,
-            vault.assetDecimals(),
-            vault.maxPriceAge()
-        );
-        return SafeCast.toInt256(currentValue) - SafeCast.toInt256(position.usdcCostBasis);
-    }
-
-    function _totalUnrealizedPnlUsdc(uint256 agentId) private view returns (int256 total) {
-        uint256[] memory ids = positionManager.getOpenPositionIds(agentId);
-        uint256 len = ids.length;
-        for (uint256 i = 0; i < len; i++) {
-            total += _positionUnrealizedPnlUsdc(positionManager.getPosition(ids[i]));
-        }
-    }
-
-    /// @dev Account equity = cap + lifetime realized + open unrealized; floored at zero for drawdown math.
-    function _currentEquityUsdc(uint256 agentId) private view returns (uint256) {
-        IAllocationManager.Allocation memory allocation = allocationManager.getAllocation(agentId);
-        int256 equitySigned =
-            int256(allocation.cap) + _lifetimeRealizedPnlUsdc[agentId] + _totalUnrealizedPnlUsdc(agentId);
-        if (equitySigned <= 0) return 0;
-        return SafeCast.toUint256(equitySigned);
-    }
-
-    /// @dev Peak equity ratchets on trade events; see `currentDrawdownBps` NatSpec for limitations.
-    function _updatePeakEquity(uint256 agentId) private {
-        uint256 current = _currentEquityUsdc(agentId);
-        if (current > _peakEquityUsdc[agentId]) {
-            _peakEquityUsdc[agentId] = current;
-        }
     }
 
     function _isRuleTriggered(ExitRule memory rule, int256 pnlBps) private pure returns (bool) {
@@ -853,11 +743,20 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
         }
 
         _recordDailyRealizedPnl(position.agentId, usdcReleased, usdcOut);
-        _recordTrade(position.agentId);
-        _maybeRecordPositionClosed(positionId);
-        _updatePeakEquity(position.agentId);
+
+        bool positionClosed = positionManager.getPosition(positionId).status == PositionStatus.Closed;
+        uint256 lensTurnover = mode == SellMode.ForceClose ? 0 : usdcOut;
+        _notifyLensTrade(position.agentId, lensTurnover, false, positionClosed);
 
         _assertLedgerInvariant(vault, position.token);
+    }
+
+    function _notifyLensTrade(uint256 agentId, uint256 turnoverUsdc, bool positionOpened, bool positionClosed)
+        private
+    {
+        if (address(lens) != address(0)) {
+            lens.onTrade(agentId, turnoverUsdc, positionOpened, positionClosed);
+        }
     }
 
     function _assertLedgerInvariant(IMandateVault vault, address token) private view {

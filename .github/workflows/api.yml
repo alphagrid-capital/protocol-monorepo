@@ -55,6 +55,9 @@ jobs:
     needs: check
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
     outputs:
       environments: ${{ steps.set-matrix.outputs.environments }}
     steps:
