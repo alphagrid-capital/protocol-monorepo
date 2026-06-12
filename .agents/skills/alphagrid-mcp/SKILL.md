@@ -110,12 +110,7 @@ Always quote → sign → submit. One open position per token per agent.
 
 OpenPosition signs `exitsHash`, not the raw `exits` array. Implement `hashExitRules` per `api/src/lib/eip712-open-position.ts`.
 
-Wallet MCP has **no `signTypedData` tool** today. Options:
-
-1. Local viem script with the agent `PRIVATE_KEY` (same key as wallet MCP `env`)
-2. User's own signer infrastructure
-
-Match `nonce` and `deadline` from the latest quote at sign time.
+Use **wallet MCP** `AlphagridActionProvider_sign_*` tools (`viem` + `PRIVATE_KEY`) or your own signer. Match `nonce` and `deadline` from the latest quote at sign time.
 
 ## Risk and position reads
 

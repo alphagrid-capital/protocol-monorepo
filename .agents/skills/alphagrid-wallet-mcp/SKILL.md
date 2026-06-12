@@ -41,7 +41,7 @@ For AlphaGrid registration and trading, run **both** MCP servers: this wallet MC
 | Pyth spot prices, x402 paid HTTP (when tools are present)   | Live-updating canvas data (canvases are static snapshots)       |
 | x402 payment for `POST /agents/register` (registration fee) | Trade quotes, submit intents, positions (`alphagrid-mcp` skill) |
 | `robinhood-testnet` signing via `viem`                      | Robinhood chain via `cdp` (not supported)                       |
-| EIP-712 `signTypedData` via local viem script (see below)   | Assuming wallet MCP can sign trade intents natively             |
+| AlphaGrid EIP-712 signing (`AlphagridActionProvider_sign_*`, `viem` only) | Trade quotes, submit intents, positions (`alphagrid-mcp` skill) |
 
 ## Wallet providers
 
@@ -135,14 +135,23 @@ Registration quote includes `registrationFee.tokenAddress` — payment must use 
 
 Tool requires CDP API keys (`CDP_API_KEY_ID` + `CDP_API_KEY_SECRET` on `viem`, or `cdp` provider). Discover services with `discover_x402_services` on the **current** network only.
 
-### EIP-712 signing (gap)
+### EIP-712 signing (AlphaGrid tools)
 
-Wallet MCP exposes **no** `signTypedData` / EIP-712 tool. AlphaGrid registration and trades require off-MCP signing:
+With `WALLET_PROVIDER=viem` and `PRIVATE_KEY`, the wallet MCP exposes **`AlphagridActionProvider_sign_*`** tools. Pair with protocol MCP quotes, then submit:
 
-1. Sign `SelfRegister` and `OpenPosition` (etc.) with viem/ethers using the same `PRIVATE_KEY` as wallet MCP
-2. Follow `contracts/docs/position-intent-eip712.md` and `api/src/lib/eip712-open-position.ts` (`exitsHash` for trades)
+| Tool | Typed data | Submit via |
+| ---- | ---------- | ---------- |
+| `AlphagridActionProvider_sign_self_register` | `SelfRegister` | `alphagrid_register_agent` / x402 register |
+| `AlphagridActionProvider_sign_open_position` | `OpenPosition` | `alphagrid_submit_trade_intent` |
+| `AlphagridActionProvider_sign_add_position` | `AddToPosition` | `alphagrid_submit_add_intent` |
+| `AlphagridActionProvider_sign_reduce_position` | `ReducePosition` | `alphagrid_submit_reduce_intent` |
+| `AlphagridActionProvider_sign_update_exit_ladder` | `UpdateExitLadder` | `alphagrid_submit_exit_ladder_intent` |
 
-Until a dedicated signing tool ships, agents may run a short local viem script from `api/` (has `viem` in dependencies). Do not commit keys.
+Pass `nonce`, `deadline`, `chainId`, and verifying contract (`agentRegistry` or `tradeRouter`) from the latest quote. For opens and ladder updates, pass `exits` exactly as you will submit; OpenPosition/UpdateExitLadder sign `exitsHash` per `api/src/lib/eip712-open-position.ts`.
+
+**Not on `cdp` provider** — requires local `PRIVATE_KEY`. After changing wallet-mcp code, `yarn build` and restart Alpha Wallet in Cursor.
+
+Optional dev CLIs: `node build/cli/sign-*.js '<json>'` (same logic; reads `PRIVATE_KEY` from MCP env or `~/.cursor/mcp.json` in CLIs only).
 
 ## Safety
 

@@ -5,6 +5,10 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js'
 import { getMcpTools } from '@coinbase/agentkit-model-context-protocol'
+import {
+  ALPHAGRID_SIGN_TOOLS,
+  handleAlphagridSignTool,
+} from './tools/alphagrid-sign-tools.js'
 import { getAgentKit } from './getAgentKit.js'
 
 /**
@@ -14,7 +18,8 @@ import { getAgentKit } from './getAgentKit.js'
 async function main() {
   const agentKit = await getAgentKit()
 
-  const { tools, toolHandler } = await getMcpTools(agentKit)
+  const { tools: agentKitTools, toolHandler } = await getMcpTools(agentKit)
+  const tools = [...agentKitTools, ...ALPHAGRID_SIGN_TOOLS]
 
   const server = new Server(
     {
@@ -36,7 +41,11 @@ async function main() {
 
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
     try {
-      return toolHandler(request.params.name, request.params.arguments)
+      const toolName = request.params.name
+      if (ALPHAGRID_SIGN_TOOLS.some((tool) => tool.name === toolName)) {
+        return handleAlphagridSignTool(toolName, request.params.arguments ?? {})
+      }
+      return toolHandler(toolName, request.params.arguments)
     } catch (error) {
       throw new Error(`Tool ${request.params.name} failed: ${error}`)
     }

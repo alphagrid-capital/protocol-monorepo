@@ -118,6 +118,22 @@ Configuration lives in `src/getAgentKit.ts` and `src/wallets/`. MCP server wirin
 | x402 (paid HTTP) | `X402ActionProvider_make_http_request_with_x402`  | One-step paid request (no confirmation)             |
 | x402 (paid HTTP) | `X402ActionProvider_discover_x402_services`       | List x402 APIs on the current network               |
 
+### AlphaGrid EIP-712 signing (`viem` + `PRIVATE_KEY`)
+
+Pair with **AlphaGrid protocol MCP** for quotes and submit. Pass fields from each quote (`nonce`, `deadline`, `tradeRouter` / `agentRegistry`, `chainId`, `token`, `vault`, `exits`).
+
+| Tool                                              | EIP-712 type       | Use with                                                  |
+| ------------------------------------------------- | ------------------ | --------------------------------------------------------- |
+| `AlphagridActionProvider_sign_self_register`      | `SelfRegister`     | `alphagrid_register_agent` / x402 `POST /agents/register` |
+| `AlphagridActionProvider_sign_open_position`      | `OpenPosition`     | `alphagrid_submit_trade_intent`                           |
+| `AlphagridActionProvider_sign_add_position`       | `AddToPosition`    | `alphagrid_submit_add_intent`                             |
+| `AlphagridActionProvider_sign_reduce_position`    | `ReducePosition`   | `alphagrid_submit_reduce_intent`                          |
+| `AlphagridActionProvider_sign_update_exit_ladder` | `UpdateExitLadder` | `alphagrid_submit_exit_ladder_intent`                     |
+
+Requires `WALLET_PROVIDER=viem` and `PRIVATE_KEY` in MCP env (not available on `cdp` smart wallet). Returns JSON: `signer`, `signature`, `deadline`, `nonce` (and `exitsHash` when applicable).
+
+Optional dev CLIs (same signing logic): `node build/cli/sign-self-register.js`, `sign-open-position.js`, `sign-reduce-position.js` with a JSON argument string.
+
 Faucet, x402, and some CDP actions require `CDP_API_KEY_ID` and `CDP_API_KEY_SECRET` (available with `viem` or required for `cdp`).
 
 ### Arbitrum x402 (AlphaGrid)
@@ -139,9 +155,17 @@ For local iteration without publishing, point `args` at `build/index.js` with `"
 
 ### Releases
 
-1. Bump `version` in `package.json`.
-2. Commit and tag: `local-wallet-mcp-vX.Y.Z` (tag must match package version).
-3. Push the tag — CI publishes via `.github/workflows/wallet-mcp.yml` (requires repo secret **`NPM_TOKEN`**).
+1. Bump, commit, and tag (tag must match `package.json` version):
+
+   ```sh
+   chmod +x scripts/bump-and-tag.sh   # once
+   ./scripts/bump-and-tag.sh minor    # or patch | major | 0.2.1
+   ./scripts/bump-and-tag.sh minor --push
+   ```
+
+   Creates annotated tag `local-wallet-mcp-vX.Y.Z` and runs `yarn type-check` + `yarn build`.
+
+2. Push the tag — CI publishes via `.github/workflows/wallet-mcp.yml` (requires repo secret **`NPM_TOKEN`**).
 
 ### Manual publish
 
