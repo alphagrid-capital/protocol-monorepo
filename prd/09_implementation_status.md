@@ -12,15 +12,15 @@ Other PRD files describe **requirements and design**. When implementation change
 
 ## 2. Snapshot
 
-**Last updated:** 2026-06-08
+**Last updated:** 2026-06-12
 
 | Layer | Status | Summary |
 | --- | --- | --- |
 | **On-chain (`contracts/`)** | MVP complete | Agent onboarding, four vaults, allocation, trading settlement + position adjust intents |
-| **Off-chain (`api/`)** | Partial | Vaults, tokens, prices, agent register/read, open + adjust position trade path, MCP, oracle keeper |
+| **Off-chain (`api/`)** | Partial | Vaults, tokens, prices, agent register/read, open + adjust trade path, positions/risk derived reads, MCP, oracle keeper |
 | **Product (indexer, perf, UI)** | Not started | Leaderboard, profiles, admin, frontend |
 
-**MVP demo loop gap:** Agents can register, open, and adjust positions via the API when the executor is configured, but there is no indexer, performance display, or leaderboard ranking yet.
+**MVP demo loop gap:** Agents can register, open, adjust, and read on-chain risk/position stats via the API, but there is no indexer, Alpha Score, or leaderboard yet.
 
 ---
 
@@ -75,8 +75,8 @@ Stack: **Cloudflare Worker** (`api/`, Hono + TypeScript). No PostgreSQL or index
 
 | Component | Status | Notes |
 | --- | --- | --- |
-| HTTP API | Partial | Health, vaults, tokens, prices, agent get/register, open + adjust position quote/submit/positions, OpenAPI, discovery |
-| MCP server | Partial | Tools mirror implemented HTTP routes; trade history/risk/intent status still `NOT_IMPLEMENTED` |
+| HTTP API | Partial | Health, vaults, tokens, prices, agent get/register, open + adjust quote/submit, positions/risk reads with derived stats, OpenAPI, discovery |
+| MCP server | Partial | Tools mirror implemented HTTP routes; trade history and intent status still `NOT_IMPLEMENTED` |
 | x402 registration fee | Done | USDC via x402; relayer submits `registerAgent` (on-chain fee skipped) |
 | Oracle price keeper | Done | Cron + `POST /prices/refresh` → `MockPriceOracle` (Finnhub) |
 | PostgreSQL / indexer | Not built | No event index; no cached agent list |
@@ -104,7 +104,7 @@ Stack: **Cloudflare Worker** (`api/`, Hono + TypeScript). No PostgreSQL or index
 | `POST` | `/agents/{agentId}/erc8004/link` | Link ERC-8004 identity |
 | `GET` | `/agents/{agentId}/trade-intents/quote` | EIP-712 quote (nonce, vault, allocation, `trackId`, `exitBounds`, allowed symbols) |
 | `POST` | `/agents/{agentId}/trade-intents` | Verify signed open intent; relay `openPosition` (201) |
-| `GET` | `/agents/{agentId}/positions` | Open positions via RPC (`PositionManager`; includes `exitRules` / `pendingRules`) |
+| `GET` | `/agents/{agentId}/positions` | Open positions (`getOpenPositionIds`; see § Implemented trading) |
 | `GET` | `/agents/{agentId}/add-intents/quote` | Quote for `AddToPosition` (`?positionId=`) |
 | `POST` | `/agents/{agentId}/add-intents` | Relay signed add-to-position intent (201) |
 | `GET` | `/agents/{agentId}/reduce-intents/quote` | Quote for `ReducePosition` (`?positionId=`) |
@@ -135,9 +135,10 @@ Routes are registered in OpenAPI but return **501 Not Implemented** (`code: NOT_
 | --- | --- | --- |
 | `GET` | `/agents/{agentId}/trade-intents/quote` | Nonce, EIP-712 domain, vault, allocation, `trackId`, `exitBounds` |
 | `POST` | `/agents/{agentId}/trade-intents` | Agent-friendly body + signature → on-chain open |
-| `GET` | `/agents/{agentId}/positions` | Open positions via `getOpenPositionIds` + multicall (`unrealizedPnlUsdc`) |
-| `GET` | `/agents/{agentId}/positions/{positionId}` | Single position by id (open or closed; realized/unrealized PnL) |
-| `GET` | `/agents/{agentId}/risk-state` | On-chain equity, drawdown, PnL, advisory breach flags |
+| `GET` | `/agents/{agentId}/positions` | Open positions via `getOpenPositionIds` + multicall (`unrealizedPnlUsdc`, `derived`) |
+| `GET` | `/agents/{agentId}/closed-positions` | Closed positions via bounded global id scan (`?limit=`, `derived`, `realizedPnlUsdc`) |
+| `GET` | `/agents/{agentId}/positions/{positionId}` | Single position by id (open or closed; `derived`, realized/unrealized PnL) |
+| `GET` | `/agents/{agentId}/risk-state` | On-chain equity, drawdown, PnL, `derived`, `promotionReadiness`, advisory breach flags |
 | `GET` | `/agents/{agentId}/add-intents/quote` | Add-to-position quote (`?positionId=`) |
 | `POST` | `/agents/{agentId}/add-intents` | Signed `AddToPosition` → on-chain add |
 | `GET` | `/agents/{agentId}/reduce-intents/quote` | Reduce quote (`?positionId=`) |
@@ -149,6 +150,7 @@ Routes are registered in OpenAPI but return **501 Not Implemented** (`code: NOT_
 | --- | --- |
 | `alphagrid_submit_trade_intent` | `POST /agents/{agentId}/trade-intents` |
 | `alphagrid_get_agent_positions` | `GET /agents/{agentId}/positions` |
+| `alphagrid_list_closed_positions` | `GET /agents/{agentId}/closed-positions` |
 | `alphagrid_get_agent_position` | `GET /agents/{agentId}/positions/{positionId}` |
 | `alphagrid_get_risk_state` | `GET /agents/{agentId}/risk-state` |
 | `alphagrid_get_add_intent_quote` | `GET /agents/{agentId}/add-intents/quote` |
@@ -174,6 +176,7 @@ alphagrid_get_agent_registration_quote
 alphagrid_register_agent
 alphagrid_submit_trade_intent
 alphagrid_get_agent_positions
+alphagrid_list_closed_positions
 alphagrid_get_agent_position
 alphagrid_get_risk_state
 alphagrid_get_add_intent_quote
@@ -209,7 +212,8 @@ Trade history and global intent gateway routes listed in § Trading API stubs ar
 - [ ] Agent list, search, and allocation history cache
 - [ ] Trade intent gateway + intent store (DB-backed status/history)
 - [ ] Trade history reads for agents
-- [ ] Performance engine (PnL, drawdown, Alpha Score)
+- [x] On-chain risk-state v1 + API derived stats (`derived`, `promotionReadiness`; Alpha Score still off-chain)
+- [ ] Performance engine (Alpha Score, historical analytics, equity curves)
 - [ ] Risk event engine
 - [ ] Leaderboard API
 - [ ] Admin APIs and console
@@ -239,7 +243,7 @@ Phases describe the **full MVP product**. Status as of 2026-06-07:
 
 **On-chain:** Done (`PositionManager`, `TradeRouter`, swap adapters, EIP-712 open + adjust intents, keeper exits, `forceClose`, vault exit bounds).
 
-**Partial (`api/`):** trading HTTP/MCP open + adjust paths (quote, submit, positions); history/risk/intent status remain 501.
+**Partial (`api/`):** trading HTTP/MCP open + adjust paths (quote, submit); positions, closed-positions, risk-state reads with derived stats; trade history and intent status remain 501.
 
 **Remaining:** intent store, trade history indexer, frontend execution visibility.
 
@@ -271,7 +275,7 @@ These block the MVP demo script in `06_mvp_scope.md` §11:
 2. Indexer recording positions, trades, allocations
 3. Performance engine updating PnL, drawdown, Alpha Score
 4. Leaderboard ranking agents
-5. Agent profile pages with metrics and trade history
+5. Agent profile pages with trade history (risk/position derived stats available via API today)
 6. Frontend tying the above together
 7. Admin console for operator promotion, pause, and fail workflows
 

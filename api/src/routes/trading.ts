@@ -15,6 +15,7 @@ import {
   AgentRiskStateResponseSchema,
   GetAgentPositionResponseSchema,
   ListAgentPositionsResponseSchema,
+  ListClosedPositionsQuerySchema,
   OpenPositionRequestSchema,
   PositionIntentQuoteQuerySchema,
   ReduceIntentQuoteSchema,
@@ -148,6 +149,33 @@ const getAgentPositionsRoute = createRoute({
   responses: {
     200: {
       description: 'Open positions',
+      content: {
+        'application/json': { schema: ListAgentPositionsResponseSchema },
+      },
+    },
+    ...tradingErrorResponses,
+  },
+})
+
+const getAgentClosedPositionsRoute = createRoute({
+  method: 'get',
+  path: '/agents/{agentId}/closed-positions',
+  tags: ['Trading'],
+  summary: 'Agent closed positions',
+  description:
+    'Scans recent global position ids (max 500) and returns closed positions for the agent. MVP/testnet scale; use indexer in production.',
+  request: {
+    params: z.object({
+      agentId: agentIdParamSchema.openapi({
+        param: { name: 'agentId', in: 'path' },
+        example: '1',
+      }),
+    }),
+    query: ListClosedPositionsQuerySchema,
+  },
+  responses: {
+    200: {
+      description: 'Closed positions',
       content: {
         'application/json': { schema: ListAgentPositionsResponseSchema },
       },
@@ -445,6 +473,23 @@ const getAgentPositionsHandler = async (
   }
 }
 
+const getAgentClosedPositionsHandler = async (
+  c: Parameters<RouteHandler<typeof getAgentClosedPositionsRoute>>[0]
+) => {
+  try {
+    const query = c.req.valid('query')
+    const result = await TradingService.fromEnv(
+      getWorkerEnv()
+    ).listClosedPositions(c.req.param('agentId'), query.limit ?? 50)
+    return c.json(result, 200)
+  } catch (error) {
+    if (error instanceof TradingError || error instanceof AppError) {
+      return c.json({ error: error.message }, statusFromTradingError(error))
+    }
+    throw error
+  }
+}
+
 const getAgentPositionHandler = async (
   c: Parameters<RouteHandler<typeof getAgentPositionRoute>>[0]
 ) => {
@@ -491,6 +536,12 @@ tradingRoutes.openapi(
 tradingRoutes.openapi(
   getAgentPositionsRoute,
   getAgentPositionsHandler as RouteHandler<typeof getAgentPositionsRoute>
+)
+tradingRoutes.openapi(
+  getAgentClosedPositionsRoute,
+  getAgentClosedPositionsHandler as RouteHandler<
+    typeof getAgentClosedPositionsRoute
+  >
 )
 tradingRoutes.openapi(
   getAgentPositionRoute,

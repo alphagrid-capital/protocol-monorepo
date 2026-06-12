@@ -14,6 +14,7 @@
     "dev": "wrangler dev --install-skills=false",
     "deploy": "wrangler deploy",
     "type-check": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test src/lib/trading-metrics.test.ts",
     "format": "prettier --write .",
     "lint:ts": "eslint \"src/**/*.ts\" --fix",
     "lint:fix": "eslint \"src/**/*.ts\" --fix"

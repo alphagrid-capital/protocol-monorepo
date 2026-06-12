@@ -6,6 +6,17 @@ import { verifyReducePositionSignature } from '../lib/eip712-reduce-position.js'
 import { verifyUpdateExitLadderSignature } from '../lib/eip712-update-exit-ladder.js'
 import { parseHumanAmount } from '../lib/amount-utils.js'
 import {
+  accountReturnBps,
+  accountUnrealizedUsdc,
+  buildPromotionReadiness,
+  dailyLossUsedUsdc,
+  maxDailyLossUsdc,
+  positionReturnBps,
+  positionTotalPnlUsdc,
+  utilizationBps,
+  utilizationBpsFromBigint,
+} from '../lib/trading-metrics.js'
+import {
   DEFAULT_EXIT_LADDER,
   buildOnChainIntent,
   mapExitRules,
@@ -50,6 +61,9 @@ const AGENT_STATUS_ACTIVE = 1
 const POSITION_STATUS_OPEN = 0
 /** IPositionTypes.PositionStatus.Closed */
 const POSITION_STATUS_CLOSED = 1
+
+const CLOSED_POSITION_MAX_SCAN = 500
+const CLOSED_POSITION_MULTICALL_BATCH = 50
 
 type OnChainPosition = Awaited<ReturnType<TradeRouterService['getPosition']>>
 type OnChainExitRule = Awaited<
@@ -353,7 +367,7 @@ export class TradingService {
 
     const [
       allocation,
-      accountRiskBounds,
+      trackConfig,
       peakUsdc,
       currentUsdc,
       currentDrawdownBps,
@@ -364,7 +378,7 @@ export class TradingService {
       openPositionIds,
     ] = await Promise.all([
       this.getAllocation(agentId),
-      this.getAccountRiskBounds(vault, trackId),
+      this.getVaultTrackConfig(vault, trackId),
       tradeRouter.peakEquityUsdc(agentId),
       tradeRouter.currentEquityUsdc(agentId),
       tradeRouter.currentDrawdownBps(agentId),
@@ -375,6 +389,11 @@ export class TradingService {
       tradeRouter.getOpenPositionIds(agentId),
     ])
 
+    const accountRiskBounds = {
+      maxDailyLossBps: trackConfig.maxDailyLossBps,
+      maxDrawdownBps: trackConfig.maxDrawdownBps,
+    }
+
     const available =
       allocation.cap > allocation.used ? allocation.cap - allocation.used : 0n
     const drawdownBps = Number(currentDrawdownBps)
@@ -384,12 +403,18 @@ export class TradingService {
       drawdownBreached = drawdownBps > accountRiskBounds.maxDrawdownBps
     }
 
+    const maxLossUsdc = maxDailyLossUsdc(
+      allocation.cap,
+      accountRiskBounds.maxDailyLossBps
+    )
     let dailyLossBreached = false
     if (accountRiskBounds.maxDailyLossBps > 0) {
-      const maxLossUsdc =
-        (allocation.cap * BigInt(accountRiskBounds.maxDailyLossBps)) / 10000n
       dailyLossBreached = dailyRealizedUsdc < -maxLossUsdc
     }
+
+    const lossUsed = dailyLossUsedUsdc(dailyRealizedUsdc)
+    const nowSeconds = BigInt(Math.floor(Date.now() / 1000))
+    const createdAtSeconds = BigInt(agent.createdAt)
 
     return {
       agentId: agentIdStr,
@@ -419,6 +444,36 @@ export class TradingService {
         drawdown: drawdownBreached,
         dailyLoss: dailyLossBreached,
       },
+      derived: {
+        returnBps: accountReturnBps(allocation.cap, currentUsdc),
+        unrealizedPnlUsdc: accountUnrealizedUsdc(
+          allocation.cap,
+          lifetimeRealizedUsdc,
+          currentUsdc
+        ).toString(),
+        drawdownUtilizationBps: utilizationBps(
+          drawdownBps,
+          accountRiskBounds.maxDrawdownBps
+        ),
+        maxDailyLossUsdc: maxLossUsdc.toString(),
+        dailyLossUsedUsdc: lossUsed.toString(),
+        dailyLossUtilizationBps: utilizationBpsFromBigint(
+          lossUsed,
+          maxLossUsdc
+        ),
+      },
+      promotionReadiness: buildPromotionReadiness({
+        minTrades: trackConfig.minTrades,
+        positionsClosed,
+        evaluationPeriodSeconds: trackConfig.evaluationPeriod,
+        createdAtSeconds,
+        nowSeconds,
+        promotionScoreRequired: trackConfig.promotionScore,
+        drawdownBreached,
+        dailyLossBreached,
+        agentStatus: agent.status,
+        agentStatusActive: AGENT_STATUS_ACTIVE,
+      }),
     }
   }
 
@@ -555,6 +610,124 @@ export class TradingService {
     return { agentId: agentIdStr, position: mapped }
   }
 
+  async listClosedPositions(
+    agentIdStr: string,
+    limit = 50
+  ): Promise<ListAgentPositionsResponse> {
+    const agentId = BigInt(agentIdStr)
+    const registry = this.agentRegistryService()
+    const tradeRouter = this.tradeRouterService()
+
+    try {
+      await registry.getAgent(agentId)
+    } catch (error) {
+      if (error instanceof AgentNotFoundError) {
+        throw new TradingError(error.message, 404)
+      }
+      throw error
+    }
+
+    const total = await tradeRouter.positionCount()
+    if (total === 0n) {
+      return { agentId: agentIdStr, positions: [] }
+    }
+
+    const positionManager = await tradeRouter.getPositionManagerAddress()
+    const client = this.providerService().createPublicClient()
+    const totalNum = Number(total)
+    const scanStart = Math.max(1, totalNum - CLOSED_POSITION_MAX_SCAN + 1)
+    const positions: ListAgentPositionsResponse['positions'] = []
+
+    for (
+      let batchEnd = totalNum;
+      batchEnd >= scanStart && positions.length < limit;
+      batchEnd -= CLOSED_POSITION_MULTICALL_BATCH
+    ) {
+      const batchStart = Math.max(
+        scanStart,
+        batchEnd - CLOSED_POSITION_MULTICALL_BATCH + 1
+      )
+      const batchIds: bigint[] = []
+      for (let id = batchEnd; id >= batchStart; id--) {
+        batchIds.push(BigInt(id))
+      }
+
+      const positionResults = await client.multicall({
+        contracts: batchIds.map((positionId) => ({
+          address: positionManager,
+          abi: positionManagerAbi,
+          functionName: 'getPosition' as const,
+          args: [positionId] as const,
+        })),
+      })
+
+      const closedMatches: Array<{ positionId: bigint; position: OnChainPosition }> =
+        []
+      for (let index = 0; index < batchIds.length; index++) {
+        const result = positionResults[index]
+        if (result.status === 'failure') {
+          throw result.error
+        }
+        const position = result.result as OnChainPosition
+        if (
+          position.agentId === agentId &&
+          position.status === POSITION_STATUS_CLOSED &&
+          position.positionId !== 0n
+        ) {
+          closedMatches.push({ positionId: batchIds[index]!, position })
+        }
+      }
+
+      if (closedMatches.length === 0) {
+        continue
+      }
+
+      const realizedResults = await client.multicall({
+        contracts: closedMatches.map(({ positionId }) => ({
+          address: positionManager,
+          abi: positionManagerAbi,
+          functionName: 'realizedPnlUsdc' as const,
+          args: [positionId] as const,
+        })),
+      })
+
+      const exitRulesResults = await client.multicall({
+        contracts: closedMatches.map(({ positionId }) => ({
+          address: positionManager,
+          abi: positionManagerAbi,
+          functionName: 'getExitRules' as const,
+          args: [positionId] as const,
+        })),
+      })
+
+      for (let index = 0; index < closedMatches.length; index++) {
+        if (positions.length >= limit) {
+          break
+        }
+        const realizedResult = realizedResults[index]
+        const exitRulesResult = exitRulesResults[index]
+        if (realizedResult?.status === 'failure') {
+          throw realizedResult.error
+        }
+        if (exitRulesResult?.status === 'failure') {
+          throw exitRulesResult.error
+        }
+
+        const { position } = closedMatches[index]!
+        positions.push(
+          this.mapPositionRecord({
+            position,
+            exitRules: exitRulesResult!.result as readonly OnChainExitRule[],
+            agentIdStr,
+            realizedPnlUsdc: realizedResult!.result.toString(),
+          })
+        )
+      }
+    }
+
+    return { agentId: agentIdStr, positions }
+  }
+
   private mapPositionRecord(params: {
     position: OnChainPosition
     exitRules: readonly OnChainExitRule[]
@@ -565,10 +738,18 @@ export class TradingService {
     const { position, exitRules, agentIdStr, unrealizedPnlUsdc, realizedPnlUsdc } =
       params
     const mappedRules = exitRules.map(mapOnChainExitRule)
-    const status =
-      position.status === POSITION_STATUS_OPEN
-        ? ('Open' as const)
-        : ('Closed' as const)
+    const isOpen = position.status === POSITION_STATUS_OPEN
+    const status = isOpen ? ('Open' as const) : ('Closed' as const)
+    const costBasis = position.usdcCostBasis
+    const unrealizedBigint =
+      unrealizedPnlUsdc !== undefined ? BigInt(unrealizedPnlUsdc) : undefined
+    const realizedBigint =
+      realizedPnlUsdc !== undefined ? BigInt(realizedPnlUsdc) : undefined
+    const totalPnl = positionTotalPnlUsdc(
+      isOpen,
+      unrealizedBigint,
+      realizedBigint
+    )
 
     return {
       positionId: position.positionId.toString(),
@@ -578,7 +759,7 @@ export class TradingService {
       vault: position.vault,
       tokenAmount: position.tokenAmount.toString(),
       entryPriceUsdc: position.entryPriceUsdc.toString(),
-      usdcCostBasis: position.usdcCostBasis.toString(),
+      usdcCostBasis: costBasis.toString(),
       maxSlippageBps: position.maxSlippageBps,
       status,
       nextRuleIndex: position.nextRuleIndex,
@@ -587,6 +768,10 @@ export class TradingService {
       openedAt: position.openedAt.toString(),
       ...(unrealizedPnlUsdc !== undefined ? { unrealizedPnlUsdc } : {}),
       ...(realizedPnlUsdc !== undefined ? { realizedPnlUsdc } : {}),
+      derived: {
+        totalPnlUsdc: totalPnl.toString(),
+        returnBps: positionReturnBps(costBasis, totalPnl),
+      },
     }
   }
 
@@ -847,7 +1032,7 @@ export class TradingService {
     return token
   }
 
-  private async getAccountRiskBounds(vault: Address, trackId: bigint) {
+  private async getVaultTrackConfig(vault: Address, trackId: bigint) {
     const registryAddress = this.config.chainContracts.VaultTrackRegistry
     if (!registryAddress) {
       throw new TradingError('VaultTrackRegistry is not configured', 503)
@@ -864,6 +1049,17 @@ export class TradingService {
     return {
       maxDailyLossBps: Number(config.maxDailyLossBps),
       maxDrawdownBps: Number(config.maxDrawdownBps),
+      minTrades: Number(config.minTrades),
+      evaluationPeriod: config.evaluationPeriod,
+      promotionScore: Number(config.promotionScore),
+    }
+  }
+
+  private async getAccountRiskBounds(vault: Address, trackId: bigint) {
+    const config = await this.getVaultTrackConfig(vault, trackId)
+    return {
+      maxDailyLossBps: config.maxDailyLossBps,
+      maxDrawdownBps: config.maxDrawdownBps,
     }
   }
 

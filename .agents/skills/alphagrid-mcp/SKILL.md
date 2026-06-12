@@ -121,9 +121,10 @@ Match `nonce` and `deadline` from the latest quote at sign time.
 
 | Tool                          | HTTP                                      | Notes |
 | ----------------------------- | ----------------------------------------- | ----- |
-| `alphagrid_get_agent_positions` | `GET /agents/{id}/positions`            | Open positions; includes `unrealizedPnlUsdc` |
-| `alphagrid_get_agent_position`  | `GET /agents/{id}/positions/{positionId}` | Open or closed; `realizedPnlUsdc` when closed |
-| `alphagrid_get_risk_state`      | `GET /agents/{id}/risk-state`           | Equity, drawdown, PnL, advisory breach flags |
+| `alphagrid_get_agent_positions` | `GET /agents/{id}/positions`            | Open positions; `unrealizedPnlUsdc`, `derived` |
+| `alphagrid_list_closed_positions` | `GET /agents/{id}/closed-positions`   | Closed list (`limit`); bounded id scan |
+| `alphagrid_get_agent_position`  | `GET /agents/{id}/positions/{positionId}` | Open or closed; `derived`, `realizedPnlUsdc` when closed |
+| `alphagrid_get_risk_state`      | `GET /agents/{id}/risk-state`           | Equity, drawdown, `derived`, `promotionReadiness`, breaches |
 
 ## Tools not implemented
 

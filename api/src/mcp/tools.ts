@@ -36,6 +36,7 @@ import {
   SubmitTradeIntentInputSchema,
   SubmitTradeIntentResponseSchema,
   ListAgentPositionsResponseSchema,
+  ListClosedPositionsQuerySchema,
 } from '../schemas/trading.js'
 import { ListVaultsResponseSchema } from '../schemas/vault.js'
 import { TradingService } from '../services/trading.service.js'
@@ -433,6 +434,30 @@ export function registerMcpTools(server: McpServer): void {
         return mcpToolSuccess(output)
       } catch (error) {
         return mcpToolErrorFromUnknown(error, 'Failed to load positions')
+      }
+    }
+  )
+
+  server.registerTool(
+    MCP_TOOL_NAMES.getAgentClosedPositions,
+    {
+      title: 'Agent closed positions',
+      description:
+        'Mirrors GET /agents/{agentId}/closed-positions. Bounded global id scan.',
+      inputSchema: GetAgentTradingInputSchema.extend({
+        limit: ListClosedPositionsQuerySchema.shape.limit,
+      }).strict(),
+      outputSchema: ListAgentPositionsResponseSchema,
+      annotations: READ_ONLY_TOOL_ANNOTATIONS,
+    },
+    async ({ agentId, limit }) => {
+      try {
+        const output = await TradingService.fromEnv(
+          getWorkerEnv()
+        ).listClosedPositions(agentId, limit ?? 50)
+        return mcpToolSuccess(output)
+      } catch (error) {
+        return mcpToolErrorFromUnknown(error, 'Failed to load closed positions')
       }
     }
   )

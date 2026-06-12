@@ -49,6 +49,11 @@ Single call for dashboard risk header:
 | Open position count | `GET /agents/{agentId}/risk-state` | `positions.openCount` |
 | Drawdown breach flag | `GET /agents/{agentId}/risk-state` | `breaches.drawdown` (advisory) |
 | Daily loss breach flag | `GET /agents/{agentId}/risk-state` | `breaches.dailyLoss` (advisory) |
+| Account return (bps vs cap) | `GET /agents/{agentId}/risk-state` | `derived.returnBps` |
+| Account unrealized PnL | `GET /agents/{agentId}/risk-state` | `derived.unrealizedPnlUsdc` |
+| Drawdown limit utilization | `GET /agents/{agentId}/risk-state` | `derived.drawdownUtilizationBps` |
+| Daily loss ceiling / used | `GET /agents/{agentId}/risk-state` | `derived.maxDailyLossUsdc`, `derived.dailyLossUsedUsdc`, `derived.dailyLossUtilizationBps` |
+| Promotion checklist | `GET /agents/{agentId}/risk-state` | `promotionReadiness` (`meetsMinTrades`, `meetsEvaluationPeriod`, `blockers`; `alphaScore` always `null`) |
 
 **Also on open-intent quote** (pre-trade context): `GET /agents/{agentId}/trade-intents/quote` → `allocation`, `accountRiskBounds`, `dailyRealizedPnlUsdc`.
 
@@ -71,10 +76,23 @@ Single call for dashboard risk header:
 | Pending TP/SL rules | `GET /agents/{agentId}/positions` | `positions[].pendingRules` |
 | Next ladder step | `GET /agents/{agentId}/positions` | `positions[].nextRuleIndex` |
 | Opened at | `GET /agents/{agentId}/positions` | `positions[].openedAt` |
+| Position return (bps) | `GET /agents/{agentId}/positions` | `positions[].derived.returnBps` |
+| Position total PnL | `GET /agents/{agentId}/positions` | `positions[].derived.totalPnlUsdc` |
 
 ---
 
-## 5. Position detail (open or closed)
+## 5. Closed positions (bounded scan)
+
+| UI stat | Endpoint | Response field(s) |
+| --- | --- | --- |
+| Closed position list | `GET /agents/{agentId}/closed-positions?limit=50` | `positions[]` (newest first, max 100 rows) |
+| Per-position derived | same | `positions[].derived`, `positions[].realizedPnlUsdc` |
+
+Scans up to **500** global position ids per request (MVP/testnet). Replace with indexer for production scale.
+
+---
+
+## 6. Position detail (open or closed)
 
 Use when user opens a row or navigates to `/agents/{id}/positions/{positionId}`:
 
@@ -84,12 +102,13 @@ Use when user opens a row or navigates to `/agents/{id}/positions/{positionId}`:
 | Status Open / Closed | `GET /agents/{agentId}/positions/{positionId}` | `position.status` |
 | Unrealized PnL (open) | `GET /agents/{agentId}/positions/{positionId}` | `position.unrealizedPnlUsdc` |
 | Realized PnL (closed) | `GET /agents/{agentId}/positions/{positionId}` | `position.realizedPnlUsdc` |
+| Position return / total PnL | `GET /agents/{agentId}/positions/{positionId}` | `position.derived` |
 
-Closed positions are **not listed** on `GET /positions`; fetch by id when you know `positionId` (e.g. from a prior open response or future trade history).
+Use `GET /closed-positions` for a list, or fetch by id when you know `positionId`.
 
 ---
 
-## 6. Vault, market, and catalog
+## 7. Vault, market, and catalog
 
 | UI stat | Endpoint | Response field(s) |
 | --- | --- | --- |
@@ -103,7 +122,7 @@ Track limits (`maxDrawdownBps`, `maxDailyLossBps`, `maxTradeSizeBps`, …) live 
 
 ---
 
-## 7. Not available yet (do not wire)
+## 8. Not available yet (do not wire)
 
 | UI stat (planned) | Planned endpoint | Status |
 | --- | --- | --- |
@@ -115,14 +134,14 @@ Track limits (`maxDrawdownBps`, `maxDailyLossBps`, `maxTradeSizeBps`, …) live 
 
 ---
 
-## 8. Suggested page → API bundle
+## 9. Suggested page → API bundle
 
 Minimal fetch sets for common screens:
 
 | Screen | Calls |
 | --- | --- |
 | Agent profile header | `GET /agents/{id}` + `GET /agents/{id}/risk-state` |
-| Positions tab | `GET /agents/{id}/positions` |
+| Positions tab | `GET /agents/{id}/positions` + `GET /agents/{id}/closed-positions` |
 | Position drawer | `GET /agents/{id}/positions/{positionId}` |
 | Open trade form | `GET /agents/{id}/trade-intents/quote?symbol=…` + `GET /prices` |
 | Wallet agent list | `GET /agents/by-owner/{owner}` |
@@ -132,7 +151,7 @@ Poll `risk-state` and `positions` on an interval or after successful intent subm
 
 ---
 
-## 9. Formatting notes
+## 10. Formatting notes
 
 - **USDC amounts:** strings in base units (`1000000` = 1 USDC). Divide by `10^6` for display.
 - **Bps:** `1500` = 15%. Drawdown and policy limits use basis points.

@@ -148,6 +148,16 @@ export class TradeRouterService {
     })
   }
 
+  async positionCount(): Promise<bigint> {
+    const positionManager = await this.getPositionManagerAddress()
+    const client = this.providerService.createPublicClient()
+    return client.readContract({
+      address: positionManager,
+      abi: positionManagerAbi,
+      functionName: 'positionCount',
+    })
+  }
+
   private async writeAndWait(
     functionName:
       | 'openPosition'

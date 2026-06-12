@@ -45,9 +45,10 @@ yarn deploy      # Deploy to Cloudflare (requires account auth)
 | `POST` | `/agents/{agentId}/reduce-intents`            | Relay signed reduce intent — partial or full close (201)                       |
 | `GET`  | `/agents/{agentId}/exit-ladder-intents/quote` | Quote for `UpdateExitLadder` (`?positionId=`)                                  |
 | `POST` | `/agents/{agentId}/exit-ladder-intents`       | Relay signed pending TP/SL update (201)                                        |
-| `GET`  | `/agents/{agentId}/positions`                 | Agent open positions (`getOpenPositionIds` + multicall)                        |
-| `GET`  | `/agents/{agentId}/positions/{positionId}`    | Single position by id (open or closed; realized/unrealized PnL)                |
-| `GET`  | `/agents/{agentId}/risk-state`                | On-chain equity, drawdown, PnL, advisory breach flags                           |
+| `GET`  | `/agents/{agentId}/positions`                 | Agent open positions (`getOpenPositionIds` + multicall; includes `derived`)    |
+| `GET`  | `/agents/{agentId}/closed-positions`          | Closed positions via bounded global id scan (`?limit=`, max 100)               |
+| `GET`  | `/agents/{agentId}/positions/{positionId}`    | Single position by id (open or closed; realized/unrealized PnL + `derived`)    |
+| `GET`  | `/agents/{agentId}/risk-state`                | Equity, drawdown, PnL, `derived`, `promotionReadiness`, breach flags           |
 | `POST` | `/intents/trade`                              | Global trade intent submit (**501** stub)                                      |
 | `GET`  | `/agents/{agentId}/trades`                    | Agent trade history (**501** stub)                                             |
 | `GET`  | `/intents/{intentId}`                         | Intent status lookup (**501** stub)                                            |
@@ -90,6 +91,7 @@ ChatGPT **browsing** only performs simple `GET` requests on **public** URLs. It 
 | `alphagrid_get_exit_ladder_intent_quote` | `GET /agents/{agentId}/exit-ladder-intents/quote`        |
 | `alphagrid_submit_exit_ladder_intent`    | `POST /agents/{agentId}/exit-ladder-intents`             |
 | `alphagrid_get_agent_positions`          | `GET /agents/{agentId}/positions`                        |
+| `alphagrid_list_closed_positions`        | `GET /agents/{agentId}/closed-positions`                 |
 | `alphagrid_get_agent_position`         | `GET /agents/{agentId}/positions/{positionId}`           |
 | `alphagrid_get_risk_state`               | `GET /agents/{agentId}/risk-state`                       |
 | `alphagrid_get_trade_history`            | `GET /agents/{agentId}/trades` (**NOT_IMPLEMENTED**)     |

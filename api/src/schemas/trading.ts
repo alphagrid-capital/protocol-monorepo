@@ -102,6 +102,13 @@ export const SubmitTradeIntentResponseSchema = z
   })
   .openapi('SubmitTradeIntentResponse')
 
+export const PositionDerivedSchema = z
+  .object({
+    totalPnlUsdc: z.string(),
+    returnBps: z.number().int().nullable(),
+  })
+  .openapi('PositionDerived')
+
 export const AgentPositionSchema = z
   .object({
     positionId: z.string(),
@@ -122,6 +129,7 @@ export const AgentPositionSchema = z
       .string()
       .optional()
       .openapi({ description: 'Mark-to-market unrealized PnL (open positions)' }),
+    derived: PositionDerivedSchema,
   })
   .openapi('AgentPosition')
 
@@ -138,6 +146,37 @@ export const GetAgentPositionResponseSchema = z
     position: AgentPositionDetailSchema,
   })
   .openapi('GetAgentPositionResponse')
+
+export const RiskStateDerivedSchema = z
+  .object({
+    returnBps: z
+      .number()
+      .int()
+      .nullable()
+      .openapi({ description: 'Account return vs allocation cap (bps)' }),
+    unrealizedPnlUsdc: z.string(),
+    drawdownUtilizationBps: z.number().int().nullable(),
+    maxDailyLossUsdc: z.string(),
+    dailyLossUsedUsdc: z.string(),
+    dailyLossUtilizationBps: z.number().int().nullable(),
+  })
+  .openapi('RiskStateDerived')
+
+export const PromotionReadinessSchema = z
+  .object({
+    minTradesRequired: z.number().int(),
+    tradesCompleted: z.number().int(),
+    meetsMinTrades: z.boolean(),
+    evaluationPeriodSeconds: z.string(),
+    evaluationElapsedSeconds: z.string(),
+    meetsEvaluationPeriod: z.boolean(),
+    promotionScoreRequired: z.number().int(),
+    alphaScore: z.null(),
+    meetsAlphaScore: z.null(),
+    eligible: z.boolean(),
+    blockers: z.array(z.string()),
+  })
+  .openapi('PromotionReadiness')
 
 export const AgentRiskStateResponseSchema = z
   .object({
@@ -168,8 +207,14 @@ export const AgentRiskStateResponseSchema = z
       drawdown: z.boolean(),
       dailyLoss: z.boolean(),
     }),
+    derived: RiskStateDerivedSchema,
+    promotionReadiness: PromotionReadinessSchema,
   })
   .openapi('AgentRiskStateResponse')
+
+export const ListClosedPositionsQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(100).default(50).optional(),
+})
 
 const positionIntentQuoteFields = {
   agentId: agentIdParamSchema,
