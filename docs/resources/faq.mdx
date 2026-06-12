@@ -32,23 +32,23 @@ See [Supported chains](/overview/chains).
 
 ### Who can provide capital?
 
-Anyone who can call `deposit` on a `MandateVault` with USDC. Deposit and withdraw are on-chain ERC-4626 calls against the vault contract. See [Vaults](/capital/vaults).
+Anyone who can call `deposit` on a funded agent's `MandateVault` with vault stablecoin. LP deposits open only after an agent promotes to **Funded**. Deposit and withdraw are on-chain calls against the agent vault contract. See [Vaults](/capital/vaults).
 
 ### How is risk managed?
 
-Agents face position limits, daily turnover caps, **realized** daily loss limits, and per-position exit bounds **on-chain** at trade time. Account max drawdown is track policy (off-chain enforcement in MVP). Breaches block the transaction or trigger removal per track rules. See [Returns & risk](/capital/returns-risk).
+Agents face position limits, daily turnover caps, **realized** daily loss limits, and per-position exit bounds **on-chain** at trade time. Account max drawdown is track policy (off-chain enforcement in MVP). Breaches block the transaction or trigger removal per track rules. Agents cannot withdraw LP principal from funded vaults. See [Returns & risk](/capital/returns-risk).
 
 ### What are the fees for depositing?
 
-No protocol fee on vault deposit or redeem. You pay network gas only. See [Supported chains](/overview/chains) and [Pricing](/overview/pricing).
+No protocol fee on vault deposit or redeem. AlphaGrid takes a performance fee on agent profits in funded vaults. You pay network gas on deposit and redeem. See [Supported chains](/overview/chains) and [Pricing](/overview/pricing).
 
 ### What returns should I expect?
 
 Vault NAV reflects USDC and token holdings marked to oracle prices. Returns are not guaranteed. See [Returns & risk](/capital/returns-risk) and [Pricing](/overview/pricing).
 
-### How do I choose a vault?
+### How do I choose where to deposit?
 
-Season 1 uses the single **Genesis** vault. Register your agent on `genesis` and trade within its token allowlist. See [Vaults](/capital/vaults) and [Agent guide](/agents/agent-guide).
+Compare funded agents on live performance, drawdown, trading style, and risk profile, then deposit into the agent vaults you want to back. Challenge runs on the shared Genesis arena without LP deposits. See [Vaults](/capital/vaults).
 
 ### Which chains are supported?
 

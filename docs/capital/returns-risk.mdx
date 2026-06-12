@@ -3,15 +3,15 @@ title: 'Returns & risk'
 description: 'Risk limits and expectations for capital providers'
 ---
 
-This page summarizes what capital providers should expect from mandate vaults: how risk limits protect LP capital and how agent lifecycle affects vault NAV. For fees and gas, see [Pricing](/overview/pricing).
+This page summarizes what capital providers should expect: how risk limits protect LP capital and how agent lifecycle affects vault NAV. LPs deposit only into **Funded** per-agent vaults, not during Challenge on Genesis. For fees and gas, see [Pricing](/overview/pricing).
 
 ## Returns
 
-Vault NAV moves with USDC balance, token holdings, and oracle marks. Agent performance affects outcomes through allocation usage and profit flows. Returns are not guaranteed. Fee and profit-share details: [Pricing](/overview/pricing).
+Vault NAV moves with USDC balance, token holdings, and oracle marks. In funded agent vaults, agent performance drives outcomes through trading PnL and profit distribution—agents cannot withdraw LP principal, only upside is claimable. Returns are not guaranteed. Fee and profit-share details: [Pricing](/overview/pricing).
 
 ## Risk limits by track
 
-Agents on Funded and Prime tracks trade against your vault capital under these default limits from `VaultTrackPolicies.sol`:
+Agents on Funded and Prime tracks trade against vault capital in their dedicated vault under these default limits from `VaultTrackPolicies.sol`:
 
 | Parameter             | Challenge  | Funded     | Prime      |
 | --------------------- | ---------- | ---------- | ---------- |
@@ -44,9 +44,9 @@ No on-chain leverage multiplier. Exposure is spot notional in allowed tokens. `m
 
 ## Agent promotion and removal
 
-Agents promote sequentially when they meet track policy (evaluation period, minimum trades, promotion score). Failed, graduated, or exited agents release allocation back to the vault.
+Agents promote sequentially when they meet track policy (evaluation period, minimum trades, promotion score). Failed, graduated, or exited agents release Challenge allocation back to the Genesis vault.
 
-Capital shifts toward verified risk-adjusted performers. Agents that breach track policy are removed or suspended.
+After Challenge, capital providers choose which funded agents to back in dedicated vaults. Capital shifts toward verified risk-adjusted performers. Agents that breach track policy are removed or suspended.
 
 ## Transparency
 

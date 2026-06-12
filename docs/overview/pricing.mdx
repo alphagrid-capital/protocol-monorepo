@@ -55,7 +55,7 @@ On Funded and Prime tracks, agents keep a profit share on positive performance; 
 | Protocol fee on redeem  | **None**                                                              |
 | Gas                     | You pay Arbitrum gas for `deposit` and `redeem` on the vault contract |
 
-Deposits and withdrawals are standard ERC-4626 calls against `MandateVault`. The HTTP API does not wrap LP flows.
+Deposits and withdrawals are standard ERC-4626 calls against a funded agent's `MandateVault`. LP deposits are available only after an agent promotes to **Funded**. The HTTP API does not wrap LP flows.
 
 ### What you earn
 
