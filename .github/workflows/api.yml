@@ -111,18 +111,21 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: api
           wranglerVersion: "4"
-          command: deploy --env ${{ matrix.environment }}
+          # `environment` scopes both `wrangler secret bulk` and `wrangler deploy` to the Wrangler env.
+          # Putting --env only in `command` deploys the right Worker but uploads secrets to the default worker.
+          environment: ${{ matrix.environment }}
+          command: deploy
           secrets: |
-            ORACLE_KEEPER_PRIVATE_KEY
             RPC_URL
             X402_FACILITATOR_URL
+            ORACLE_KEEPER_PRIVATE_KEY
             RELAYER_PRIVATE_KEY
             EXECUTOR_PRIVATE_KEY
             FINNHUB_API_KEY
         env:
-          ORACLE_KEEPER_PRIVATE_KEY: ${{ secrets.ORACLE_KEEPER_PRIVATE_KEY }}
           RPC_URL: ${{ secrets.RPC_URL }}
           X402_FACILITATOR_URL: ${{ secrets.X402_FACILITATOR_URL }}
+          ORACLE_KEEPER_PRIVATE_KEY: ${{ secrets.ORACLE_KEEPER_PRIVATE_KEY }}
           RELAYER_PRIVATE_KEY: ${{ secrets.RELAYER_PRIVATE_KEY }}
           EXECUTOR_PRIVATE_KEY: ${{ secrets.EXECUTOR_PRIVATE_KEY }}
           FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}

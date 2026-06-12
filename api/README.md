@@ -223,6 +223,8 @@ In **each** environment, add secrets with the **same names** but chain-specific 
 
 `CHAIN_ID` and `X402_NETWORK` come from `wrangler.toml` — do not set them as secrets.
 
+The deploy workflow passes `environment: <wrangler-env>` to `wrangler-action` so `wrangler secret bulk` and `wrangler deploy` target the same Worker. Do not put `--env` only in `command` — secrets would upload to the default worker instead.
+
 **Mainnet gate:** add a required reviewer on the `arbitrum-one` environment so production deploys need manual approval.
 
 **Migrating from a single deployment:** copy existing repository secrets (`RPC_URL`, `RELAYER_PRIVATE_KEY`, etc.) into the `arbitrum-sepolia` environment, then remove the old repository-level copies so values do not leak across chains.
