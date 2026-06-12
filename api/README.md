@@ -67,9 +67,8 @@ yarn deploy:all                 # Deploy all three sequentially
 | `GET`  | `/agents/{agentId}/closed-positions`          | Closed positions via bounded global id scan (`?limit=`, max 100)               |
 | `GET`  | `/agents/{agentId}/positions/{positionId}`    | Single position by id (open or closed; realized/unrealized PnL + `derived`)    |
 | `GET`  | `/agents/{agentId}/risk-state`                | Equity, drawdown, PnL, `derived`, `promotionReadiness`, breach flags           |
-| `POST` | `/intents/trade`                              | Global trade intent submit (**501** stub)                                      |
-| `GET`  | `/agents/{agentId}/trades`                    | Agent trade history (**501** stub)                                             |
-| `GET`  | `/intents/{intentId}`                         | Intent status lookup (**501** stub)                                            |
+| `GET`  | `/agents/{agentId}/trades`                    | On-chain trade activity from event logs (`?limit=`, max 100)                   |
+| `GET`  | `/transactions/{txHash}`                      | Transaction receipt status (confirm intent submit)                             |
 | `GET`  | `/docs`                                       | Swagger UI (humans; poor fit for URL paste in chat)                            |
 | `GET`  | `/docs/swagger.json`                          | OpenAPI 3.1 (Custom GPT Actions)                                               |
 | `POST` | `/mcp`                                        | MCP Streamable HTTP (Durable Object sessions)                                  |
@@ -89,33 +88,32 @@ ChatGPT **browsing** only performs simple `GET` requests on **public** URLs. It 
 
 ### MCP tools
 
-| Tool                                     | HTTP equivalent                                      |
-| ---------------------------------------- | ---------------------------------------------------- |
-| `alphagrid_list_vaults`                  | `GET /vaults`                                        |
-| `alphagrid_list_tokens`                  | `GET /tokens`                                        |
-| `alphagrid_list_vault_tokens`            | `GET /vaults/{id}/tokens`                            |
-| `alphagrid_get_prices`                   | `GET /prices`                                        |
-| `alphagrid_get_agent`                    | `GET /agents/{agentId}`                              |
-| `alphagrid_list_agents_by_owner`         | `GET /agents/by-owner/{owner}`                       |
-| `alphagrid_get_agent_by_erc8004`         | `GET /agents/by-erc8004/{erc8004AgentId}`            |
-| `alphagrid_link_agent_erc8004`           | `POST /agents/{agentId}/erc8004/link`                |
-| `alphagrid_get_agent_registration_quote` | `GET /agents/register/quote`                         |
-| `alphagrid_register_agent`               | `POST /agents/register`                              |
-| `alphagrid_submit_trade_intent`          | `POST /agents/{agentId}/trade-intents`               |
-| `alphagrid_get_add_intent_quote`         | `GET /agents/{agentId}/add-intents/quote`            |
-| `alphagrid_submit_add_intent`            | `POST /agents/{agentId}/add-intents`                 |
-| `alphagrid_get_reduce_intent_quote`      | `GET /agents/{agentId}/reduce-intents/quote`         |
-| `alphagrid_submit_reduce_intent`         | `POST /agents/{agentId}/reduce-intents`              |
-| `alphagrid_get_exit_ladder_intent_quote` | `GET /agents/{agentId}/exit-ladder-intents/quote`    |
-| `alphagrid_submit_exit_ladder_intent`    | `POST /agents/{agentId}/exit-ladder-intents`         |
-| `alphagrid_get_agent_positions`          | `GET /agents/{agentId}/positions`                    |
-| `alphagrid_list_closed_positions`        | `GET /agents/{agentId}/closed-positions`             |
-| `alphagrid_get_agent_position`           | `GET /agents/{agentId}/positions/{positionId}`       |
-| `alphagrid_get_risk_state`               | `GET /agents/{agentId}/risk-state`                   |
-| `alphagrid_get_trade_history`            | `GET /agents/{agentId}/trades` (**NOT_IMPLEMENTED**) |
-| `alphagrid_get_intent_status`            | `GET /intents/{intentId}` (**NOT_IMPLEMENTED**)      |
+| Tool                                     | HTTP equivalent                                   |
+| ---------------------------------------- | ------------------------------------------------- |
+| `alphagrid_list_vaults`                  | `GET /vaults`                                     |
+| `alphagrid_list_tokens`                  | `GET /tokens`                                     |
+| `alphagrid_list_vault_tokens`            | `GET /vaults/{id}/tokens`                         |
+| `alphagrid_get_prices`                   | `GET /prices`                                     |
+| `alphagrid_get_agent`                    | `GET /agents/{agentId}`                           |
+| `alphagrid_list_agents_by_owner`         | `GET /agents/by-owner/{owner}`                    |
+| `alphagrid_get_agent_by_erc8004`         | `GET /agents/by-erc8004/{erc8004AgentId}`         |
+| `alphagrid_link_agent_erc8004`           | `POST /agents/{agentId}/erc8004/link`             |
+| `alphagrid_get_agent_registration_quote` | `GET /agents/register/quote`                      |
+| `alphagrid_register_agent`               | `POST /agents/register`                           |
+| `alphagrid_submit_trade_intent`          | `POST /agents/{agentId}/trade-intents`            |
+| `alphagrid_get_add_intent_quote`         | `GET /agents/{agentId}/add-intents/quote`         |
+| `alphagrid_submit_add_intent`            | `POST /agents/{agentId}/add-intents`              |
+| `alphagrid_get_reduce_intent_quote`      | `GET /agents/{agentId}/reduce-intents/quote`      |
+| `alphagrid_submit_reduce_intent`         | `POST /agents/{agentId}/reduce-intents`           |
+| `alphagrid_get_exit_ladder_intent_quote` | `GET /agents/{agentId}/exit-ladder-intents/quote` |
+| `alphagrid_submit_exit_ladder_intent`    | `POST /agents/{agentId}/exit-ladder-intents`      |
+| `alphagrid_get_agent_positions`          | `GET /agents/{agentId}/positions`                 |
+| `alphagrid_list_closed_positions`        | `GET /agents/{agentId}/closed-positions`          |
+| `alphagrid_get_agent_position`           | `GET /agents/{agentId}/positions/{positionId}`    |
+| `alphagrid_get_risk_state`               | `GET /agents/{agentId}/risk-state`                |
+| `alphagrid_get_trade_history`            | `GET /agents/{agentId}/trades`                    |
 
-Trade history and intent status stubs return HTTP **501** or MCP `NOT_IMPLEMENTED`. Open/add/reduce/exit-ladder intents and position/risk reads require executor config for writes; reads need `RPC_URL` + `CHAIN_ID` (see below).
+Open/add/reduce/exit-ladder intent submits require executor config for writes; on-chain reads need `RPC_URL` + `CHAIN_ID` (see below). After submit, confirm execution with `GET /transactions/{txHash}` or read positions/trades.
 
 Connect MCP clients to `http://localhost:8787/mcp` in development (or your deployed Worker URL). Clients must send `Accept: application/json, text/event-stream` on MCP requests.
 

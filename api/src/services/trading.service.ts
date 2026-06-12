@@ -23,6 +23,7 @@ import {
   mapOnChainExitRule,
   resolveTokenAddress,
 } from '../lib/trading-intent-builder.js'
+import { fetchAgentTradeActivity } from '../lib/agent-trade-events.js'
 import { loadTradingConfig, type TradingConfig } from '../lib/trading-config.js'
 import { tokenCatalog } from '../lib/token-catalog.js'
 import { getWorkerEnv } from '../lib/worker-env.js'
@@ -33,6 +34,7 @@ import type {
   ExitRuleInput,
   GetAgentPositionResponse,
   ListAgentPositionsResponse,
+  ListAgentTradesResponse,
   OpenPositionRequest,
   ReducePositionRequest,
   SubmitAdjustIntentResponse,
@@ -52,9 +54,6 @@ import {
 } from './agent-registry.service.js'
 import { ProviderService } from './provider.service.js'
 import { TradeRouterService } from './trade-router.service.js'
-
-export const TRADING_NOT_IMPLEMENTED_MESSAGE =
-  'Trading API is not yet available. Intent gateway and executor are planned for a future release.'
 
 /** AgentRegistry AgentStatus.Active */
 const AGENT_STATUS_ACTIVE = 1
@@ -93,14 +92,6 @@ export class TradingService {
       const message =
         error instanceof Error ? error.message : 'Trading is not configured'
       throw new TradingError(message, 503)
-    }
-  }
-
-  static notImplemented() {
-    return {
-      error: 'Not implemented' as const,
-      code: 'NOT_IMPLEMENTED' as const,
-      message: TRADING_NOT_IMPLEMENTED_MESSAGE,
     }
   }
 
@@ -730,6 +721,40 @@ export class TradingService {
     }
 
     return { agentId: agentIdStr, positions }
+  }
+
+  async listTradeActivity(
+    agentIdStr: string,
+    limit = 50
+  ): Promise<ListAgentTradesResponse> {
+    const agentId = BigInt(agentIdStr)
+    const registry = this.agentRegistryService()
+    const tradeRouter = this.tradeRouterService()
+
+    try {
+      await registry.getAgent(agentId)
+    } catch (error) {
+      if (error instanceof AgentNotFoundError) {
+        throw new TradingError(error.message, 404)
+      }
+      throw error
+    }
+
+    const client = this.providerService().createPublicClient()
+    const trades = await fetchAgentTradeActivity({
+      client,
+      chainId: this.config.chainId,
+      tradeRouterAddress: this.config.tradeRouterAddress,
+      positionManagerAddress: this.config.chainContracts.PositionManager,
+      agentId,
+      limit,
+    })
+
+    return {
+      agentId: agentIdStr,
+      source: 'on-chain-events',
+      trades,
+    }
   }
 
   private mapPositionRecord(params: {

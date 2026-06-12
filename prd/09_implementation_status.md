@@ -76,7 +76,7 @@ Stack: **Cloudflare Worker** (`api/`, Hono + TypeScript). No PostgreSQL or index
 | Component | Status | Notes |
 | --- | --- | --- |
 | HTTP API | Partial | Health, vaults, tokens, prices, agent get/register, open + adjust quote/submit, positions/risk reads with derived stats, OpenAPI, discovery |
-| MCP server | Partial | Tools mirror implemented HTTP routes; trade history and intent status still `NOT_IMPLEMENTED` |
+| MCP server | Partial | Tools mirror implemented HTTP routes; trade activity v1 from on-chain event logs |
 | x402 registration fee | Done | USDC via x402; relayer submits `registerAgent` (on-chain fee skipped) |
 | Oracle price keeper | Done | Cron + `POST /prices/refresh` → `MockPriceOracle` (Finnhub) |
 | PostgreSQL / indexer | Not built | No event index; no cached agent list |
@@ -111,23 +111,29 @@ Stack: **Cloudflare Worker** (`api/`, Hono + TypeScript). No PostgreSQL or index
 | `POST` | `/agents/{agentId}/reduce-intents` | Relay signed reduce intent — partial or full close (201) |
 | `GET` | `/agents/{agentId}/exit-ladder-intents/quote` | Quote for `UpdateExitLadder` (`?positionId=`) |
 | `POST` | `/agents/{agentId}/exit-ladder-intents` | Relay signed pending TP/SL update (201) |
+| `GET` | `/agents/{agentId}/trades` | On-chain trade activity from TradeRouter + PositionManager event logs (`?limit=`) |
+| `GET` | `/transactions/{txHash}` | Transaction receipt status |
 | `GET` | `/`, `/llms.txt`, `/docs/swagger.json` | Discovery / OpenAPI |
 | `POST` | `/mcp` | MCP Streamable HTTP |
 
-### Trading API stubs (501)
+### Removed API stubs (2026-06-12)
 
-Routes are registered in OpenAPI but return **501 Not Implemented** (`code: NOT_IMPLEMENTED`).
+Former 501 routes dropped in favor of per-agent intent paths and synchronous submit:
+
+| Method | Path | Replacement |
+| --- | --- | --- |
+| `POST` | `/intents/trade` | `POST /agents/{agentId}/trade-intents` (+ add/reduce/exit-ladder) |
+| `GET` | `/intents/{intentId}` | `GET /transactions/{txHash}` after submit |
+
+### Trade history (v1, no indexer)
 
 | Method | Path | Description |
 | --- | --- | --- |
-| `POST` | `/intents/trade` | Global trade intent gateway |
-| `GET` | `/agents/{agentId}/trades` | Agent trade history |
-| `GET` | `/intents/{intentId}` | Intent status lookup |
+| `GET` | `/agents/{agentId}/trades` | Activity feed from on-chain event logs (not indexed per-fill history) |
 
 | MCP tool | HTTP equivalent |
 | --- | --- |
 | `alphagrid_get_trade_history` | `GET /agents/{agentId}/trades` |
-| `alphagrid_get_intent_status` | `GET /intents/{intentId}` |
 
 ### Implemented trading (open + adjust)
 
@@ -185,6 +191,7 @@ alphagrid_get_reduce_intent_quote
 alphagrid_submit_reduce_intent
 alphagrid_get_exit_ladder_intent_quote
 alphagrid_submit_exit_ladder_intent
+alphagrid_get_trade_history
 ```
 
 ### Planned MCP / API (not yet implemented)
@@ -196,7 +203,7 @@ GET /leaderboard / GET /agents (list) / admin routes / vault deposit APIs
 POST /intents/{id}/cancel / GET /intents/{id}/execution
 ```
 
-Trade history and global intent gateway routes listed in § Trading API stubs are **501** only.
+Per-fill indexed history and async intent store remain future work (see § Trade history v1).
 
 ### Off-chain checklist
 
@@ -206,12 +213,13 @@ Trade history and global intent gateway routes listed in § Trading API stubs ar
 - [x] Agent registration (x402 + relayer) and agent read by id / ERC-8004
 - [x] MCP tools for implemented routes
 - [x] Mock oracle price keeper
-- [x] Trading API + MCP stubs (501; OpenAPI/discovery wired)
+- [x] On-chain trade activity v1 (`GET /agents/{id}/trades`, MCP `alphagrid_get_trade_history`)
+- [x] Transaction status lookup (`GET /transactions/{txHash}`)
 - [x] Open + adjust position trade path (quote, EIP-712 submit, positions read; executor relay)
 - [ ] Contract event indexing
 - [ ] Agent list, search, and allocation history cache
 - [ ] Trade intent gateway + intent store (DB-backed status/history)
-- [ ] Trade history reads for agents
+- [ ] Indexed per-fill trade history (DB indexer; v1 uses on-chain event logs)
 - [x] On-chain risk-state v1 + API derived stats (`derived`, `promotionReadiness`; Alpha Score still off-chain)
 - [ ] Performance engine (Alpha Score, historical analytics, equity curves)
 - [ ] Risk event engine
@@ -243,9 +251,9 @@ Phases describe the **full MVP product**. Status as of 2026-06-07:
 
 **On-chain:** Done (`PositionManager`, `TradeRouter`, swap adapters, EIP-712 open + adjust intents, keeper exits, `forceClose`, vault exit bounds).
 
-**Partial (`api/`):** trading HTTP/MCP open + adjust paths (quote, submit); positions, closed-positions, risk-state reads with derived stats; trade history and intent status remain 501.
+**Partial (`api/`):** trading HTTP/MCP open + adjust paths; positions, closed-positions, risk-state, trade activity v1; transaction status lookup.
 
-**Remaining:** intent store, trade history indexer, frontend execution visibility.
+**Remaining:** DB indexer (per-fill history), intent store, frontend execution visibility.
 
 ### Phase 4 — Performance and Risk
 
@@ -271,7 +279,7 @@ Phases describe the **full MVP product**. Status as of 2026-06-07:
 
 These block the MVP demo script in `06_mvp_scope.md` §11:
 
-1. ~~Trade intent submission path (API → executor → `TradeRouter`)~~ — open + adjust position paths implemented; trade history and indexer still missing
+1. ~~Trade intent submission path (API → executor → `TradeRouter`)~~ — open + adjust position paths implemented; trade activity v1 from event logs; DB indexer still missing
 2. Indexer recording positions, trades, allocations
 3. Performance engine updating PnL, drawdown, Alpha Score
 4. Leaderboard ranking agents

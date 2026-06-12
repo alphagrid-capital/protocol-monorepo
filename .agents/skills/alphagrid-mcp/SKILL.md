@@ -120,15 +120,9 @@ Use **wallet MCP** `AlphagridActionProvider_sign_*` tools (`viem` + `PRIVATE_KEY
 | `alphagrid_list_closed_positions` | `GET /agents/{id}/closed-positions`   | Closed list (`limit`); bounded id scan |
 | `alphagrid_get_agent_position`  | `GET /agents/{id}/positions/{positionId}` | Open or closed; `derived`, `realizedPnlUsdc` when closed |
 | `alphagrid_get_risk_state`      | `GET /agents/{id}/risk-state`           | Equity, drawdown, `derived`, `promotionReadiness`, breaches |
+| `alphagrid_get_trade_history`   | `GET /agents/{id}/trades`               | On-chain activity from event logs (`limit`); not indexed fills |
 
-## Tools not implemented
-
-Return `NOT_IMPLEMENTED` / HTTP 501 — do not retry as transient errors:
-
-| Tool                          | HTTP                          |
-| ----------------------------- | ----------------------------- |
-| `alphagrid_get_trade_history` | `GET /agents/{id}/trades`     |
-| `alphagrid_get_intent_status` | `GET /intents/{intentId}`     |
+After intent submit, confirm execution via HTTP `GET /transactions/{txHash}` (returns `transactionHash` from submit) or poll positions/trades.
 
 ## Failure modes
 

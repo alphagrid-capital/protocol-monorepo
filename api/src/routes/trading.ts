@@ -7,14 +7,14 @@ import {
 import { AppError } from '../errors.js'
 import { agentIdParamSchema } from '../schemas/agent.js'
 import {
-  intentIdParamSchema,
-  LegacyTradeIntentRequestSchema,
   AddIntentQuoteSchema,
   AddPositionRequestSchema,
   ExitLadderIntentQuoteSchema,
   AgentRiskStateResponseSchema,
   GetAgentPositionResponseSchema,
   ListAgentPositionsResponseSchema,
+  ListAgentTradesQuerySchema,
+  ListAgentTradesResponseSchema,
   ListClosedPositionsQuerySchema,
   OpenPositionRequestSchema,
   PositionIntentQuoteQuerySchema,
@@ -26,21 +26,9 @@ import {
   TradeIntentQuoteSchema,
   UpdateExitLadderRequestSchema,
   TradingErrorSchema,
-  TradingNotImplementedSchema,
 } from '../schemas/trading.js'
 import { TradingError, TradingService } from '../services/trading.service.js'
 import { getWorkerEnv } from '../lib/worker-env.js'
-
-const tradingNotImplementedResponses = {
-  501: {
-    description: 'Trading API not yet implemented',
-    content: {
-      'application/json': {
-        schema: TradingNotImplementedSchema,
-      },
-    },
-  },
-} as const
 
 const tradingErrorResponses = {
   400: {
@@ -340,32 +328,13 @@ const submitExitLadderIntentRoute = createRoute({
   },
 })
 
-const submitTradeIntentRoute = createRoute({
-  method: 'post',
-  path: '/intents/trade',
-  tags: ['Trading'],
-  summary: 'Submit trade intent',
-  description:
-    'Planned global intent gateway entrypoint. Returns 501 until implemented.',
-  request: {
-    body: {
-      content: {
-        'application/json': {
-          schema: LegacyTradeIntentRequestSchema,
-        },
-      },
-    },
-  },
-  responses: tradingNotImplementedResponses,
-})
-
 const getAgentTradesRoute = createRoute({
   method: 'get',
   path: '/agents/{agentId}/trades',
   tags: ['Trading'],
-  summary: 'Agent trade history',
+  summary: 'Agent trade activity',
   description:
-    'Planned indexed trade history for an agent. Returns 501 until the indexer is built.',
+    'On-chain v1 activity feed from TradeRouter and PositionManager event logs (newest first). Not indexed per-fill history.',
   request: {
     params: z.object({
       agentId: agentIdParamSchema.openapi({
@@ -373,8 +342,17 @@ const getAgentTradesRoute = createRoute({
         example: '1',
       }),
     }),
+    query: ListAgentTradesQuerySchema,
   },
-  responses: tradingNotImplementedResponses,
+  responses: {
+    200: {
+      description: 'Agent trade activity',
+      content: {
+        'application/json': { schema: ListAgentTradesResponseSchema },
+      },
+    },
+    ...tradingErrorResponses,
+  },
 })
 
 const getAgentRiskStateRoute = createRoute({
@@ -401,23 +379,6 @@ const getAgentRiskStateRoute = createRoute({
     },
     ...tradingErrorResponses,
   },
-})
-
-const getIntentRoute = createRoute({
-  method: 'get',
-  path: '/intents/{intentId}',
-  tags: ['Trading'],
-  summary: 'Get trade intent status',
-  description:
-    'Planned intent lookup by id. Returns 501 until the intent gateway is built.',
-  request: {
-    params: z.object({
-      intentId: intentIdParamSchema.openapi({
-        param: { name: 'intentId', in: 'path' },
-      }),
-    }),
-  },
-  responses: tradingNotImplementedResponses,
 })
 
 export const tradingRoutes = new OpenAPIHono()
@@ -481,6 +442,23 @@ const getAgentClosedPositionsHandler = async (
     const result = await TradingService.fromEnv(
       getWorkerEnv()
     ).listClosedPositions(c.req.param('agentId'), query.limit ?? 50)
+    return c.json(result, 200)
+  } catch (error) {
+    if (error instanceof TradingError || error instanceof AppError) {
+      return c.json({ error: error.message }, statusFromTradingError(error))
+    }
+    throw error
+  }
+}
+
+const getAgentTradesHandler = async (
+  c: Parameters<RouteHandler<typeof getAgentTradesRoute>>[0]
+) => {
+  try {
+    const query = c.req.valid('query')
+    const result = await TradingService.fromEnv(
+      getWorkerEnv()
+    ).listTradeActivity(c.req.param('agentId'), query.limit ?? 50)
     return c.json(result, 200)
   } catch (error) {
     if (error instanceof TradingError || error instanceof AppError) {
@@ -688,16 +666,11 @@ tradingRoutes.openapi(
   >
 )
 
-tradingRoutes.openapi(submitTradeIntentRoute, (c) =>
-  c.json(TradingService.notImplemented(), 501)
-)
-tradingRoutes.openapi(getAgentTradesRoute, (c) =>
-  c.json(TradingService.notImplemented(), 501)
+tradingRoutes.openapi(
+  getAgentTradesRoute,
+  getAgentTradesHandler as RouteHandler<typeof getAgentTradesRoute>
 )
 tradingRoutes.openapi(
   getAgentRiskStateRoute,
   getAgentRiskStateHandler as RouteHandler<typeof getAgentRiskStateRoute>
-)
-tradingRoutes.openapi(getIntentRoute, (c) =>
-  c.json(TradingService.notImplemented(), 501)
 )

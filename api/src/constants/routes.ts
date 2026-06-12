@@ -29,8 +29,7 @@ export const ROUTE_PATHS = {
   agentExitLadderIntents: '/agents/{agentId}/exit-ladder-intents',
   agentExitLadderIntentsQuote: '/agents/{agentId}/exit-ladder-intents/quote',
   agentRiskState: '/agents/{agentId}/risk-state',
-  intentsTrade: '/intents/trade',
-  intentById: '/intents/{intentId}',
+  transactionByHash: '/transactions/{txHash}',
 } as const
 
 export const HTTP_ROUTES = {

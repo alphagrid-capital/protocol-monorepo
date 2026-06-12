@@ -90,9 +90,43 @@ Single call for dashboard risk header:
 
 Scans up to **500** global position ids per request (MVP/testnet). Replace with indexer for production scale.
 
+For a **chronological activity feed** (opens, adds, reduces, keeper exits), prefer `GET /agents/{agentId}/trades` (§6). Closed-positions is position-level snapshots; trades is event-level timeline.
+
 ---
 
-## 6. Position detail (open or closed)
+## 6. Trade activity (on-chain v1)
+
+Chronological feed from `TradeRouter` + `PositionManager` event logs. Not indexed per-fill history — `source` is always `on-chain-events`.
+
+| UI stat | Endpoint | Response field(s) |
+| --- | --- | --- |
+| Activity list | `GET /agents/{agentId}/trades?limit=50` | `trades[]` (newest first, max 100) |
+| Event type | same | `trades[].type` — `PositionOpened`, `PositionIncreased`, `PositionReduced`, `ExitLadderUpdated`, `ExitExecuted`, `PositionForceClosed`, `PositionClosed` |
+| Position id | same | `trades[].positionId` |
+| Time | same | `trades[].timestamp` (block unix seconds) |
+| Tx link | same | `trades[].transactionHash`, `trades[].blockNumber` |
+| Symbol (opens) | same | `trades[].symbol` when `type === PositionOpened` |
+| USDC in/out | same | `trades[].usdcIn`, `trades[].usdcOut` (when present) |
+| Realized PnL (final close) | same | `trades[].realizedPnlUsdc` when `type === PositionClosed` |
+| Keeper exit detail | same | `trades[].ruleIndex`, `trades[].keeper`, `trades[].keeperBounty` on `ExitExecuted` |
+
+**RPC note:** Scans chain logs from genesis filtered by `agentId`. Fine for testnet/MVP; add DB indexer for high-volume production.
+
+### After intent submit
+
+Submit routes return `transactionHash` (201). Confirm landing before refreshing positions:
+
+| UI stat | Endpoint | Response field(s) |
+| --- | --- | --- |
+| Tx pending / success / reverted | `GET /transactions/{txHash}` | `status` — `pending`, `success`, `reverted` |
+| Block time | same | `blockTimestamp` (when mined) |
+| Block number | same | `blockNumber` |
+
+Poll until `status !== pending`, then refresh `GET /agents/{id}/positions` or `GET /agents/{id}/trades`. No UUID intent-id lookup — submit is synchronous via the executor.
+
+---
+
+## 7. Position detail (open or closed)
 
 Use when user opens a row or navigates to `/agents/{id}/positions/{positionId}`:
 
@@ -108,7 +142,7 @@ Use `GET /closed-positions` for a list, or fetch by id when you know `positionId
 
 ---
 
-## 7. Vault, market, and catalog
+## 8. Vault, market, and catalog
 
 | UI stat | Endpoint | Response field(s) |
 | --- | --- | --- |
@@ -122,19 +156,19 @@ Track limits (`maxDrawdownBps`, `maxDailyLossBps`, `maxTradeSizeBps`, …) live 
 
 ---
 
-## 8. Not available yet (do not wire)
+## 9. Not available yet (do not wire)
 
 | UI stat (planned) | Planned endpoint | Status |
 | --- | --- | --- |
-| Trade history / fills | `GET /agents/{agentId}/trades` | **501** — needs indexer |
 | Performance / Alpha Score | `GET /agents/{agentId}/performance` | Not built |
 | Leaderboard rank | `GET /leaderboard` | Not built |
 | Equity curve (time series) | Indexer + perf engine | Not built |
-| Intent status (DB) | `GET /intents/{intentId}` | **501** — needs intent store |
+| Per-fill history (venue, fees) | Indexer + `trades` table | Not built — use §6 event feed for MVP |
+| Async intent status (UUID) | DB intent store | Not built — use §6 tx lookup + positions |
 
 ---
 
-## 9. Suggested page → API bundle
+## 10. Suggested page → API bundle
 
 Minimal fetch sets for common screens:
 
@@ -142,18 +176,20 @@ Minimal fetch sets for common screens:
 | --- | --- |
 | Agent profile header | `GET /agents/{id}` + `GET /agents/{id}/risk-state` |
 | Positions tab | `GET /agents/{id}/positions` + `GET /agents/{id}/closed-positions` |
+| Activity / history tab | `GET /agents/{id}/trades?limit=50` |
 | Position drawer | `GET /agents/{id}/positions/{positionId}` |
 | Open trade form | `GET /agents/{id}/trade-intents/quote?symbol=…` + `GET /prices` |
+| After intent submit | `GET /transactions/{txHash}` until mined → refresh positions or trades |
 | Wallet agent list | `GET /agents/by-owner/{owner}` |
 | Vault picker | `GET /vaults` |
 
-Poll `risk-state` and `positions` on an interval or after successful intent submit; no WebSocket yet.
+Poll `risk-state`, `positions`, and `trades` on an interval or after successful intent submit; no WebSocket yet.
 
 ---
 
-## 10. Formatting notes
+## 11. Formatting notes
 
 - **USDC amounts:** strings in base units (`1000000` = 1 USDC). Divide by `10^6` for display.
 - **Bps:** `1500` = 15%. Drawdown and policy limits use basis points.
 - **Signed PnL:** negative string = loss (`"-2500000"` = −2.5 USDC).
-- **Errors:** `404` agent/position not found; `503` missing RPC or executor config on writes.
+- **Errors:** `404` agent/position/transaction not found; `503` missing RPC or executor config on writes.

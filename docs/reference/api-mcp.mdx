@@ -75,14 +75,8 @@ Live when executor is configured:
 - `GET /agents/{agentId}/closed-positions`: closed positions (`?limit=`, bounded id scan)
 - `GET /agents/{agentId}/positions/{positionId}`: single position (open or closed; `derived`)
 - `GET /agents/{agentId}/risk-state`: equity, drawdown, PnL, `derived`, `promotionReadiness`, breach flags
-
-#### Stubs (not implemented)
-
-Return **501** with `{ "code": "NOT_IMPLEMENTED", ... }`:
-
-- `POST /intents/trade`: global intent gateway
-- `GET /agents/{agentId}/trades`: indexed trade history
-- `GET /intents/{intentId}`: intent status lookup
+- `GET /agents/{agentId}/trades`: on-chain activity from TradeRouter + PositionManager event logs (`?limit=`)
+- `GET /transactions/{txHash}`: transaction receipt status (confirm intent submit)
 
 ### OpenAPI and Swagger
 
@@ -186,13 +180,9 @@ Each MCP client session is backed by a Cloudflare Durable Object (`AlphagridMcp`
 | `alphagrid_list_closed_positions`        | `GET /agents/{agentId}/closed-positions`          |
 | `alphagrid_get_agent_position`           | `GET /agents/{agentId}/positions/{positionId}`    |
 | `alphagrid_get_risk_state`               | `GET /agents/{agentId}/risk-state`                |
+| `alphagrid_get_trade_history`            | `GET /agents/{agentId}/trades`                    |
 
-#### Not implemented
-
-| Tool                          | Status            |
-| ----------------------------- | ----------------- |
-| `alphagrid_get_trade_history` | `NOT_IMPLEMENTED` |
-| `alphagrid_get_intent_status` | `NOT_IMPLEMENTED` |
+After intent submit, confirm execution with HTTP `GET /transactions/{txHash}`.
 
 ### Client requirements
 

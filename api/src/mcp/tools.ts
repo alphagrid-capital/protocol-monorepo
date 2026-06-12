@@ -27,7 +27,6 @@ import {
   AgentRiskStateResponseSchema,
   GetAgentPositionResponseSchema,
   GetAgentTradingInputSchema,
-  GetIntentStatusInputSchema,
   PositionAdjustInputSchema,
   SubmitAddIntentInputSchema,
   SubmitAdjustIntentResponseSchema,
@@ -36,6 +35,7 @@ import {
   SubmitTradeIntentInputSchema,
   SubmitTradeIntentResponseSchema,
   ListAgentPositionsResponseSchema,
+  ListAgentTradesResponseSchema,
   ListClosedPositionsQuerySchema,
 } from '../schemas/trading.js'
 import { ListVaultsResponseSchema } from '../schemas/vault.js'
@@ -484,19 +484,30 @@ export function registerMcpTools(server: McpServer): void {
     }
   )
 
-  const tradingNotImplemented = () =>
-    mcpToolError(TradingService.notImplemented().message, 'NOT_IMPLEMENTED')
+  const listTradesInputSchema = GetAgentTradingInputSchema.extend({
+    limit: ListClosedPositionsQuerySchema.shape.limit,
+  }).strict()
 
   server.registerTool(
     MCP_TOOL_NAMES.getTradeHistory,
     {
       title: 'Agent trade history',
       description:
-        'Mirrors GET /agents/{agentId}/trades. Returns NOT_IMPLEMENTED.',
-      inputSchema: GetAgentTradingInputSchema,
+        'Mirrors GET /agents/{agentId}/trades. On-chain activity from TradeRouter and PositionManager event logs.',
+      inputSchema: listTradesInputSchema,
+      outputSchema: ListAgentTradesResponseSchema,
       annotations: READ_ONLY_TOOL_ANNOTATIONS,
     },
-    tradingNotImplemented
+    async ({ agentId, limit }) => {
+      try {
+        const output = await TradingService.fromEnv(
+          getWorkerEnv()
+        ).listTradeActivity(agentId, limit ?? 50)
+        return mcpToolSuccess(output)
+      } catch (error) {
+        return mcpToolErrorFromUnknown(error, 'Failed to load trade history')
+      }
+    }
   )
 
   server.registerTool(
@@ -517,16 +528,5 @@ export function registerMcpTools(server: McpServer): void {
         return mcpToolErrorFromUnknown(error, 'Failed to load risk state')
       }
     }
-  )
-
-  server.registerTool(
-    MCP_TOOL_NAMES.getIntentStatus,
-    {
-      title: 'Trade intent status',
-      description: 'Mirrors GET /intents/{intentId}. Returns NOT_IMPLEMENTED.',
-      inputSchema: GetIntentStatusInputSchema,
-      annotations: READ_ONLY_TOOL_ANNOTATIONS,
-    },
-    tradingNotImplemented
   )
 }

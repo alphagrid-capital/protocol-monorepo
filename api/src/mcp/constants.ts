@@ -25,7 +25,6 @@ export const MCP_TOOL_NAMES = {
   getAgentPosition: 'alphagrid_get_agent_position',
   getTradeHistory: 'alphagrid_get_trade_history',
   getRiskState: 'alphagrid_get_risk_state',
-  getIntentStatus: 'alphagrid_get_intent_status',
 } as const
 
 export const MCP_TOOL_NAME_LIST = Object.values(MCP_TOOL_NAMES)

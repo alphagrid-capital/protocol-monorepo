@@ -2,14 +2,6 @@ import { z } from '@hono/zod-openapi'
 import { agentIdParamSchema } from './agent.js'
 import { AccountRiskBoundsSchema, ExitBoundsSchema } from './vault.js'
 
-export const TradingNotImplementedSchema = z
-  .object({
-    error: z.literal('Not implemented'),
-    code: z.literal('NOT_IMPLEMENTED'),
-    message: z.string(),
-  })
-  .openapi('TradingNotImplemented')
-
 export const TradingErrorSchema = z
   .object({
     error: z.string(),
@@ -320,29 +312,57 @@ export const ListAgentPositionsResponseSchema = z
   })
   .openapi('ListAgentPositionsResponse')
 
-/** Legacy stub schema for routes still returning 501. */
-export const LegacyTradeIntentRequestSchema = z
-  .object({
-    agentId: agentIdParamSchema.optional(),
-    trackId: z.string().regex(/^\d+$/),
-    action: z.enum(['swap', 'open', 'close']),
-    inputAsset: z.string().min(1),
-    outputAsset: z.string().min(1),
-    amount: z.string().min(1),
-    minOutputAmount: z.string().optional(),
-    maxSlippageBps: z.number().int().optional(),
-    venue: z.string().optional(),
-    deadline: z.number().int(),
-    nonce: z.number().int(),
-    signature: z.string().regex(/^0x[a-fA-F0-9]+$/),
-  })
-  .strict()
-  .openapi('LegacyTradeIntentRequest')
+export const AgentTradeActivityTypeSchema = z.enum([
+  'PositionOpened',
+  'PositionIncreased',
+  'PositionReduced',
+  'ExitLadderUpdated',
+  'ExitExecuted',
+  'PositionForceClosed',
+  'PositionClosed',
+])
 
-export const intentIdParamSchema = z
-  .string()
-  .uuid()
-  .openapi({ example: '00000000-0000-4000-8000-000000000001' })
+export const AgentTradeActivitySchema = z
+  .object({
+    type: AgentTradeActivityTypeSchema,
+    positionId: z.string(),
+    blockNumber: z.string(),
+    transactionHash: z.string(),
+    timestamp: z.string().openapi({
+      description: 'Block timestamp (unix seconds)',
+    }),
+    logIndex: z.number().int(),
+    source: z.enum(['TradeRouter', 'PositionManager']),
+    vault: z.string().optional(),
+    token: z.string().optional(),
+    symbol: z.string().optional(),
+    usdcIn: z.string().optional(),
+    usdcOut: z.string().optional(),
+    tokensAdded: z.string().optional(),
+    exitBps: z.number().int().optional(),
+    ruleIndex: z.number().int().optional(),
+    nextRuleIndex: z.number().int().optional(),
+    keeper: z.string().optional(),
+    keeperBounty: z.string().optional(),
+    operator: z.string().optional(),
+    realizedPnlUsdc: z.string().optional(),
+  })
+  .openapi('AgentTradeActivity')
+
+export const ListAgentTradesQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(100).default(50).optional(),
+})
+
+export const ListAgentTradesResponseSchema = z
+  .object({
+    agentId: agentIdParamSchema,
+    source: z.literal('on-chain-events').openapi({
+      description:
+        'v1 activity feed from TradeRouter and PositionManager event logs (not indexed fills)',
+    }),
+    trades: z.array(AgentTradeActivitySchema),
+  })
+  .openapi('ListAgentTradesResponse')
 
 export const GetAgentTradingInputSchema = z
   .object({
@@ -369,12 +389,6 @@ export const SubmitExitLadderIntentInputSchema =
     agentId: agentIdParamSchema,
   }).strict()
 
-export const GetIntentStatusInputSchema = z
-  .object({
-    intentId: intentIdParamSchema,
-  })
-  .strict()
-
 export type OpenPositionRequest = z.infer<typeof OpenPositionRequestSchema>
 export type TradeIntentQuote = z.infer<typeof TradeIntentQuoteSchema>
 export type SubmitTradeIntentResponse = z.infer<
@@ -396,4 +410,7 @@ export type UpdateExitLadderRequest = z.infer<
 >
 export type SubmitAdjustIntentResponse = z.infer<
   typeof SubmitAdjustIntentResponseSchema
+>
+export type ListAgentTradesResponse = z.infer<
+  typeof ListAgentTradesResponseSchema
 >
