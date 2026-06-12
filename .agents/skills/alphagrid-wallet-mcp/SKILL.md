@@ -33,15 +33,15 @@ For AlphaGrid registration and trading, run **both** MCP servers: this wallet MC
 
 ## Scope: use vs avoid
 
-| Use wallet MCP for                                        | Do not use it for                                          |
-| --------------------------------------------------------- | ---------------------------------------------------------- |
-| Address, network, native + ERC20 balances (EVM)           | Writing/testing Solidity (`foundry-solidity` skill)        |
-| Transfers the user explicitly requested                   | Inventing trades or portfolio strategy                     |
-| Testnet faucet (with CDP keys)                            | Assuming multi-chain without checking `get_wallet_details` |
-| Pyth spot prices, x402 paid HTTP (when tools are present) | Live-updating canvas data (canvases are static snapshots)  |
+| Use wallet MCP for                                          | Do not use it for                                               |
+| ----------------------------------------------------------- | --------------------------------------------------------------- |
+| Address, network, native + ERC20 balances (EVM)             | Writing/testing Solidity (`foundry-solidity` skill)             |
+| Transfers the user explicitly requested                     | Inventing trades or portfolio strategy                          |
+| Testnet faucet (with CDP keys)                              | Assuming multi-chain without checking `get_wallet_details`      |
+| Pyth spot prices, x402 paid HTTP (when tools are present)   | Live-updating canvas data (canvases are static snapshots)       |
 | x402 payment for `POST /agents/register` (registration fee) | Trade quotes, submit intents, positions (`alphagrid-mcp` skill) |
-| `robinhood-testnet` signing via `viem`                    | Robinhood chain via `cdp` (not supported)                  |
-| EIP-712 `signTypedData` via local viem script (see below) | Assuming wallet MCP can sign trade intents natively       |
+| `robinhood-testnet` signing via `viem`                      | Robinhood chain via `cdp` (not supported)                       |
+| EIP-712 `signTypedData` via local viem script (see below)   | Assuming wallet MCP can sign trade intents natively             |
 
 ## Wallet providers
 
@@ -53,7 +53,7 @@ Set `WALLET_PROVIDER` in MCP `env`:
 | `cdp`            | `CDP_API_KEY_ID`, `CDP_API_KEY_SECRET`, `CDP_WALLET_SECRET` | Smart wallet without raw private key; paymaster, faucet, x402 on CDP-supported networks |
 
 - **`viem` + CDP API keys:** `CDP_API_KEY_ID` and `CDP_API_KEY_SECRET` are optional but **required to register** faucet and x402 tools. Without them, those tools are absent from `ListTools`, not merely disabled.
-- **`cdp`:** `NETWORK_ID` defaults to `base-sepolia` if omitted. Optional: `ADDRESS`, `OWNER_ADDRESS`, `PAYMASTER_URL`, `RPC_URL`.
+- **`cdp`:** `NETWORK_ID` defaults to `arbitrum-sepolia` if omitted. Optional: `ADDRESS`, `OWNER_ADDRESS`, `PAYMASTER_URL`, `RPC_URL`.
 - **No Solana wallet** is wired in this package — native transfers are EVM ETH only. Ignore AgentKit Solana IDs and faucet notes for `solana-devnet`.
 
 ## Configuration agents must assume
@@ -102,7 +102,7 @@ Faucet ETH is still useful for direct on-chain txs outside the API (debugging wi
 | Tool missing / server errored                  | MCP offline or misconfigured `env`     | Ask user to enable MCP in Cursor Settings; verify `NETWORK_ID` and provider secrets                                |
 | Wrong USDC balance                             | Wrong network or token address         | Re-run `get_wallet_details`; verify `tokenAddress`                                                                 |
 | Unsupported `NETWORK_ID` at startup            | Typo or `robinhood-testnet` with `cdp` | Fix `NETWORK_ID`; use `viem` for Robinhood testnet                                                                 |
-| x402 payment fails on registration             | Wrong USDC contract or network         | Use `registrationFee.tokenAddress` from quote; Arbitrum needs repo wallet-mcp build with x402 patch                  |
+| x402 payment fails on registration             | Wrong USDC contract or network         | Use `registrationFee.tokenAddress` from quote; Arbitrum needs repo wallet-mcp build with x402 patch                |
 | x402 tools missing on `arbitrum-sepolia`       | Stock AgentKit networks                | Use monorepo `agents/wallet-mcp` build, not bare npm, until Arbitrum patch is published                            |
 
 ## Tool-specific flows
@@ -167,11 +167,11 @@ If the wallet MCP server is not in the available server list:
 
 Tradable symbols, vault mandates, quotes, registration, and trades live on the **protocol MCP** — see `.agents/skills/alphagrid-mcp/SKILL.md`.
 
-| Need | Use protocol MCP / HTTP |
-| ---- | ----------------------- |
-| Vaults, allowlists, prices | `alphagrid_list_vaults`, `alphagrid_list_vault_tokens`, `alphagrid_get_prices` |
-| Register + trade | `alphagrid_get_agent_registration_quote`, `alphagrid_register_agent`, `alphagrid_submit_trade_intent` |
-| Open-position quote | **HTTP only:** `GET /agents/{id}/trade-intents/quote` (no MCP quote tool yet) |
+| Need                       | Use protocol MCP / HTTP                                                                               |
+| -------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Vaults, allowlists, prices | `alphagrid_list_vaults`, `alphagrid_list_vault_tokens`, `alphagrid_get_prices`                        |
+| Register + trade           | `alphagrid_get_agent_registration_quote`, `alphagrid_register_agent`, `alphagrid_submit_trade_intent` |
+| Open-position quote        | **HTTP only:** `GET /agents/{id}/trade-intents/quote` (no MCP quote tool yet)                         |
 
 Pyth equity tools here remain optional cross-checks only.
 

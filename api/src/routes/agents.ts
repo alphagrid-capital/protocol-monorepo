@@ -9,6 +9,7 @@ import {
   GetAgentResponseSchema,
   LinkErc8004RequestSchema,
   LinkErc8004ResponseSchema,
+  ListAgentsByOwnerResponseSchema,
 } from '../schemas/agent.js'
 import {
   AgentRegistrationService,
@@ -79,6 +80,36 @@ const linkErc8004Route = createRoute({
     404: { description: 'Agent not found' },
     502: { description: 'On-chain link transaction failed' },
     503: { description: 'Relayer or registry not configured' },
+  },
+})
+
+const listAgentsByOwnerRoute = createRoute({
+  method: 'get',
+  path: '/agents/by-owner/{owner}',
+  tags: ['Agents'],
+  summary: 'List agents by owner',
+  description:
+    'Reads AgentRegistry via `agentCountByOwner` and `agentIdByOwnerAt`, then loads each record with `getAgent`. Returns current ownership only.',
+  request: {
+    params: z.object({
+      owner: z
+        .string()
+        .regex(/^0x[a-fA-F0-9]{40}$/, 'Expected 0x-prefixed 20-byte address')
+        .openapi({
+          param: { name: 'owner', in: 'path' },
+          example: '0x0000000000000000000000000000000000000001',
+        }),
+    }),
+  },
+  responses: {
+    200: {
+      description: 'Agents owned by the address',
+      content: {
+        'application/json': { schema: ListAgentsByOwnerResponseSchema },
+      },
+    },
+    400: { description: 'Invalid owner address' },
+    503: { description: 'Registry or RPC not configured' },
   },
 })
 
@@ -212,6 +243,22 @@ agentRoutes.openapi(getAgentByErc8004Route, async (c) => {
     const result = await AgentRegistrationService.fromEnv(
       getWorkerEnv()
     ).getAgentByErc8004(c.req.param('erc8004AgentId'))
+    return c.json(result, 200, {
+      'Cache-Control': 'public, max-age=15',
+    })
+  } catch (error) {
+    if (error instanceof AppError || error instanceof AgentRegistrationError) {
+      return c.json({ error: error.message }, statusFromError(error))
+    }
+    throw error
+  }
+})
+
+agentRoutes.openapi(listAgentsByOwnerRoute, async (c) => {
+  try {
+    const result = await AgentRegistrationService.fromEnv(
+      getWorkerEnv()
+    ).listAgentsByOwner(c.req.param('owner') as `0x${string}`)
     return c.json(result, 200, {
       'Cache-Control': 'public, max-age=15',
     })

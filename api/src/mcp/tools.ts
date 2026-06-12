@@ -12,6 +12,8 @@ import {
   GetAgentResponseSchema,
   LinkErc8004InputSchema,
   LinkErc8004ResponseSchema,
+  ListAgentsByOwnerInputSchema,
+  ListAgentsByOwnerResponseSchema,
 } from '../schemas/agent.js'
 import { AgentRegistrationService } from '../services/agent-registration.service.js'
 import { TokensService } from '../services/tokens.service.js'
@@ -155,6 +157,28 @@ export function registerMcpTools(server: McpServer): void {
           error,
           'Failed to load agent by ERC-8004'
         )
+      }
+    }
+  )
+
+  server.registerTool(
+    MCP_TOOL_NAMES.listAgentsByOwner,
+    {
+      title: 'List agents by owner',
+      description:
+        'Mirrors GET /agents/by-owner/{owner}. Reads AgentRegistry via RPC.',
+      inputSchema: ListAgentsByOwnerInputSchema,
+      outputSchema: ListAgentsByOwnerResponseSchema,
+      annotations: READ_ONLY_TOOL_ANNOTATIONS,
+    },
+    async ({ owner }) => {
+      try {
+        const output = await AgentRegistrationService.fromEnv(
+          getWorkerEnv()
+        ).listAgentsByOwner(owner as `0x${string}`)
+        return mcpToolSuccess(output)
+      } catch (error) {
+        return mcpToolErrorFromUnknown(error, 'Failed to list agents by owner')
       }
     }
   )

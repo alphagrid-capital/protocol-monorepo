@@ -11,6 +11,7 @@ export const ROUTE_PATHS = {
   prices: '/prices',
   pricesRefresh: '/prices/refresh',
   agentById: '/agents/{agentId}',
+  agentByOwner: '/agents/by-owner/{owner}',
   agentByErc8004: '/agents/by-erc8004/{erc8004AgentId}',
   agentLinkErc8004: '/agents/{agentId}/erc8004/link',
   agentRegister: '/agents/register',

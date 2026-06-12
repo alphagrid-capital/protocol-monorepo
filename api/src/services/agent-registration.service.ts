@@ -24,6 +24,7 @@ import type {
   AgentRegistrationResponse,
   LinkErc8004Request,
   LinkErc8004Response,
+  ListAgentsByOwnerResponse,
 } from '../schemas/agent.js'
 
 export interface GetAgentResult {
@@ -180,6 +181,16 @@ export class AgentRegistrationService {
         throw new AgentRegistrationError(error.message, 404)
       }
       throw error
+    }
+  }
+
+  async listAgentsByOwner(owner: Address): Promise<ListAgentsByOwnerResponse> {
+    const agents = await this.agentRegistryService().listAgentsByOwner(owner)
+    return {
+      owner,
+      agentRegistry: this.config.agentRegistryAddress,
+      count: agents.length,
+      agents,
     }
   }
 

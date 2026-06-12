@@ -54,6 +54,59 @@ export class AgentRegistryService {
     }
   }
 
+  async listAgentsByOwner(
+    owner: Address
+  ): Promise<Array<{ agentId: string; agent: AgentRecord }>> {
+    const client = this.providerService.createPublicClient()
+    const count = await client.readContract({
+      address: this.registryAddress,
+      abi: agentRegistryAbi,
+      functionName: 'agentCountByOwner',
+      args: [owner],
+    })
+
+    if (count === 0n) {
+      return []
+    }
+
+    const countNum = Number(count)
+    const idResults = await client.multicall({
+      contracts: Array.from({ length: countNum }, (_, index) => ({
+        address: this.registryAddress,
+        abi: agentRegistryAbi,
+        functionName: 'agentIdByOwnerAt' as const,
+        args: [owner, BigInt(index)] as const,
+      })),
+    })
+
+    const agentIds = idResults.map((result) => {
+      if (result.status === 'failure') {
+        throw result.error
+      }
+      return result.result
+    })
+
+    const agentResults = await client.multicall({
+      contracts: agentIds.map((agentId) => ({
+        address: this.registryAddress,
+        abi: agentRegistryAbi,
+        functionName: 'getAgent' as const,
+        args: [agentId] as const,
+      })),
+    })
+
+    return agentIds.map((agentId, index) => {
+      const result = agentResults[index]
+      if (result.status === 'failure') {
+        throw result.error
+      }
+      return {
+        agentId: agentId.toString(),
+        agent: this.mapAgentRecord(result.result),
+      }
+    })
+  }
+
   async getAgentByErc8004(
     erc8004AgentId: bigint
   ): Promise<{ agentId: string; agent: AgentRecord }> {

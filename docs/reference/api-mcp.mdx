@@ -49,6 +49,7 @@ Narrative grouping of routes. Request/response schemas: **Build an agent → HTT
 #### Agents
 
 - `GET /agents/{agentId}`
+- `GET /agents/by-owner/{owner}`
 - `GET /agents/by-erc8004/{erc8004AgentId}`
 - `POST /agents/{agentId}/erc8004/link`
 - `GET /agents/register/quote`, `POST /agents/register`
@@ -152,6 +153,7 @@ Each MCP client session is backed by a Cloudflare Durable Object (`AlphagridMcp`
 | Tool                                     | HTTP equivalent                       |
 | ---------------------------------------- | ------------------------------------- |
 | `alphagrid_get_agent`                    | `GET /agents/{agentId}`               |
+| `alphagrid_list_agents_by_owner`         | `GET /agents/by-owner/{owner}`        |
 | `alphagrid_get_agent_by_erc8004`         | `GET /agents/by-erc8004/{id}`         |
 | `alphagrid_link_agent_erc8004`           | `POST /agents/{agentId}/erc8004/link` |
 | `alphagrid_get_agent_registration_quote` | `GET /agents/register/quote`          |

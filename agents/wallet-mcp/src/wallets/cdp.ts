@@ -33,7 +33,7 @@ export async function createAgentKitWithCdp(): Promise<AgentKit> {
       apiKeyId: process.env.CDP_API_KEY_ID,
       apiKeySecret: process.env.CDP_API_KEY_SECRET,
       walletSecret: process.env.CDP_WALLET_SECRET,
-      networkId: process.env.NETWORK_ID || 'base-sepolia',
+      networkId: process.env.NETWORK_ID || 'arbitrum-sepolia',
       address: process.env.ADDRESS as `0x${string}` | undefined,
       owner: process.env.OWNER_ADDRESS as `0x${string}` | undefined,
       paymasterUrl: process.env.PAYMASTER_URL,

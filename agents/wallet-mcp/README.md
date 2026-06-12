@@ -31,7 +31,7 @@ No global install required. Merge `mcp.config.example.json` into your MCP client
       "args": ["-y", "@alphagrid/local-wallet-mcp"],
       "env": {
         "WALLET_PROVIDER": "viem",
-        "NETWORK_ID": "base-sepolia",
+        "NETWORK_ID": "arbitrum-sepolia",
         "PRIVATE_KEY": "0x..."
       }
     }
@@ -56,7 +56,7 @@ Optional: add `CDP_API_KEY_ID` and `CDP_API_KEY_SECRET` to unlock faucet and x40
       "args": ["-y", "@alphagrid/local-wallet-mcp"],
       "env": {
         "WALLET_PROVIDER": "cdp",
-        "NETWORK_ID": "base-sepolia",
+        "NETWORK_ID": "arbitrum-sepolia",
         "CDP_API_KEY_ID": "...",
         "CDP_API_KEY_SECRET": "...",
         "CDP_WALLET_SECRET": "..."
@@ -79,21 +79,21 @@ Set `WALLET_PROVIDER` in env:
 
 ### `NETWORK_ID`
 
-Required for `viem`. Defaults to `base-sepolia` for `cdp`.
+Required for `viem`. Defaults to `arbitrum-sepolia` for `cdp`.
 
-| `NETWORK_ID`       | Chain            |
-| ------------------ | ---------------- |
-| `ethereum-mainnet` | Ethereum         |
-| `ethereum-sepolia` | Ethereum Sepolia |
-| `polygon-mainnet`  | Polygon          |
-| `polygon-mumbai`   | Polygon Mumbai   |
-| `base-mainnet`     | Base             |
-| `base-sepolia`     | Base Sepolia     |
-| `arbitrum-mainnet` | Arbitrum One     |
-| `arbitrum-sepolia` | Arbitrum Sepolia |
-| `optimism-mainnet`   | Optimism               |
-| `optimism-sepolia`   | Optimism Sepolia       |
-| `robinhood-testnet`  | Robinhood Chain Testnet |
+| `NETWORK_ID`        | Chain                   |
+| ------------------- | ----------------------- |
+| `ethereum-mainnet`  | Ethereum                |
+| `ethereum-sepolia`  | Ethereum Sepolia        |
+| `polygon-mainnet`   | Polygon                 |
+| `polygon-mumbai`    | Polygon Mumbai          |
+| `base-mainnet`      | Base                    |
+| `base-sepolia`      | Base Sepolia            |
+| `arbitrum-mainnet`  | Arbitrum One            |
+| `arbitrum-sepolia`  | Arbitrum Sepolia        |
+| `optimism-mainnet`  | Optimism                |
+| `optimism-sepolia`  | Optimism Sepolia        |
+| `robinhood-testnet` | Robinhood Chain Testnet |
 
 Configuration lives in `src/getAgentKit.ts` and `src/wallets/`. MCP server wiring is in `src/index.ts`.
 

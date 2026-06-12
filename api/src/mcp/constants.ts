@@ -8,6 +8,7 @@ export const MCP_TOOL_NAMES = {
   listVaultTokens: 'alphagrid_list_vault_tokens',
   getPrices: 'alphagrid_get_prices',
   getAgent: 'alphagrid_get_agent',
+  listAgentsByOwner: 'alphagrid_list_agents_by_owner',
   getAgentByErc8004: 'alphagrid_get_agent_by_erc8004',
   linkAgentErc8004: 'alphagrid_link_agent_erc8004',
   getAgentRegistrationQuote: 'alphagrid_get_agent_registration_quote',

@@ -8,7 +8,7 @@
         "CDP_API_KEY_ID": "",
         "CDP_API_KEY_SECRET": "",
         "CDP_WALLET_SECRET": "",
-        "NETWORK_ID": "base-sepolia",
+        "NETWORK_ID": "arbitrum-sepolia",
         "ADDRESS": "",
         "OWNER_ADDRESS": "",
         "PAYMASTER_URL": "",

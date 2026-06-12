@@ -36,6 +36,7 @@ yarn deploy      # Deploy to Cloudflare (requires account auth)
 | `GET`  | `/tokens`                                     | Global token catalog + on-chain registry state                                 |
 | `GET`  | `/prices`                                     | MockPriceOracle quotes indexed by symbol (e.g. `NVDA`)                         |
 | `POST` | `/prices/refresh`                             | Manually fetch Finnhub quotes and update the oracle                            |
+| `GET`  | `/agents/by-owner/{owner}`                    | List agents owned by address (`agentCountByOwner` + `getAgent`)                |
 | `GET`  | `/agents/{agentId}/trade-intents/quote`       | EIP-712 quote for open-position intent (nonce, vault, allocation, exit bounds) |
 | `POST` | `/agents/{agentId}/trade-intents`             | Verify signed open intent; relay `TradeRouter.openPosition` (201)              |
 | `GET`  | `/agents/{agentId}/add-intents/quote`         | Quote for `AddToPosition` (`?positionId=`)                                     |
@@ -75,6 +76,7 @@ ChatGPT **browsing** only performs simple `GET` requests on **public** URLs. It 
 | `alphagrid_list_vault_tokens`            | `GET /vaults/{id}/tokens`                                |
 | `alphagrid_get_prices`                   | `GET /prices`                                            |
 | `alphagrid_get_agent`                    | `GET /agents/{agentId}`                                  |
+| `alphagrid_list_agents_by_owner`         | `GET /agents/by-owner/{owner}`                           |
 | `alphagrid_get_agent_by_erc8004`         | `GET /agents/by-erc8004/{erc8004AgentId}`                |
 | `alphagrid_link_agent_erc8004`           | `POST /agents/{agentId}/erc8004/link`                    |
 | `alphagrid_get_agent_registration_quote` | `GET /agents/register/quote`                             |

@@ -174,6 +174,30 @@ export const GetAgentResponseSchema = z
   })
   .openapi('GetAgentResponse')
 
+export const ListAgentsByOwnerInputSchema = z
+  .object({
+    owner: addressSchema,
+  })
+  .strict()
+
+export const ListAgentsByOwnerResponseSchema = z
+  .object({
+    owner: addressSchema,
+    agentRegistry: addressSchema,
+    count: z.number().int().nonnegative(),
+    agents: z.array(
+      z.object({
+        agentId: agentIdParamSchema,
+        agent: AgentRecordSchema,
+      })
+    ),
+  })
+  .openapi('ListAgentsByOwnerResponse')
+
+export type ListAgentsByOwnerResponse = z.infer<
+  typeof ListAgentsByOwnerResponseSchema
+>
+
 export const AgentNotFoundSchema = z
   .object({
     error: z.string(),
