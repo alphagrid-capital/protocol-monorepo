@@ -42,6 +42,11 @@ const contracts = [
     exportName: 'tradeRouterAbi',
   },
   {
+    artifact: 'contracts/out/TradeRouterLens.sol/TradeRouterLens.json',
+    out: 'api/src/services/abis/trade-router-lens.ts',
+    exportName: 'tradeRouterLensAbi',
+  },
+  {
     artifact: 'contracts/out/VaultTrackRegistry.sol/VaultTrackRegistry.json',
     out: 'api/src/services/abis/vault-track-registry.ts',
     exportName: 'vaultTrackRegistryAbi',

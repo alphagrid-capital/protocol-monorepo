@@ -1,4 +1,4 @@
-import { decodeEventLog } from 'viem'
+import { decodeEventLog, zeroAddress } from 'viem'
 import type { Address, Hex } from 'viem'
 import type { OnChainAddToPositionIntent } from '../lib/eip712-add-position.js'
 import type { OnChainReducePositionIntent } from '../lib/eip712-reduce-position.js'
@@ -7,13 +7,41 @@ import type { OnChainPositionIntent } from '../lib/trading-intent-builder.js'
 import type { TradingConfig } from '../lib/trading-config.js'
 import { positionManagerAbi } from './abis/position-manager.js'
 import { tradeRouterAbi } from './abis/trade-router.js'
+import { tradeRouterLensAbi } from './abis/trade-router-lens.js'
 import type { ProviderService } from './provider.service.js'
 
 export class TradeRouterService {
+  private resolvedLensAddress: Address | null | undefined
+
   constructor(
     private readonly providerService: ProviderService,
     private readonly config: TradingConfig
   ) {}
+
+  async getTradeRouterLensAddress(): Promise<Address> {
+    if (this.config.tradeRouterLensAddress) {
+      return this.config.tradeRouterLensAddress
+    }
+    if (this.resolvedLensAddress !== undefined) {
+      if (this.resolvedLensAddress === null) {
+        throw new Error('TradeRouter lens is not configured')
+      }
+      return this.resolvedLensAddress
+    }
+
+    const client = this.providerService.createPublicClient()
+    const lens = await client.readContract({
+      address: this.config.tradeRouterAddress,
+      abi: tradeRouterAbi,
+      functionName: 'lens',
+    })
+    if (lens === zeroAddress) {
+      this.resolvedLensAddress = null
+      throw new Error('TradeRouter lens is not configured')
+    }
+    this.resolvedLensAddress = lens
+    return lens
+  }
 
   async getEip712Domain(): Promise<{ name: string; version: string }> {
     const client = this.providerService.createPublicClient()
@@ -57,8 +85,8 @@ export class TradeRouterService {
   async peakEquityUsdc(agentId: bigint): Promise<bigint> {
     const client = this.providerService.createPublicClient()
     return client.readContract({
-      address: this.config.tradeRouterAddress,
-      abi: tradeRouterAbi,
+      address: await this.getTradeRouterLensAddress(),
+      abi: tradeRouterLensAbi,
       functionName: 'peakEquityUsdc',
       args: [agentId],
     })
@@ -67,8 +95,8 @@ export class TradeRouterService {
   async currentEquityUsdc(agentId: bigint): Promise<bigint> {
     const client = this.providerService.createPublicClient()
     return client.readContract({
-      address: this.config.tradeRouterAddress,
-      abi: tradeRouterAbi,
+      address: await this.getTradeRouterLensAddress(),
+      abi: tradeRouterLensAbi,
       functionName: 'currentEquityUsdc',
       args: [agentId],
     })
@@ -77,8 +105,8 @@ export class TradeRouterService {
   async currentDrawdownBps(agentId: bigint): Promise<bigint> {
     const client = this.providerService.createPublicClient()
     return client.readContract({
-      address: this.config.tradeRouterAddress,
-      abi: tradeRouterAbi,
+      address: await this.getTradeRouterLensAddress(),
+      abi: tradeRouterLensAbi,
       functionName: 'currentDrawdownBps',
       args: [agentId],
     })
@@ -97,8 +125,8 @@ export class TradeRouterService {
   async positionsOpened(agentId: bigint): Promise<number> {
     const client = this.providerService.createPublicClient()
     const count = await client.readContract({
-      address: this.config.tradeRouterAddress,
-      abi: tradeRouterAbi,
+      address: await this.getTradeRouterLensAddress(),
+      abi: tradeRouterLensAbi,
       functionName: 'positionsOpened',
       args: [agentId],
     })
@@ -108,8 +136,8 @@ export class TradeRouterService {
   async positionsClosed(agentId: bigint): Promise<number> {
     const client = this.providerService.createPublicClient()
     const count = await client.readContract({
-      address: this.config.tradeRouterAddress,
-      abi: tradeRouterAbi,
+      address: await this.getTradeRouterLensAddress(),
+      abi: tradeRouterLensAbi,
       functionName: 'positionsClosed',
       args: [agentId],
     })
@@ -119,8 +147,8 @@ export class TradeRouterService {
   async positionUnrealizedPnlUsdc(positionId: bigint): Promise<bigint> {
     const client = this.providerService.createPublicClient()
     return client.readContract({
-      address: this.config.tradeRouterAddress,
-      abi: tradeRouterAbi,
+      address: await this.getTradeRouterLensAddress(),
+      abi: tradeRouterLensAbi,
       functionName: 'positionUnrealizedPnlUsdc',
       args: [positionId],
     })

@@ -2,11 +2,12 @@
 pragma solidity ^0.8.30;
 
 import { IPositionTypes } from "./IPositionTypes.sol";
+import { ITradeRouter } from "./ITradeRouter.sol";
 
 /// @title ITradeRouterLens
 /// @notice Read-only analytics and oracle-based position metrics for TradeRouter.
 interface ITradeRouterLens is IPositionTypes {
-    function tradeRouter() external view returns (address);
+    function tradeRouter() external view returns (ITradeRouter);
 
     function isTriggerMet(uint256 positionId) external view returns (bool);
 

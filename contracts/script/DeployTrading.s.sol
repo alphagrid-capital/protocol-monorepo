@@ -8,6 +8,7 @@ import { AgentRegistry } from "../src/core/AgentRegistry.sol";
 import { AllocationManager } from "../src/core/AllocationManager.sol";
 import { PositionManager } from "../src/core/PositionManager.sol";
 import { TradeRouter } from "../src/core/TradeRouter.sol";
+import { TradeRouterLens } from "../src/core/TradeRouterLens.sol";
 import { VaultTrackRegistry } from "../src/core/VaultTrackRegistry.sol";
 import { ISwapAdapter } from "../src/interfaces/ISwapAdapter.sol";
 import { MandateVault } from "../src/vaults/MandateVault.sol";
@@ -20,6 +21,7 @@ contract DeployTrading is DeploymentEnv {
     struct Deployed {
         PositionManager positionManager;
         TradeRouter tradeRouter;
+        TradeRouterLens tradeRouterLens;
         ISwapAdapter swapAdapter;
         bool deployMock;
     }
@@ -67,6 +69,10 @@ contract DeployTrading is DeploymentEnv {
             deployed.swapAdapter,
             VaultTrackRegistry(trading.vaultTrackRegistry)
         );
+        deployed.tradeRouterLens = new TradeRouterLens(
+            deployed.tradeRouter, AllocationManager(trading.allocationManager), deployed.positionManager
+        );
+        deployed.tradeRouter.setLens(deployed.tradeRouterLens);
     }
 
     function _wire(Deployed memory deployed) private {
@@ -95,6 +101,7 @@ contract DeployTrading is DeploymentEnv {
     function _log(Deployed memory deployed, TradingAddresses memory trading, address[] memory vaults) private pure {
         console2.log("PositionManager:", address(deployed.positionManager));
         console2.log("TradeRouter:", address(deployed.tradeRouter));
+        console2.log("TradeRouterLens:", address(deployed.tradeRouterLens));
         console2.log("SwapAdapter:", address(deployed.swapAdapter));
         console2.log("MockAdapter:", deployed.deployMock);
         console2.log("Vaults:", vaults.length);

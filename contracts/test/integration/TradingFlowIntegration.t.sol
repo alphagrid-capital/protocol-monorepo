@@ -24,7 +24,7 @@ contract TradingFlowIntegrationTest is TradingTestBase {
         uint256 positionId = tradeRouter.openPosition(intent, sig);
 
         assertEq(positionManager.getOpenPositionIds(agentId).length, 1);
-        uint256 peakAfterOpen = tradeRouter.peakEquityUsdc(agentId);
+        uint256 peakAfterOpen = tradeRouterLens.peakEquityUsdc(agentId);
         assertGe(peakAfterOpen, CHALLENGE_CAP - 1e6);
 
         assertEq(registry.vaultOf(agentId), vaultAddr);
@@ -41,7 +41,7 @@ contract TradingFlowIntegrationTest is TradingTestBase {
         assertEq(positionManager.openPositionId(agentId, address(nvda)), 0);
         assertEq(positionManager.getOpenPositionIds(agentId).length, 0);
         assertLt(positionManager.realizedPnlUsdc(positionId), 0);
-        assertGt(tradeRouter.currentDrawdownBps(agentId), 0);
+        assertGt(tradeRouterLens.currentDrawdownBps(agentId), 0);
     }
 
     function test_SuspendedAgentCanStillExit() public {

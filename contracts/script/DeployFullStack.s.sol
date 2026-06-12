@@ -6,6 +6,7 @@ import { InventorySwapAdapter } from "../src/adapters/InventorySwapAdapter.sol";
 import { MockSwapAdapter } from "../src/adapters/MockSwapAdapter.sol";
 import { PositionManager } from "../src/core/PositionManager.sol";
 import { TradeRouter } from "../src/core/TradeRouter.sol";
+import { TradeRouterLens } from "../src/core/TradeRouterLens.sol";
 import { ISwapAdapter } from "../src/interfaces/ISwapAdapter.sol";
 import { MockERC20 } from "../src/mocks/MockERC20.sol";
 import { MockPriceOracle } from "../src/mocks/MockPriceOracle.sol";
@@ -23,6 +24,13 @@ import { VaultDeploy } from "./helpers/VaultDeploy.sol";
 ///      to `VAULT_ASSET`. Legacy `USDC` sets both when the newer vars are omitted.
 ///      Production rollouts should use staged individual scripts instead.
 contract DeployFullStack is AgentCoreDeploy, VaultDeploy, AssetDeploy, DeploymentArtifacts {
+    struct TradingDeployed {
+        PositionManager positionManager;
+        TradeRouter tradeRouter;
+        TradeRouterLens tradeRouterLens;
+        ISwapAdapter swapAdapter;
+    }
+
     function run() external {
         address admin = vm.envAddress("ADMIN");
         address treasury = vm.envAddress("TREASURY");
@@ -48,30 +56,7 @@ contract DeployFullStack is AgentCoreDeploy, VaultDeploy, AssetDeploy, Deploymen
             address(vaults.macroVault)
         );
 
-        PositionManager positionManager = new PositionManager(admin);
-        ISwapAdapter swapAdapter = deployMock
-            ? ISwapAdapter(address(new MockSwapAdapter(address(0))))
-            : ISwapAdapter(address(new InventorySwapAdapter(address(0))));
-
-        TradeRouter tradeRouter = new TradeRouter(
-            admin, core.registry, core.allocationManager, positionManager, swapAdapter, core.vaultTrackRegistry
-        );
-
-        if (deployMock) {
-            MockSwapAdapter(address(swapAdapter)).setTradeRouter(address(tradeRouter));
-        } else {
-            InventorySwapAdapter(address(swapAdapter)).setTradeRouter(address(tradeRouter));
-        }
-        positionManager.setTradeRouter(address(tradeRouter));
-
-        tradeRouter.grantRole(tradeRouter.EXECUTOR_ROLE(), executor);
-        tradeRouter.grantRole(tradeRouter.OPERATOR_ROLE(), operator);
-
-        bytes32 tradeRouterRole = vaults.foundationVault.TRADE_ROUTER_ROLE();
-        for (uint256 i = 0; i < vaultAddrs.length; i++) {
-            MandateVault(vaultAddrs[i]).grantRole(tradeRouterRole, address(tradeRouter));
-        }
-        core.allocationManager.grantRole(core.allocationManager.TRADE_ROUTER_ROLE(), address(tradeRouter));
+        TradingDeployed memory trading = _deployTrading(admin, executor, operator, deployMock, core, vaults, vaultAddrs);
 
         MockPriceOracle oracle = new MockPriceOracle(admin);
         core.tokenRegistry.setPriceOracle(address(oracle));
@@ -108,9 +93,10 @@ contract DeployFullStack is AgentCoreDeploy, VaultDeploy, AssetDeploy, Deploymen
                 techVault: address(vaults.techVault),
                 volatilityVault: address(vaults.volatilityVault),
                 macroVault: address(vaults.macroVault),
-                positionManager: address(positionManager),
-                tradeRouter: address(tradeRouter),
-                swapAdapter: address(swapAdapter),
+                positionManager: address(trading.positionManager),
+                tradeRouter: address(trading.tradeRouter),
+                tradeRouterLens: address(trading.tradeRouterLens),
+                swapAdapter: address(trading.swapAdapter),
                 priceOracle: address(oracle),
                 feeAsset: assets.feeAsset,
                 vaultAsset: assets.vaultAsset,
@@ -129,5 +115,48 @@ contract DeployFullStack is AgentCoreDeploy, VaultDeploy, AssetDeploy, Deploymen
         console2.log("Fee asset (FeeManager):", assets.feeAsset);
         console2.log("Vault asset (trading):", assets.vaultAsset);
         console2.log("Copy token addresses into config/token-catalog.json and update api/src/constants/contracts.ts");
+    }
+
+    function _deployTrading(
+        address admin,
+        address executor,
+        address operator,
+        bool deployMock,
+        AgentCoreDeployed memory core,
+        VaultSet memory vaults,
+        address[] memory vaultAddrs
+    ) private returns (TradingDeployed memory deployed) {
+        deployed.positionManager = new PositionManager(admin);
+        deployed.swapAdapter = deployMock
+            ? ISwapAdapter(address(new MockSwapAdapter(address(0))))
+            : ISwapAdapter(address(new InventorySwapAdapter(address(0))));
+
+        deployed.tradeRouter = new TradeRouter(
+            admin,
+            core.registry,
+            core.allocationManager,
+            deployed.positionManager,
+            deployed.swapAdapter,
+            core.vaultTrackRegistry
+        );
+        deployed.tradeRouterLens =
+            new TradeRouterLens(deployed.tradeRouter, core.allocationManager, deployed.positionManager);
+        deployed.tradeRouter.setLens(deployed.tradeRouterLens);
+
+        if (deployMock) {
+            MockSwapAdapter(address(deployed.swapAdapter)).setTradeRouter(address(deployed.tradeRouter));
+        } else {
+            InventorySwapAdapter(address(deployed.swapAdapter)).setTradeRouter(address(deployed.tradeRouter));
+        }
+        deployed.positionManager.setTradeRouter(address(deployed.tradeRouter));
+
+        deployed.tradeRouter.grantRole(deployed.tradeRouter.EXECUTOR_ROLE(), executor);
+        deployed.tradeRouter.grantRole(deployed.tradeRouter.OPERATOR_ROLE(), operator);
+
+        bytes32 tradeRouterRole = vaults.foundationVault.TRADE_ROUTER_ROLE();
+        for (uint256 i = 0; i < vaultAddrs.length; i++) {
+            MandateVault(vaultAddrs[i]).grantRole(tradeRouterRole, address(deployed.tradeRouter));
+        }
+        core.allocationManager.grantRole(core.allocationManager.TRADE_ROUTER_ROLE(), address(deployed.tradeRouter));
     }
 }

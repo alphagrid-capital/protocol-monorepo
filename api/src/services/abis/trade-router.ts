@@ -243,44 +243,6 @@ export const tradeRouterAbi = [
   },
   {
     type: 'function',
-    name: 'currentDrawdownBps',
-    inputs: [
-      {
-        name: 'agentId',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
-    ],
-    outputs: [
-      {
-        name: '',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'currentEquityUsdc',
-    inputs: [
-      {
-        name: 'agentId',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
-    ],
-    outputs: [
-      {
-        name: '',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
     name: 'dailyRealizedPnlUsdc',
     inputs: [
       {
@@ -471,25 +433,6 @@ export const tradeRouterAbi = [
   },
   {
     type: 'function',
-    name: 'isTriggerMet',
-    inputs: [
-      {
-        name: 'positionId',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
-    ],
-    outputs: [
-      {
-        name: '',
-        type: 'bool',
-        internalType: 'bool',
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
     name: 'keeperBountyBps',
     inputs: [],
     outputs: [
@@ -497,6 +440,19 @@ export const tradeRouterAbi = [
         name: '',
         type: 'uint256',
         internalType: 'uint256',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'lens',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
+        type: 'address',
+        internalType: 'contract ITradeRouterLens',
       },
     ],
     stateMutability: 'view',
@@ -516,25 +472,6 @@ export const tradeRouterAbi = [
         name: '',
         type: 'int256',
         internalType: 'int256',
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'lifetimeTurnoverUsdc',
-    inputs: [
-      {
-        name: 'agentId',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
-    ],
-    outputs: [
-      {
-        name: '',
-        type: 'uint256',
-        internalType: 'uint256',
       },
     ],
     stateMutability: 'view',
@@ -661,25 +598,6 @@ export const tradeRouterAbi = [
   },
   {
     type: 'function',
-    name: 'peakEquityUsdc',
-    inputs: [
-      {
-        name: 'agentId',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
-    ],
-    outputs: [
-      {
-        name: '',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
     name: 'positionManager',
     inputs: [],
     outputs: [
@@ -687,82 +605,6 @@ export const tradeRouterAbi = [
         name: '',
         type: 'address',
         internalType: 'contract IPositionManager',
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'positionPnlBps',
-    inputs: [
-      {
-        name: 'positionId',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
-    ],
-    outputs: [
-      {
-        name: '',
-        type: 'int256',
-        internalType: 'int256',
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'positionUnrealizedPnlUsdc',
-    inputs: [
-      {
-        name: 'positionId',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
-    ],
-    outputs: [
-      {
-        name: '',
-        type: 'int256',
-        internalType: 'int256',
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'positionsClosed',
-    inputs: [
-      {
-        name: 'agentId',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
-    ],
-    outputs: [
-      {
-        name: '',
-        type: 'uint32',
-        internalType: 'uint32',
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'positionsOpened',
-    inputs: [
-      {
-        name: 'agentId',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
-    ],
-    outputs: [
-      {
-        name: '',
-        type: 'uint32',
-        internalType: 'uint32',
       },
     ],
     stateMutability: 'view',
@@ -874,6 +716,19 @@ export const tradeRouterAbi = [
   },
   {
     type: 'function',
+    name: 'setLens',
+    inputs: [
+      {
+        name: 'lens_',
+        type: 'address',
+        internalType: 'contract ITradeRouterLens',
+      },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
     name: 'supportsInterface',
     inputs: [
       {
@@ -900,25 +755,6 @@ export const tradeRouterAbi = [
         name: '',
         type: 'address',
         internalType: 'contract ISwapAdapter',
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'tradeCount',
-    inputs: [
-      {
-        name: 'agentId',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
-    ],
-    outputs: [
-      {
-        name: '',
-        type: 'uint32',
-        internalType: 'uint32',
       },
     ],
     stateMutability: 'view',
@@ -1544,6 +1380,11 @@ export const tradeRouterAbi = [
         internalType: 'uint256',
       },
     ],
+  },
+  {
+    type: 'error',
+    name: 'LensAlreadySet',
+    inputs: [],
   },
   {
     type: 'error',

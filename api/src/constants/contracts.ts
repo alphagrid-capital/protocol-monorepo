@@ -19,6 +19,7 @@ export interface ChainContracts {
   VaultFactory: `0x${string}` | null
   PositionManager: `0x${string}` | null
   TradeRouter: `0x${string}` | null
+  TradeRouterLens: `0x${string}` | null
   SwapAdapter: `0x${string}` | null
   /** FeeManager / x402 registration (official USDC). */
   feeAsset: TokenConfig
@@ -44,6 +45,7 @@ export const contracts: Record<number, ChainContracts> = {
     PriceOracle: '0x87c482ccdd60df9da3b3f02c6ad500587fa92c98',
     PositionManager: '0xc27558d2773a391a494cc7899831b304fbd2c2fb',
     TradeRouter: '0x12b0548e204c6d832b29d307e3c6154d029c4277',
+    TradeRouterLens: null,
     SwapAdapter: '0xf645850781a781ab4583f7dcd03a3b9ac1192a22',
     FoundationVault: '0x0665b5ebc6692a2f770369ed6e4c652d0a460292',
     TechVault: '0xea3895c279bcab7f3d2fd18416500f781accebed',
@@ -74,6 +76,7 @@ export const contracts: Record<number, ChainContracts> = {
     VaultFactory: null,
     PositionManager: null,
     TradeRouter: null,
+    TradeRouterLens: null,
     SwapAdapter: null,
     FoundationVault: null,
     TechVault: null,
@@ -104,6 +107,7 @@ export const contracts: Record<number, ChainContracts> = {
     VaultFactory: '0x244f924132cF1ec3b8e9b0faFB02D4Ac8E15a657',
     PositionManager: '0x9Db3cd7e776bc334fe0343d34eBcf775360da8B6',
     TradeRouter: '0x657b4dA89AeD3bD0f1d0aD0b2a9bDb33B1054cC2',
+    TradeRouterLens: null,
     SwapAdapter: '0xb81eeEC997C5F6B8F858C0f70E7307109BA4F0F3',
     FoundationVault: '0x5187d55578BD7a7cD44FfBDF47cB43b7D10E8C4d',
     TechVault: '0xE7164E3eEb4F83ddb6149D06C8859DD3B763939d',
@@ -134,6 +138,7 @@ export const contracts: Record<number, ChainContracts> = {
     VaultFactory: null,
     PositionManager: null,
     TradeRouter: null,
+    TradeRouterLens: null,
     SwapAdapter: null,
     FoundationVault: null,
     TechVault: null,

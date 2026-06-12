@@ -743,20 +743,21 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
         }
 
         _recordDailyRealizedPnl(position.agentId, usdcReleased, usdcOut);
-
-        bool positionClosed = positionManager.getPosition(positionId).status == PositionStatus.Closed;
-        uint256 lensTurnover = mode == SellMode.ForceClose ? 0 : usdcOut;
-        _notifyLensTrade(position.agentId, lensTurnover, false, positionClosed);
+        _notifyLensAfterSell(positionId, position.agentId, mode, usdcOut);
 
         _assertLedgerInvariant(vault, position.token);
     }
 
-    function _notifyLensTrade(uint256 agentId, uint256 turnoverUsdc, bool positionOpened, bool positionClosed)
-        private
-    {
+    function _notifyLensTrade(uint256 agentId, uint256 turnoverUsdc, bool positionOpened, bool positionClosed) private {
         if (address(lens) != address(0)) {
             lens.onTrade(agentId, turnoverUsdc, positionOpened, positionClosed);
         }
+    }
+
+    function _notifyLensAfterSell(uint256 positionId, uint256 agentId, SellMode mode, uint256 usdcOut) private {
+        if (address(lens) == address(0)) return;
+        bool positionClosed = positionManager.getPosition(positionId).status == PositionStatus.Closed;
+        lens.onTrade(agentId, mode == SellMode.ForceClose ? 0 : usdcOut, false, positionClosed);
     }
 
     function _assertLedgerInvariant(IMandateVault vault, address token) private view {

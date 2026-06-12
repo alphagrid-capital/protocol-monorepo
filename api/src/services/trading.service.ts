@@ -43,6 +43,7 @@ import type {
 import { allocationManagerAbi } from './abis/allocation-manager.js'
 import { positionManagerAbi } from './abis/position-manager.js'
 import { tradeRouterAbi } from './abis/trade-router.js'
+import { tradeRouterLensAbi } from './abis/trade-router-lens.js'
 import { mandateVaultAbi } from './abis/mandate-vault.js'
 import { vaultTrackRegistryAbi } from './abis/vault-track-registry.js'
 import {
@@ -516,9 +517,10 @@ export class TradingService {
       },
     ])
 
+    const lensAddress = await tradeRouter.getTradeRouterLensAddress()
     const unrealizedCalls = positionIds.map((positionId) => ({
-      address: this.config.tradeRouterAddress,
-      abi: tradeRouterAbi,
+      address: lensAddress,
+      abi: tradeRouterLensAbi,
       functionName: 'positionUnrealizedPnlUsdc' as const,
       args: [positionId] as const,
     }))

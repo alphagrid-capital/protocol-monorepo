@@ -7,6 +7,8 @@ export interface TradingConfig {
   rpcUrl: string
   chainContracts: ChainContracts
   tradeRouterAddress: `0x${string}`
+  /** Explicit lens override; when unset, resolved from chainContracts or TradeRouter.lens(). */
+  tradeRouterLensAddress: `0x${string}` | null
   agentRegistryAddress: `0x${string}`
   allocationManagerAddress: `0x${string}`
   executorPrivateKey: `0x${string}` | null
@@ -49,11 +51,17 @@ export function loadTradingConfig(
     )
   }
 
+  const tradeRouterLensAddress =
+    parseAddress(env.TRADE_ROUTER_LENS_ADDRESS) ??
+    chainContracts.TradeRouterLens ??
+    null
+
   return {
     chainId,
     rpcUrl: requireEnv(env, 'RPC_URL'),
     chainContracts,
     tradeRouterAddress,
+    tradeRouterLensAddress,
     agentRegistryAddress: chainContracts.AgentRegistry,
     allocationManagerAddress: chainContracts.AllocationManager,
     executorPrivateKey: parsePrivateKey(env.EXECUTOR_PRIVATE_KEY),

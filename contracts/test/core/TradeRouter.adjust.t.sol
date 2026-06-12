@@ -48,7 +48,7 @@ contract TradeRouterAdjustTest is TradingTestBase {
         assertEq(positionManager.getPosition(positionId).nextRuleIndex, 0);
 
         _setTokenPrice(address(nvda), 130e8);
-        assertTrue(tradeRouter.isTriggerMet(positionId));
+        assertTrue(tradeRouterLens.isTriggerMet(positionId));
     }
 
     function test_AddToPositionWeightedEntry() public {

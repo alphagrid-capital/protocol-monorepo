@@ -28,8 +28,12 @@ contract TradeRouterLens is ITradeRouterLens {
     error ZeroAddress();
 
     modifier onlyTradeRouter() {
-        if (msg.sender != address(tradeRouter)) revert OnlyTradeRouter();
+        _onlyTradeRouter();
         _;
+    }
+
+    function _onlyTradeRouter() internal view {
+        if (msg.sender != address(tradeRouter)) revert OnlyTradeRouter();
     }
 
     constructor(ITradeRouter tradeRouter_, IAllocationManager allocationManager_, IPositionManager positionManager_) {
@@ -175,8 +179,8 @@ contract TradeRouterLens is ITradeRouterLens {
 
     function _currentEquityUsdc(uint256 agentId) private view returns (uint256) {
         IAllocationManager.Allocation memory allocation = allocationManager.getAllocation(agentId);
-        int256 equitySigned = int256(allocation.cap) + tradeRouter.lifetimeRealizedPnlUsdc(agentId)
-            + _totalUnrealizedPnlUsdc(agentId);
+        int256 equitySigned =
+            int256(allocation.cap) + tradeRouter.lifetimeRealizedPnlUsdc(agentId) + _totalUnrealizedPnlUsdc(agentId);
         if (equitySigned <= 0) return 0;
         return SafeCast.toUint256(equitySigned);
     }

@@ -23,6 +23,7 @@ abstract contract DeploymentArtifacts is DeploymentEnv {
         address macroVault;
         address positionManager;
         address tradeRouter;
+        address tradeRouterLens;
         address swapAdapter;
         address priceOracle;
         address feeAsset;
@@ -54,6 +55,7 @@ abstract contract DeploymentArtifacts is DeploymentEnv {
         objectKey.serialize("MacroVault", snapshot.macroVault);
         objectKey.serialize("PositionManager", snapshot.positionManager);
         objectKey.serialize("TradeRouter", snapshot.tradeRouter);
+        objectKey.serialize("TradeRouterLens", snapshot.tradeRouterLens);
         objectKey.serialize("SwapAdapter", snapshot.swapAdapter);
         objectKey.serialize("PriceOracle", snapshot.priceOracle);
         objectKey.serialize("feeAsset", snapshot.feeAsset);
