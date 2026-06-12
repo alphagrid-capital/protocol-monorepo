@@ -91,13 +91,22 @@ No application-level rate limits are defined in the current codebase.
 
 #### Local development
 
+Requires Node.js 24+ (root `.nvmrc`).
+
 ```bash
 cd api
 yarn install
 yarn dev   # http://localhost:8787
 ```
 
-Copy `api/.env.example` for local bindings. Use `yarn type-check` before deploy.
+`GET /health` works without chain config. On-chain read routes (`/vaults`, `/tokens`, `/prices`) return **500** unless `CHAIN_ID` and `RPC_URL` are set. For `wrangler dev`, create `api/.dev.vars` (gitignored):
+
+```bash
+CHAIN_ID=84532
+RPC_URL=https://sepolia.base.org
+```
+
+Base Sepolia contract addresses are in `api/src/constants/contracts.ts`. See `api/.env.example` for registration, executor, and oracle variables. Use `yarn type-check` before deploy.
 
 ## MCP
 
@@ -119,11 +128,13 @@ Opening `/mcp` in a web browser will not work — use an MCP client.
 
 #### Sessions
 
+Each MCP client session is backed by a Cloudflare Durable Object (`AlphagridMcp`, via the `agents` `McpAgent` helper). Initialize and tool calls stay on the same session across Worker isolates.
+
 1. The client sends an **initialize** request (`POST /mcp`).
 2. The server responds with an `mcp-session-id` header.
-3. The client includes that header on all later MCP requests for the same connection.
+3. The client includes that header on all later MCP requests for the same connection (`POST`, `GET`, or `DELETE` on `/mcp`).
 
-Standard MCP clients manage sessions automatically. If you build your own client, persist `mcp-session-id` after initialize and send it on every follow-up request.
+`GET /mcp` supports Streamable HTTP listen streams (SSE). Standard MCP clients manage sessions and transport automatically. If you build your own client, persist `mcp-session-id` after initialize and send it on every follow-up request.
 
 ### Tools
 
