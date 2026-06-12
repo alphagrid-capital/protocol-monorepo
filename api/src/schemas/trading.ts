@@ -125,12 +125,9 @@ export const AgentPositionSchema = z
     exitRules: z.array(ExitRuleInputSchema),
     pendingRules: z.array(ExitRuleInputSchema),
     openedAt: z.string(),
-    unrealizedPnlUsdc: z
-      .string()
-      .optional()
-      .openapi({
-        description: 'Mark-to-market unrealized PnL (open positions)',
-      }),
+    unrealizedPnlUsdc: z.string().optional().openapi({
+      description: 'Mark-to-market unrealized PnL (open positions)',
+    }),
     derived: PositionDerivedSchema,
   })
   .openapi('AgentPosition')

@@ -26,14 +26,7 @@ abstract contract VaultDeploy is DeploymentEnv {
         IERC20 asset = IERC20(vaultAsset);
         vaults.factory = new MandateVaultFactory(address(0), asset);
         vaults.genesisVault = deployVaultClone(
-            vaults.factory,
-            asset,
-            tokenRegistry_,
-            admin,
-            treasury,
-            "AlphaGrid Genesis Vault",
-            "agGEN",
-            MANDATE_GENESIS
+            vaults.factory, asset, tokenRegistry_, admin, treasury, "AlphaGrid Genesis Vault", "agGEN", MANDATE_GENESIS
         );
     }
 

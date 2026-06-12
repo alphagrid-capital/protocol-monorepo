@@ -40,10 +40,8 @@ contract EnableGenesisVaultTokens is DeploymentEnv {
     }
 
     function loadTokenAddresses() internal view returns (address[] memory tokens) {
-        string memory path = vm.envOr(
-            "DEPLOYMENT_ARTIFACT",
-            string.concat("./deployments/", vm.toString(block.chainid), ".json")
-        );
+        string memory path =
+            vm.envOr("DEPLOYMENT_ARTIFACT", string.concat("./deployments/", vm.toString(block.chainid), ".json"));
         string memory json = vm.readFile(path);
 
         tokens = new address[](8);

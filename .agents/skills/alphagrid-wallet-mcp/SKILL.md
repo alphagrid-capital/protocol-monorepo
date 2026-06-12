@@ -33,14 +33,14 @@ For AlphaGrid registration and trading, run **both** MCP servers: this wallet MC
 
 ## Scope: use vs avoid
 
-| Use wallet MCP for                                          | Do not use it for                                               |
-| ----------------------------------------------------------- | --------------------------------------------------------------- |
-| Address, network, native + ERC20 balances (EVM)             | Writing/testing Solidity (`foundry-solidity` skill)             |
-| Transfers the user explicitly requested                     | Inventing trades or portfolio strategy                          |
-| Testnet faucet (with CDP keys)                              | Assuming multi-chain without checking `get_wallet_details`      |
-| Pyth spot prices, x402 paid HTTP (when tools are present)   | Live-updating canvas data (canvases are static snapshots)       |
-| x402 payment for `POST /agents/register` (registration fee) | Trade quotes, submit intents, positions (`alphagrid-mcp` skill) |
-| `robinhood-testnet` signing via `viem`                      | Robinhood chain via `cdp` (not supported)                       |
+| Use wallet MCP for                                                        | Do not use it for                                               |
+| ------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| Address, network, native + ERC20 balances (EVM)                           | Writing/testing Solidity (`foundry-solidity` skill)             |
+| Transfers the user explicitly requested                                   | Inventing trades or portfolio strategy                          |
+| Testnet faucet (with CDP keys)                                            | Assuming multi-chain without checking `get_wallet_details`      |
+| Pyth spot prices, x402 paid HTTP (when tools are present)                 | Live-updating canvas data (canvases are static snapshots)       |
+| x402 payment for `POST /agents/register` (registration fee)               | Trade quotes, submit intents, positions (`alphagrid-mcp` skill) |
+| `robinhood-testnet` signing via `viem`                                    | Robinhood chain via `cdp` (not supported)                       |
 | AlphaGrid EIP-712 signing (`AlphagridActionProvider_sign_*`, `viem` only) | Trade quotes, submit intents, positions (`alphagrid-mcp` skill) |
 
 ## Wallet providers
@@ -139,13 +139,13 @@ Tool requires CDP API keys (`CDP_API_KEY_ID` + `CDP_API_KEY_SECRET` on `viem`, o
 
 With `WALLET_PROVIDER=viem` and `PRIVATE_KEY`, the wallet MCP exposes **`AlphagridActionProvider_sign_*`** tools. Pair with protocol MCP quotes, then submit:
 
-| Tool | Typed data | Submit via |
-| ---- | ---------- | ---------- |
-| `AlphagridActionProvider_sign_self_register` | `SelfRegister` | `alphagrid_register_agent` / x402 register |
-| `AlphagridActionProvider_sign_open_position` | `OpenPosition` | `alphagrid_submit_trade_intent` |
-| `AlphagridActionProvider_sign_add_position` | `AddToPosition` | `alphagrid_submit_add_intent` |
-| `AlphagridActionProvider_sign_reduce_position` | `ReducePosition` | `alphagrid_submit_reduce_intent` |
-| `AlphagridActionProvider_sign_update_exit_ladder` | `UpdateExitLadder` | `alphagrid_submit_exit_ladder_intent` |
+| Tool                                              | Typed data         | Submit via                                 |
+| ------------------------------------------------- | ------------------ | ------------------------------------------ |
+| `AlphagridActionProvider_sign_self_register`      | `SelfRegister`     | `alphagrid_register_agent` / x402 register |
+| `AlphagridActionProvider_sign_open_position`      | `OpenPosition`     | `alphagrid_submit_trade_intent`            |
+| `AlphagridActionProvider_sign_add_position`       | `AddToPosition`    | `alphagrid_submit_add_intent`              |
+| `AlphagridActionProvider_sign_reduce_position`    | `ReducePosition`   | `alphagrid_submit_reduce_intent`           |
+| `AlphagridActionProvider_sign_update_exit_ladder` | `UpdateExitLadder` | `alphagrid_submit_exit_ladder_intent`      |
 
 Pass `nonce`, `deadline`, `chainId`, and verifying contract (`agentRegistry` or `tradeRouter`) from the latest quote. For opens and ladder updates, pass `exits` exactly as you will submit; OpenPosition/UpdateExitLadder sign `exitsHash` per `api/src/lib/eip712-open-position.ts`.
 
