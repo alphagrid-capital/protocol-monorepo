@@ -41,6 +41,7 @@ All make targets `cd` into `contracts/` automatically.
 - **Node version:** a baseline `node` (v22) sits first on `$PATH` and wins over nvm. Interactive login shells source `~/.bashrc` → nvm → Node 24, so `bash -lc '...'` (and tmux login shells) get Node 24. In a non-login shell, prepend it explicitly: `export PATH="$HOME/.nvm/versions/node/v24.16.0/bin:$PATH"`. `wrangler dev`, `mint dev`, and `tsx` require Node 24.
 - **API live data:** `GET /vaults`, `/tokens`, `/prices` read on-chain state and return **500** unless `CHAIN_ID` + `RPC_URL` are set. For local dev create `api/.dev.vars` (gitignored) with `CHAIN_ID=84532` and `RPC_URL=https://sepolia.base.org` to read the deployed Base Sepolia contracts (addresses in `api/src/constants/contracts.ts`). `/health` works without config. MCP (`POST /mcp`) needs an `initialize` handshake + `Mcp-Session-Id` header and `Accept: application/json, text/event-stream`.
 - **Yarn cache:** do not run `yarn install` for multiple packages in parallel — they share `~/.cache/yarn` and concurrent writes corrupt it (`EEXIST`/`ENOENT` on e.g. `viem`, `sharp`). Install sequentially; `yarn cache clean` recovers from corruption.
+- **docs Puppeteer:** `mint` (in `docs/`) pulls in `puppeteer`, whose postinstall downloads Chromium from a host that is unreachable here, so a plain `yarn install` in `docs/` fails. Install with `PUPPETEER_SKIP_DOWNLOAD=true yarn install` (the update script does this). `yarn validate` and `yarn format:check` work without the browser; `yarn broken-links` may not.
 
 ### Wallet MCP
 
