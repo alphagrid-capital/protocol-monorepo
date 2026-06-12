@@ -24,7 +24,7 @@ The same codebase deploys to **three** Cloudflare Workers. Each instance has its
 | `robinhood-testnet`   | `alphagrid-api-robinhood`      | 46630    | `https://api-46630.alphagrid.capital`    |
 | `arbitrum-one`        | `alphagrid-api-arbitrum-one`   | 42161    | `https://api-42161.alphagrid.capital`    |
 
-Custom domains are declared in `wrangler.toml` (`api-{chainId}.alphagrid.capital`). The `alphagrid.capital` zone must be on the same Cloudflare account. `*.workers.dev` URLs still work as a fallback after deploy.
+Public URLs use `https://api-{chainId}.alphagrid.capital` — attach each hostname in the Cloudflare dashboard (**Workers & Pages → Worker → Settings → Domains & Routes → Add Custom Domain**). `*.workers.dev` URLs work immediately after deploy.
 
 `CHAIN_ID` and `X402_NETWORK` are set in `wrangler.toml` per env. Contract addresses for each chain are in `src/constants/contracts.ts` (Robinhood and Arbitrum One are placeholders until on-chain deploy).
 

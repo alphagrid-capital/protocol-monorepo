@@ -47,7 +47,6 @@ crons = ["*/15 * * * *"]
 
 [env.arbitrum-sepolia]
 name = "alphagrid-api-arbitrum-sepolia"
-routes = [{ pattern = "api-421614.alphagrid.capital", custom_domain = true }]
 
 [env.arbitrum-sepolia.vars]
 CHAIN_ID = "421614"
@@ -67,7 +66,6 @@ crons = ["*/15 * * * *"]
 
 [env.robinhood-testnet]
 name = "alphagrid-api-robinhood"
-routes = [{ pattern = "api-46630.alphagrid.capital", custom_domain = true }]
 
 [env.robinhood-testnet.vars]
 CHAIN_ID = "46630"
@@ -87,7 +85,6 @@ crons = ["*/15 * * * *"]
 
 [env.arbitrum-one]
 name = "alphagrid-api-arbitrum-one"
-routes = [{ pattern = "api-42161.alphagrid.capital", custom_domain = true }]
 
 [env.arbitrum-one.vars]
 CHAIN_ID = "42161"
