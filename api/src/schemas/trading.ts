@@ -118,8 +118,58 @@ export const AgentPositionSchema = z
     exitRules: z.array(ExitRuleInputSchema),
     pendingRules: z.array(ExitRuleInputSchema),
     openedAt: z.string(),
+    unrealizedPnlUsdc: z
+      .string()
+      .optional()
+      .openapi({ description: 'Mark-to-market unrealized PnL (open positions)' }),
   })
   .openapi('AgentPosition')
+
+export const AgentPositionDetailSchema = AgentPositionSchema.extend({
+  realizedPnlUsdc: z
+    .string()
+    .optional()
+    .openapi({ description: 'Cumulative realized PnL (closed positions)' }),
+}).openapi('AgentPositionDetail')
+
+export const GetAgentPositionResponseSchema = z
+  .object({
+    agentId: agentIdParamSchema,
+    position: AgentPositionDetailSchema,
+  })
+  .openapi('GetAgentPositionResponse')
+
+export const AgentRiskStateResponseSchema = z
+  .object({
+    agentId: agentIdParamSchema,
+    trackId: z.number().int(),
+    allocation: z.object({
+      cap: z.string(),
+      used: z.string(),
+      available: z.string(),
+    }),
+    accountRiskBounds: AccountRiskBoundsSchema,
+    equity: z.object({
+      peakUsdc: z.string(),
+      currentUsdc: z.string(),
+      currentDrawdownBps: z.number().int(),
+    }),
+    pnl: z.object({
+      lifetimeRealizedUsdc: z.string(),
+      dailyRealizedUsdc: z.string(),
+      day: z.string(),
+    }),
+    positions: z.object({
+      opened: z.number().int(),
+      closed: z.number().int(),
+      openCount: z.number().int(),
+    }),
+    breaches: z.object({
+      drawdown: z.boolean(),
+      dailyLoss: z.boolean(),
+    }),
+  })
+  .openapi('AgentRiskStateResponse')
 
 const positionIntentQuoteFields = {
   agentId: agentIdParamSchema,
@@ -288,6 +338,12 @@ export type SubmitTradeIntentResponse = z.infer<
 >
 export type ListAgentPositionsResponse = z.infer<
   typeof ListAgentPositionsResponseSchema
+>
+export type AgentRiskStateResponse = z.infer<
+  typeof AgentRiskStateResponseSchema
+>
+export type GetAgentPositionResponse = z.infer<
+  typeof GetAgentPositionResponseSchema
 >
 export type AddPositionRequest = z.infer<typeof AddPositionRequestSchema>
 export type ReducePositionRequest = z.infer<typeof ReducePositionRequestSchema>

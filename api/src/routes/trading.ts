@@ -12,6 +12,8 @@ import {
   AddIntentQuoteSchema,
   AddPositionRequestSchema,
   ExitLadderIntentQuoteSchema,
+  AgentRiskStateResponseSchema,
+  GetAgentPositionResponseSchema,
   ListAgentPositionsResponseSchema,
   OpenPositionRequestSchema,
   PositionIntentQuoteQuerySchema,
@@ -134,7 +136,7 @@ const getAgentPositionsRoute = createRoute({
   tags: ['Trading'],
   summary: 'Agent open positions',
   description:
-    'Reads open positions from PositionManager via RPC (catalog token scan).',
+    'Reads open positions via PositionManager.getOpenPositionIds and multicall.',
   request: {
     params: z.object({
       agentId: agentIdParamSchema.openapi({
@@ -159,6 +161,40 @@ const agentIdParams = z.object({
     param: { name: 'agentId', in: 'path' },
     example: '1',
   }),
+})
+
+const positionIdParamSchema = z
+  .string()
+  .regex(/^\d+$/)
+  .openapi({ example: '1' })
+
+const getAgentPositionRoute = createRoute({
+  method: 'get',
+  path: '/agents/{agentId}/positions/{positionId}',
+  tags: ['Trading'],
+  summary: 'Agent position by id',
+  description:
+    'Reads a single position (open or closed) with realized or unrealized PnL.',
+  request: {
+    params: z.object({
+      agentId: agentIdParamSchema.openapi({
+        param: { name: 'agentId', in: 'path' },
+        example: '1',
+      }),
+      positionId: positionIdParamSchema.openapi({
+        param: { name: 'positionId', in: 'path' },
+      }),
+    }),
+  },
+  responses: {
+    200: {
+      description: 'Position details',
+      content: {
+        'application/json': { schema: GetAgentPositionResponseSchema },
+      },
+    },
+    ...tradingErrorResponses,
+  },
 })
 
 const addIntentQuoteRoute = createRoute({
@@ -319,7 +355,7 @@ const getAgentRiskStateRoute = createRoute({
   tags: ['Trading'],
   summary: 'Agent risk state',
   description:
-    'Planned drawdown, turnover, and breach flags for an agent. Returns 501 until the risk engine is built.',
+    'On-chain v1: equity, drawdown, PnL, and advisory breach flags from TradeRouter views.',
   request: {
     params: z.object({
       agentId: agentIdParamSchema.openapi({
@@ -328,7 +364,15 @@ const getAgentRiskStateRoute = createRoute({
       }),
     }),
   },
-  responses: tradingNotImplementedResponses,
+  responses: {
+    200: {
+      description: 'Agent risk state',
+      content: {
+        'application/json': { schema: AgentRiskStateResponseSchema },
+      },
+    },
+    ...tradingErrorResponses,
+  },
 })
 
 const getIntentRoute = createRoute({
@@ -401,6 +445,39 @@ const getAgentPositionsHandler = async (
   }
 }
 
+const getAgentPositionHandler = async (
+  c: Parameters<RouteHandler<typeof getAgentPositionRoute>>[0]
+) => {
+  try {
+    const result = await TradingService.fromEnv(getWorkerEnv()).getPosition(
+      c.req.param('agentId'),
+      c.req.param('positionId')
+    )
+    return c.json(result, 200)
+  } catch (error) {
+    if (error instanceof TradingError || error instanceof AppError) {
+      return c.json({ error: error.message }, statusFromTradingError(error))
+    }
+    throw error
+  }
+}
+
+const getAgentRiskStateHandler = async (
+  c: Parameters<RouteHandler<typeof getAgentRiskStateRoute>>[0]
+) => {
+  try {
+    const result = await TradingService.fromEnv(getWorkerEnv()).getRiskState(
+      c.req.param('agentId')
+    )
+    return c.json(result, 200)
+  } catch (error) {
+    if (error instanceof TradingError || error instanceof AppError) {
+      return c.json({ error: error.message }, statusFromTradingError(error))
+    }
+    throw error
+  }
+}
+
 tradingRoutes.openapi(
   tradeIntentQuoteRoute,
   tradeIntentQuoteHandler as RouteHandler<typeof tradeIntentQuoteRoute>
@@ -414,6 +491,10 @@ tradingRoutes.openapi(
 tradingRoutes.openapi(
   getAgentPositionsRoute,
   getAgentPositionsHandler as RouteHandler<typeof getAgentPositionsRoute>
+)
+tradingRoutes.openapi(
+  getAgentPositionRoute,
+  getAgentPositionHandler as RouteHandler<typeof getAgentPositionRoute>
 )
 
 const addIntentQuoteHandler = async (
@@ -562,8 +643,9 @@ tradingRoutes.openapi(submitTradeIntentRoute, (c) =>
 tradingRoutes.openapi(getAgentTradesRoute, (c) =>
   c.json(TradingService.notImplemented(), 501)
 )
-tradingRoutes.openapi(getAgentRiskStateRoute, (c) =>
-  c.json(TradingService.notImplemented(), 501)
+tradingRoutes.openapi(
+  getAgentRiskStateRoute,
+  getAgentRiskStateHandler as RouteHandler<typeof getAgentRiskStateRoute>
 )
 tradingRoutes.openapi(getIntentRoute, (c) =>
   c.json(TradingService.notImplemented(), 501)

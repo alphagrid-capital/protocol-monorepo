@@ -45,10 +45,11 @@ yarn deploy      # Deploy to Cloudflare (requires account auth)
 | `POST` | `/agents/{agentId}/reduce-intents`            | Relay signed reduce intent — partial or full close (201)                       |
 | `GET`  | `/agents/{agentId}/exit-ladder-intents/quote` | Quote for `UpdateExitLadder` (`?positionId=`)                                  |
 | `POST` | `/agents/{agentId}/exit-ladder-intents`       | Relay signed pending TP/SL update (201)                                        |
-| `GET`  | `/agents/{agentId}/positions`                 | Agent open positions with exit rules (RPC via `PositionManager`)               |
+| `GET`  | `/agents/{agentId}/positions`                 | Agent open positions (`getOpenPositionIds` + multicall)                        |
+| `GET`  | `/agents/{agentId}/positions/{positionId}`    | Single position by id (open or closed; realized/unrealized PnL)                |
+| `GET`  | `/agents/{agentId}/risk-state`                | On-chain equity, drawdown, PnL, advisory breach flags                           |
 | `POST` | `/intents/trade`                              | Global trade intent submit (**501** stub)                                      |
 | `GET`  | `/agents/{agentId}/trades`                    | Agent trade history (**501** stub)                                             |
-| `GET`  | `/agents/{agentId}/risk-state`                | Agent risk state (**501** stub)                                                |
 | `GET`  | `/intents/{intentId}`                         | Intent status lookup (**501** stub)                                            |
 | `GET`  | `/docs`                                       | Swagger UI (humans; poor fit for URL paste in chat)                            |
 | `GET`  | `/docs/swagger.json`                          | OpenAPI 3.1 (Custom GPT Actions)                                               |
@@ -89,11 +90,12 @@ ChatGPT **browsing** only performs simple `GET` requests on **public** URLs. It 
 | `alphagrid_get_exit_ladder_intent_quote` | `GET /agents/{agentId}/exit-ladder-intents/quote`        |
 | `alphagrid_submit_exit_ladder_intent`    | `POST /agents/{agentId}/exit-ladder-intents`             |
 | `alphagrid_get_agent_positions`          | `GET /agents/{agentId}/positions`                        |
+| `alphagrid_get_agent_position`         | `GET /agents/{agentId}/positions/{positionId}`           |
+| `alphagrid_get_risk_state`               | `GET /agents/{agentId}/risk-state`                       |
 | `alphagrid_get_trade_history`            | `GET /agents/{agentId}/trades` (**NOT_IMPLEMENTED**)     |
-| `alphagrid_get_risk_state`               | `GET /agents/{agentId}/risk-state` (**NOT_IMPLEMENTED**) |
 | `alphagrid_get_intent_status`            | `GET /intents/{intentId}` (**NOT_IMPLEMENTED**)          |
 
-Trade history, risk state, and intent status stubs return HTTP **501** or MCP `NOT_IMPLEMENTED`. Open/add/reduce/exit-ladder intents and positions require executor config (see below).
+Trade history and intent status stubs return HTTP **501** or MCP `NOT_IMPLEMENTED`. Open/add/reduce/exit-ladder intents and position/risk reads require executor config for writes; reads need `RPC_URL` + `CHAIN_ID` (see below).
 
 Connect MCP clients to `http://localhost:8787/mcp` in development (or your deployed Worker URL). Clients must send `Accept: application/json, text/event-stream` on MCP requests.
 

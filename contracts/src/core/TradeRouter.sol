@@ -73,6 +73,7 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
     mapping(uint256 agentId => uint32 trades) private _tradeCount;
     mapping(uint256 agentId => uint32 opened) private _positionsOpened;
     mapping(uint256 agentId => uint32 closed) private _positionsClosed;
+    mapping(uint256 agentId => uint256 peakEquity) private _peakEquityUsdc;
 
     uint256 public keeperBountyBps;
     uint256 public maxKeeperBounty;
@@ -183,20 +184,26 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
 
     /// @inheritdoc ITradeRouter
     function positionUnrealizedPnlUsdc(uint256 positionId) external view returns (int256) {
-        Position memory position = positionManager.getPosition(positionId);
-        if (position.status != PositionStatus.Open) return 0;
+        return _positionUnrealizedPnlUsdc(positionManager.getPosition(positionId));
+    }
 
-        IMandateVault vault = IMandateVault(position.vault);
-        uint8 tokenDecimals = vault.tokenRegistry().tokenDecimals(position.token);
-        uint256 currentValue = OracleLib.valueInAsset(
-            position.tokenAmount,
-            vault.tokenRegistry().priceOracle(),
-            position.token,
-            tokenDecimals,
-            vault.assetDecimals(),
-            vault.maxPriceAge()
-        );
-        return SafeCast.toInt256(currentValue) - SafeCast.toInt256(position.usdcCostBasis);
+    /// @inheritdoc ITradeRouter
+    function peakEquityUsdc(uint256 agentId) external view returns (uint256) {
+        return _peakEquityUsdc[agentId];
+    }
+
+    /// @inheritdoc ITradeRouter
+    function currentEquityUsdc(uint256 agentId) external view returns (uint256) {
+        return _currentEquityUsdc(agentId);
+    }
+
+    /// @inheritdoc ITradeRouter
+    function currentDrawdownBps(uint256 agentId) external view returns (uint256) {
+        uint256 peak = _peakEquityUsdc[agentId];
+        if (peak == 0) return 0;
+        uint256 current = _currentEquityUsdc(agentId);
+        if (current >= peak) return 0;
+        return (peak - current) * MAX_BPS / peak;
     }
 
     /// @inheritdoc ITradeRouter
@@ -441,6 +448,7 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
         _recordDailyTurnover(intent.agentId, intent.usdcAmount);
         _recordTrade(intent.agentId);
         _positionsOpened[intent.agentId]++;
+        _updatePeakEquity(intent.agentId);
         _assertLedgerInvariant(vault, intent.token);
     }
 
@@ -467,6 +475,7 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
 
         _recordDailyTurnover(intent.agentId, intent.usdcAmount);
         _recordTrade(intent.agentId);
+        _updatePeakEquity(intent.agentId);
         _assertLedgerInvariant(vault, position.token);
     }
 
@@ -724,6 +733,47 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
         return (price - entry) * SafeCast.toInt256(MAX_BPS) / entry;
     }
 
+    function _positionUnrealizedPnlUsdc(Position memory position) private view returns (int256) {
+        if (position.status != PositionStatus.Open) return 0;
+
+        IMandateVault vault = IMandateVault(position.vault);
+        uint8 tokenDecimals = vault.tokenRegistry().tokenDecimals(position.token);
+        uint256 currentValue = OracleLib.valueInAsset(
+            position.tokenAmount,
+            vault.tokenRegistry().priceOracle(),
+            position.token,
+            tokenDecimals,
+            vault.assetDecimals(),
+            vault.maxPriceAge()
+        );
+        return SafeCast.toInt256(currentValue) - SafeCast.toInt256(position.usdcCostBasis);
+    }
+
+    function _totalUnrealizedPnlUsdc(uint256 agentId) private view returns (int256 total) {
+        uint256[] memory ids = positionManager.getOpenPositionIds(agentId);
+        uint256 len = ids.length;
+        for (uint256 i = 0; i < len; i++) {
+            total += _positionUnrealizedPnlUsdc(positionManager.getPosition(ids[i]));
+        }
+    }
+
+    /// @dev Account equity = cap + lifetime realized + open unrealized; floored at zero for drawdown math.
+    function _currentEquityUsdc(uint256 agentId) private view returns (uint256) {
+        IAllocationManager.Allocation memory allocation = allocationManager.getAllocation(agentId);
+        int256 equitySigned =
+            int256(allocation.cap) + _lifetimeRealizedPnlUsdc[agentId] + _totalUnrealizedPnlUsdc(agentId);
+        if (equitySigned <= 0) return 0;
+        return SafeCast.toUint256(equitySigned);
+    }
+
+    /// @dev Peak equity ratchets on trade events; see `currentDrawdownBps` NatSpec for limitations.
+    function _updatePeakEquity(uint256 agentId) private {
+        uint256 current = _currentEquityUsdc(agentId);
+        if (current > _peakEquityUsdc[agentId]) {
+            _peakEquityUsdc[agentId] = current;
+        }
+    }
+
     function _isRuleTriggered(ExitRule memory rule, int256 pnlBps) private pure returns (bool) {
         if (rule.triggerType == TriggerType.StopLoss) {
             return pnlBps <= rule.triggerBps;
@@ -784,10 +834,15 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
             }
         }
 
+        int256 realizedPnlDelta = 0;
+        if (usdcReleased != usdcOut) {
+            realizedPnlDelta = SafeCast.toInt256(usdcOut) - SafeCast.toInt256(usdcReleased);
+        }
+
         if (mode == SellMode.Ladder) {
-            positionManager.applyLadderExit(positionId, sellAmount, usdcReleased);
+            positionManager.applyLadderExit(positionId, sellAmount, usdcReleased, realizedPnlDelta);
         } else {
-            positionManager.applyDiscretionaryReduce(positionId, sellAmount, usdcReleased);
+            positionManager.applyDiscretionaryReduce(positionId, sellAmount, usdcReleased, realizedPnlDelta);
         }
 
         IAllocationManager.Allocation memory allocation = allocationManager.getAllocation(position.agentId);
@@ -800,6 +855,7 @@ contract TradeRouter is ITradeRouter, AccessControl, EIP712, ReentrancyGuard {
         _recordDailyRealizedPnl(position.agentId, usdcReleased, usdcOut);
         _recordTrade(position.agentId);
         _maybeRecordPositionClosed(positionId);
+        _updatePeakEquity(position.agentId);
 
         _assertLedgerInvariant(vault, position.token);
     }

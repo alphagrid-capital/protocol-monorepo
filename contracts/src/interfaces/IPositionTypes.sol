@@ -70,5 +70,6 @@ interface IPositionTypes {
         PositionStatus status;
         uint8 nextRuleIndex;
         uint64 openedAt;
+        int256 realizedPnlUsdc;
     }
 }

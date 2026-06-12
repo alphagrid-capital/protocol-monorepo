@@ -87,7 +87,7 @@ The server uses Streamable HTTP on `/mcp`. Use an MCP-native client — opening 
 
 ### Tool parity with HTTP
 
-Every live MCP tool maps to an HTTP route. Example: `alphagrid_list_vaults` → `GET /vaults`. Stub tools return `NOT_IMPLEMENTED` for trade history, risk state, and intent status.
+Every live MCP tool maps to an HTTP route. Example: `alphagrid_list_vaults` → `GET /vaults`. Stub tools return `NOT_IMPLEMENTED` for trade history and intent status.
 
 ## Local wallet MCP (for testing)
 
@@ -283,9 +283,9 @@ MCP clients should send `Accept: application/json, text/event-stream`. Most MCP 
 
 ### Available tools
 
-Live tools: vault/token/price reads, agent CRUD, registration quote/register, trade intent quote/submit (open, add, reduce, exit-ladder), positions.
+Live tools: vault/token/price reads, agent CRUD, registration quote/register, trade intent quote/submit (open, add, reduce, exit-ladder), positions, position-by-id, risk state.
 
-Not implemented: `alphagrid_get_trade_history`, `alphagrid_get_risk_state`, `alphagrid_get_intent_status`.
+Not implemented: `alphagrid_get_trade_history`, `alphagrid_get_intent_status`.
 
 ### Session handling
 

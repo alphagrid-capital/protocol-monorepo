@@ -85,7 +85,7 @@ Stack: **Cloudflare Worker** (`api/`, Hono + TypeScript). No PostgreSQL or index
 | Risk event engine | Not built | Drawdown breach → automated status changes |
 | Leaderboard API | Not built | Vault + track filters |
 | Admin console / APIs | Not built | Operator actions via contracts only |
-| Frontend | Not built | Landing PRD only (`prd/landing_website/`) |
+| Frontend | Not built | Landing PRD (`prd/landing_website/`); API wiring map in [`10_frontend_integration.md`](10_frontend_integration.md) |
 
 ### Implemented HTTP routes
 
@@ -122,13 +122,11 @@ Routes are registered in OpenAPI but return **501 Not Implemented** (`code: NOT_
 | --- | --- | --- |
 | `POST` | `/intents/trade` | Global trade intent gateway |
 | `GET` | `/agents/{agentId}/trades` | Agent trade history |
-| `GET` | `/agents/{agentId}/risk-state` | Agent risk state |
 | `GET` | `/intents/{intentId}` | Intent status lookup |
 
 | MCP tool | HTTP equivalent |
 | --- | --- |
 | `alphagrid_get_trade_history` | `GET /agents/{agentId}/trades` |
-| `alphagrid_get_risk_state` | `GET /agents/{agentId}/risk-state` |
 | `alphagrid_get_intent_status` | `GET /intents/{intentId}` |
 
 ### Implemented trading (open + adjust)
@@ -137,7 +135,9 @@ Routes are registered in OpenAPI but return **501 Not Implemented** (`code: NOT_
 | --- | --- | --- |
 | `GET` | `/agents/{agentId}/trade-intents/quote` | Nonce, EIP-712 domain, vault, allocation, `trackId`, `exitBounds` |
 | `POST` | `/agents/{agentId}/trade-intents` | Agent-friendly body + signature → on-chain open |
-| `GET` | `/agents/{agentId}/positions` | RPC scan of open positions (`exitRules`, `pendingRules`) |
+| `GET` | `/agents/{agentId}/positions` | Open positions via `getOpenPositionIds` + multicall (`unrealizedPnlUsdc`) |
+| `GET` | `/agents/{agentId}/positions/{positionId}` | Single position by id (open or closed; realized/unrealized PnL) |
+| `GET` | `/agents/{agentId}/risk-state` | On-chain equity, drawdown, PnL, advisory breach flags |
 | `GET` | `/agents/{agentId}/add-intents/quote` | Add-to-position quote (`?positionId=`) |
 | `POST` | `/agents/{agentId}/add-intents` | Signed `AddToPosition` → on-chain add |
 | `GET` | `/agents/{agentId}/reduce-intents/quote` | Reduce quote (`?positionId=`) |
@@ -149,6 +149,8 @@ Routes are registered in OpenAPI but return **501 Not Implemented** (`code: NOT_
 | --- | --- |
 | `alphagrid_submit_trade_intent` | `POST /agents/{agentId}/trade-intents` |
 | `alphagrid_get_agent_positions` | `GET /agents/{agentId}/positions` |
+| `alphagrid_get_agent_position` | `GET /agents/{agentId}/positions/{positionId}` |
+| `alphagrid_get_risk_state` | `GET /agents/{agentId}/risk-state` |
 | `alphagrid_get_add_intent_quote` | `GET /agents/{agentId}/add-intents/quote` |
 | `alphagrid_submit_add_intent` | `POST /agents/{agentId}/add-intents` |
 | `alphagrid_get_reduce_intent_quote` | `GET /agents/{agentId}/reduce-intents/quote` |
@@ -172,6 +174,8 @@ alphagrid_get_agent_registration_quote
 alphagrid_register_agent
 alphagrid_submit_trade_intent
 alphagrid_get_agent_positions
+alphagrid_get_agent_position
+alphagrid_get_risk_state
 alphagrid_get_add_intent_quote
 alphagrid_submit_add_intent
 alphagrid_get_reduce_intent_quote
@@ -189,7 +193,7 @@ GET /leaderboard / GET /agents (list) / admin routes / vault deposit APIs
 POST /intents/{id}/cancel / GET /intents/{id}/execution
 ```
 
-Trade history, risk state, and global intent gateway routes listed in § Trading API stubs are **501** only.
+Trade history and global intent gateway routes listed in § Trading API stubs are **501** only.
 
 ### Off-chain checklist
 

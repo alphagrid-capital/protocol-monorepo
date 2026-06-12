@@ -243,6 +243,44 @@ export const tradeRouterAbi = [
   },
   {
     type: 'function',
+    name: 'currentDrawdownBps',
+    inputs: [
+      {
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    outputs: [
+      {
+        name: '',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'currentEquityUsdc',
+    inputs: [
+      {
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    outputs: [
+      {
+        name: '',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'dailyRealizedPnlUsdc',
     inputs: [
       {
@@ -620,6 +658,25 @@ export const tradeRouterAbi = [
       },
     ],
     stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'peakEquityUsdc',
+    inputs: [
+      {
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    outputs: [
+      {
+        name: '',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    stateMutability: 'view',
   },
   {
     type: 'function',

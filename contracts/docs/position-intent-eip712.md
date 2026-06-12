@@ -230,9 +230,18 @@ Violations revert with `ExitRulesOutOfBounds`.
 | Field | On-chain enforcement |
 |-------|---------------------|
 | `maxDailyLossBps` | When non-zero, blocks `openPosition` and `addToPosition` after net **realized** sell PnL today (UTC day) exceeds `allocation.cap × maxDailyLossBps / 10000`. Updated on every sell (`reducePosition`, `executeExit`, `forceClose`). `reducePosition` / ladder update still allowed. `0` = disabled. |
-| `maxDrawdownBps` | Stored for policy; **account-level HWM drawdown is not enforced on-chain in MVP** (off-chain risk engine). |
+| `maxDrawdownBps` | Stored for policy comparison; **not enforced on-chain**. Drawdown is exposed via views only. |
 
-View: `TradeRouter.dailyRealizedPnlUsdc(agentId, day)`.
+Views:
+
+- `TradeRouter.dailyRealizedPnlUsdc(agentId, day)` — net realized sell PnL for the UTC day.
+- `TradeRouter.peakEquityUsdc(agentId)` — stored equity high-water mark (ratchets on trade events).
+- `TradeRouter.currentEquityUsdc(agentId)` — `allocation.cap + lifetimeRealizedPnl + sum(open unrealized)` (floored at zero).
+- `TradeRouter.currentDrawdownBps(agentId)` — `(peak - current) / peak` in bps; uses live oracle unrealized for current equity.
+
+Peak equity updates on `openPosition`, `addToPosition`, and sells; unrealized spikes between trades are not persisted into peak unless a trade occurs while equity is elevated.
+
+Per-position realized PnL: `PositionManager.realizedPnlUsdc(positionId)` and `PositionClosed(..., realizedPnlUsdc)`. Open positions for an agent: `PositionManager.getOpenPositionIds(agentId)`.
 
 ## Primary type: `AddToPosition`
 

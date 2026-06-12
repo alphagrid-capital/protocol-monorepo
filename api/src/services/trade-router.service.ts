@@ -54,6 +54,100 @@ export class TradeRouterService {
     })
   }
 
+  async peakEquityUsdc(agentId: bigint): Promise<bigint> {
+    const client = this.providerService.createPublicClient()
+    return client.readContract({
+      address: this.config.tradeRouterAddress,
+      abi: tradeRouterAbi,
+      functionName: 'peakEquityUsdc',
+      args: [agentId],
+    })
+  }
+
+  async currentEquityUsdc(agentId: bigint): Promise<bigint> {
+    const client = this.providerService.createPublicClient()
+    return client.readContract({
+      address: this.config.tradeRouterAddress,
+      abi: tradeRouterAbi,
+      functionName: 'currentEquityUsdc',
+      args: [agentId],
+    })
+  }
+
+  async currentDrawdownBps(agentId: bigint): Promise<bigint> {
+    const client = this.providerService.createPublicClient()
+    return client.readContract({
+      address: this.config.tradeRouterAddress,
+      abi: tradeRouterAbi,
+      functionName: 'currentDrawdownBps',
+      args: [agentId],
+    })
+  }
+
+  async lifetimeRealizedPnlUsdc(agentId: bigint): Promise<bigint> {
+    const client = this.providerService.createPublicClient()
+    return client.readContract({
+      address: this.config.tradeRouterAddress,
+      abi: tradeRouterAbi,
+      functionName: 'lifetimeRealizedPnlUsdc',
+      args: [agentId],
+    })
+  }
+
+  async positionsOpened(agentId: bigint): Promise<number> {
+    const client = this.providerService.createPublicClient()
+    const count = await client.readContract({
+      address: this.config.tradeRouterAddress,
+      abi: tradeRouterAbi,
+      functionName: 'positionsOpened',
+      args: [agentId],
+    })
+    return Number(count)
+  }
+
+  async positionsClosed(agentId: bigint): Promise<number> {
+    const client = this.providerService.createPublicClient()
+    const count = await client.readContract({
+      address: this.config.tradeRouterAddress,
+      abi: tradeRouterAbi,
+      functionName: 'positionsClosed',
+      args: [agentId],
+    })
+    return Number(count)
+  }
+
+  async positionUnrealizedPnlUsdc(positionId: bigint): Promise<bigint> {
+    const client = this.providerService.createPublicClient()
+    return client.readContract({
+      address: this.config.tradeRouterAddress,
+      abi: tradeRouterAbi,
+      functionName: 'positionUnrealizedPnlUsdc',
+      args: [positionId],
+    })
+  }
+
+  async getOpenPositionIds(agentId: bigint): Promise<readonly bigint[]> {
+    const positionManager = await this.getPositionManagerAddress()
+    const client = this.providerService.createPublicClient()
+    return client.readContract({
+      address: positionManager,
+      abi: positionManagerAbi,
+      functionName: 'getOpenPositionIds',
+      args: [agentId],
+    })
+  }
+
+  async realizedPnlUsdc(positionId: bigint): Promise<bigint> {
+    const positionManager = await this.getPositionManagerAddress()
+    const client = this.providerService.createPublicClient()
+    return client.readContract({
+      address: positionManager,
+      abi: positionManagerAbi,
+      functionName: 'realizedPnlUsdc',
+      args: [positionId],
+    })
+  }
+
   private async writeAndWait(
     functionName:
       | 'openPosition'

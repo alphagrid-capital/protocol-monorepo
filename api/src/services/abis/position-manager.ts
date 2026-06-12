@@ -81,6 +81,11 @@ export const positionManagerAbi = [
         type: 'uint256',
         internalType: 'uint256',
       },
+      {
+        name: 'realizedPnlDelta',
+        type: 'int256',
+        internalType: 'int256',
+      },
     ],
     outputs: [],
     stateMutability: 'nonpayable',
@@ -103,6 +108,11 @@ export const positionManagerAbi = [
         name: 'usdcReleased',
         type: 'uint256',
         internalType: 'uint256',
+      },
+      {
+        name: 'realizedPnlDelta',
+        type: 'int256',
+        internalType: 'int256',
       },
     ],
     outputs: [
@@ -188,6 +198,25 @@ export const positionManagerAbi = [
   },
   {
     type: 'function',
+    name: 'getOpenPositionIds',
+    inputs: [
+      {
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    outputs: [
+      {
+        name: '',
+        type: 'uint256[]',
+        internalType: 'uint256[]',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'getPosition',
     inputs: [
       {
@@ -256,6 +285,11 @@ export const positionManagerAbi = [
             name: 'openedAt',
             type: 'uint64',
             internalType: 'uint64',
+          },
+          {
+            name: 'realizedPnlUsdc',
+            type: 'int256',
+            internalType: 'int256',
           },
         ],
       },
@@ -429,6 +463,25 @@ export const positionManagerAbi = [
   },
   {
     type: 'function',
+    name: 'openPositionCountByAgent',
+    inputs: [
+      {
+        name: 'agentId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    outputs: [
+      {
+        name: '',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'openPositionId',
     inputs: [
       {
@@ -460,6 +513,25 @@ export const positionManagerAbi = [
         name: '',
         type: 'uint256',
         internalType: 'uint256',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'realizedPnlUsdc',
+    inputs: [
+      {
+        name: 'positionId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    outputs: [
+      {
+        name: '',
+        type: 'int256',
+        internalType: 'int256',
       },
     ],
     stateMutability: 'view',
@@ -614,6 +686,12 @@ export const positionManagerAbi = [
         type: 'uint256',
         indexed: true,
         internalType: 'uint256',
+      },
+      {
+        name: 'realizedPnlUsdc',
+        type: 'int256',
+        indexed: false,
+        internalType: 'int256',
       },
     ],
     anonymous: false,

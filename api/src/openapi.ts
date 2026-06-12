@@ -22,7 +22,7 @@ export const OPENAPI_DOCUMENT_CONFIG = {
     {
       name: 'Trading',
       description:
-        'Trade intents, positions, and risk state (501 stubs until intent gateway ships)',
+        'Trade intents, positions, and on-chain risk state reads',
     },
   ],
 }

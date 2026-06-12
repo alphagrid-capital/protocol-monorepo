@@ -106,6 +106,7 @@ AlphaGrid should not feel like a human copy-trading platform with AI branding. I
   07_user_flows.md
   08_open_questions.md
   09_implementation_status.md
+  10_frontend_integration.md
 ```
 
 ---
@@ -124,6 +125,7 @@ AlphaGrid should not feel like a human copy-trading platform with AI branding. I
 | `07_user_flows.md` | Agent builder, capital provider, operator, graduation, failure, allocation flows. |
 | `08_open_questions.md` | Living backlog (§2), thematic questions, and decision log. |
 | `09_implementation_status.md` | **Build progress:** on-chain/off-chain status, phases, checklists (single source of truth). |
+| `10_frontend_integration.md` | **Frontend wiring:** UI stats → HTTP endpoints and response fields. |
 
 ---
 

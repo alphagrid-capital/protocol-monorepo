@@ -18,7 +18,9 @@ import { getWorkerEnv } from '../lib/worker-env.js'
 import { isContractRevert } from '../lib/viem-revert.js'
 import type {
   AddPositionRequest,
+  AgentRiskStateResponse,
   ExitRuleInput,
+  GetAgentPositionResponse,
   ListAgentPositionsResponse,
   OpenPositionRequest,
   ReducePositionRequest,
@@ -28,6 +30,8 @@ import type {
   UpdateExitLadderRequest,
 } from '../schemas/trading.js'
 import { allocationManagerAbi } from './abis/allocation-manager.js'
+import { positionManagerAbi } from './abis/position-manager.js'
+import { tradeRouterAbi } from './abis/trade-router.js'
 import { mandateVaultAbi } from './abis/mandate-vault.js'
 import { vaultTrackRegistryAbi } from './abis/vault-track-registry.js'
 import {
@@ -44,6 +48,13 @@ export const TRADING_NOT_IMPLEMENTED_MESSAGE =
 const AGENT_STATUS_ACTIVE = 1
 /** IPositionTypes.PositionStatus.Open */
 const POSITION_STATUS_OPEN = 0
+/** IPositionTypes.PositionStatus.Closed */
+const POSITION_STATUS_CLOSED = 1
+
+type OnChainPosition = Awaited<ReturnType<TradeRouterService['getPosition']>>
+type OnChainExitRule = Awaited<
+  ReturnType<TradeRouterService['getExitRules']>
+>[number]
 
 export class TradingError extends AppError {
   constructor(
@@ -321,6 +332,96 @@ export class TradingService {
     return this.submitAdjustIntent(agentIdStr, body, 'updateExitLadder')
   }
 
+  async getRiskState(agentIdStr: string): Promise<AgentRiskStateResponse> {
+    const agentId = BigInt(agentIdStr)
+    const registry = this.agentRegistryService()
+    const tradeRouter = this.tradeRouterService()
+
+    let agent
+    try {
+      agent = await registry.getAgent(agentId)
+    } catch (error) {
+      if (error instanceof AgentNotFoundError) {
+        throw new TradingError(error.message, 404)
+      }
+      throw error
+    }
+
+    const vault = agent.vault as Address
+    const trackId = BigInt(agent.track)
+    const day = BigInt(Math.floor(Date.now() / 1000 / 86400))
+
+    const [
+      allocation,
+      accountRiskBounds,
+      peakUsdc,
+      currentUsdc,
+      currentDrawdownBps,
+      lifetimeRealizedUsdc,
+      dailyRealizedUsdc,
+      positionsOpened,
+      positionsClosed,
+      openPositionIds,
+    ] = await Promise.all([
+      this.getAllocation(agentId),
+      this.getAccountRiskBounds(vault, trackId),
+      tradeRouter.peakEquityUsdc(agentId),
+      tradeRouter.currentEquityUsdc(agentId),
+      tradeRouter.currentDrawdownBps(agentId),
+      tradeRouter.lifetimeRealizedPnlUsdc(agentId),
+      tradeRouter.dailyRealizedPnlUsdc(agentId, day),
+      tradeRouter.positionsOpened(agentId),
+      tradeRouter.positionsClosed(agentId),
+      tradeRouter.getOpenPositionIds(agentId),
+    ])
+
+    const available =
+      allocation.cap > allocation.used ? allocation.cap - allocation.used : 0n
+    const drawdownBps = Number(currentDrawdownBps)
+
+    let drawdownBreached = false
+    if (accountRiskBounds.maxDrawdownBps > 0) {
+      drawdownBreached = drawdownBps > accountRiskBounds.maxDrawdownBps
+    }
+
+    let dailyLossBreached = false
+    if (accountRiskBounds.maxDailyLossBps > 0) {
+      const maxLossUsdc =
+        (allocation.cap * BigInt(accountRiskBounds.maxDailyLossBps)) / 10000n
+      dailyLossBreached = dailyRealizedUsdc < -maxLossUsdc
+    }
+
+    return {
+      agentId: agentIdStr,
+      trackId: Number(trackId),
+      allocation: {
+        cap: allocation.cap.toString(),
+        used: allocation.used.toString(),
+        available: available.toString(),
+      },
+      accountRiskBounds,
+      equity: {
+        peakUsdc: peakUsdc.toString(),
+        currentUsdc: currentUsdc.toString(),
+        currentDrawdownBps: drawdownBps,
+      },
+      pnl: {
+        lifetimeRealizedUsdc: lifetimeRealizedUsdc.toString(),
+        dailyRealizedUsdc: dailyRealizedUsdc.toString(),
+        day: day.toString(),
+      },
+      positions: {
+        opened: positionsOpened,
+        closed: positionsClosed,
+        openCount: openPositionIds.length,
+      },
+      breaches: {
+        drawdown: drawdownBreached,
+        dailyLoss: dailyLossBreached,
+      },
+    }
+  }
+
   async listOpenPositions(
     agentIdStr: string
   ): Promise<ListAgentPositionsResponse> {
@@ -337,47 +438,156 @@ export class TradingService {
       throw error
     }
 
-    const chainTokens =
-      tokenCatalog.chains[String(this.config.chainId)]?.tokens ?? {}
+    const positionIds = await tradeRouter.getOpenPositionIds(agentId)
+    if (positionIds.length === 0) {
+      return { agentId: agentIdStr, positions: [] }
+    }
+
+    const positionManager = await tradeRouter.getPositionManagerAddress()
+    const client = this.providerService().createPublicClient()
+
+    const positionAndRulesCalls = positionIds.flatMap((positionId) => [
+      {
+        address: positionManager,
+        abi: positionManagerAbi,
+        functionName: 'getPosition' as const,
+        args: [positionId] as const,
+      },
+      {
+        address: positionManager,
+        abi: positionManagerAbi,
+        functionName: 'getExitRules' as const,
+        args: [positionId] as const,
+      },
+    ])
+
+    const unrealizedCalls = positionIds.map((positionId) => ({
+      address: this.config.tradeRouterAddress,
+      abi: tradeRouterAbi,
+      functionName: 'positionUnrealizedPnlUsdc' as const,
+      args: [positionId] as const,
+    }))
+
+    const [positionResults, unrealizedResults] = await Promise.all([
+      client.multicall({ contracts: positionAndRulesCalls }),
+      client.multicall({ contracts: unrealizedCalls }),
+    ])
+
     const positions: ListAgentPositionsResponse['positions'] = []
 
-    for (const [symbol, address] of Object.entries(chainTokens)) {
-      if (!address) {
-        continue
+    for (let index = 0; index < positionIds.length; index++) {
+      const positionResult = positionResults[index * 2]
+      const exitRulesResult = positionResults[index * 2 + 1]
+      const unrealizedResult = unrealizedResults[index]
+
+      if (positionResult.status === 'failure') {
+        throw positionResult.error
       }
-      const token = address as Address
-      const positionId = await tradeRouter.openPositionId(agentId, token)
-      if (positionId === 0n) {
-        continue
+      if (exitRulesResult.status === 'failure') {
+        throw exitRulesResult.error
+      }
+      if (unrealizedResult.status === 'failure') {
+        throw unrealizedResult.error
       }
 
-      const position = await tradeRouter.getPosition(positionId)
+      const position = positionResult.result as OnChainPosition
       if (position.status !== POSITION_STATUS_OPEN) {
         continue
       }
 
-      const exitRules = await tradeRouter.getExitRules(positionId)
-      const mappedRules = exitRules.map(mapOnChainExitRule)
-
-      positions.push({
-        positionId: position.positionId.toString(),
-        agentId: agentIdStr,
-        symbol,
-        token: position.token,
-        vault: position.vault,
-        tokenAmount: position.tokenAmount.toString(),
-        entryPriceUsdc: position.entryPriceUsdc.toString(),
-        usdcCostBasis: position.usdcCostBasis.toString(),
-        maxSlippageBps: position.maxSlippageBps,
-        status: 'Open',
-        nextRuleIndex: position.nextRuleIndex,
-        exitRules: mappedRules,
-        pendingRules: mappedRules.slice(position.nextRuleIndex),
-        openedAt: position.openedAt.toString(),
+      const mapped = this.mapPositionRecord({
+        position,
+        exitRules: exitRulesResult.result as readonly OnChainExitRule[],
+        agentIdStr,
+        unrealizedPnlUsdc: unrealizedResult.result.toString(),
       })
+      positions.push(mapped)
     }
 
     return { agentId: agentIdStr, positions }
+  }
+
+  async getPosition(
+    agentIdStr: string,
+    positionIdStr: string
+  ): Promise<GetAgentPositionResponse> {
+    const agentId = BigInt(agentIdStr)
+    const positionId = BigInt(positionIdStr)
+    const registry = this.agentRegistryService()
+    const tradeRouter = this.tradeRouterService()
+
+    try {
+      await registry.getAgent(agentId)
+    } catch (error) {
+      if (error instanceof AgentNotFoundError) {
+        throw new TradingError(error.message, 404)
+      }
+      throw error
+    }
+
+    const position = await tradeRouter.getPosition(positionId)
+    if (position.agentId !== agentId || position.positionId === 0n) {
+      throw new TradingError(`Position ${positionIdStr} not found`, 404)
+    }
+
+    const isOpen = position.status === POSITION_STATUS_OPEN
+
+    const [exitRules, realizedPnlUsdc, unrealizedPnlUsdc] = await Promise.all([
+      tradeRouter.getExitRules(positionId),
+      tradeRouter.realizedPnlUsdc(positionId),
+      isOpen
+        ? tradeRouter.positionUnrealizedPnlUsdc(positionId)
+        : Promise.resolve(null),
+    ])
+
+    const mapped = this.mapPositionRecord({
+      position,
+      exitRules,
+      agentIdStr,
+      unrealizedPnlUsdc:
+        unrealizedPnlUsdc !== null ? unrealizedPnlUsdc.toString() : undefined,
+      realizedPnlUsdc:
+        position.status === POSITION_STATUS_CLOSED
+          ? realizedPnlUsdc.toString()
+          : undefined,
+    })
+
+    return { agentId: agentIdStr, position: mapped }
+  }
+
+  private mapPositionRecord(params: {
+    position: OnChainPosition
+    exitRules: readonly OnChainExitRule[]
+    agentIdStr: string
+    unrealizedPnlUsdc?: string
+    realizedPnlUsdc?: string
+  }): GetAgentPositionResponse['position'] {
+    const { position, exitRules, agentIdStr, unrealizedPnlUsdc, realizedPnlUsdc } =
+      params
+    const mappedRules = exitRules.map(mapOnChainExitRule)
+    const status =
+      position.status === POSITION_STATUS_OPEN
+        ? ('Open' as const)
+        : ('Closed' as const)
+
+    return {
+      positionId: position.positionId.toString(),
+      agentId: agentIdStr,
+      symbol: this.symbolForToken(position.token as Address),
+      token: position.token,
+      vault: position.vault,
+      tokenAmount: position.tokenAmount.toString(),
+      entryPriceUsdc: position.entryPriceUsdc.toString(),
+      usdcCostBasis: position.usdcCostBasis.toString(),
+      maxSlippageBps: position.maxSlippageBps,
+      status,
+      nextRuleIndex: position.nextRuleIndex,
+      exitRules: mappedRules,
+      pendingRules: mappedRules.slice(position.nextRuleIndex),
+      openedAt: position.openedAt.toString(),
+      ...(unrealizedPnlUsdc !== undefined ? { unrealizedPnlUsdc } : {}),
+      ...(realizedPnlUsdc !== undefined ? { realizedPnlUsdc } : {}),
+    }
   }
 
   private async buildPositionQuote(
@@ -411,24 +621,11 @@ export class TradingService {
       throw new TradingError(`Position ${positionIdStr} is not open`, 400)
     }
 
-    const mappedRules = exitRules.map(mapOnChainExitRule)
-    const symbol = this.symbolForToken(position.token as Address)
-    const serialized = {
-      positionId: position.positionId.toString(),
-      agentId: agentIdStr,
-      symbol,
-      token: position.token,
-      vault: position.vault,
-      tokenAmount: position.tokenAmount.toString(),
-      entryPriceUsdc: position.entryPriceUsdc.toString(),
-      usdcCostBasis: position.usdcCostBasis.toString(),
-      maxSlippageBps: position.maxSlippageBps,
-      status: 'Open' as const,
-      nextRuleIndex: position.nextRuleIndex,
-      exitRules: mappedRules,
-      pendingRules: mappedRules.slice(position.nextRuleIndex),
-      openedAt: position.openedAt.toString(),
-    }
+    const serialized = this.mapPositionRecord({
+      position,
+      exitRules,
+      agentIdStr,
+    })
 
     const exitBounds = await this.getExitBounds(
       position.vault as Address,

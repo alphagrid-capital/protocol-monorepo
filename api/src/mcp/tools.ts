@@ -24,6 +24,8 @@ import {
   VaultTokensResponseSchema,
 } from '../schemas/token.js'
 import {
+  AgentRiskStateResponseSchema,
+  GetAgentPositionResponseSchema,
   GetAgentTradingInputSchema,
   GetIntentStatusInputSchema,
   PositionAdjustInputSchema,
@@ -435,6 +437,28 @@ export function registerMcpTools(server: McpServer): void {
     }
   )
 
+  server.registerTool(
+    MCP_TOOL_NAMES.getAgentPosition,
+    {
+      title: 'Agent position by id',
+      description: 'Mirrors GET /agents/{agentId}/positions/{positionId}.',
+      inputSchema: PositionAdjustInputSchema,
+      outputSchema: GetAgentPositionResponseSchema,
+      annotations: READ_ONLY_TOOL_ANNOTATIONS,
+    },
+    async ({ agentId, positionId }) => {
+      try {
+        const output = await TradingService.fromEnv(getWorkerEnv()).getPosition(
+          agentId,
+          positionId
+        )
+        return mcpToolSuccess(output)
+      } catch (error) {
+        return mcpToolErrorFromUnknown(error, 'Failed to load position')
+      }
+    }
+  )
+
   const tradingNotImplemented = () =>
     mcpToolError(TradingService.notImplemented().message, 'NOT_IMPLEMENTED')
 
@@ -454,12 +478,20 @@ export function registerMcpTools(server: McpServer): void {
     MCP_TOOL_NAMES.getRiskState,
     {
       title: 'Agent risk state',
-      description:
-        'Mirrors GET /agents/{agentId}/risk-state. Returns NOT_IMPLEMENTED.',
+      description: 'Mirrors GET /agents/{agentId}/risk-state.',
       inputSchema: GetAgentTradingInputSchema,
+      outputSchema: AgentRiskStateResponseSchema,
       annotations: READ_ONLY_TOOL_ANNOTATIONS,
     },
-    tradingNotImplemented
+    async ({ agentId }) => {
+      try {
+        const output =
+          await TradingService.fromEnv(getWorkerEnv()).getRiskState(agentId)
+        return mcpToolSuccess(output)
+      } catch (error) {
+        return mcpToolErrorFromUnknown(error, 'Failed to load risk state')
+      }
+    }
   )
 
   server.registerTool(

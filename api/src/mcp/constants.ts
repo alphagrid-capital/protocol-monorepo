@@ -21,6 +21,7 @@ export const MCP_TOOL_NAMES = {
   getExitLadderIntentQuote: 'alphagrid_get_exit_ladder_intent_quote',
   submitExitLadderIntent: 'alphagrid_submit_exit_ladder_intent',
   getAgentPositions: 'alphagrid_get_agent_positions',
+  getAgentPosition: 'alphagrid_get_agent_position',
   getTradeHistory: 'alphagrid_get_trade_history',
   getRiskState: 'alphagrid_get_risk_state',
   getIntentStatus: 'alphagrid_get_intent_status',

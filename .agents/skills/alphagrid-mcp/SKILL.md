@@ -117,6 +117,14 @@ Wallet MCP has **no `signTypedData` tool** today. Options:
 
 Match `nonce` and `deadline` from the latest quote at sign time.
 
+## Risk and position reads
+
+| Tool                          | HTTP                                      | Notes |
+| ----------------------------- | ----------------------------------------- | ----- |
+| `alphagrid_get_agent_positions` | `GET /agents/{id}/positions`            | Open positions; includes `unrealizedPnlUsdc` |
+| `alphagrid_get_agent_position`  | `GET /agents/{id}/positions/{positionId}` | Open or closed; `realizedPnlUsdc` when closed |
+| `alphagrid_get_risk_state`      | `GET /agents/{id}/risk-state`           | Equity, drawdown, PnL, advisory breach flags |
+
 ## Tools not implemented
 
 Return `NOT_IMPLEMENTED` / HTTP 501 — do not retry as transient errors:
@@ -124,7 +132,6 @@ Return `NOT_IMPLEMENTED` / HTTP 501 — do not retry as transient errors:
 | Tool                          | HTTP                          |
 | ----------------------------- | ----------------------------- |
 | `alphagrid_get_trade_history` | `GET /agents/{id}/trades`     |
-| `alphagrid_get_risk_state`    | `GET /agents/{id}/risk-state` |
 | `alphagrid_get_intent_status` | `GET /intents/{intentId}`     |
 
 ## Failure modes

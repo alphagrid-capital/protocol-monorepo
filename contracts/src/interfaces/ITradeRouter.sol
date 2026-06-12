@@ -78,6 +78,15 @@ interface ITradeRouter is IPositionTypes {
     /// @notice Count of positions fully closed.
     function positionsClosed(uint256 agentId) external view returns (uint32);
 
+    /// @notice Stored account equity high-water mark (USDC, 6 decimals). Ratchets on trade events only.
+    function peakEquityUsdc(uint256 agentId) external view returns (uint256);
+
+    /// @notice Current account equity: allocation cap + lifetime realized + open unrealized (floored at zero).
+    function currentEquityUsdc(uint256 agentId) external view returns (uint256);
+
+    /// @notice Drawdown from `peakEquityUsdc` in bps; zero when at or above peak or peak unset.
+    function currentDrawdownBps(uint256 agentId) external view returns (uint256);
+
     // -------------------------------------------------------------------------
     // Execution
     // -------------------------------------------------------------------------

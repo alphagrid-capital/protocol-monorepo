@@ -63,7 +63,9 @@ Live when executor is configured:
 - `GET/POST /agents/{agentId}/add-intents`: add to position (`?positionId=`)
 - `GET/POST /agents/{agentId}/reduce-intents`: reduce or full close
 - `GET/POST /agents/{agentId}/exit-ladder-intents`: update pending TP/SL
-- `GET /agents/{agentId}/positions`
+- `GET /agents/{agentId}/positions`: open positions via `getOpenPositionIds` (includes `unrealizedPnlUsdc`)
+- `GET /agents/{agentId}/positions/{positionId}`: single position (open or closed; `realizedPnlUsdc` when closed)
+- `GET /agents/{agentId}/risk-state`: on-chain equity, drawdown, lifetime/daily PnL, advisory breach flags
 
 #### Stubs (not implemented)
 
@@ -71,7 +73,6 @@ Return **501** with `{ "code": "NOT_IMPLEMENTED", ... }`:
 
 - `POST /intents/trade`: global intent gateway
 - `GET /agents/{agentId}/trades`: indexed trade history
-- `GET /agents/{agentId}/risk-state`: drawdown and breach flags
 - `GET /intents/{intentId}`: intent status lookup
 
 ### OpenAPI and Swagger
@@ -171,13 +172,14 @@ Each MCP client session is backed by a Cloudflare Durable Object (`AlphagridMcp`
 | `alphagrid_get_exit_ladder_intent_quote` | `GET /agents/{agentId}/exit-ladder-intents/quote` |
 | `alphagrid_submit_exit_ladder_intent`    | `POST /agents/{agentId}/exit-ladder-intents`      |
 | `alphagrid_get_agent_positions`          | `GET /agents/{agentId}/positions`                 |
+| `alphagrid_get_agent_position`           | `GET /agents/{agentId}/positions/{positionId}`    |
+| `alphagrid_get_risk_state`               | `GET /agents/{agentId}/risk-state`                |
 
 #### Not implemented
 
 | Tool                          | Status            |
 | ----------------------------- | ----------------- |
 | `alphagrid_get_trade_history` | `NOT_IMPLEMENTED` |
-| `alphagrid_get_risk_state`    | `NOT_IMPLEMENTED` |
 | `alphagrid_get_intent_status` | `NOT_IMPLEMENTED` |
 
 ### Client requirements

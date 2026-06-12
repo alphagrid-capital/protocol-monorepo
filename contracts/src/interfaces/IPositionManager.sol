@@ -37,7 +37,7 @@ interface IPositionManager is IPositionTypes {
 
     event PositionExitLadderUpdated(uint256 indexed positionId, uint256 indexed agentId, uint8 nextRuleIndex);
 
-    event PositionClosed(uint256 indexed positionId, uint256 indexed agentId);
+    event PositionClosed(uint256 indexed positionId, uint256 indexed agentId, int256 realizedPnlUsdc);
 
     // -------------------------------------------------------------------------
     // Views
@@ -48,6 +48,15 @@ interface IPositionManager is IPositionTypes {
     function agentTokenBalance(uint256 agentId, address token) external view returns (uint256);
 
     function openPositionId(uint256 agentId, address token) external view returns (uint256);
+
+    /// @notice Number of open positions for `agentId`.
+    function openPositionCountByAgent(uint256 agentId) external view returns (uint256);
+
+    /// @notice Open position ids for `agentId` (current ownership only).
+    function getOpenPositionIds(uint256 agentId) external view returns (uint256[] memory);
+
+    /// @notice Cumulative realized PnL for `positionId` (partial sells + final on close).
+    function realizedPnlUsdc(uint256 positionId) external view returns (int256);
 
     function getPosition(uint256 positionId) external view returns (Position memory);
 
@@ -75,11 +84,16 @@ interface IPositionManager is IPositionTypes {
         ExitRule[] calldata exits
     ) external returns (uint256 positionId);
 
-    function applyLadderExit(uint256 positionId, uint256 tokenSold, uint256 usdcReleased)
+    function applyLadderExit(uint256 positionId, uint256 tokenSold, uint256 usdcReleased, int256 realizedPnlDelta)
         external
         returns (uint8 ruleIndex);
 
-    function applyDiscretionaryReduce(uint256 positionId, uint256 tokenSold, uint256 usdcReleased) external;
+    function applyDiscretionaryReduce(
+        uint256 positionId,
+        uint256 tokenSold,
+        uint256 usdcReleased,
+        int256 realizedPnlDelta
+    ) external;
 
     function increasePosition(
         uint256 positionId,

@@ -77,6 +77,55 @@ contract TradeRouterTest is TradingTestBase {
         assertTrue(tradeRouter.isTriggerMet(positionId));
     }
 
+    function test_PeakEquityAndDrawdown() public {
+        uint256 agentId = _registerAgent();
+        uint256 usdcAmount = 10_000e6;
+        IPositionTypes.PositionIntent memory intent = _singleStopIntent(agentId, usdcAmount, -1000);
+        bytes memory sig = _signOpenPosition(intent);
+
+        vm.prank(executor);
+        uint256 positionId = tradeRouter.openPosition(intent, sig);
+
+        uint256 peakAfterOpen = tradeRouter.peakEquityUsdc(agentId);
+        assertGe(peakAfterOpen, CHALLENGE_CAP - 1e6);
+        assertEq(tradeRouter.peakEquityUsdc(agentId), tradeRouter.currentEquityUsdc(agentId));
+        assertEq(tradeRouter.currentDrawdownBps(agentId), 0);
+
+        _setTokenPrice(address(nvda), 130e8);
+        vm.prank(makeAddr("keeper"));
+        tradeRouter.executeExit(positionId);
+
+        assertLt(tradeRouter.lifetimeRealizedPnlUsdc(agentId), 0);
+        assertEq(tradeRouter.peakEquityUsdc(agentId), peakAfterOpen);
+        assertLt(tradeRouter.currentEquityUsdc(agentId), peakAfterOpen);
+        assertGt(tradeRouter.currentDrawdownBps(agentId), 0);
+        assertLt(positionManager.realizedPnlUsdc(positionId), 0);
+        assertEq(positionManager.getOpenPositionIds(agentId).length, 0);
+    }
+
+    function test_PeakEquityRatchetsOnProfitableClose() public {
+        uint256 agentId = _registerAgent();
+        uint256 usdcAmount = 10_000e6;
+        IPositionTypes.PositionIntent memory intent = _singleStopIntent(agentId, usdcAmount, -1000);
+        bytes memory sig = _signOpenPosition(intent);
+
+        vm.prank(executor);
+        uint256 positionId = tradeRouter.openPosition(intent, sig);
+
+        _setTokenPrice(address(nvda), 200e8);
+        IPositionTypes.ReducePositionIntent memory reduce = IPositionTypes.ReducePositionIntent({
+            agentId: agentId, positionId: positionId, exitBps: 10_000, deadline: 0, nonce: 0
+        });
+        bytes memory reduceSig = _signReducePosition(reduce);
+        vm.prank(executor);
+        tradeRouter.reducePosition(reduce, reduceSig);
+
+        assertGt(tradeRouter.lifetimeRealizedPnlUsdc(agentId), 0);
+        assertGt(tradeRouter.peakEquityUsdc(agentId), CHALLENGE_CAP);
+        assertEq(tradeRouter.currentDrawdownBps(agentId), 0);
+        assertGt(positionManager.realizedPnlUsdc(positionId), 0);
+    }
+
     function test_AgentOwnerStats_LifetimeCountersAndPositionPnl() public {
         uint256 agentId = _registerAgent();
         uint256 usdcAmount = 10_000e6;
