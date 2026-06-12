@@ -12,7 +12,7 @@ import { MandateVaultFactory } from "../src/vaults/MandateVaultFactory.sol";
 import { AgentCoreDeploy } from "./helpers/AgentCoreDeploy.sol";
 import { VaultDeploy } from "./helpers/VaultDeploy.sol";
 
-/// @notice Greenfield deploy: agent core, token registry, four vault clones, track configs, and AllocationManager wiring.
+/// @notice Greenfield deploy: agent core, token registry, Genesis vault clone, track configs, and AllocationManager wiring.
 /// @dev Pipeline: deploy → wire → setRoles → configure tracks. Edit VaultTrackPolicies before mainnet.
 contract DeployVaultInfrastructure is AgentCoreDeploy, VaultDeploy {
     function run()
@@ -24,10 +24,7 @@ contract DeployVaultInfrastructure is AgentCoreDeploy, VaultDeploy {
             AgentRegistry registry,
             AllocationManager allocationManager,
             MandateVaultFactory vaultFactory,
-            MandateVault foundationVault,
-            MandateVault techVault,
-            MandateVault volatilityVault,
-            MandateVault macroVault
+            MandateVault genesisVault
         )
     {
         CoreAddresses memory env = loadCoreAddresses();
@@ -47,10 +44,7 @@ contract DeployVaultInfrastructure is AgentCoreDeploy, VaultDeploy {
         registry = core.registry;
         allocationManager = core.allocationManager;
         vaultFactory = vaults.factory;
-        foundationVault = vaults.foundationVault;
-        techVault = vaults.techVault;
-        volatilityVault = vaults.volatilityVault;
-        macroVault = vaults.macroVault;
+        genesisVault = vaults.genesisVault;
 
         _log(core, vaults, env, vaultAsset);
     }
@@ -68,9 +62,6 @@ contract DeployVaultInfrastructure is AgentCoreDeploy, VaultDeploy {
         console2.log("AllocationManager:", address(core.allocationManager));
         console2.log("VaultFactory:", address(vaults.factory));
         console2.log("VaultImplementation:", vaults.factory.implementation());
-        console2.log("FoundationVault:", address(vaults.foundationVault));
-        console2.log("TechVault:", address(vaults.techVault));
-        console2.log("VolatilityVault:", address(vaults.volatilityVault));
-        console2.log("MacroVault:", address(vaults.macroVault));
+        console2.log("GenesisVault:", address(vaults.genesisVault));
     }
 }

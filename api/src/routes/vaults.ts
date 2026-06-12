@@ -55,7 +55,7 @@ const getVaultRoute = createRoute({
         .min(1)
         .openapi({
           param: { name: 'id', in: 'path' },
-          example: 'foundation',
+          example: 'genesis',
         }),
     }),
   },

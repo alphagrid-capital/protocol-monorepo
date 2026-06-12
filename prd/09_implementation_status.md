@@ -16,7 +16,7 @@ Other PRD files describe **requirements and design**. When implementation change
 
 | Layer | Status | Summary |
 | --- | --- | --- |
-| **On-chain (`contracts/`)** | MVP complete | Agent onboarding, four vaults, allocation, trading settlement + position adjust intents |
+| **On-chain (`contracts/`)** | MVP complete | Agent onboarding, Genesis vault, allocation, trading settlement + position adjust intents |
 | **Off-chain (`api/`)** | Partial | Vaults, tokens, prices, agent register/read, open + adjust trade path, positions/risk derived reads, MCP, oracle keeper |
 | **Product (indexer, perf, UI)** | Not started | Leaderboard, profiles, admin, frontend |
 
@@ -29,7 +29,7 @@ Other PRD files describe **requirements and design**. When implementation change
 Deploy in order:
 
 1. `DeployAgentCore` — `FeeManager`, `VaultTrackRegistry`, `AgentRegistry`
-2. `DeployVaultInfrastructure` — agent core + `TokenRegistry` + four `MandateVault` clones + `AllocationManager`
+2. `DeployVaultInfrastructure` — agent core + `TokenRegistry` + Genesis `MandateVault` clone + `AllocationManager`
 3. Track configs — CHALLENGE / FUNDED / PRIME (wired into `DeployVaultInfrastructure` / `DeployFullStack` via `VaultTrackPolicies`)
 4. `DeployTrading` — `PositionManager`, `TradeRouter`, swap adapter; wire roles
 5. *(Optional)* `DeployPriceOracle`, `DeployTokenCatalog`, `SetRegistrationFee`
@@ -58,7 +58,7 @@ Deploy in order:
 
 - [x] Agent registry — registrar + self-register; optional ERC-8004 link
 - [x] Track configuration — `VaultTrackRegistry` + `VaultTrackConfig`
-- [x] Four ERC-4626 `MandateVault` instances (Foundation, Tech, Volatility, Macro)
+- [x] One Genesis ERC-4626 `MandateVault` instance (`agGEN`; reuses former Tech vault address on testnet)
 - [x] `FeeManager` (registration + promotion fees)
 - [x] `TokenRegistry` + vault token allowlist
 - [x] `AllocationManager`
@@ -233,7 +233,7 @@ Phases describe the **full MVP product**. Status as of 2026-06-07:
 
 ### Phase 2 — Contracts and Core State
 
-**On-chain:** Done (`AgentRegistry`, `FeeManager`, `VaultTrackRegistry`, `TokenRegistry`, `AllocationManager`, four vaults).
+**On-chain:** Done (`AgentRegistry`, `FeeManager`, `VaultTrackRegistry`, `TokenRegistry`, `AllocationManager`, Genesis vault).
 
 **Partial (`api/`):** vault catalog, tokens, prices, agent registration.
 

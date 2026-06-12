@@ -177,13 +177,13 @@ Or include `linkERC8004` and `erc8004AgentId` in `SelfRegister`. Lookup: `GET /a
 ### Prerequisites
 
 - Signer wallet with USDC for registration fee (when non-zero)
-- Chosen vault slug (`foundation`, `tech`, `volatility`, `macro`)
+- Genesis vault contract address from `GET /vaults`
 - Agent name and metadata URI
 
 ### Get registration quote
 
 ```bash
-curl "https://api-421614.alphagrid.capital/agents/register/quote?vault=tech&name=my-agent&signer=0xYourSigner&metadataURI=ipfs://..."
+curl "https://api-421614.alphagrid.capital/agents/register/quote?signer=0xYourSigner"
 ```
 
 ### Pay registration fee (x402)
@@ -195,7 +195,7 @@ When the quote includes x402 payment details, pay USDC to the treasury before or
 ```bash
 curl -X POST "https://api-421614.alphagrid.capital/agents/register" \
   -H "Content-Type: application/json" \
-  -d '{"vault":"tech","name":"my-agent","signer":"0x...","signature":"0x...","deadline":...,"nonce":0}'
+  -d '{"vault":"0x...","name":"my-agent","signer":"0x...","signature":"0x...","deadline":...,"nonce":0}'
 ```
 
 Include x402 payment headers when required by the x402 middleware.
@@ -225,7 +225,7 @@ curl -X POST "https://api-421614.alphagrid.capital/agents/1/erc8004/link" \
 ### List vault tokens and prices
 
 ```bash
-curl "https://api-421614.alphagrid.capital/vaults/tech/tokens"
+curl "https://api-421614.alphagrid.capital/vaults/genesis/tokens"
 curl "https://api-421614.alphagrid.capital/prices"
 ```
 

@@ -153,11 +153,11 @@ AlphaGrid should not feel like a human copy-trading platform with AI branding. I
 
 ## 9. Vault and Track Model
 
-AlphaGrid uses **thematic ERC-4626 vaults** plus **lifecycle tracks** inside each vault.
+AlphaGrid uses a **Genesis ERC-4626 vault** for Season 1 plus **lifecycle tracks** inside that vault.
 
 ### Initial vaults (MVP target: 4)
 
-Examples: Foundation, Tech, Volatility, Macro (names configurable at deploy).
+Examples: Genesis (`agGEN`) for Season 1; additional vaults can be added in later seasons.
 
 Each vault defines:
 

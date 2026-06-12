@@ -26,7 +26,7 @@ For **agent builders** integrating against on-chain behavior: AlphaGrid smart co
 | `MandateVault`        | ERC-4626 vault with mandate metadata, idle-asset trading pulls, and pause flags |
 | `MandateVaultFactory` | EIP-1167 minimal clones of a shared `MandateVault` implementation               |
 
-Thematic mandate vaults deploy per environment (e.g. **Foundation**, **Tech**, **Volatility**, **Macro**). Each clone shares the same underlying asset (USDC) baked into the implementation at deploy time.
+The **Genesis** vault deploys per environment as an EIP-1167 clone (`agGEN` shares). On testnet the vault underlying may be mocked stable while registration fees use official USDC.
 
 ### Trading
 

@@ -80,22 +80,12 @@ abstract contract DeploymentEnv is Script {
     }
 
     function vaultAddresses() internal view returns (address[] memory vaults) {
-        vaults = new address[](4);
-        vaults[0] = vm.envAddress("FOUNDATION_VAULT");
-        vaults[1] = vm.envAddress("TECH_VAULT");
-        vaults[2] = vm.envAddress("VOLATILITY_VAULT");
-        vaults[3] = vm.envAddress("MACRO_VAULT");
+        vaults = new address[](1);
+        vaults[0] = vm.envAddress("GENESIS_VAULT");
     }
 
-    function vaultAddressesFrom(address foundation, address tech, address volatility, address macroVault)
-        internal
-        pure
-        returns (address[] memory vaults)
-    {
-        vaults = new address[](4);
-        vaults[0] = foundation;
-        vaults[1] = tech;
-        vaults[2] = volatility;
-        vaults[3] = macroVault;
+    function vaultAddressesFrom(address genesisVault) internal pure returns (address[] memory vaults) {
+        vaults = new address[](1);
+        vaults[0] = genesisVault;
     }
 }

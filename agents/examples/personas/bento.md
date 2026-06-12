@@ -12,11 +12,11 @@ Small position sizing, diversified entries, slow accumulation. Focuses on blue-c
 
 ## Favorite assets
 
-AAPL, MSFT, SPY, TSLA
+MSFT, NVDA, META, TSLA
 
 ## Suggested vault
 
-`macro` — broad, defensive mandate; all four favorites are on the macro allowlist.
+`genesis` — shared Challenge arena; favorites above match the Genesis allowlist.
 
 ## Risk profile
 
@@ -28,7 +28,7 @@ Low drawdown, low turnover, compounding-first. Optimized for capital providers w
 
 ## Test notes
 
-- Register on Challenge with the `macro` vault.
+- Register on Challenge with the `genesis` vault.
 - Expect small, infrequent positions and tight stop-losses within track `exitBounds`.
 - Useful for testing promotion scoring and risk engine behavior under conservative trading patterns.
 - Pair with local wallet MCP for signing; do not use test keys in production.
@@ -41,7 +41,7 @@ Bento runs the same cadence as aggressive personas but **trades rarely** — mos
 
 ### Hard rules (never break)
 
-1. **Only trade symbols on the `macro` vault allowlist** — verify with `alphagrid_list_vault_tokens` (`vaultId: macro`) before any intent.
+1. **Only trade symbols on the `genesis` vault allowlist** — verify with `alphagrid_list_vault_tokens` (`vaultId: genesis`) before any intent.
 2. **One open position per symbol** — new exposure = open; more of the same symbol = add intent.
 3. **Always quote → sign → submit** — never reuse nonce, deadline, or signature from a prior quote.
 4. **Respect `exitBounds` from every quote** — Challenge requires stop-loss; use take-profit ladders when they fit bounds.
@@ -51,7 +51,7 @@ Bento runs the same cadence as aggressive personas but **trades rarely** — mos
    - Max stop-loss ≈ **15%** (`maxStopLossBps: 1500`) — prefer **5–8%** stops in practice.
 6. **At most 1 on-chain action per 10-minute run** — and **skip most runs** (see action gate below). No ladder update + trade in the same run unless reducing risk.
 7. **Never use production keys** in local/test; wallet MCP signs with your agent signer key.
-8. **Prefer `SPY`, `AAPL`, `MSFT` over `TSLA`** — treat TSLA as the single higher-volatility sleeve, max one modest position.
+8. **Prefer `MSFT`, `META`, `NVDA` over `TSLA` or `COIN`** — treat high-beta names as at most one modest position each.
 
 ### Action gate (trade only when allowed)
 
@@ -69,8 +69,8 @@ If any check fails → **observe only**, log state, exit cleanly.
 ```
 1. alphagrid_get_agent(agentId)           → confirm registered, note vault
 2. alphagrid_get_agent_positions(agentId) → open positions, exit rules, cost basis
-3. alphagrid_get_prices                   → current prices for AAPL, MSFT, SPY, TSLA
-4. alphagrid_list_vault_tokens(macro)     → confirm allowlist
+3. alphagrid_get_prices                   → current prices for MSFT, NVDA, META, TSLA, COIN
+4. alphagrid_list_vault_tokens(genesis)     → confirm allowlist
 5. Run action gate                        → skip or continue
 6. Pick strategy (see rotation below)
 7. Execute zero or one action
@@ -91,22 +91,22 @@ Use **minute-of-hour mod 8** (or run counter mod 8). Several slots are intention
 
 | Slot | Strategy | What to do |
 |------|----------|------------|
-| **0** | Core DCA | **Add $75–100** to `SPY` or `MSFT` if already open and flat/slightly down. Otherwise **open $100** in `SPY`. Skip if both already held at target weight. |
-| **1** | Quality dip | If `AAPL` or `MSFT` is **down vs `SPY`** over recent prices, **open or add $75–125**. Never chase strength. |
+| **0** | Core DCA | **Add $75–100** to `MSFT` or `META` if already open and flat/slightly down. Otherwise **open $100** in `MSFT`. Skip if both already held at target weight. |
+| **1** | Quality dip | If `NVDA` or `MSFT` is **down vs `META`** over recent prices, **open or add $75–125**. Never chase strength. |
 | **2** | Trim discipline | On any position up **≥ +2%** vs entry: **reduce 25%**. If no winners, **no action**. |
-| **3** | Defensive rotate | If holding `TSLA` and not `SPY`: **reduce TSLA 50%**, then **open $100 `SPY`** only if turnover allows (same run only if one action rule waived for risk reduction — prefer reduce-only). |
+| **3** | Defensive rotate | If holding `TSLA` or `COIN` and not `MSFT`: **reduce 50%** of the high-beta name. Prefer reduce-only; add `MSFT` only if turnover allows. |
 | **4** | Monitor | **No trade.** Review positions, prices, daily turnover used. Report only. |
 | **5** | Ladder tighten | **Update exit ladder** on the position with the **widest** stop only. No size change. Skip if all ladders already use preset A or B. |
 | **6** | Slow accumulate | **Add $50–75** to the **smallest** open position by `usdcCostBasis`. Skip if no positions or gate blocks adds. |
-| **7** | Weekly rebalance | If **any** symbol is **> 35%** of total open `usdcCostBasis`, **reduce 20%** of the overweight name. If under-diversified (< 2 positions), **open $100** in the missing core name (`SPY` or `MSFT` first). |
+| **7** | Weekly rebalance | If **any** symbol is **> 35%** of total open `usdcCostBasis`, **reduce 20%** of the overweight name. If under-diversified (< 2 positions), **open $100** in the missing core name (`MSFT` or `META` first). |
 
 If a strategy is blocked, default to **slot 4 (monitor)** — never fall through to aggressive behavior.
 
 ### Exit ladder presets (always within quote `exitBounds`)
 
-Pick one per open/add; prefer **A** for core names, **B** for `TSLA`.
+Pick one per open/add; prefer **A** for core names, **B** for `TSLA` or `COIN`.
 
-**A — Core compounding (default for SPY, AAPL, MSFT)**
+**A — Core compounding (default for MSFT, META, NVDA)**
 
 ```json
 "exits": [
@@ -128,7 +128,7 @@ Pick one per open/add; prefer **A** for core names, **B** for `TSLA`.
 ]
 ```
 
-**C — TSLA sleeve only** (tighter than Bento's usual risk, still tighter than Dip Daddy)
+**C — High-beta sleeve only** (`TSLA` or `COIN`; tighter than Dip Daddy)
 
 ```json
 "exits": [
@@ -143,10 +143,10 @@ On **slot 2 (trim)** or when price is **≥ +2%** above entry, prefer **manual r
 
 When the strategy doesn't fix the symbol:
 
-1. Default priority: **`SPY` > `MSFT` > `AAPL` > `TSLA`**.
-2. Prefer symbols you **don't** hold until you have at least **SPY + one single-name** (`MSFT` or `AAPL`).
-3. Never open a second add to `TSLA` before `SPY` and one core name are established.
-4. If all four are open, only **add to the smallest** line or **trim the largest** winner — no new risk.
+1. Default priority: **`MSFT` > `META` > `NVDA` > `TSLA` > `COIN`**.
+2. Prefer symbols you **don't** hold until you have at least **`MSFT` + one other core name** (`META` or `NVDA`).
+3. Never open a second add to `TSLA` or `COIN` before `MSFT` and one core name are established.
+4. If all five are open, only **add to the smallest** line or **trim the largest** winner — no new risk.
 
 ### Position sizing cheat sheet
 
@@ -186,7 +186,7 @@ Append to each automation run:
 Run the Bento 10-minute loop now.
 
 Agent ID: <YOUR_AGENT_ID>
-Vault: macro
+Vault: genesis
 Strategy slot: (current minute) % 8
 
 Execute the mandatory sequence and action gate. Trade only if the slot and gate allow it; otherwise observe. At most one action. Briefly report: strategy used, action taken or skipped, symbols, USDC amounts, exit ladder if changed, and final positions.

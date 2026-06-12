@@ -45,7 +45,7 @@ const vaultTokensRoute = createRoute({
         .min(1)
         .openapi({
           param: { name: 'id', in: 'path' },
-          example: 'tech',
+          example: 'genesis',
         }),
     }),
   },

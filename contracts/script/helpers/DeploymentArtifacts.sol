@@ -17,10 +17,7 @@ abstract contract DeploymentArtifacts is DeploymentEnv {
         address allocationManager;
         address vaultFactory;
         address vaultImplementation;
-        address foundationVault;
-        address techVault;
-        address volatilityVault;
-        address macroVault;
+        address genesisVault;
         address positionManager;
         address tradeRouter;
         address tradeRouterLens;
@@ -49,10 +46,7 @@ abstract contract DeploymentArtifacts is DeploymentEnv {
         objectKey.serialize("AllocationManager", snapshot.allocationManager);
         objectKey.serialize("VaultFactory", snapshot.vaultFactory);
         objectKey.serialize("VaultImplementation", snapshot.vaultImplementation);
-        objectKey.serialize("FoundationVault", snapshot.foundationVault);
-        objectKey.serialize("TechVault", snapshot.techVault);
-        objectKey.serialize("VolatilityVault", snapshot.volatilityVault);
-        objectKey.serialize("MacroVault", snapshot.macroVault);
+        objectKey.serialize("GenesisVault", snapshot.genesisVault);
         objectKey.serialize("PositionManager", snapshot.positionManager);
         objectKey.serialize("TradeRouter", snapshot.tradeRouter);
         objectKey.serialize("TradeRouterLens", snapshot.tradeRouterLens);

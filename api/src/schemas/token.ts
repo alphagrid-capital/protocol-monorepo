@@ -19,7 +19,7 @@ export const TokenSummarySchema = z
     decimals: z.number().int().openapi({ example: 18 }),
     vaultIds: z.array(z.string()).openapi({
       description: 'Vault slugs where MandateVault.isAllowedToken is true',
-      example: ['tech', 'foundation'],
+      example: ['genesis'],
     }),
     listed: z.boolean().openapi({ example: true }),
     active: z.boolean().openapi({ example: true }),

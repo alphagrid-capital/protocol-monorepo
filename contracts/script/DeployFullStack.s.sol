@@ -49,12 +49,7 @@ contract DeployFullStack is AgentCoreDeploy, VaultDeploy, AssetDeploy, Deploymen
         grantRegistrarRole(core.registry, backendRelayer);
         configureVaultTracks(core.vaultTrackRegistry, vaults);
 
-        address[] memory vaultAddrs = vaultAddressesFrom(
-            address(vaults.foundationVault),
-            address(vaults.techVault),
-            address(vaults.volatilityVault),
-            address(vaults.macroVault)
-        );
+        address[] memory vaultAddrs = vaultAddressesFrom(address(vaults.genesisVault));
 
         TradingDeployed memory trading = _deployTrading(admin, executor, operator, deployMock, core, vaults, vaultAddrs);
 
@@ -73,9 +68,7 @@ contract DeployFullStack is AgentCoreDeploy, VaultDeploy, AssetDeploy, Deploymen
             console2.log("MockERC20", defs[i].symbol, tokens[i]);
         }
         TokenCatalog.registerAll(core.tokenRegistry, tokens);
-        TokenCatalog.enableVaultTokens(
-            tokens, vaults.foundationVault, vaults.techVault, vaults.volatilityVault, vaults.macroVault
-        );
+        TokenCatalog.enableGenesisVaultTokens(tokens, vaults.genesisVault);
 
         vm.stopBroadcast();
 
@@ -89,10 +82,7 @@ contract DeployFullStack is AgentCoreDeploy, VaultDeploy, AssetDeploy, Deploymen
                 allocationManager: address(core.allocationManager),
                 vaultFactory: address(vaults.factory),
                 vaultImplementation: vaults.factory.implementation(),
-                foundationVault: address(vaults.foundationVault),
-                techVault: address(vaults.techVault),
-                volatilityVault: address(vaults.volatilityVault),
-                macroVault: address(vaults.macroVault),
+                genesisVault: address(vaults.genesisVault),
                 positionManager: address(trading.positionManager),
                 tradeRouter: address(trading.tradeRouter),
                 tradeRouterLens: address(trading.tradeRouterLens),
@@ -155,7 +145,7 @@ contract DeployFullStack is AgentCoreDeploy, VaultDeploy, AssetDeploy, Deploymen
         deployed.tradeRouter.grantRole(deployed.tradeRouter.EXECUTOR_ROLE(), executor);
         deployed.tradeRouter.grantRole(deployed.tradeRouter.OPERATOR_ROLE(), operator);
 
-        bytes32 tradeRouterRole = vaults.foundationVault.TRADE_ROUTER_ROLE();
+        bytes32 tradeRouterRole = vaults.genesisVault.TRADE_ROUTER_ROLE();
         for (uint256 i = 0; i < vaultAddrs.length; i++) {
             MandateVault(vaultAddrs[i]).grantRole(tradeRouterRole, address(deployed.tradeRouter));
         }

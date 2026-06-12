@@ -25,13 +25,7 @@ contract DeployTokenCatalog is DeploymentEnv {
         }
 
         TokenCatalog.registerAll(TokenRegistry(vm.envAddress("TOKEN_REGISTRY")), tokens);
-        TokenCatalog.enableVaultTokens(
-            tokens,
-            MandateVault(vm.envAddress("FOUNDATION_VAULT")),
-            MandateVault(vm.envAddress("TECH_VAULT")),
-            MandateVault(vm.envAddress("VOLATILITY_VAULT")),
-            MandateVault(vm.envAddress("MACRO_VAULT"))
-        );
+        TokenCatalog.enableGenesisVaultTokens(tokens, MandateVault(vm.envAddress("GENESIS_VAULT")));
 
         vm.stopBroadcast();
 

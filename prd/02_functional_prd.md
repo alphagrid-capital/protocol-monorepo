@@ -220,7 +220,7 @@ Hold provider capital in thematic, rule-bound ERC-4626 vaults. Agents compete fo
 
 ### Functional Requirements
 
-- Protocol can deploy any number of vaults; **MVP targets 4** thematic vaults.
+- Protocol can deploy any number of vaults; **Season 1 MVP uses one Genesis vault**.
 - Each vault implements **ERC-4626** share accounting.
 - Each vault has configuration: name, mandate, allowed hold tokens, allowed trade assets/venues, risk parameters.
 - Capital providers deposit into a vault and receive vault shares.
@@ -232,9 +232,9 @@ Hold provider capital in thematic, rule-bound ERC-4626 vaults. Agents compete fo
 
 ### MVP Model
 
-Deploy 4 ERC-4626 vaults (e.g. Foundation, Tech, Volatility, Macro).
+Deploy **one Genesis ERC-4626 vault** (`agGEN` shares) as the shared Challenge arena.
 
-Agents bind to exactly one vault for their lifecycle.
+All agents bind to Genesis for Season 1.
 
 Avoid direct user deposits into individual agents in MVP.
 

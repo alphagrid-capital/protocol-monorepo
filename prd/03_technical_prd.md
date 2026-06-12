@@ -282,7 +282,7 @@ struct VaultConfig {
 
 ### MVP Design
 
-Deploy **4 ERC-4626 vault instances** with distinct mandates (e.g. Foundation, Tech, Volatility, Macro).
+Deploy **one Genesis ERC-4626 vault** (`AlphaGrid Genesis Vault`, share symbol `agGEN`) as the Season 1 Challenge arena.
 
 Agents bind to one vault for their full lifecycle.
 

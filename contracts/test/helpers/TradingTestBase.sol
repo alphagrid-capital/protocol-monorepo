@@ -25,7 +25,7 @@ import { VaultTestLib } from "./VaultTestLib.sol";
 
 /// @notice Shared fixture: full on-chain stack through TradeRouter with MockSwapAdapter.
 abstract contract TradingTestBase is BaseTest {
-    bytes32 internal constant VAULT_MANDATE = "TECH";
+    bytes32 internal constant VAULT_MANDATE = "GENESIS";
 
     uint256 internal constant AGENT_SIGNER_PK = 0xA11CE;
     uint256 internal constant LP_USDC = 1_000_000e6;
@@ -76,8 +76,8 @@ abstract contract TradingTestBase is BaseTest {
         vault = VaultTestLib.deployVault(
             vaultFactory,
             IERC20(address(usdc)),
-            "AlphaGrid Tech Vault",
-            "agTECH",
+            "AlphaGrid Genesis Vault",
+            "agGEN",
             VAULT_MANDATE,
             tokenRegistry,
             deployer,

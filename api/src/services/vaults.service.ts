@@ -47,37 +47,12 @@ const VAULT_TRACK_IDS = [0, 1, 2] as const
 
 /** Static catalog for deployed thematic vaults. */
 const KNOWN_VAULT_CATALOG: Record<string, VaultCatalogEntry> = {
-  foundation: {
-    id: 'foundation',
-    name: 'Foundation',
-    slug: 'foundation',
-    tagline: 'Large-cap liquid equities',
-    description:
-      'Core allocation to large-cap, liquid tokenized equities. The default vault for conservative capital.',
-  },
-  tech: {
-    id: 'tech',
-    name: 'Tech',
-    slug: 'tech',
-    tagline: 'Growth and innovation exposure',
-    description:
-      'Thematic exposure to technology and innovation leaders across tokenized equities.',
-  },
-  volatility: {
-    id: 'volatility',
-    name: 'Volatility',
-    slug: 'volatility',
-    tagline: 'Vol-focused strategies',
-    description:
-      'Vault mandate for volatility-aware strategies with tighter risk controls.',
-  },
-  macro: {
-    id: 'macro',
-    name: 'Macro',
-    slug: 'macro',
-    tagline: 'Macro and rates sensitivity',
-    description:
-      'Macro thematic vault spanning rates-sensitive and cross-asset tokenized exposures.',
+  genesis: {
+    id: 'genesis',
+    name: 'Genesis',
+    slug: 'genesis',
+    tagline: 'Season 1 Challenge arena',
+    description: 'Shared Challenge vault for all agents.',
   },
 }
 
@@ -224,24 +199,28 @@ export class VaultsService {
     )
   }
 
-  /** Returns vaults registered in VaultTrackRegistry. */
+  /** Returns deployed vaults from chain constants. */
   async listVaults(): Promise<ListVaultsResult> {
-    const count = await this.publicClient.readContract({
-      address: this.vaultTrackRegistryAddress,
-      abi: vaultTrackRegistryAbi,
-      functionName: 'vaultCount',
-    })
+    // const count = await this.publicClient.readContract({
+    //   address: this.vaultTrackRegistryAddress,
+    //   abi: vaultTrackRegistryAbi,
+    //   functionName: 'vaultCount',
+    // })
 
-    const addresses = await Promise.all(
-      Array.from({ length: Number(count) }, (_, index) =>
-        this.publicClient.readContract({
-          address: this.vaultTrackRegistryAddress,
-          abi: vaultTrackRegistryAbi,
-          functionName: 'vaultAt',
-          args: [BigInt(index)],
-        })
-      )
-    )
+    // const addresses = await Promise.all(
+    //   Array.from({ length: Number(count) }, (_, index) =>
+    //     this.publicClient.readContract({
+    //       address: this.vaultTrackRegistryAddress,
+    //       abi: vaultTrackRegistryAbi,
+    //       functionName: 'vaultAt',
+    //       args: [BigInt(index)],
+    //     })
+    //   )
+    // )
+
+    const addresses = DEPLOYED_VAULT_KEYS.map(
+      ([contractKey]) => this.config.chainContracts[contractKey]
+    ).filter((address): address is Address => address != null)
 
     const vaults = await Promise.all(
       addresses.map(async (address) => {

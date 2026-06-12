@@ -22,7 +22,7 @@ contract VaultAndAllocationIntegrationTest is BaseTest {
     FeeManager internal feeManager;
     VaultTrackRegistry internal vaultTrackRegistry;
     AllocationManager internal allocationManager;
-    MandateVault internal techVault;
+    MandateVault internal genesisVault;
     MockERC8004IdentityRegistry internal identityRegistry;
 
     address internal treasury;
@@ -48,12 +48,12 @@ contract VaultAndAllocationIntegrationTest is BaseTest {
         TokenRegistry tokenRegistry = new TokenRegistry(deployer);
         MandateVaultFactory vaultFactory;
         (vaultFactory,) = VaultTestLib.deployFactory(IERC20(address(usdc)));
-        techVault = VaultTestLib.deployVault(
+        genesisVault = VaultTestLib.deployVault(
             vaultFactory,
             IERC20(address(usdc)),
-            "AlphaGrid Tech Vault",
-            "agTECH",
-            "TECH",
+            "AlphaGrid Genesis Vault",
+            "agGEN",
+            "GENESIS",
             tokenRegistry,
             deployer,
             treasury
@@ -67,20 +67,21 @@ contract VaultAndAllocationIntegrationTest is BaseTest {
         registry.grantRole(registry.OPERATOR_ROLE(), operator);
         registry.grantRole(registry.REGISTRAR_ROLE(), operator);
 
-        _setVaultTrackConfig(address(techVault), 0, CHALLENGE_CAP, 25_000e6);
-        _setVaultTrackConfig(address(techVault), 1, 50_000e6, 100_000e6);
+        _setVaultTrackConfig(address(genesisVault), 0, CHALLENGE_CAP, 25_000e6);
+        _setVaultTrackConfig(address(genesisVault), 1, 50_000e6, 100_000e6);
         usdc.mint(lp, SEED_DEPOSIT);
         vm.stopPrank();
 
         vm.startPrank(lp);
-        usdc.approve(address(techVault), SEED_DEPOSIT);
-        techVault.deposit(SEED_DEPOSIT, lp);
+        usdc.approve(address(genesisVault), SEED_DEPOSIT);
+        genesisVault.deposit(SEED_DEPOSIT, lp);
         vm.stopPrank();
     }
 
     function _registerAlice() internal returns (uint256 agentId) {
         uint256 erc8004Id = AgentTestLib.mintERC8004(identityRegistry, alice);
-        agentId = registry.registerAgent(alice, address(techVault), "Alpha Bot", "ipfs://alpha", alice, true, erc8004Id);
+        agentId =
+            registry.registerAgent(alice, address(genesisVault), "Alpha Bot", "ipfs://alpha", alice, true, erc8004Id);
     }
 
     function test_RegisterAgentCreatesAllocationAgainstRealVault() public {
@@ -89,7 +90,7 @@ contract VaultAndAllocationIntegrationTest is BaseTest {
         vm.stopPrank();
 
         assertEq(allocationManager.allocationCap(agentId), CHALLENGE_CAP);
-        assertEq(techVault.totalAssets(), SEED_DEPOSIT);
+        assertEq(genesisVault.totalAssets(), SEED_DEPOSIT);
     }
 
     function test_PromoteUpdatesAllocationCap() public {

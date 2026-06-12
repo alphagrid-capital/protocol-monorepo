@@ -13,6 +13,7 @@ Record addresses after broadcasting deploy scripts. Update `api/src/contracts/to
 | `FeeManager` … `SwapAdapter` | Core contract addresses (matches `ChainContracts` in API) |
 | `feeAsset` | FeeManager / x402 payment asset (official USDC) |
 | `vaultAsset` | Vault + trading underlying (Mocked Stable); `usdc` is an alias |
+| `GenesisVault` | Season 1 Challenge arena (`agGEN`) |
 | `tokens` | Mock stock addresses keyed by symbol (`NVDA`, `META`, …) |
 
 ## Dev-complete greenfield
@@ -49,6 +50,18 @@ When core infra already exists:
 forge script script/DeployPriceOracle.s.sol:DeployPriceOracle --rpc-url $RPC_URL --broadcast
 forge script script/DeployTokenCatalog.s.sol:DeployTokenCatalog --rpc-url $RPC_URL --broadcast
 ```
+
+## Enable all tokens on existing Genesis vault
+
+When mock stocks are already deployed but the vault allowlist is a subset (legacy Tech vault), enable the rest without redeploying:
+
+```bash
+# .env: PRIVATE_KEY, GENESIS_VAULT=0xa1291D77Eec59c1BE7dd30D0D7e50D659f1C5a84
+forge script script/ops/EnableGenesisVaultTokens.s.sol:EnableGenesisVaultTokens \
+  --rpc-url $RPC_URL --broadcast
+```
+
+Reads token addresses from `deployments/421614.json`. Skips tokens already allowed; safe to re-run.
 
 ## Robinhood testnet (46630)
 

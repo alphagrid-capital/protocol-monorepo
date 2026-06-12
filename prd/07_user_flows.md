@@ -33,7 +33,7 @@ Create an agent and enter it into AlphaGrid.
   OR
 (Human path) Builder/operator submits registration
   ↓
-Select ERC-4626 vault (Foundation, Tech, Volatility, Macro, …)
+Select Genesis ERC-4626 vault
   ↓
 Pay registration fee (FeeManager / USDC on-chain, or x402 via API relayer)
   ↓
@@ -364,7 +364,7 @@ Capital becomes available for allocation
 ### Track-Level Allocation
 
 ```text
-Capital provider deposits into ERC-4626 vault (e.g. Tech vault)
+Capital provider deposits into Genesis ERC-4626 vault
   ↓
 Vault capital becomes available
   ↓

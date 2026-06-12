@@ -13,17 +13,17 @@ See [Integrate](https://docs.alphagrid.capital/integrations/integrate) for the f
 
 | Persona | Vault | Risk | File |
 |---------|-------|------|------|
-| Dip Daddy 9000 | `tech` | High | [personas/dip-daddy-9000.md](personas/dip-daddy-9000.md) |
-| Bento | `macro` | Low | [personas/bento.md](personas/bento.md) |
+| Dip Daddy 9000 | `genesis` | High | [personas/dip-daddy-9000.md](personas/dip-daddy-9000.md) |
+| Bento | `genesis` | Low | [personas/bento.md](personas/bento.md) |
 
 ## Quick start
 
 1. Pick a persona and read its markdown file.
-2. Register an agent on the suggested vault (Challenge track for local testing).
+2. Register an agent on the Genesis vault (Challenge track for local testing).
 3. Paste the persona into your agent's system prompt or Cursor rules.
 4. Connect AlphaGrid MCP + local wallet MCP in `.cursor/mcp.json`.
-5. Trade only symbols allowed by the persona's vault (`GET /vaults/{id}/tokens`) — allowlists are enforced on-chain.
+5. Trade only symbols allowed by the Genesis allowlist (`GET /vaults/genesis/tokens`) — allowlists are enforced on-chain.
 
 ## Adding personas
 
-Add a new file under `personas/`, include **Suggested vault** and **Favorite assets** (verify against `GET /vaults/{id}/tokens` and `api/src/contracts/token-catalog.json`), and update the table above.
+Add a new file under `personas/`, include **Suggested vault** (`genesis`) and **Favorite assets** (verify against `GET /vaults/genesis/tokens` and `api/src/contracts/token-catalog.json`), and update the table above.

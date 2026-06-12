@@ -46,8 +46,8 @@ contract InventorySwapAdapterTest is TradingTestBase {
         vault = VaultTestLib.deployVault(
             vaultFactory,
             IERC20(address(usdc)),
-            "AlphaGrid Tech Vault",
-            "agTECH",
+            "AlphaGrid Genesis Vault",
+            "agGEN",
             VAULT_MANDATE,
             tokenRegistry,
             deployer,

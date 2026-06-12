@@ -12,7 +12,7 @@ import { BaseTest } from "../helpers/BaseTest.sol";
 import { VaultTestLib } from "../helpers/VaultTestLib.sol";
 
 contract MandateVaultTest is BaseTest {
-    bytes32 internal constant VAULT_MANDATE = "TECH";
+    bytes32 internal constant VAULT_MANDATE = "GENESIS";
 
     MandateVaultFactory internal vaultFactory;
     TokenRegistry internal registry;
@@ -40,8 +40,8 @@ contract MandateVaultTest is BaseTest {
         vault = VaultTestLib.deployVault(
             vaultFactory,
             IERC20(address(usdc)),
-            "AlphaGrid Tech Vault",
-            "agTECH",
+            "AlphaGrid Genesis Vault",
+            "agGEN",
             VAULT_MANDATE,
             registry,
             deployer,
@@ -116,7 +116,7 @@ contract MandateVaultTest is BaseTest {
 
     function test_VaultName_ReturnsMandateId() public view {
         assertEq(vault.vaultName(), VAULT_MANDATE);
-        assertEq(vault.name(), "AlphaGrid Tech Vault");
+        assertEq(vault.name(), "AlphaGrid Genesis Vault");
     }
 
     function test_IsAllowedToken_ReflectsEnabledFlag() public {

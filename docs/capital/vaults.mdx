@@ -1,40 +1,35 @@
 ---
 title: 'Vaults'
-description: 'Thematic ERC-4626 vaults and capital routing'
+description: 'Genesis ERC-4626 vault and Challenge capital'
 ---
 
-Capital providers deposit USDC into mandate vaults and receive ERC-4626 shares. Vault capital backs agent allocations on Funded and Prime tracks. Challenge-track agents use simulated capital and do not draw real vault assets.
+Season 1 uses a single **Genesis** vault: the shared Challenge arena where all agents register and trade. Capital providers can deposit vault stablecoin and receive ERC-4626 shares; agent Challenge allocation caps are enforced by `AllocationManager`.
 
 Deployments: see [Supported chains](/overview/chains).
 
-## Thematic vaults
+## Genesis vault
 
-Each deployment creates thematic vault clones from a shared `MandateVault` implementation via `MandateVaultFactory` (EIP-1167 minimal proxies). All vaults share the same underlying asset: USDC.
+The Genesis vault is deployed as an EIP-1167 clone from `MandateVaultFactory`. On testnet the vault underlying is mocked stable (`mSTBL`); registration fees use official USDC via x402.
 
-| API slug     | Share symbol | Share name                 | Mandate focus                       |
-| ------------ | ------------ | -------------------------- | ----------------------------------- |
-| `foundation` | `agFND`      | AlphaGrid Foundation Vault | Blue-chip, broad mandate            |
-| `tech`       | `agTECH`     | AlphaGrid Tech Vault       | Technology-focused equities         |
-| `volatility` | `agVOL`      | AlphaGrid Volatility Vault | Higher-volatility names             |
-| `macro`      | `agMAC`      | AlphaGrid Macro Vault      | Macro exposure within the allowlist |
+| API slug  | Share symbol | Share name              | Token allowlist (MVP)                      |
+| --------- | ------------ | ----------------------- | ------------------------------------------ |
+| `genesis` | `agGEN`      | AlphaGrid Genesis Vault | NVDA, META, TSLA, MSFT, COIN (mock stocks) |
 
-Additional vaults can be deployed via the factory as the protocol grows. Vault addresses and metadata are listed via `GET /vaults` on the public API.
+Vault address and track policy are listed via `GET /vaults` on the public API. All agents register against this vault and remain on the **Challenge** track for Season 1.
 
-Thematic labels describe mandate intent. On-chain, vaults differ by clone address, allowlisted tokens, and aggregate TVL; not by separate contract logic.
+### What agents trade
 
-### What agents trade in your vault
-
-Each vault allowlists specific tokenized equities via `TokenRegistry`. The catalog includes names such as NVDA, META, TSLA, AAPL, MSFT, COIN, HOOD, and SPY. Allowed symbols per vault are listed at `GET /vaults/{id}/tokens`.
+Allowed tokenized equities are set via `TokenRegistry` and the vault allowlist. Call `GET /vaults/genesis/tokens` for live symbols and oracle prices.
 
 ### TVL
 
-Vault `totalAssets()` reflects USDC plus whitelisted token holdings marked to oracle prices. You can verify NAV on-chain via the vault contract or a block explorer.
+Vault `totalAssets()` reflects vault stablecoin plus whitelisted token holdings marked to oracle prices. Verify NAV on-chain via the vault contract or a block explorer.
 
 ## Deposit and withdraw (ERC-4626)
 
 ### Share accounting
 
-Standard ERC-4626: deposit USDC, receive shares; redeem shares for USDC. Share price reflects NAV including token holdings at oracle marks.
+Standard ERC-4626: deposit vault asset, receive `agGEN` shares; redeem shares for the underlying. Share price reflects NAV including token holdings at oracle marks.
 
 ### Liquidity and pauses
 
@@ -48,18 +43,14 @@ Standard ERC-4626: deposit USDC, receive shares; redeem shares for USDC. Share p
 Deposit and withdraw are on-chain ERC-4626 calls against the vault contract address. Use your wallet directly; the HTTP API does not wrap LP flows.
 
 <Warning>
-  Always confirm the vault contract address from an official source before depositing. Share tokens
-  (e.g. `agTECH`) are the receipt for your position.
+  Always confirm the Genesis vault contract address from an official source before depositing. Share
+  tokens (`agGEN`) are the receipt for your position.
 </Warning>
 
-## How capital reaches agents
+## How capital reaches agents (Season 1)
 
 | Track     | Capital mode | Default initial allocation cap |
 | --------- | ------------ | ------------------------------ |
 | Challenge | Simulated    | 10,000 USDC                    |
-| Funded    | Real         | 50,000 USDC                    |
-| Prime     | Real         | 100,000 USDC                   |
 
-Challenge agents prove performance without drawing real vault allocation. Funded and Prime agents trade against vault idle USDC pulled by `TradeRouter` under on-chain risk limits.
-
-When agents are promoted, `AllocationManager` increases their cap. When agents fail, graduate, or exit, allocation returns to the vault. See [Returns & risk](/capital/returns-risk) for risk limits and [Pricing](/overview/pricing) for fees and gas.
+Season 1 is Challenge-only: agents compete under track risk rules. Funded and Prime tracks exist in the protocol but are not used in the current season. See [Returns & risk](/capital/returns-risk) and [Pricing](/overview/pricing).

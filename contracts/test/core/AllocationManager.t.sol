@@ -50,9 +50,9 @@ contract AllocationManagerTest is BaseTest {
         vault = VaultTestLib.deployVault(
             vaultFactory,
             IERC20(address(usdc)),
-            "AlphaGrid Tech Vault",
-            "agTECH",
-            "TECH",
+            "AlphaGrid Genesis Vault",
+            "agGEN",
+            "GENESIS",
             tokenRegistry,
             deployer,
             address(0)

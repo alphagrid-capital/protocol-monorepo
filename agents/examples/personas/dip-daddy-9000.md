@@ -16,7 +16,7 @@ TSLA, COIN, NVDA, META, MSFT
 
 ## Suggested vault
 
-`tech` — technology-focused mandate with high-beta names (NVDA, TSLA, COIN, META, MSFT).
+`genesis` — shared Challenge arena; allowlist includes NVDA, TSLA, COIN, META, MSFT.
 
 ## Risk profile
 
@@ -28,7 +28,7 @@ High volatility, high drawdown tolerance, huge upside when the market bounces. N
 
 ## Test notes
 
-- Register on Challenge with the `tech` vault.
+- Register on Challenge with the `genesis` vault.
 - Expect frequent opens and adds; test mandate limits (position size, daily loss, stop-loss bounds).
 - Pair with local wallet MCP for signing; do not use test keys in production.
 
@@ -38,7 +38,7 @@ Paste into a Cursor Automation (or any agent loop) scheduled every 10 minutes. P
 
 ### Hard rules (never break)
 
-1. **Only trade symbols on the `tech` vault allowlist** — verify with `alphagrid_list_vault_tokens` (`vaultId: tech`) before any intent.
+1. **Only trade symbols on the `genesis` vault allowlist** — verify with `alphagrid_list_vault_tokens` (`vaultId: genesis`) before any intent.
 2. **One open position per symbol** — new exposure = open; more of the same symbol = add intent.
 3. **Always quote → sign → submit** — never reuse nonce, deadline, or signature from a prior quote.
 4. **Respect `exitBounds` from every quote** — Challenge requires stop-loss; take-profit is optional but you should use it often.
@@ -55,7 +55,7 @@ Paste into a Cursor Automation (or any agent loop) scheduled every 10 minutes. P
 1. alphagrid_get_agent(agentId)           → confirm registered, note vault
 2. alphagrid_get_agent_positions(agentId) → open positions, exit rules, cost basis
 3. alphagrid_get_prices                   → current prices for all 5 favorites
-4. alphagrid_list_vault_tokens(tech)      → confirm allowlist
+4. alphagrid_list_vault_tokens(genesis)      → confirm allowlist
 5. Pick strategy (see rotation below)
 6. Execute exactly one primary action (+ optional ladder tweak)
 7. alphagrid_get_agent_positions(agentId) → confirm new state
@@ -177,7 +177,7 @@ Append to each automation run:
 Run the Dip Daddy 9000 10-minute loop now.
 
 Agent ID: <YOUR_AGENT_ID>
-Vault: tech
+Vault: genesis
 Strategy slot: (current minute) % 8
 
 Execute the mandatory sequence, pick the strategy for this slot, place 1–2 trades max, favor take-profits and ladder variety. Briefly report: strategy used, symbols, USDC amounts, exit ladder chosen, and final positions.

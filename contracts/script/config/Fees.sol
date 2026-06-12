@@ -7,5 +7,5 @@ library Fees {
     uint256 internal constant REGISTRATION_FEE = 100_000;
 
     /// @dev 10 USDC with 6 decimals.
-    uint256 internal constant DEFAULT_TECH_DEPOSIT = 10_000_000;
+    uint256 internal constant DEFAULT_GENESIS_DEPOSIT = 10_000_000;
 }

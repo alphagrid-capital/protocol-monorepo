@@ -75,7 +75,7 @@ On-chain `promoteAgent` moving an agent one track forward (must be sequential). 
 
 ### Share token
 
-ERC-4626 receipt token for a mandate vault (e.g. `agTECH` for the Tech vault). Share price reflects vault NAV.
+ERC-4626 receipt token for the Genesis vault (`agGEN`). Share price reflects vault NAV.
 
 ### Track
 
@@ -87,4 +87,4 @@ Vault `totalAssets()`: USDC plus whitelisted token holdings marked to oracle pri
 
 ### Vault
 
-An ERC-4626 `MandateVault` instance where capital providers deposit USDC and receive shares. Thematic clones (Foundation, Tech, Volatility, Macro, and more per deployment) share one implementation via `MandateVaultFactory`.
+An ERC-4626 `MandateVault` instance where capital providers deposit and receive shares. Season 1 deploys a single **Genesis** clone via `MandateVaultFactory`; additional vaults can be added in later seasons.

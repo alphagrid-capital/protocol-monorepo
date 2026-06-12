@@ -35,7 +35,14 @@ contract MandateVaultFactoryTest is BaseTest {
         vm.startPrank(deployer);
 
         MandateVault techVault = VaultTestLib.deployVault(
-            factory, IERC20(address(usdc)), "AlphaGrid Tech Vault", "agTECH", "TECH", registry, deployer, address(0)
+            factory,
+            IERC20(address(usdc)),
+            "AlphaGrid Genesis Vault",
+            "agGEN",
+            "GENESIS",
+            registry,
+            deployer,
+            address(0)
         );
         MandateVault macroVault = VaultTestLib.deployVault(
             factory, IERC20(address(usdc)), "AlphaGrid Macro Vault", "agMAC", "MACRO", registry, deployer, address(0)
@@ -43,9 +50,9 @@ contract MandateVaultFactoryTest is BaseTest {
 
         vm.stopPrank();
 
-        assertEq(techVault.vaultName(), "TECH");
+        assertEq(techVault.vaultName(), "GENESIS");
         assertEq(macroVault.vaultName(), "MACRO");
-        assertEq(techVault.name(), "AlphaGrid Tech Vault");
+        assertEq(techVault.name(), "AlphaGrid Genesis Vault");
         assertEq(macroVault.symbol(), "agMAC");
         assertNotEq(address(techVault), address(macroVault));
         assertEq(factory.vaultCount(), 2);
@@ -55,7 +62,14 @@ contract MandateVaultFactoryTest is BaseTest {
 
     function test_ERC4626DepositOnProxy() public {
         MandateVault vault = VaultTestLib.deployVault(
-            factory, IERC20(address(usdc)), "AlphaGrid Tech Vault", "agTECH", "TECH", registry, deployer, address(0)
+            factory,
+            IERC20(address(usdc)),
+            "AlphaGrid Genesis Vault",
+            "agGEN",
+            "GENESIS",
+            registry,
+            deployer,
+            address(0)
         );
 
         usdc.mint(lp, 100_000e6);
@@ -72,7 +86,14 @@ contract MandateVaultFactoryTest is BaseTest {
 
     function test_VaultTrackRegistryReferencesProxy() public {
         MandateVault vault = VaultTestLib.deployVault(
-            factory, IERC20(address(usdc)), "AlphaGrid Tech Vault", "agTECH", "TECH", registry, deployer, address(0)
+            factory,
+            IERC20(address(usdc)),
+            "AlphaGrid Genesis Vault",
+            "agGEN",
+            "GENESIS",
+            registry,
+            deployer,
+            address(0)
         );
 
         vm.prank(deployer);
@@ -105,7 +126,14 @@ contract MandateVaultFactoryTest is BaseTest {
 
     function test_CloneUsesFixedImplementation() public {
         MandateVault vault = VaultTestLib.deployVault(
-            factory, IERC20(address(usdc)), "AlphaGrid Tech Vault", "agTECH", "TECH", registry, deployer, address(0)
+            factory,
+            IERC20(address(usdc)),
+            "AlphaGrid Genesis Vault",
+            "agGEN",
+            "GENESIS",
+            registry,
+            deployer,
+            address(0)
         );
 
         address impl = factory.implementation();

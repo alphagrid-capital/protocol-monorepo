@@ -18,6 +18,7 @@ export const AgentRegistrationRequestSchema = z
   .object({
     vault: addressSchema.openapi({
       example: '0x0000000000000000000000000000000000000001',
+      description: 'Genesis vault contract address',
     }),
     name: z.string().min(1).max(128).openapi({ example: 'Alpha Bot' }),
     metadataURI: z

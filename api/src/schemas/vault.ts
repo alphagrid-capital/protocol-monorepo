@@ -43,9 +43,9 @@ export const AccountRiskBoundsSchema = z
 
 export const VaultSummarySchema = z
   .object({
-    id: z.string().openapi({ example: 'foundation' }),
-    name: z.string().openapi({ example: 'Foundation' }),
-    slug: z.string().openapi({ example: 'foundation' }),
+    id: z.string().openapi({ example: 'genesis' }),
+    name: z.string().openapi({ example: 'Genesis' }),
+    slug: z.string().openapi({ example: 'genesis' }),
     tagline: z.string().openapi({ example: 'Large-cap liquid equities' }),
     description: z.string(),
     vaultTrackConfigs: z.array(VaultTrackConfigSchema),

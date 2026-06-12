@@ -59,7 +59,7 @@ Required:
 
 Required:
 
-- **4 ERC-4626 thematic vaults** (configurable mandates, allowed tokens, rules)
+- **One Genesis ERC-4626 vault** (tech-equivalent allowlist: NVDA, META, TSLA, MSFT, COIN)
 - **3 track types per vault:** Challenge, Funded, Prime
 
 Challenge uses simulated/test allocation only within the selected vault.

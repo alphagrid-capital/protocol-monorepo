@@ -25,11 +25,8 @@ export interface ChainContracts {
   feeAsset: TokenConfig
   /** Vault + trading underlying (Mocked Stable on testnet). */
   vaultAsset: TokenConfig
-  // Thematic vaults
-  FoundationVault: `0x${string}` | null
-  TechVault: `0x${string}` | null
-  VolatilityVault: `0x${string}` | null
-  MacroVault: `0x${string}` | null
+  /** Challenge arena ERC-4626 vault (formerly Tech vault on testnet). */
+  GenesisVault: `0x${string}` | null
 }
 
 export const contracts: Record<number, ChainContracts> = {
@@ -47,10 +44,7 @@ export const contracts: Record<number, ChainContracts> = {
     TradeRouter: '0x12b0548e204c6d832b29d307e3c6154d029c4277',
     TradeRouterLens: null,
     SwapAdapter: '0xf645850781a781ab4583f7dcd03a3b9ac1192a22',
-    FoundationVault: '0x0665b5ebc6692a2f770369ed6e4c652d0a460292',
-    TechVault: '0xea3895c279bcab7f3d2fd18416500f781accebed',
-    VolatilityVault: '0x6caf45c8c5a6c3765f3ffc91d830ce16f7507cb1',
-    MacroVault: '0x87f9be8f34ee7784747b77d77b6d2ac9afe909a8',
+    GenesisVault: '0xea3895c279bcab7f3d2fd18416500f781accebed',
     feeAsset: {
       address: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
       symbol: 'USDC',
@@ -78,10 +72,7 @@ export const contracts: Record<number, ChainContracts> = {
     TradeRouter: null,
     TradeRouterLens: null,
     SwapAdapter: null,
-    FoundationVault: null,
-    TechVault: null,
-    VolatilityVault: null,
-    MacroVault: null,
+    GenesisVault: null,
     feeAsset: {
       address: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
       symbol: 'USDC',
@@ -109,10 +100,7 @@ export const contracts: Record<number, ChainContracts> = {
     TradeRouter: '0xADaf3a37fFDC10447356E131DC316509c44885D2',
     TradeRouterLens: '0x62272B653a128e2d5786Ae63C063157dfD3aa2bE',
     SwapAdapter: '0xBe12805faF4916791E1546457b67feb2952Ef298',
-    FoundationVault: '0x39ef8b4921301342382Fe9B05C960aEd4f35f7C3',
-    TechVault: '0xa1291D77Eec59c1BE7dd30D0D7e50D659f1C5a84',
-    VolatilityVault: '0x949ce3cceacA61E6a793D4dF14A52C259E981387',
-    MacroVault: '0x49ADb1250AfA92c362e696F2fEd5bC300851c9CA',
+    GenesisVault: '0xa1291D77Eec59c1BE7dd30D0D7e50D659f1C5a84',
     feeAsset: {
       address: '0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d',
       symbol: 'USDC',
@@ -140,10 +128,7 @@ export const contracts: Record<number, ChainContracts> = {
     TradeRouter: null,
     TradeRouterLens: null,
     SwapAdapter: null,
-    FoundationVault: null,
-    TechVault: null,
-    VolatilityVault: null,
-    MacroVault: null,
+    GenesisVault: null,
     feeAsset: {
       address: '0x0000000000000000000000000000000000000000',
       symbol: 'USDC',

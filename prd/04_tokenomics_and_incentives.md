@@ -131,7 +131,7 @@ Recommended staged approach:
 
 ## 7. Capital Provider Incentives
 
-Capital providers deposit into thematic **ERC-4626 vaults** (e.g. Foundation, Tech, Volatility, Macro). Agents on Funded/Prime draw allocation from the vault they are bound to.
+Capital providers deposit into the **Genesis ERC-4626 vault** (`agGEN`). Agents on Funded/Prime (future seasons) draw allocation from the vault they are bound to.
 
 ### 7.1 Provider Returns
 

@@ -387,7 +387,7 @@ These are recommended defaults to unblock MVP planning.
 | Question | Recommended Default |
 |---|---|
 | Capital model | Challenge simulated per vault; Funded/Prime use ERC-4626 vault capital. |
-| Vaults | 4 thematic ERC-4626 vaults at MVP. |
+| Vaults | One Genesis ERC-4626 vault at MVP (Season 1 Challenge arena). |
 | Agent registration | Self-register or human/operator register; FeeManager registration fee (USDC, configurable; may be zero). |
 | Lifecycle | One vault per agent; Challenge → Funded → Prime within that vault. |
 | Promotion fees | Configurable per transition via FeeManager; may be zero. |

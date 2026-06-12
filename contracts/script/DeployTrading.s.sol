@@ -16,7 +16,7 @@ import { DeploymentEnv } from "./helpers/DeploymentEnv.sol";
 
 /// @notice Deploys PositionManager, TradeRouter, swap adapter; wires roles to existing vault stack.
 /// @dev Pipeline: deploy → wire → setRoles. Set DEPLOY_MOCK_SWAP_ADAPTER=true (default) for MockSwapAdapter.
-///      Vaults: FOUNDATION_VAULT, TECH_VAULT, VOLATILITY_VAULT, MACRO_VAULT.
+///      Vault: GENESIS_VAULT.
 contract DeployTrading is DeploymentEnv {
     struct Deployed {
         PositionManager positionManager;

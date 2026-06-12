@@ -60,7 +60,7 @@ contracts/
 └── script/
     ├── helpers/                    # DeploymentEnv, AgentCoreDeploy, VaultDeploy, DeploymentArtifacts
     ├── config/                     # VaultTrackPolicies, Fees, TokenCatalog
-    ├── ops/                        # SetRegistrationFee, DepositToTechVault
+    ├── ops/                        # SetRegistrationFee, DepositToGenesisVault, EnableGenesisVaultTokens
     ├── DeployAgentCore.s.sol
     ├── DeployVaultInfrastructure.s.sol
     ├── DeployFullStack.s.sol       # dev-complete greenfield orchestrator
@@ -92,7 +92,7 @@ Deploys core + vaults + track config + trading + oracle + mock token catalog in 
 # Agent onboarding only
 forge script script/DeployAgentCore.s.sol:DeployAgentCore --rpc-url $RPC_URL --broadcast
 
-# Greenfield: agent core + four vaults + allocation + track configs
+# Greenfield: agent core + Genesis vault + allocation + track configs
 forge script script/DeployVaultInfrastructure.s.sol:DeployVaultInfrastructure --rpc-url $RPC_URL --broadcast
 
 # Set registration fee to 0.1 USDC on FeeManager
@@ -108,7 +108,36 @@ forge script script/DeployTokenCatalog.s.sol:DeployTokenCatalog --rpc-url $RPC_U
 
 See [`deployments/README.md`](deployments/README.md) and [`../api/src/contracts/token-catalog.json`](../api/src/contracts/token-catalog.json).
 
-`DeployTrading` env vars: `ADMIN`, `EXECUTOR`, `OPERATOR` (optional), `AGENT_REGISTRY`, `ALLOCATION_MANAGER`, `VAULT_TRACK_REGISTRY`, `FOUNDATION_VAULT`, `TECH_VAULT`, `VOLATILITY_VAULT`, `MACRO_VAULT`, `DEPLOY_MOCK_SWAP_ADAPTER`.
+### Enable all tokens on an existing Genesis vault
+
+Use when the vault was deployed with a subset allowlist (e.g. former Tech vault with 5 stocks) and you want all 8 mock stocks enabled without redeploying.
+
+**Prerequisites**
+
+1. Mock stocks are registered and active in `TokenRegistry` (from `DeployTokenCatalog` or equivalent).
+2. Broadcaster (`PRIVATE_KEY`) holds `VAULT_ADMIN_ROLE` on `GENESIS_VAULT` (typically the deploy `ADMIN`).
+3. `deployments/<chainId>.json` exists with `tokens.NVDA` … `tokens.SPY` (or set `DEPLOYMENT_ARTIFACT`).
+
+**Arbitrum Sepolia (421614)** — former Tech vault, now Genesis:
+
+```bash
+cd contracts
+# .env: PRIVATE_KEY, RPC_URL, GENESIS_VAULT=0xa1291D77Eec59c1BE7dd30D0D7e50D659f1C5a84
+
+forge script script/ops/EnableGenesisVaultTokens.s.sol:EnableGenesisVaultTokens \
+  --rpc-url $RPC_URL --broadcast
+```
+
+Dry-run first (omit `--broadcast`). The script skips tokens already on the allowlist and only calls `enableToken` for missing ones (typically `AAPL`, `HOOD`, `SPY` on the legacy Tech vault).
+
+Verify on-chain:
+
+```bash
+cast call $GENESIS_VAULT "allowedTokenCount()(uint256)" --rpc-url $RPC_URL
+# expect 8
+```
+
+`DeployTrading` env vars: `ADMIN`, `EXECUTOR`, `OPERATOR` (optional), `AGENT_REGISTRY`, `ALLOCATION_MANAGER`, `VAULT_TRACK_REGISTRY`, `GENESIS_VAULT`, `DEPLOY_MOCK_SWAP_ADAPTER`.
 
 - `DEPLOY_MOCK_SWAP_ADAPTER=true` — test/dev adapter (mints mock tokens)
 - `DEPLOY_MOCK_SWAP_ADAPTER=false` — `InventorySwapAdapter` (pre-funded ERC-20 inventory)

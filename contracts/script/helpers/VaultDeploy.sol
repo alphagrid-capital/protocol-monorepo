@@ -10,19 +10,13 @@ import { MandateVault } from "../../src/vaults/MandateVault.sol";
 import { MandateVaultFactory } from "../../src/vaults/MandateVaultFactory.sol";
 import { DeploymentEnv } from "./DeploymentEnv.sol";
 
-/// @notice Shared MandateVault factory + four mandate clone deploy.
+/// @notice Shared MandateVault factory + Genesis vault clone deploy.
 abstract contract VaultDeploy is DeploymentEnv {
-    bytes32 internal constant MANDATE_FOUNDATION = "FOUNDATION";
-    bytes32 internal constant MANDATE_TECH = "TECH";
-    bytes32 internal constant MANDATE_VOLATILITY = "VOLATILITY";
-    bytes32 internal constant MANDATE_MACRO = "MACRO";
+    bytes32 internal constant MANDATE_GENESIS = "GENESIS";
 
     struct VaultSet {
         MandateVaultFactory factory;
-        MandateVault foundationVault;
-        MandateVault techVault;
-        MandateVault volatilityVault;
-        MandateVault macroVault;
+        MandateVault genesisVault;
     }
 
     function deployVaults(address vaultAsset, TokenRegistry tokenRegistry_, address admin, address treasury)
@@ -31,39 +25,20 @@ abstract contract VaultDeploy is DeploymentEnv {
     {
         IERC20 asset = IERC20(vaultAsset);
         vaults.factory = new MandateVaultFactory(address(0), asset);
-        vaults.foundationVault = deployVaultClone(
+        vaults.genesisVault = deployVaultClone(
             vaults.factory,
             asset,
             tokenRegistry_,
             admin,
             treasury,
-            "AlphaGrid Foundation Vault",
-            "agFND",
-            MANDATE_FOUNDATION
-        );
-        vaults.techVault = deployVaultClone(
-            vaults.factory, asset, tokenRegistry_, admin, treasury, "AlphaGrid Tech Vault", "agTECH", MANDATE_TECH
-        );
-        vaults.volatilityVault = deployVaultClone(
-            vaults.factory,
-            asset,
-            tokenRegistry_,
-            admin,
-            treasury,
-            "AlphaGrid Volatility Vault",
-            "agVOL",
-            MANDATE_VOLATILITY
-        );
-        vaults.macroVault = deployVaultClone(
-            vaults.factory, asset, tokenRegistry_, admin, treasury, "AlphaGrid Macro Vault", "agMAC", MANDATE_MACRO
+            "AlphaGrid Genesis Vault",
+            "agGEN",
+            MANDATE_GENESIS
         );
     }
 
     function configureVaultTracks(VaultTrackRegistry registry, VaultSet memory vaults) internal {
-        VaultTrackPolicies.configureVault(registry, address(vaults.foundationVault));
-        VaultTrackPolicies.configureVault(registry, address(vaults.techVault));
-        VaultTrackPolicies.configureVault(registry, address(vaults.volatilityVault));
-        VaultTrackPolicies.configureVault(registry, address(vaults.macroVault));
+        VaultTrackPolicies.configureVault(registry, address(vaults.genesisVault));
     }
 
     function deployVaultClone(
