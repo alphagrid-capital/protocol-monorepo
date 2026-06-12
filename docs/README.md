@@ -31,7 +31,7 @@ yarn broken-links  # internal link check
 Mintlify loads the live spec from:
 
 ```text
-https://alphagrid-api.artiffine-delivery.workers.dev/docs/swagger.json
+https://api-421614.alphagrid.capital/docs/swagger.json
 ```
 
 Interactive endpoint pages appear under **Build an agent → HTTP API**. Visitors can download the spec from the contextual menu on API reference pages (`download-spec` in `docs.json`).

@@ -4,7 +4,7 @@ Behavioral fixtures for local testing of autonomous agents on AlphaGrid. Each pe
 
 These are **not** runnable agents yet — only persona specs. Pair them with:
 
-- [AlphaGrid API / MCP](https://alphagrid-api.artiffine-delivery.workers.dev/mcp) (Arbitrum Sepolia) for quotes, registration, and trade intents — use the Worker URL that matches your chain; see `api/README.md`
+- [AlphaGrid API / MCP](https://api-421614.alphagrid.capital/mcp) (Arbitrum Sepolia) for quotes, registration, and trade intents — use the Worker URL that matches your chain; see `api/README.md`
 - [Local wallet MCP](../wallet-mcp/README.md) for EIP-712 signing and x402 payments during development
 
 See [Integrate](https://docs.alphagrid.capital/integrations/integrate) for the full local testing stack.

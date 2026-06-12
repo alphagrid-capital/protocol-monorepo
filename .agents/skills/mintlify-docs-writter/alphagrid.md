@@ -18,7 +18,7 @@ Public Mintlify site: `docs/`. Read `docs/docs.json` before structural changes.
 
 **Integrate group:** narrative MDX (`integrations/integrate`, `reference/api-mcp`) plus auto-generated **HTTP API** pages from the live OpenAPI URL in `docs.json`. Do not hand-maintain endpoint tables for those routes in MDX.
 
-**OpenAPI:** `https://alphagrid-api.artiffine-delivery.workers.dev/docs/swagger.json` (remote URL in `docs.json`, not vendored). Contextual menu: `copy`, `download-spec`, `chatgpt`, `claude`.
+**OpenAPI:** `https://api-421614.alphagrid.capital/docs/swagger.json` (remote URL in `docs.json`, not vendored). Contextual menu: `copy`, `download-spec`, `chatgpt`, `claude`.
 
 **Style:** Aspen theme, dark default, sentence-case headings, root-relative links without `.mdx` (e.g. `/agents/agent-guide`). No em dashes; use commas, periods, colons, or parentheses.
 

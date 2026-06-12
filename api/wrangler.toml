@@ -43,7 +43,8 @@ crons = ["*/15 * * * *"]
 # CI deploys all three on push to main (see .github/workflows/api.yml).
 
 [env.arbitrum-sepolia]
-name = "alphagrid-api"
+name = "alphagrid-api-arbitrum-sepolia"
+routes = [{ pattern = "api-421614.alphagrid.capital", custom_domain = true }]
 
 [env.arbitrum-sepolia.vars]
 CHAIN_ID = "421614"
@@ -52,6 +53,7 @@ ENABLE_SWAGGER = "true"
 
 [env.robinhood-testnet]
 name = "alphagrid-api-robinhood"
+routes = [{ pattern = "api-46630.alphagrid.capital", custom_domain = true }]
 
 [env.robinhood-testnet.vars]
 CHAIN_ID = "46630"
@@ -60,6 +62,7 @@ ENABLE_SWAGGER = "true"
 
 [env.arbitrum-one]
 name = "alphagrid-api-arbitrum-one"
+routes = [{ pattern = "api-42161.alphagrid.capital", custom_domain = true }]
 
 [env.arbitrum-one.vars]
 CHAIN_ID = "42161"

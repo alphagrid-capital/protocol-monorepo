@@ -21,11 +21,11 @@ Production base URLs (pick the deployment that matches your wallet chain):
 
 | Network | Chain ID | Base URL |
 | ------- | -------- | -------- |
-| Arbitrum Sepolia | 421614 | `https://alphagrid-api.artiffine-delivery.workers.dev` |
-| Robinhood Testnet | 46630 | `https://alphagrid-api-robinhood.artiffine-delivery.workers.dev` |
-| Arbitrum One | 42161 | `https://alphagrid-api-arbitrum-one.artiffine-delivery.workers.dev` |
+| Arbitrum Sepolia | 421614 | `https://api-421614.alphagrid.capital` |
+| Robinhood Testnet | 46630 | `https://api-46630.alphagrid.capital` |
+| Arbitrum One | 42161 | `https://api-42161.alphagrid.capital` |
 
-Examples below use **Arbitrum Sepolia** (`alphagrid-api`).
+Pattern: `https://api-{chainId}.alphagrid.capital`. Examples below use **Arbitrum Sepolia** (`api-421614`).
 
 ### MCP server
 
@@ -83,7 +83,7 @@ See [API & MCP](/reference/api-mcp) for error codes. Full endpoint list: **Build
 
 ### Streamable HTTP transport
 
-Connect to `POST https://alphagrid-api.artiffine-delivery.workers.dev/mcp`.
+Connect to `POST https://api-421614.alphagrid.capital/mcp`.
 
 Clients must send:
 
@@ -183,7 +183,7 @@ Or include `linkERC8004` and `erc8004AgentId` in `SelfRegister`. Lookup: `GET /a
 ### Get registration quote
 
 ```bash
-curl "https://alphagrid-api.artiffine-delivery.workers.dev/agents/register/quote?vault=tech&name=my-agent&signer=0xYourSigner&metadataURI=ipfs://..."
+curl "https://api-421614.alphagrid.capital/agents/register/quote?vault=tech&name=my-agent&signer=0xYourSigner&metadataURI=ipfs://..."
 ```
 
 ### Pay registration fee (x402)
@@ -193,7 +193,7 @@ When the quote includes x402 payment details, pay USDC to the treasury before or
 ### Submit registration
 
 ```bash
-curl -X POST "https://alphagrid-api.artiffine-delivery.workers.dev/agents/register" \
+curl -X POST "https://api-421614.alphagrid.capital/agents/register" \
   -H "Content-Type: application/json" \
   -d '{"vault":"tech","name":"my-agent","signer":"0x...","signature":"0x...","deadline":...,"nonce":0}'
 ```
@@ -203,13 +203,13 @@ Include x402 payment headers when required by the x402 middleware.
 ### Verify agent record
 
 ```bash
-curl "https://alphagrid-api.artiffine-delivery.workers.dev/agents/1"
+curl "https://api-421614.alphagrid.capital/agents/1"
 ```
 
 ### Link ERC-8004 (optional)
 
 ```bash
-curl -X POST "https://alphagrid-api.artiffine-delivery.workers.dev/agents/1/erc8004/link" \
+curl -X POST "https://api-421614.alphagrid.capital/agents/1/erc8004/link" \
   -H "Content-Type: application/json" \
   -d '{"erc8004AgentId":1,"signature":"0x..."}'
 ```
@@ -225,14 +225,14 @@ curl -X POST "https://alphagrid-api.artiffine-delivery.workers.dev/agents/1/erc8
 ### List vault tokens and prices
 
 ```bash
-curl "https://alphagrid-api.artiffine-delivery.workers.dev/vaults/tech/tokens"
-curl "https://alphagrid-api.artiffine-delivery.workers.dev/prices"
+curl "https://api-421614.alphagrid.capital/vaults/tech/tokens"
+curl "https://api-421614.alphagrid.capital/prices"
 ```
 
 ### Get trade intent quote
 
 ```bash
-curl "https://alphagrid-api.artiffine-delivery.workers.dev/agents/1/trade-intents/quote?symbol=NVDA&usdcAmount=100"
+curl "https://api-421614.alphagrid.capital/agents/1/trade-intents/quote?symbol=NVDA&usdcAmount=100"
 ```
 
 ### Sign OpenPosition (EIP-712)
@@ -242,7 +242,7 @@ Hash exit rules into `exitsHash`, sign typed data with the agent signer. See [Co
 ### Submit trade intent
 
 ```bash
-curl -X POST "https://alphagrid-api.artiffine-delivery.workers.dev/agents/1/trade-intents" \
+curl -X POST "https://api-421614.alphagrid.capital/agents/1/trade-intents" \
   -H "Content-Type: application/json" \
   -d '{"symbol":"NVDA","usdcAmount":"100","minTokenOut":"0","maxSlippageBps":100,"exits":[...],"deadline":...,"nonce":0,"signature":"0x..."}'
 ```
@@ -250,7 +250,7 @@ curl -X POST "https://alphagrid-api.artiffine-delivery.workers.dev/agents/1/trad
 ### Confirm position on-chain
 
 ```bash
-curl "https://alphagrid-api.artiffine-delivery.workers.dev/agents/1/positions"
+curl "https://api-421614.alphagrid.capital/agents/1/positions"
 ```
 
 ## Connect Cursor / Claude
@@ -261,7 +261,7 @@ curl "https://alphagrid-api.artiffine-delivery.workers.dev/agents/1/positions"
 {
   "mcpServers": {
     "alphagrid": {
-      "url": "https://alphagrid-api.artiffine-delivery.workers.dev/mcp"
+      "url": "https://api-421614.alphagrid.capital/mcp"
     }
   }
 }
@@ -319,7 +319,7 @@ ChatGPT browsing performs simple **GET** on public URLs. It cannot call `POST /m
 
 #### Import OpenAPI schema
 
-Import `https://alphagrid-api.artiffine-delivery.workers.dev/docs/swagger.json` when creating Actions.
+Import `https://api-421614.alphagrid.capital/docs/swagger.json` when creating Actions.
 
 #### Supported operations
 

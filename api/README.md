@@ -18,13 +18,13 @@ Workers Logs and tracing are enabled in `wrangler.toml` (`observability.enabled`
 
 The same codebase deploys to **three** Cloudflare Workers. Each instance has its own `CHAIN_ID`, RPC, relayer/executor keys, and Durable Object namespace. MCP clients and agents must use the URL that matches their wallet chain.
 
-| Wrangler env          | Worker name                    | Chain ID | Network                 |
-| --------------------- | ------------------------------ | -------- | ----------------------- |
-| `arbitrum-sepolia`    | `alphagrid-api`                | 421614   | Arbitrum Sepolia        |
-| `robinhood-testnet`   | `alphagrid-api-robinhood`      | 46630    | Robinhood Chain Testnet |
-| `arbitrum-one`        | `alphagrid-api-arbitrum-one`   | 42161    | Arbitrum One (mainnet)  |
+| Wrangler env          | Worker name                    | Chain ID | URL                                      |
+| --------------------- | ------------------------------ | -------- | ---------------------------------------- |
+| `arbitrum-sepolia`    | `alphagrid-api-arbitrum-sepolia` | 421614   | `https://api-421614.alphagrid.capital`   |
+| `robinhood-testnet`   | `alphagrid-api-robinhood`      | 46630    | `https://api-46630.alphagrid.capital`    |
+| `arbitrum-one`        | `alphagrid-api-arbitrum-one`   | 42161    | `https://api-42161.alphagrid.capital`    |
 
-Worker URLs follow `https://<worker-name>.<account-subdomain>.workers.dev` unless you attach custom routes in Cloudflare.
+Custom domains are declared in `wrangler.toml` (`api-{chainId}.alphagrid.capital`). The `alphagrid.capital` zone must be on the same Cloudflare account. `*.workers.dev` URLs still work as a fallback after deploy.
 
 `CHAIN_ID` and `X402_NETWORK` are set in `wrangler.toml` per env. Contract addresses for each chain are in `src/constants/contracts.ts` (Robinhood and Arbitrum One are placeholders until on-chain deploy).
 
@@ -85,7 +85,7 @@ ChatGPT **browsing** only performs simple `GET` requests on **public** URLs. It 
 | Custom GPT with structured actions     | Import `GET /docs/swagger.json` when creating Actions                        |
 | Claude / Cursor / MCP-native clients   | `POST /mcp` (see MCP tools table below)                                      |
 
-**Do not paste** `/docs` if you want JSON—the UI is HTML. Paste the **data URL**, e.g. `https://<your-worker>.workers.dev/vaults?format=md`.
+**Do not paste** `/docs` if you want JSON—the UI is HTML. Paste the **data URL**, e.g. `https://api-421614.alphagrid.capital/vaults?format=md`.
 
 ### MCP tools
 
