@@ -128,7 +128,9 @@ export const AgentPositionSchema = z
     unrealizedPnlUsdc: z
       .string()
       .optional()
-      .openapi({ description: 'Mark-to-market unrealized PnL (open positions)' }),
+      .openapi({
+        description: 'Mark-to-market unrealized PnL (open positions)',
+      }),
     derived: PositionDerivedSchema,
   })
   .openapi('AgentPosition')

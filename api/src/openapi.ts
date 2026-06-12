@@ -21,8 +21,7 @@ export const OPENAPI_DOCUMENT_CONFIG = {
     },
     {
       name: 'Trading',
-      description:
-        'Trade intents, positions, and on-chain risk state reads',
+      description: 'Trade intents, positions, and on-chain risk state reads',
     },
   ],
 }

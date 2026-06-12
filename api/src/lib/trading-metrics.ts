@@ -18,10 +18,7 @@ export function utilizationBps(current: number, limit: number): number | null {
 }
 
 /** Policy max daily loss in USDC base units (positive magnitude). */
-export function maxDailyLossUsdc(
-  cap: bigint,
-  maxDailyLossBps: number
-): bigint {
+export function maxDailyLossUsdc(cap: bigint, maxDailyLossBps: number): bigint {
   return (cap * BigInt(maxDailyLossBps)) / 10000n
 }
 

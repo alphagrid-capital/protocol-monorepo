@@ -18,11 +18,11 @@ Workers Logs and tracing are enabled in `wrangler.toml` (`observability.enabled`
 
 The same codebase deploys to **three** Cloudflare Workers. Each instance has its own `CHAIN_ID`, RPC, relayer/executor keys, and Durable Object namespace. MCP clients and agents must use the URL that matches their wallet chain.
 
-| Wrangler env          | Worker name                    | Chain ID | URL                                      |
-| --------------------- | ------------------------------ | -------- | ---------------------------------------- |
-| `arbitrum-sepolia`    | `alphagrid-api-arbitrum-sepolia` | 421614   | `https://api-421614.alphagrid.capital`   |
-| `robinhood-testnet`   | `alphagrid-api-robinhood`      | 46630    | `https://api-46630.alphagrid.capital`    |
-| `arbitrum-one`        | `alphagrid-api-arbitrum-one`   | 42161    | `https://api-42161.alphagrid.capital`    |
+| Wrangler env        | Worker name                      | Chain ID | URL                                    |
+| ------------------- | -------------------------------- | -------- | -------------------------------------- |
+| `arbitrum-sepolia`  | `alphagrid-api-arbitrum-sepolia` | 421614   | `https://api-421614.alphagrid.capital` |
+| `robinhood-testnet` | `alphagrid-api-robinhood`        | 46630    | `https://api-46630.alphagrid.capital`  |
+| `arbitrum-one`      | `alphagrid-api-arbitrum-one`     | 42161    | `https://api-42161.alphagrid.capital`  |
 
 Public URLs use `https://api-{chainId}.alphagrid.capital` — attach each hostname in the Cloudflare dashboard (**Workers & Pages → Worker → Settings → Domains & Routes → Add Custom Domain**). `*.workers.dev` URLs work immediately after deploy.
 
@@ -89,31 +89,31 @@ ChatGPT **browsing** only performs simple `GET` requests on **public** URLs. It 
 
 ### MCP tools
 
-| Tool                                     | HTTP equivalent                                          |
-| ---------------------------------------- | -------------------------------------------------------- |
-| `alphagrid_list_vaults`                  | `GET /vaults`                                            |
-| `alphagrid_list_tokens`                  | `GET /tokens`                                            |
-| `alphagrid_list_vault_tokens`            | `GET /vaults/{id}/tokens`                                |
-| `alphagrid_get_prices`                   | `GET /prices`                                            |
-| `alphagrid_get_agent`                    | `GET /agents/{agentId}`                                  |
-| `alphagrid_list_agents_by_owner`         | `GET /agents/by-owner/{owner}`                           |
-| `alphagrid_get_agent_by_erc8004`         | `GET /agents/by-erc8004/{erc8004AgentId}`                |
-| `alphagrid_link_agent_erc8004`           | `POST /agents/{agentId}/erc8004/link`                    |
-| `alphagrid_get_agent_registration_quote` | `GET /agents/register/quote`                             |
-| `alphagrid_register_agent`               | `POST /agents/register`                                  |
-| `alphagrid_submit_trade_intent`          | `POST /agents/{agentId}/trade-intents`                   |
-| `alphagrid_get_add_intent_quote`         | `GET /agents/{agentId}/add-intents/quote`                |
-| `alphagrid_submit_add_intent`            | `POST /agents/{agentId}/add-intents`                     |
-| `alphagrid_get_reduce_intent_quote`      | `GET /agents/{agentId}/reduce-intents/quote`             |
-| `alphagrid_submit_reduce_intent`         | `POST /agents/{agentId}/reduce-intents`                  |
-| `alphagrid_get_exit_ladder_intent_quote` | `GET /agents/{agentId}/exit-ladder-intents/quote`        |
-| `alphagrid_submit_exit_ladder_intent`    | `POST /agents/{agentId}/exit-ladder-intents`             |
-| `alphagrid_get_agent_positions`          | `GET /agents/{agentId}/positions`                        |
-| `alphagrid_list_closed_positions`        | `GET /agents/{agentId}/closed-positions`                 |
-| `alphagrid_get_agent_position`         | `GET /agents/{agentId}/positions/{positionId}`           |
-| `alphagrid_get_risk_state`               | `GET /agents/{agentId}/risk-state`                       |
-| `alphagrid_get_trade_history`            | `GET /agents/{agentId}/trades` (**NOT_IMPLEMENTED**)     |
-| `alphagrid_get_intent_status`            | `GET /intents/{intentId}` (**NOT_IMPLEMENTED**)          |
+| Tool                                     | HTTP equivalent                                      |
+| ---------------------------------------- | ---------------------------------------------------- |
+| `alphagrid_list_vaults`                  | `GET /vaults`                                        |
+| `alphagrid_list_tokens`                  | `GET /tokens`                                        |
+| `alphagrid_list_vault_tokens`            | `GET /vaults/{id}/tokens`                            |
+| `alphagrid_get_prices`                   | `GET /prices`                                        |
+| `alphagrid_get_agent`                    | `GET /agents/{agentId}`                              |
+| `alphagrid_list_agents_by_owner`         | `GET /agents/by-owner/{owner}`                       |
+| `alphagrid_get_agent_by_erc8004`         | `GET /agents/by-erc8004/{erc8004AgentId}`            |
+| `alphagrid_link_agent_erc8004`           | `POST /agents/{agentId}/erc8004/link`                |
+| `alphagrid_get_agent_registration_quote` | `GET /agents/register/quote`                         |
+| `alphagrid_register_agent`               | `POST /agents/register`                              |
+| `alphagrid_submit_trade_intent`          | `POST /agents/{agentId}/trade-intents`               |
+| `alphagrid_get_add_intent_quote`         | `GET /agents/{agentId}/add-intents/quote`            |
+| `alphagrid_submit_add_intent`            | `POST /agents/{agentId}/add-intents`                 |
+| `alphagrid_get_reduce_intent_quote`      | `GET /agents/{agentId}/reduce-intents/quote`         |
+| `alphagrid_submit_reduce_intent`         | `POST /agents/{agentId}/reduce-intents`              |
+| `alphagrid_get_exit_ladder_intent_quote` | `GET /agents/{agentId}/exit-ladder-intents/quote`    |
+| `alphagrid_submit_exit_ladder_intent`    | `POST /agents/{agentId}/exit-ladder-intents`         |
+| `alphagrid_get_agent_positions`          | `GET /agents/{agentId}/positions`                    |
+| `alphagrid_list_closed_positions`        | `GET /agents/{agentId}/closed-positions`             |
+| `alphagrid_get_agent_position`           | `GET /agents/{agentId}/positions/{positionId}`       |
+| `alphagrid_get_risk_state`               | `GET /agents/{agentId}/risk-state`                   |
+| `alphagrid_get_trade_history`            | `GET /agents/{agentId}/trades` (**NOT_IMPLEMENTED**) |
+| `alphagrid_get_intent_status`            | `GET /intents/{intentId}` (**NOT_IMPLEMENTED**)      |
 
 Trade history and intent status stubs return HTTP **501** or MCP `NOT_IMPLEMENTED`. Open/add/reduce/exit-ladder intents and position/risk reads require executor config for writes; reads need `RPC_URL` + `CHAIN_ID` (see below).
 
@@ -212,13 +212,13 @@ Create three [GitHub Environments](https://docs.github.com/en/actions/deployment
 
 In **each** environment, add secrets with the **same names** but chain-specific values:
 
-| Secret                      | Description                                                        |
-| --------------------------- | ------------------------------------------------------------------ |
-| `RPC_URL`                   | JSON-RPC URL for that chain                                        |
-| `X402_FACILITATOR_URL`      | x402 facilitator for that network                                  |
+| Secret                      | Description                                                      |
+| --------------------------- | ---------------------------------------------------------------- |
+| `RPC_URL`                   | JSON-RPC URL for that chain                                      |
+| `X402_FACILITATOR_URL`      | x402 facilitator for that network                                |
 | `RELAYER_PRIVATE_KEY`       | EOA with `REGISTRAR_ROLE` on that chain's `AgentRegistry`        |
-| `EXECUTOR_PRIVATE_KEY`      | EOA with `EXECUTOR_ROLE` on that chain's `TradeRouter`             |
-| `ORACLE_KEEPER_PRIVATE_KEY` | EOA with `ORACLE_UPDATER_ROLE` on that chain's `MockPriceOracle`  |
+| `EXECUTOR_PRIVATE_KEY`      | EOA with `EXECUTOR_ROLE` on that chain's `TradeRouter`           |
+| `ORACLE_KEEPER_PRIVATE_KEY` | EOA with `ORACLE_UPDATER_ROLE` on that chain's `MockPriceOracle` |
 | `FINNHUB_API_KEY`           | Finnhub API key (can be the same value in every environment)     |
 
 `CHAIN_ID` and `X402_NETWORK` come from `wrangler.toml` — do not set them as secrets.

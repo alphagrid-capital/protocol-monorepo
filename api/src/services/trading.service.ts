@@ -663,8 +663,10 @@ export class TradingService {
         })),
       })
 
-      const closedMatches: Array<{ positionId: bigint; position: OnChainPosition }> =
-        []
+      const closedMatches: Array<{
+        positionId: bigint
+        position: OnChainPosition
+      }> = []
       for (let index = 0; index < batchIds.length; index++) {
         const result = positionResults[index]
         if (result.status === 'failure') {
@@ -737,8 +739,13 @@ export class TradingService {
     unrealizedPnlUsdc?: string
     realizedPnlUsdc?: string
   }): GetAgentPositionResponse['position'] {
-    const { position, exitRules, agentIdStr, unrealizedPnlUsdc, realizedPnlUsdc } =
-      params
+    const {
+      position,
+      exitRules,
+      agentIdStr,
+      unrealizedPnlUsdc,
+      realizedPnlUsdc,
+    } = params
     const mappedRules = exitRules.map(mapOnChainExitRule)
     const isOpen = position.status === POSITION_STATUS_OPEN
     const status = isOpen ? ('Open' as const) : ('Closed' as const)
