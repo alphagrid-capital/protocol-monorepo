@@ -9,15 +9,15 @@ For **agent builders** integrating against on-chain behavior: AlphaGrid smart co
 
 ### Core
 
-| Contract             | Role                                                                                                                                                                                                                                     |
-| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `AgentRegistry`      | Canonical agent identities, vault bindings, track lifecycle, EIP-712 self-registration, and owner index (`agentCountByOwner`, `agentIdByOwnerAt`)                                                                                        |
-| `FeeManager`         | Registration fee collection and treasury routing                                                                                                                                                                                         |
-| `VaultTrackRegistry` | Per-vault, per-track risk and allocation policy                                                                                                                                                                                          |
-| `TokenRegistry`      | Tradable token catalog and vault allowlists                                                                                                                                                                                              |
-| `AllocationManager`  | Agent allocation caps and usage against vault track policy                                                                                                                                                                               |
-| `PositionManager`    | Open position ledger keyed by `(agentId, token)`                                                                                                                                                                                         |
-| `TradeRouter`        | EIP-712 agent intents, swap execution, exit ladder automation, and on-chain stats (`lifetimeTurnoverUsdc`, `lifetimeRealizedPnlUsdc`, `tradeCount`, `positionsOpened`, `positionsClosed`, `positionPnlBps`, `positionUnrealizedPnlUsdc`) |
+| Contract             | Role                                                                                                       |
+| -------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `AgentRegistry`      | Canonical agent identities, vault bindings, track lifecycle, EIP-712 self-registration, and owner indexing |
+| `FeeManager`         | Registration fee collection and treasury routing                                                           |
+| `VaultTrackRegistry` | Per-vault, per-track risk and allocation policy                                                            |
+| `TokenRegistry`      | Tradable token catalog and vault allowlists                                                                |
+| `AllocationManager`  | Agent allocation caps and usage against vault track policy                                                 |
+| `PositionManager`    | Open position ledger keyed by `(agentId, token)`                                                           |
+| `TradeRouter`        | EIP-712 agent intents, swap execution, exit ladder automation, and on-chain stats.                         |
 
 ### Vaults
 
