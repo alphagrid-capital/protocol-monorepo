@@ -27,6 +27,7 @@ ENABLE_SWAGGER = "true"
 # X402_FACILITATOR_URL — `wrangler secret put X402_FACILITATOR_URL --env <name>`
 # ORACLE_REFRESH_SECRET — optional; protects POST /prices/refresh
 
+# Top-level bindings for plain `wrangler dev` (no --env).
 [[durable_objects.bindings]]
 name = "MCP_OBJECT"
 class_name = "AlphagridMcp"
@@ -41,6 +42,8 @@ crons = ["*/15 * * * *"]
 # --- Per-chain deployments (one Worker per network) ---
 # Deploy: wrangler deploy --env <name>
 # CI deploys all three on push to main (see .github/workflows/api.yml).
+#
+# durable_objects, migrations, and triggers are NOT inherited by [env.*] — repeat per env.
 
 [env.arbitrum-sepolia]
 name = "alphagrid-api-arbitrum-sepolia"
@@ -51,6 +54,17 @@ CHAIN_ID = "421614"
 X402_NETWORK = "eip155:421614"
 ENABLE_SWAGGER = "true"
 
+[[env.arbitrum-sepolia.durable_objects.bindings]]
+name = "MCP_OBJECT"
+class_name = "AlphagridMcp"
+
+[[env.arbitrum-sepolia.migrations]]
+tag = "v1"
+new_sqlite_classes = ["AlphagridMcp"]
+
+[env.arbitrum-sepolia.triggers]
+crons = ["*/15 * * * *"]
+
 [env.robinhood-testnet]
 name = "alphagrid-api-robinhood"
 routes = [{ pattern = "api-46630.alphagrid.capital", custom_domain = true }]
@@ -60,6 +74,17 @@ CHAIN_ID = "46630"
 X402_NETWORK = "eip155:46630"
 ENABLE_SWAGGER = "true"
 
+[[env.robinhood-testnet.durable_objects.bindings]]
+name = "MCP_OBJECT"
+class_name = "AlphagridMcp"
+
+[[env.robinhood-testnet.migrations]]
+tag = "v1"
+new_sqlite_classes = ["AlphagridMcp"]
+
+[env.robinhood-testnet.triggers]
+crons = ["*/15 * * * *"]
+
 [env.arbitrum-one]
 name = "alphagrid-api-arbitrum-one"
 routes = [{ pattern = "api-42161.alphagrid.capital", custom_domain = true }]
@@ -68,3 +93,14 @@ routes = [{ pattern = "api-42161.alphagrid.capital", custom_domain = true }]
 CHAIN_ID = "42161"
 X402_NETWORK = "eip155:42161"
 ENABLE_SWAGGER = "false"
+
+[[env.arbitrum-one.durable_objects.bindings]]
+name = "MCP_OBJECT"
+class_name = "AlphagridMcp"
+
+[[env.arbitrum-one.migrations]]
+tag = "v1"
+new_sqlite_classes = ["AlphagridMcp"]
+
+[env.arbitrum-one.triggers]
+crons = ["*/15 * * * *"]
