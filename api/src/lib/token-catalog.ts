@@ -1,5 +1,5 @@
 import type { Address } from 'viem'
-import catalogJson from '../../../config/token-catalog.json'
+import catalogJson from '../contracts/token-catalog.json'
 
 export interface TokenCatalogEntry {
   symbol: string

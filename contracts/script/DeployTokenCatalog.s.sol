@@ -35,6 +35,6 @@ contract DeployTokenCatalog is DeploymentEnv {
 
         vm.stopBroadcast();
 
-        console2.log("Deployed", n, "mock stocks; copy addresses into config/token-catalog.json");
+        console2.log("Deployed", n, "mock stocks; copy addresses into api/src/contracts/token-catalog.json");
     }
 }

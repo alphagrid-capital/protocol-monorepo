@@ -1,6 +1,6 @@
 # On-chain deployment artifacts
 
-Record addresses after broadcasting deploy scripts. Update `config/token-catalog.json` (`chains.<chainId>`) and `api/src/constants/contracts.ts` from the generated artifact.
+Record addresses after broadcasting deploy scripts. Update `api/src/contracts/token-catalog.json` (`chains.<chainId>`) and `api/src/constants/contracts.ts` from the generated artifact.
 
 ## Artifact file
 
@@ -27,7 +27,7 @@ forge script script/DeployFullStack.s.sol:DeployFullStack \
 
 Required env: `ADMIN`, `TREASURY`, `BACKEND_RELAYER`, `ERC8004_IDENTITY_REGISTRY`, `EXECUTOR`. Optional: `FEE_ASSET`, `VAULT_ASSET`, legacy `USDC` (sets both), `OPERATOR`, `ORACLE_KEEPER`, `DEPLOY_MOCK_SWAP_ADAPTER`.
 
-Copy logged addresses into `config/token-catalog.json` and `api/src/constants/contracts.ts`.
+Copy logged addresses into `api/src/contracts/token-catalog.json` and `api/src/constants/contracts.ts`.
 
 ## Staged deploy (production)
 

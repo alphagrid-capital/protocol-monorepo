@@ -238,7 +238,7 @@ When `PriceOracle` and token addresses are configured for `CHAIN_ID`, a cron (`*
 | `ORACLE_REFRESH_SECRET`     | Optional; if set, `POST /prices/refresh` requires `Authorization: Bearer <secret>` |
 | `RPC_URL` / `CHAIN_ID`      | Same as other on-chain reads                                                       |
 
-Fill `config/token-catalog.json` `chains.<id>.tokens` with addresses logged by `DeployTokenCatalog` before the keeper can update prices.
+Fill `api/src/contracts/token-catalog.json` `chains.<id>.tokens` with addresses logged by `DeployTokenCatalog` before the keeper can update prices.
 
 ## Environment
 

@@ -106,7 +106,7 @@ forge script script/DeployPriceOracle.s.sol:DeployPriceOracle --rpc-url $RPC_URL
 forge script script/DeployTokenCatalog.s.sol:DeployTokenCatalog --rpc-url $RPC_URL --broadcast
 ```
 
-See [`deployments/README.md`](deployments/README.md) and [`../config/token-catalog.json`](../config/token-catalog.json).
+See [`deployments/README.md`](deployments/README.md) and [`../api/src/contracts/token-catalog.json`](../api/src/contracts/token-catalog.json).
 
 `DeployTrading` env vars: `ADMIN`, `EXECUTOR`, `OPERATOR` (optional), `AGENT_REGISTRY`, `ALLOCATION_MANAGER`, `VAULT_TRACK_REGISTRY`, `FOUNDATION_VAULT`, `TECH_VAULT`, `VOLATILITY_VAULT`, `MACRO_VAULT`, `DEPLOY_MOCK_SWAP_ADAPTER`.
 

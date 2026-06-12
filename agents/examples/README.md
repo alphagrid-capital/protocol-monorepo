@@ -26,4 +26,4 @@ See [Integrate](https://docs.alphagrid.capital/integrations/integrate) for the f
 
 ## Adding personas
 
-Add a new file under `personas/`, include **Suggested vault** and **Favorite assets** (verify against `GET /vaults/{id}/tokens` and `config/token-catalog.json`), and update the table above.
+Add a new file under `personas/`, include **Suggested vault** and **Favorite assets** (verify against `GET /vaults/{id}/tokens` and `api/src/contracts/token-catalog.json`), and update the table above.
