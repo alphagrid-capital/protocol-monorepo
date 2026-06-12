@@ -334,7 +334,7 @@ const getAgentTradesRoute = createRoute({
   tags: ['Trading'],
   summary: 'Agent trade activity',
   description:
-    'On-chain v1 activity feed from TradeRouter and PositionManager event logs (newest first). Not indexed per-fill history.',
+    'On-chain v1 activity feed from TradeRouter and PositionManager event logs (newest first). Scans backwards from latest; lower bound is chain deploy block or ?fromBlock=.',
   request: {
     params: z.object({
       agentId: agentIdParamSchema.openapi({
@@ -458,7 +458,11 @@ const getAgentTradesHandler = async (
     const query = c.req.valid('query')
     const result = await TradingService.fromEnv(
       getWorkerEnv()
-    ).listTradeActivity(c.req.param('agentId'), query.limit ?? 50)
+    ).listTradeActivity(
+      c.req.param('agentId'),
+      query.limit ?? 50,
+      query.fromBlock
+    )
     return c.json(result, 200)
   } catch (error) {
     if (error instanceof TradingError || error instanceof AppError) {

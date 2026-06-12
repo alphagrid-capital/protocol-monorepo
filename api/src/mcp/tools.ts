@@ -35,6 +35,7 @@ import {
   SubmitTradeIntentInputSchema,
   SubmitTradeIntentResponseSchema,
   ListAgentPositionsResponseSchema,
+  ListAgentTradesQuerySchema,
   ListAgentTradesResponseSchema,
   ListClosedPositionsQuerySchema,
 } from '../schemas/trading.js'
@@ -486,6 +487,7 @@ export function registerMcpTools(server: McpServer): void {
 
   const listTradesInputSchema = GetAgentTradingInputSchema.extend({
     limit: ListClosedPositionsQuerySchema.shape.limit,
+    fromBlock: ListAgentTradesQuerySchema.shape.fromBlock,
   }).strict()
 
   server.registerTool(
@@ -498,11 +500,11 @@ export function registerMcpTools(server: McpServer): void {
       outputSchema: ListAgentTradesResponseSchema,
       annotations: READ_ONLY_TOOL_ANNOTATIONS,
     },
-    async ({ agentId, limit }) => {
+    async ({ agentId, limit, fromBlock }) => {
       try {
         const output = await TradingService.fromEnv(
           getWorkerEnv()
-        ).listTradeActivity(agentId, limit ?? 50)
+        ).listTradeActivity(agentId, limit ?? 50, fromBlock)
         return mcpToolSuccess(output)
       } catch (error) {
         return mcpToolErrorFromUnknown(error, 'Failed to load trade history')

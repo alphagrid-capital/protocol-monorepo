@@ -24,6 +24,7 @@ import {
   resolveTokenAddress,
 } from '../lib/trading-intent-builder.js'
 import { fetchAgentTradeActivity } from '../lib/agent-trade-events.js'
+import { resolveMinLogScanBlock } from '../lib/trading-log-from-block.js'
 import { loadTradingConfig, type TradingConfig } from '../lib/trading-config.js'
 import { tokenCatalog } from '../lib/token-catalog.js'
 import { getWorkerEnv } from '../lib/worker-env.js'
@@ -725,11 +726,11 @@ export class TradingService {
 
   async listTradeActivity(
     agentIdStr: string,
-    limit = 50
+    limit = 50,
+    queryFromBlock?: string
   ): Promise<ListAgentTradesResponse> {
     const agentId = BigInt(agentIdStr)
     const registry = this.agentRegistryService()
-    const tradeRouter = this.tradeRouterService()
 
     try {
       await registry.getAgent(agentId)
@@ -740,6 +741,12 @@ export class TradingService {
       throw error
     }
 
+    const minScanBlock = resolveMinLogScanBlock({
+      chainFromBlock: this.config.tradingLogFromBlock,
+      queryFromBlock:
+        queryFromBlock !== undefined ? BigInt(queryFromBlock) : undefined,
+    })
+
     const client = this.providerService().createPublicClient()
     const trades = await fetchAgentTradeActivity({
       client,
@@ -748,11 +755,13 @@ export class TradingService {
       positionManagerAddress: this.config.chainContracts.PositionManager,
       agentId,
       limit,
+      minScanBlock,
     })
 
     return {
       agentId: agentIdStr,
       source: 'on-chain-events',
+      scannedFromBlock: minScanBlock.toString(),
       trades,
     }
   }

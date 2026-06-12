@@ -101,6 +101,7 @@ Chronological feed from `TradeRouter` + `PositionManager` event logs. Not indexe
 | UI stat | Endpoint | Response field(s) |
 | --- | --- | --- |
 | Activity list | `GET /agents/{agentId}/trades?limit=50` | `trades[]` (newest first, max 100) |
+| Scan lower bound | same | `scannedFromBlock` (chain deploy block unless `?fromBlock=` overrides) |
 | Event type | same | `trades[].type` — `PositionOpened`, `PositionIncreased`, `PositionReduced`, `ExitLadderUpdated`, `ExitExecuted`, `PositionForceClosed`, `PositionClosed` |
 | Position id | same | `trades[].positionId` |
 | Time | same | `trades[].timestamp` (block unix seconds) |
@@ -110,7 +111,7 @@ Chronological feed from `TradeRouter` + `PositionManager` event logs. Not indexe
 | Realized PnL (final close) | same | `trades[].realizedPnlUsdc` when `type === PositionClosed` |
 | Keeper exit detail | same | `trades[].ruleIndex`, `trades[].keeper`, `trades[].keeperBounty` on `ExitExecuted` |
 
-**RPC note:** Scans chain logs from genesis filtered by `agentId`. Fine for testnet/MVP; add DB indexer for high-volume production.
+**RPC note:** Scans backwards from latest in ≤999-block windows. Default lower bound is the chain **trading deploy block** (`tradingLogFromBlock` in `contracts.ts`, overridable via `?fromBlock=` or `TRADING_LOG_FROM_BLOCK`). Stops at deploy — never scans from genesis block 0.
 
 ### After intent submit
 

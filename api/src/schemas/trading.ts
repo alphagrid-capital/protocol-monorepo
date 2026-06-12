@@ -351,6 +351,11 @@ export const AgentTradeActivitySchema = z
 
 export const ListAgentTradesQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(50).optional(),
+  fromBlock: z.string().regex(/^\d+$/).optional().openapi({
+    description:
+      'Optional lower block bound for log scan (defaults to chain trading deploy block)',
+    example: '276471279',
+  }),
 })
 
 export const ListAgentTradesResponseSchema = z
@@ -359,6 +364,9 @@ export const ListAgentTradesResponseSchema = z
     source: z.literal('on-chain-events').openapi({
       description:
         'v1 activity feed from TradeRouter and PositionManager event logs (not indexed fills)',
+    }),
+    scannedFromBlock: z.string().openapi({
+      description: 'Lower block bound used for this scan',
     }),
     trades: z.array(AgentTradeActivitySchema),
   })

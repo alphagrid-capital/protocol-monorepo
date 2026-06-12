@@ -27,6 +27,8 @@ export interface ChainContracts {
   vaultAsset: TokenConfig
   /** Challenge arena ERC-4626 vault (formerly Tech vault on testnet). */
   GenesisVault: `0x${string}` | null
+  /** First block to scan for TradeRouter / PositionManager logs (chain deploy). */
+  tradingLogFromBlock?: bigint
 }
 
 export const contracts: Record<number, ChainContracts> = {
@@ -45,6 +47,7 @@ export const contracts: Record<number, ChainContracts> = {
     TradeRouterLens: null,
     SwapAdapter: '0xf645850781a781ab4583f7dcd03a3b9ac1192a22',
     GenesisVault: '0xea3895c279bcab7f3d2fd18416500f781accebed',
+    tradingLogFromBlock: 42_661_563n,
     feeAsset: {
       address: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
       symbol: 'USDC',
@@ -101,6 +104,7 @@ export const contracts: Record<number, ChainContracts> = {
     TradeRouterLens: '0x62272B653a128e2d5786Ae63C063157dfD3aa2bE',
     SwapAdapter: '0xBe12805faF4916791E1546457b67feb2952Ef298',
     GenesisVault: '0xa1291D77Eec59c1BE7dd30D0D7e50D659f1C5a84',
+    tradingLogFromBlock: 276_471_279n,
     feeAsset: {
       address: '0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d',
       symbol: 'USDC',

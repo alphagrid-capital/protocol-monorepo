@@ -13,6 +13,8 @@ export interface TradingConfig {
   allocationManagerAddress: `0x${string}`
   executorPrivateKey: `0x${string}` | null
   usdcDecimals: number
+  /** Lower bound for trade-activity log scans (env override or chain deploy block). */
+  tradingLogFromBlock: bigint | null
 }
 
 function requireEnv(
@@ -56,6 +58,10 @@ export function loadTradingConfig(
     chainContracts.TradeRouterLens ??
     null
 
+  const tradingLogFromBlock = env.TRADING_LOG_FROM_BLOCK
+    ? BigInt(env.TRADING_LOG_FROM_BLOCK)
+    : (chainContracts.tradingLogFromBlock ?? null)
+
   return {
     chainId,
     rpcUrl: requireEnv(env, 'RPC_URL'),
@@ -66,5 +72,6 @@ export function loadTradingConfig(
     allocationManagerAddress: chainContracts.AllocationManager,
     executorPrivateKey: parsePrivateKey(env.EXECUTOR_PRIVATE_KEY),
     usdcDecimals: chainContracts.vaultAsset.decimals,
+    tradingLogFromBlock,
   }
 }

@@ -1,6 +1,14 @@
 import type { Address, PublicClient } from 'viem'
 import { positionManagerAbi } from '../services/abis/position-manager.js'
 import { tradeRouterAbi } from '../services/abis/trade-router.js'
+import {
+  fetchInAdaptiveBlockRange,
+  logScanWindow,
+  MAX_CONSECUTIVE_EMPTY_LOG_CHUNKS,
+  MAX_LOG_BLOCK_RANGE,
+  MAX_LOG_SCAN_CHUNKS,
+  sortActivitiesNewestFirst,
+} from './agent-trade-log-scan.js'
 import { catalogEntryForAddress } from './token-catalog.js'
 
 export type AgentTradeActivityType =
@@ -135,14 +143,6 @@ function mapPositionClosedLog(log: {
   }
 }
 
-function sortActivitiesNewestFirst(a: RawActivity, b: RawActivity): number {
-  const blockDiff = Number(BigInt(b.blockNumber) - BigInt(a.blockNumber))
-  if (blockDiff !== 0) {
-    return blockDiff
-  }
-  return b.logIndex - a.logIndex
-}
-
 async function attachTimestamps(
   client: PublicClient,
   activities: RawActivity[]
@@ -163,37 +163,36 @@ async function attachTimestamps(
   }))
 }
 
-export async function fetchAgentTradeActivity(params: {
+async function fetchTradeRouterActivitiesInRange(params: {
   client: PublicClient
   chainId: number
   tradeRouterAddress: Address
-  positionManagerAddress: Address | null
   agentId: bigint
-  limit: number
-}): Promise<AgentTradeActivity[]> {
-  const {
-    client,
-    chainId,
-    tradeRouterAddress,
-    positionManagerAddress,
-    agentId,
-    limit,
-  } = params
+  fromBlock: bigint
+  toBlock: bigint
+}): Promise<RawActivity[]> {
+  const { client, chainId, tradeRouterAddress, agentId, fromBlock, toBlock } =
+    params
 
   const routerLogs = await Promise.all(
     TRADE_ROUTER_EVENT_NAMES.map((eventName) =>
-      client.getContractEvents({
-        address: tradeRouterAddress,
-        abi: tradeRouterAbi,
-        eventName,
-        args: { agentId },
-        fromBlock: 0n,
-        toBlock: 'latest',
+      fetchInAdaptiveBlockRange({
+        fromBlock,
+        toBlock,
+        fetch: (rangeFrom, rangeTo) =>
+          client.getContractEvents({
+            address: tradeRouterAddress,
+            abi: tradeRouterAbi,
+            eventName,
+            args: { agentId },
+            fromBlock: rangeFrom,
+            toBlock: rangeTo,
+          }),
       })
     )
   )
 
-  const activities: RawActivity[] = routerLogs.flatMap((logs, index) =>
+  return routerLogs.flatMap((logs, index) =>
     logs.map((log) =>
       mapTradeRouterLog(chainId, {
         eventName: TRADE_ROUTER_EVENT_NAMES[index]!,
@@ -204,29 +203,132 @@ export async function fetchAgentTradeActivity(params: {
       })
     )
   )
+}
 
-  if (positionManagerAddress) {
-    const closedLogs = await client.getContractEvents({
-      address: positionManagerAddress,
-      abi: positionManagerAbi,
-      eventName: 'PositionClosed',
-      args: { agentId },
-      fromBlock: 0n,
-      toBlock: 'latest',
+async function fetchPositionClosedInRange(params: {
+  client: PublicClient
+  positionManagerAddress: Address
+  agentId: bigint
+  fromBlock: bigint
+  toBlock: bigint
+}): Promise<RawActivity[]> {
+  const { client, positionManagerAddress, agentId, fromBlock, toBlock } = params
+
+  const closedLogs = await fetchInAdaptiveBlockRange({
+    fromBlock,
+    toBlock,
+    fetch: (rangeFrom, rangeTo) =>
+      client.getContractEvents({
+        address: positionManagerAddress,
+        abi: positionManagerAbi,
+        eventName: 'PositionClosed',
+        args: { agentId },
+        fromBlock: rangeFrom,
+        toBlock: rangeTo,
+      }),
+  })
+
+  return closedLogs.map((log) =>
+    mapPositionClosedLog({
+      args: log.args as Record<string, unknown>,
+      blockNumber: log.blockNumber,
+      transactionHash: log.transactionHash,
+      logIndex: log.logIndex,
     })
+  )
+}
 
-    for (const log of closedLogs) {
-      activities.push(
-        mapPositionClosedLog({
-          args: log.args as Record<string, unknown>,
-          blockNumber: log.blockNumber,
-          transactionHash: log.transactionHash,
-          logIndex: log.logIndex,
-        })
-      )
+async function scanActivitiesBackwards(params: {
+  client: PublicClient
+  chainId: number
+  tradeRouterAddress: Address
+  positionManagerAddress: Address | null
+  agentId: bigint
+  limit: number
+  minScanBlock?: bigint
+}): Promise<RawActivity[]> {
+  const {
+    client,
+    chainId,
+    tradeRouterAddress,
+    positionManagerAddress,
+    agentId,
+    limit,
+    minScanBlock = 0n,
+  } = params
+
+  const latestBlock = await client.getBlockNumber()
+  const activities: RawActivity[] = []
+  let toBlock = latestBlock
+  let chunks = 0
+  let emptyChunks = 0
+
+  while (toBlock >= minScanBlock && chunks < MAX_LOG_SCAN_CHUNKS) {
+    const { fromBlock } = logScanWindow(
+      toBlock,
+      MAX_LOG_BLOCK_RANGE,
+      minScanBlock
+    )
+
+    const [routerBatch, closedBatch] = await Promise.all([
+      fetchTradeRouterActivitiesInRange({
+        client,
+        chainId,
+        tradeRouterAddress,
+        agentId,
+        fromBlock,
+        toBlock,
+      }),
+      positionManagerAddress
+        ? fetchPositionClosedInRange({
+            client,
+            positionManagerAddress,
+            agentId,
+            fromBlock,
+            toBlock,
+          })
+        : Promise.resolve([]),
+    ])
+
+    const batch = [...routerBatch, ...closedBatch]
+    if (batch.length === 0) {
+      emptyChunks++
+      if (
+        activities.length === 0 &&
+        emptyChunks >= MAX_CONSECUTIVE_EMPTY_LOG_CHUNKS
+      ) {
+        break
+      }
+    } else {
+      emptyChunks = 0
+      activities.push(...batch)
+      activities.sort(sortActivitiesNewestFirst)
+      if (activities.length >= limit) {
+        break
+      }
     }
+
+    if (fromBlock <= minScanBlock) {
+      break
+    }
+
+    toBlock = fromBlock - 1n
+    chunks++
   }
 
   activities.sort(sortActivitiesNewestFirst)
-  return attachTimestamps(client, activities.slice(0, limit))
+  return activities.slice(0, limit)
+}
+
+export async function fetchAgentTradeActivity(params: {
+  client: PublicClient
+  chainId: number
+  tradeRouterAddress: Address
+  positionManagerAddress: Address | null
+  agentId: bigint
+  limit: number
+  minScanBlock?: bigint
+}): Promise<AgentTradeActivity[]> {
+  const activities = await scanActivitiesBackwards(params)
+  return attachTimestamps(params.client, activities)
 }
