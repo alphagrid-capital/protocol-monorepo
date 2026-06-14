@@ -11,13 +11,14 @@ import { DeploymentEnv } from "../helpers/DeploymentEnv.sol";
 contract SetRegistrationFee is DeploymentEnv {
     function run() external {
         FeeManager feeManager = FeeManager(vm.envAddress("FEE_MANAGER"));
+        uint256 registrationFeeAmount = vm.envOr("REGISTRATION_FEE_AMOUNT", Fees.REGISTRATION_FEE);
 
         vm.startBroadcast();
-        feeManager.setRegistrationFee(Fees.REGISTRATION_FEE);
+        feeManager.setRegistrationFee(registrationFeeAmount);
         vm.stopBroadcast();
 
         console2.log("FeeManager:", address(feeManager));
-        console2.log("Registration fee (raw):", Fees.REGISTRATION_FEE);
-        console2.log("Registration fee (USDC): 0.1");
+        console2.log("Registration fee (raw):", registrationFeeAmount);
+        console2.log("Registration fee (USDC):", registrationFeeAmount / 10 ** 6);
     }
 }
