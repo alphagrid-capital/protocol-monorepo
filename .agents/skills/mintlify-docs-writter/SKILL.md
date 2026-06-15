@@ -6,6 +6,8 @@ description: >-
   Docs follow the codebase as source of truth; not the reverse. Covers voice,
   verification guardrails, collaboration patterns, and PR-based workflows.
   Pair with mintlify-docs for Mintlify platform mechanics.
+metadata:
+  internal: true
 ---
 
 # Write and maintain documentation

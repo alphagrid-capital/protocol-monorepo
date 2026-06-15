@@ -6,6 +6,7 @@ compatibility: Requires Node.js for CLI. Works with any Git-based workflow.
 metadata:
   author: mintlify
   version: "1.0"
+  internal: true
 ---
 
 # Mintlify best practices
