@@ -84,8 +84,8 @@ export const contracts: Record<number, ChainContracts> = {
     },
     vaultAsset: {
       address: '0xF0C7eC2cc2866F482009818F1Ea343d6e7f181e9',
-      symbol: 'USDC',
-      name: 'USD Coin',
+      symbol: 'mSTBL',
+      name: 'Mocked Stable',
       decimals: 6,
     },
   },
@@ -141,8 +141,8 @@ export const contracts: Record<number, ChainContracts> = {
     },
     vaultAsset: {
       address: '0xF0C7eC2cc2866F482009818F1Ea343d6e7f181e9',
-      symbol: 'USDC',
-      name: 'USDC',
+      symbol: 'mSTBL',
+      name: 'Mocked Stable',
       decimals: 6,
     },
   },
