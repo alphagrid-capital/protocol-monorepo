@@ -201,6 +201,15 @@ export class AgentRegistryService {
     return { name, version }
   }
 
+  async getSelfRegisterTypehash(): Promise<Hex> {
+    const client = this.providerService.createPublicClient()
+    return client.readContract({
+      address: this.registryAddress,
+      abi: agentRegistryAbi,
+      functionName: 'SELF_REGISTER_TYPEHASH',
+    })
+  }
+
   async signerOf(agentId: bigint): Promise<Address> {
     const client = this.providerService.createPublicClient()
     return client.readContract({

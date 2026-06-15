@@ -1,6 +1,7 @@
 import type { Address, Hex } from 'viem'
 import { loadAgentRegistrationConfig } from '../lib/agent-registration-config.js'
 import type { AgentRegistrationConfig } from '../lib/agent-registration-config.js'
+import { SELF_REGISTER_TYPEHASH } from '../constants/agent-registration.js'
 import {
   AGENT_REGISTRY_EIP712_DOMAIN,
   verifySelfRegisterSignature,
@@ -67,7 +68,11 @@ export class AgentRegistrationService {
       signerNonce = nonce.toString()
     }
 
-    const domain = await this.agentRegistryService().getEip712Domain()
+    const registry = this.agentRegistryService()
+    const [domain, selfRegisterTypehash] = await Promise.all([
+      registry.getEip712Domain(),
+      registry.getSelfRegisterTypehash().catch(() => SELF_REGISTER_TYPEHASH),
+    ])
     domainName = domain.name
     domainVersion = domain.version
 
@@ -92,8 +97,7 @@ export class AgentRegistrationService {
         chainId: this.config.chainId,
         verifyingContract: this.config.agentRegistryAddress,
         primaryType: 'SelfRegister',
-        selfRegisterTypehash:
-          '0x943fcd588cbf2f97757c6f41f78f5a7f133ad3f3111e330a636c80c3e3c70679',
+        selfRegisterTypehash,
       },
       agentRegistry: this.config.agentRegistryAddress,
       signerNonce,

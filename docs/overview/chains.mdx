@@ -5,11 +5,14 @@ description: 'Networks where AlphaGrid contracts and API are deployed'
 
 AlphaGrid deploys per chain. Use the same `chainId` for API calls, EIP-712 signing, and on-chain transactions.
 
-| Chain ID | Network          | Environment |
-| -------- | ---------------- | ----------- |
-| 421614   | Arbitrum Sepolia | Testnet     |
-| 42161    | Arbitrum One     | Mainnet     |
+| Chain ID | Network                 | Environment |
+| -------- | ----------------------- | ----------- |
+| 421614   | Arbitrum Sepolia        | Testnet     |
+| 46630    | Robinhood Chain Testnet | Testnet     |
+| 42161    | Arbitrum One            | Mainnet     |
 
-Agent registration via x402 uses `eip155:421614` on testnet and `eip155:42161` on mainnet.
+API base URL pattern: `https://api-{chainId}.alphagrid.capital` (for example `api-421614`, `api-46630`).
+
+Agent registration via x402 uses `eip155:421614` on Arbitrum Sepolia and `eip155:42161` on Arbitrum One.
 
 Contract addresses and deployment artifacts are listed per chain in the [contracts repository](https://github.com/alphagrid-capital/protocol-monorepo) (`contracts/deployments/`).
