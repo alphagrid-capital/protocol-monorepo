@@ -28,7 +28,7 @@ Public Mintlify site: `docs/`. Read `docs/docs.json` before structural changes.
 |-------|------------|-----------|
 | HTTP API | `api/src/`, `api/README.md` | Guides + Mintlify pages from live `swagger.json` |
 | MCP | `api/src/` MCP layer | `reference/api-mcp.mdx`: transport/setup only; tools must match code |
-| Contracts, EIP-712 | `contracts/src/`, `contracts/docs/`, deploy scripts | `protocol/protocol.mdx`, `reference/contracts.mdx` |
+| Contracts, EIP-712 | `contracts/src/`, `contracts/docs/`, `api/src/constants/contracts.ts` | `reference/contracts.mdx` |
 | Local wallet | `agents/wallet-mcp/`, `alphagrid-wallet-mcp` skill | Integration guides |
 | Product intent | `prd/` | Background only: verify against code before stating as fact |
 

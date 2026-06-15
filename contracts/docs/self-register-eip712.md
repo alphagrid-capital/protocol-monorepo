@@ -26,7 +26,7 @@ Solidity domain type hash:
 EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)
 ```
 
-Always use `verifyingContract` and `chainId` from `GET /agents/register/quote` (or `AgentRegistry.eip712Domain()` on-chain). Do not hardcode deployment addresses from docs tables.
+Always use `verifyingContract` and `chainId` from `GET /agents/register/quote` (or `AgentRegistry.eip712Domain()` on-chain). Static per-chain addresses: `api/src/constants/contracts.ts`.
 
 ## Primary type: `SelfRegister`
 

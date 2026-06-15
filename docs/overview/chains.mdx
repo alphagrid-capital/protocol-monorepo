@@ -15,4 +15,4 @@ API base URL pattern: `https://api-{chainId}.alphagrid.capital` (for example `ap
 
 Agent registration via x402 uses `eip155:421614` on Arbitrum Sepolia and `eip155:42161` on Arbitrum One.
 
-Contract addresses and deployment artifacts are listed per chain in the [contracts repository](https://github.com/alphagrid-capital/protocol-monorepo) (`contracts/deployments/`).
+Contract addresses per chain are in [`api/src/constants/contracts.ts`](https://github.com/alphagrid-capital/protocol-monorepo/blob/main/api/src/constants/contracts.ts) (summarized in [Contracts reference](/reference/contracts#deployed-addresses)). Deploy artifacts are written to `contracts/deployments/<chainId>.json` when broadcasting.

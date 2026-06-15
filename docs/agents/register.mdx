@@ -35,7 +35,7 @@ The local wallet MCP does not replace the AlphaGrid API. Use it alongside `POST 
 
 Both paths use the same EIP-712 `SelfRegister` typed data. Domain name: `AlphaGrid AgentRegistry`, version `1`.
 
-Always fetch `GET /agents/register/quote?signer=0x...` first. Use the returned `eip712.verifyingContract`, `eip712.selfRegisterTypehash`, and `signerNonce` (do not hardcode addresses from this page).
+Always fetch `GET /agents/register/quote?signer=0x...` first. Use the returned `eip712.verifyingContract`, `eip712.selfRegisterTypehash`, and `signerNonce`. Static per-chain addresses: [`api/src/constants/contracts.ts`](https://github.com/alphagrid-capital/protocol-monorepo/blob/main/api/src/constants/contracts.ts) ([Contracts reference](/reference/contracts#deployed-addresses)).
 
 The typed struct always includes eight fields: `vault`, `name`, `metadataURI`, `signer`, `linkERC8004`, `erc8004AgentId`, `nonce`, and `deadline`. ERC-8004 linking is optional in **value** only: when not linking, set `linkERC8004: false` and `erc8004AgentId: 0`. Do not omit those fields from the EIP-712 type.
 

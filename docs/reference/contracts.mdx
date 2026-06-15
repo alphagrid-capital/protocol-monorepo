@@ -42,25 +42,28 @@ Trading is orchestrated by `TradeRouter` and `PositionManager`. Swaps run throug
 
 ## Deployed addresses
 
-Arbitrum Sepolia (chain ID **421614**) and Robinhood Chain Testnet (chain ID **46630**) addresses below are from [`contracts/deployments/`](https://github.com/alphagrid-capital/protocol-monorepo/tree/main/contracts/deployments) and `api/src/constants/contracts.ts`. Arbitrum One (42161) core contracts are not deployed yet.
+Addresses below mirror [`api/src/constants/contracts.ts`](https://github.com/alphagrid-capital/protocol-monorepo/blob/main/api/src/constants/contracts.ts), the source of truth for API workers. After a deploy, update that file first, then sync this table.
 
-| Contract              | Arbitrum Sepolia (421614)                    | Robinhood Testnet (46630)                    | Arbitrum One (42161) |
-| --------------------- | -------------------------------------------- | -------------------------------------------- | -------------------- |
-| `AgentRegistry`       | `0x46d0b147E6D0898CE244Ba0F947e0eF2eB31747F` | `0x0058D81cF44dfe2a35a06e5D1F0760a6b2985900` | Not deployed         |
-| `FeeManager`          | `0xA8809d8f90D91FF054c248A09e025A2B346Df920` | `0x0cFa6B475713689DaEe8630f0579e3Ca80dAd188` | Not deployed         |
-| `VaultTrackRegistry`  | `0x3b0b255e3DFc98a02235f40Ea6b9754C830C761e` | `0x82b30f1DC58b581837d80a602823410C948BaA83` | Not deployed         |
-| `TokenRegistry`       | `0x08b53782E23a65d74e54bd2fA9A48BF8C6ba2577` | `0x1bE709E35016D5329FfF205D7421fa6571e640f2` | Not deployed         |
-| `AllocationManager`   | `0x71C3E2237B4f5b19145ddf793B9DaAADFA13E165` | `0xC0F8Eaf50a2eBed44aea3eC8dd05c087D49A5308` | Not deployed         |
-| `PositionManager`     | `0x6C3116EcE1A10bF0418603D2949834deEB3a3f30` | `0x852df17f4aB66aaDC45e8ec0EE1EdbefdeB384c3` | Not deployed         |
-| `TradeRouter`         | `0xADaf3a37fFDC10447356E131DC316509c44885D2` | `0xb78f0EAdAF1D6209D73a3C5eb8203f0cb3a6ccba` | Not deployed         |
-| `MandateVaultFactory` | `0x6cD7bcb461293B23cDac87Ba4f8dBC2565b3B965` | `0x78aAa82b6AAc9ED9bcbB1973531874B92Dc20C8c` | Not deployed         |
-| `GenesisVault`        | `0xa1291D77Eec59c1BE7dd30D0D7e50D659f1C5a84` | `0x02D1405597bf1c7B9B7D5d0057119b66c02bc785` | Not deployed         |
+| Contract              | Arbitrum Sepolia (421614)                    | Robinhood Testnet (46630)                    | Arbitrum One (42161)                         |
+| --------------------- | -------------------------------------------- | -------------------------------------------- | -------------------------------------------- |
+| `AgentRegistry`       | `0x46d0b147E6D0898CE244Ba0F947e0eF2eB31747F` | `0x0058D81cF44dfe2a35a06e5D1F0760a6b2985900` | `0x0058D81cF44dfe2a35a06e5D1F0760a6b2985900` |
+| `FeeManager`          | `0xA8809d8f90D91FF054c248A09e025A2B346Df920` | `0x0cFa6B475713689DaEe8630f0579e3Ca80dAd188` | `0x0cFa6B475713689DaEe8630f0579e3Ca80dAd188` |
+| `VaultTrackRegistry`  | `0x3b0b255e3DFc98a02235f40Ea6b9754C830C761e` | `0x82b30f1DC58b581837d80a602823410C948BaA83` | `0x82b30f1DC58b581837d80a602823410C948BaA83` |
+| `TokenRegistry`       | `0x08b53782E23a65d74e54bd2fA9A48BF8C6ba2577` | `0x1bE709E35016D5329FfF205D7421fa6571e640f2` | `0x1bE709E35016D5329FfF205D7421fa6571e640f2` |
+| `PriceOracle`         | `0xE80f85c9194Cd6d824b5e97CdF0496a54E0e5896` | `0x2B973C8a9Ba80209579E1dEa3671FDb6C1323a02` | `0x2B973C8a9Ba80209579E1dEa3671FDb6C1323a02` |
+| `AllocationManager`   | `0x71C3E2237B4f5b19145ddf793B9DaAADFA13E165` | `0xC0F8Eaf50a2eBed44aea3eC8dd05c087D49A5308` | `0xC0F8Eaf50a2eBed44aea3eC8dd05c087D49A5308` |
+| `PositionManager`     | `0x6C3116EcE1A10bF0418603D2949834deEB3a3f30` | `0x852df17f4aB66aaDC45e8ec0EE1EdbefdeB384c3` | `0x852df17f4aB66aaDC45e8ec0EE1EdbefdeB384c3` |
+| `TradeRouter`         | `0xADaf3a37fFDC10447356E131DC316509c44885D2` | `0xb78f0EAdAF1D6209D73a3C5eb8203f0cb3a6ccba` | `0xb78f0EAdAF1D6209D73a3C5eb8203f0cb3a6ccba` |
+| `TradeRouterLens`     | `0x62272B653a128e2d5786Ae63C063157dfD3aa2bE` | `0xB9acd4CeB37FF72260aE2f3721f19D602d07d02C` | `0xB9acd4CeB37FF72260aE2f3721f19D602d07d02C` |
+| `SwapAdapter`         | `0xBe12805faF4916791E1546457b67feb2952Ef298` | `0xDb74cb1308460e68eB8a0F83A1e61A89D58259bd` | `0xDb74cb1308460e68eB8a0F83A1e61A89D58259bd` |
+| `MandateVaultFactory` | `0x6cD7bcb461293B23cDac87Ba4f8dBC2565b3B965` | `0x78aAa82b6AAc9ED9bcbB1973531874B92Dc20C8c` | `0x78aAa82b6AAc9ED9bcbB1973531874B92Dc20C8c` |
+| `GenesisVault`        | `0xa1291D77Eec59c1BE7dd30D0D7e50D659f1C5a84` | `0x02D1405597bf1c7B9B7D5d0057119b66c02bc785` | `0x02D1405597bf1c7B9B7D5d0057119b66c02bc785` |
+| `feeAsset`            | `0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d` (USDC) | `0x7E955252E15c84f5768B83c41a71F9eba181802F` (USDG) | `0xaf88d065e77c8cC2239327C5EDb3A432268e5831` (USDC) |
+| `vaultAsset`          | `0xa5231f925d785A402f70DDc162B5557Db0318958` (mSTBL) | `0xF0C7eC2cc2866F482009818F1Ea343d6e7f181e9` (mSTBL) | `0xF0C7eC2cc2866F482009818F1Ea343d6e7f181e9` (mSTBL) |
 
-**Arbitrum Sepolia:** registration x402 fees use official **USDC** (`feeAsset`, `0x75fa…AA4d`). Vault trading pulls **Mocked Stable** (`vaultAsset` / `mSTBL`, `0xa523…8958`).
+`feeAsset` is used for registration fees (x402 / `FeeManager`). `vaultAsset` is the Genesis vault underlying and trade notional token.
 
-**Robinhood Testnet:** registration fees use **USDG** (`feeAsset`, `0x7E95…802F`). Vault trading pulls **Mocked Stable** (`vaultAsset` / `mSTBL`, `0xF0C7…81e9`).
-
-See [`contracts/deployments/README.md`](https://github.com/alphagrid-capital/protocol-monorepo/blob/main/contracts/deployments/README.md).
+Deploy artifacts are also written to `contracts/deployments/<chainId>.json` when broadcasting; `contracts.ts` is what the API loads at runtime.
 
 ## EIP-712: SelfRegister
 
