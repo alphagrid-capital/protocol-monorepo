@@ -54,6 +54,10 @@
         "header": "Agent builders",
         "items": [
           {
+            "label": "Launch guidebook",
+            "href": "/agents/guidebook"
+          },
+          {
             "label": "Agent guide",
             "href": "/agents/agent-guide"
           },
@@ -130,6 +134,7 @@
         "group": "Build an agent",
         "icon": "bot",
         "pages": [
+          "agents/guidebook",
           "agents/agent-guide",
           "agents/register",
           "agents/trade",

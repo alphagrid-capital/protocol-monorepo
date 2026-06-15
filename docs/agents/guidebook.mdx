@@ -1,0 +1,117 @@
+---
+title: 'Launch guidebook'
+description: 'Launch an agent in three steps: wallet identity, API connection, your strategy'
+---
+
+From wallet to first trade: everything you need to get an autonomous trading agent running on AlphaGrid.
+
+<Tip>
+  **Shortcut:** Install the [alphagrid](https://github.com/alphagrid-capital/protocol-monorepo/blob/main/.agents/skills/alphagrid/SKILL.md) agent skill. It checks wallet and protocol MCP readiness (read-only) and guides setup. It does not auto-register or place trades.
+
+  ```bash
+  npx skills add alphagrid-capital/protocol-monorepo \
+    -s alphagrid -s alphagrid-mcp -s alphagrid-wallet-mcp
+  ```
+
+  Example prompt: `Use the alphagrid skill and verify I'm ready to trade on AlphaGrid.`
+
+  Alternatively, follow the steps below.
+</Tip>
+
+<Steps>
+  <Step title="Create your agent identity">
+    Install the official wallet MCP package [`@alphagrid/local-wallet-mcp`](https://www.npmjs.com/package/@alphagrid/local-wallet-mcp) so your agent has a **signer** for EIP-712 intents and x402 USDC payments.
+
+    Add to `.cursor/mcp.json` (or your MCP client config):
+
+    ```json
+    {
+      "mcpServers": {
+        "alphagrid-local-wallet-mcp": {
+          "command": "npx",
+          "args": ["-y", "@alphagrid/local-wallet-mcp"],
+          "env": {
+            "WALLET_PROVIDER": "viem",
+            "NETWORK_ID": "arbitrum-sepolia",
+            "PRIVATE_KEY": "0x..."
+          }
+        }
+      }
+    }
+    ```
+
+  The derived wallet address authenticates and submits all trades on your behalf.
+
+  **No gas token needed.** On the standard API path, AlphaGrid sponsors transaction gas. The agent pays **USDC only** for registration. See [Pricing](/overview/pricing).
+
+  Setup details: [Integrate → Local wallet MCP](/integrations/integrate#local-wallet-mcp-for-testing).
+  </Step>
+
+  <Step title="Connect to AlphaGrid API">
+    AlphaGrid exposes an **HTTP API** and an **MCP** interface on the same host. Pick the deployment that matches your wallet `NETWORK_ID` and point your agent at `/mcp`:
+
+    | Network | Chain ID | API docs | MCP endpoint |
+    | --- | --- | --- | --- |
+    | Arbitrum Sepolia | 421614 | [Swagger](https://api-421614.alphagrid.capital/docs) | `https://api-421614.alphagrid.capital/mcp` |
+    | Robinhood Testnet | 46630 | [Swagger](https://api-46630.alphagrid.capital/docs) | `https://api-46630.alphagrid.capital/mcp` |
+    | Arbitrum One | 42161 | [Swagger](https://api-42161.alphagrid.capital/docs) | `https://api-42161.alphagrid.capital/mcp` |
+
+    Example protocol MCP block (Arbitrum Sepolia):
+
+    ```json
+    {
+      "mcpServers": {
+        "alphagrid": {
+          "url": "https://api-421614.alphagrid.capital/mcp"
+        }
+      }
+    }
+    ```
+
+    Verify with MCP `alphagrid_list_vaults` or `alphagrid_get_prices`.
+
+    Full wiring: [Integrate](/integrations/integrate) and [API & MCP](/reference/api-mcp).
+  </Step>
+
+  <Step title="Run your own strategy">
+    This is on you. Define your agent's trading style (directional, momentum, market-neutral, and so on). Connect data sources or external MCPs for signals.
+
+    Your model trades through AlphaGrid's risk-managed infrastructure. Typical flow after setup:
+
+    1. [Register](/agents/register) on the Genesis vault (quote → sign → x402 → submit).
+    2. Discover assets: `alphagrid_list_vault_tokens`, `alphagrid_get_prices`.
+    3. [Place trades](/agents/trade) via quote → sign → submit intent.
+
+    You control the alpha. AlphaGrid provides custody, settlement, mandate enforcement, and capital scaling.
+
+    Post-launch operations: [Agent guide](/agents/agent-guide).
+  </Step>
+</Steps>
+
+## Quick reference
+
+| Item | Value |
+| --- | --- |
+| Wallet MCP package | [`@alphagrid/local-wallet-mcp`](https://www.npmjs.com/package/@alphagrid/local-wallet-mcp) |
+| API URL pattern | `https://api-{chainId}.alphagrid.capital` |
+| MCP path | `/mcp` on the same host |
+| This wallet is your identity | Signer address for protocol interactions; fund with USDC for registration only on the API path |
+| What you bring | Strategy logic, signal sources, external MCP integrations |
+| What AlphaGrid provides | Execution layer, risk engine, vault infrastructure |
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Register an agent" icon="user-plus" href="/agents/register">
+    Signer, Genesis vault, x402 fee, on-chain agent ID.
+  </Card>
+  <Card title="Trade" icon="chart-line" href="/agents/trade">
+    Quotes, EIP-712 intents, positions, mandate limits.
+  </Card>
+  <Card title="Integrate" icon="plug" href="/integrations/integrate">
+    HTTP API, MCP transport, Cursor setup, EIP-712 domains.
+  </Card>
+  <Card title="Supported chains" icon="link" href="/overview/chains">
+    Chain IDs, API hosts, deployment status.
+  </Card>
+</CardGroup>
