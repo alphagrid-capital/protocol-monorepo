@@ -8,14 +8,15 @@ From wallet to first trade: everything you need to get an autonomous trading age
 <Tip>
   **Shortcut:** Install the [alphagrid](https://github.com/alphagrid-capital/protocol-monorepo/blob/main/.agents/skills/alphagrid/SKILL.md) agent skill. It checks wallet and protocol MCP readiness (read-only) and guides setup. It does not auto-register or place trades.
 
-  ```bash
-  npx skills add alphagrid-capital/protocol-monorepo \
-    -s alphagrid -s alphagrid-mcp -s alphagrid-wallet-mcp
-  ```
+```bash
+npx skills add alphagrid-capital/protocol-monorepo \
+  -s alphagrid -s alphagrid-mcp -s alphagrid-wallet-mcp
+```
 
-  Example prompt: `Use the alphagrid skill and verify I'm ready to trade on AlphaGrid.`
+Example prompt: `Use the alphagrid skill and verify I'm ready to trade on AlphaGrid.`
 
-  Alternatively, follow the steps below.
+Alternatively, follow the steps below.
+
 </Tip>
 
 <Steps>
@@ -40,11 +41,12 @@ From wallet to first trade: everything you need to get an autonomous trading age
     }
     ```
 
-  The derived wallet address authenticates and submits all trades on your behalf.
+The derived wallet address authenticates and submits all trades on your behalf.
 
-  **No gas token needed.** On the standard API path, AlphaGrid sponsors transaction gas. The agent pays **USDC only** for registration. See [Pricing](/overview/pricing).
+**No gas token needed.** On the standard API path, AlphaGrid sponsors transaction gas. The agent pays **USDC only** for registration. See [Pricing](/overview/pricing).
 
-  Setup details: [Integrate → Local wallet MCP](/integrations/integrate#local-wallet-mcp-for-testing).
+Setup details: [Integrate → Local wallet MCP](/integrations/integrate#local-wallet-mcp-for-testing).
+
   </Step>
 
   <Step title="Connect to AlphaGrid API">
@@ -71,6 +73,7 @@ From wallet to first trade: everything you need to get an autonomous trading age
     Verify with MCP `alphagrid_list_vaults` or `alphagrid_get_prices`.
 
     Full wiring: [Integrate](/integrations/integrate) and [API & MCP](/reference/api-mcp).
+
   </Step>
 
   <Step title="Run your own strategy">
@@ -85,19 +88,20 @@ From wallet to first trade: everything you need to get an autonomous trading age
     You control the alpha. AlphaGrid provides custody, settlement, mandate enforcement, and capital scaling.
 
     Post-launch operations: [Agent guide](/agents/agent-guide).
+
   </Step>
 </Steps>
 
 ## Quick reference
 
-| Item | Value |
-| --- | --- |
-| Wallet MCP package | [`@alphagrid/local-wallet-mcp`](https://www.npmjs.com/package/@alphagrid/local-wallet-mcp) |
-| API URL pattern | `https://api-{chainId}.alphagrid.capital` |
-| MCP path | `/mcp` on the same host |
+| Item                         | Value                                                                                          |
+| ---------------------------- | ---------------------------------------------------------------------------------------------- |
+| Wallet MCP package           | [`@alphagrid/local-wallet-mcp`](https://www.npmjs.com/package/@alphagrid/local-wallet-mcp)     |
+| API URL pattern              | `https://api-{chainId}.alphagrid.capital`                                                      |
+| MCP path                     | `/mcp` on the same host                                                                        |
 | This wallet is your identity | Signer address for protocol interactions; fund with USDC for registration only on the API path |
-| What you bring | Strategy logic, signal sources, external MCP integrations |
-| What AlphaGrid provides | Execution layer, risk engine, vault infrastructure |
+| What you bring               | Strategy logic, signal sources, external MCP integrations                                      |
+| What AlphaGrid provides      | Execution layer, risk engine, vault infrastructure                                             |
 
 ## Next steps
 
