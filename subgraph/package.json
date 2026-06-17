@@ -1,0 +1,19 @@
+{
+  "name": "@alphagrid/subgraph",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "codegen": "graph codegen",
+    "build": "graph build",
+    "test": "graph test -d",
+    "prepare:networks": "node ../scripts/generate-subgraph-networks.mjs",
+    "deploy:arbitrum-sepolia": "graph deploy alphagrid-protocol-subgraph-arbitrum-sepolia --network arbitrum-sepolia",
+    "deploy:arbitrum-one": "graph deploy alphagrid-protocol-subgraph-arbitrum-one --network arbitrum-one"
+  },
+  "devDependencies": {
+    "@graphprotocol/graph-cli": "^0.98.1",
+    "@graphprotocol/graph-ts": "^0.36.0",
+    "matchstick-as": "^0.6.0"
+  }
+}

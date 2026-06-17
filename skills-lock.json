@@ -6,6 +6,24 @@
       "sourceType": "github",
       "skillPath": "skills/foundry-solidity/SKILL.md",
       "computedHash": "852fd41402c682ec78a5f8f97bb07800dcdc2e1e86f41d06e4c0d3c930fd44d6"
+    },
+    "subgraph-dev": {
+      "source": "PaulieB14/Subgraph-Skills",
+      "sourceType": "github",
+      "skillPath": "skills/subgraph-dev/SKILL.md",
+      "computedHash": "5ae29ae23e9b0dc33944935684be03efd2bb76fb5f4461a27533e5e3b598d8b6"
+    },
+    "subgraph-optimization": {
+      "source": "PaulieB14/Subgraph-Skills",
+      "sourceType": "github",
+      "skillPath": "skills/subgraph-optimization/SKILL.md",
+      "computedHash": "9469ade787ca483af11ca5e0c0a5fb67fe64d00750c04efb56b238571bc68b53"
+    },
+    "subgraph-testing": {
+      "source": "PaulieB14/Subgraph-Skills",
+      "sourceType": "github",
+      "skillPath": "skills/subgraph-testing/SKILL.md",
+      "computedHash": "114518dc77e0ff38af25b52491a02d72e118236f2e49e6d8f7d94c1607540a19"
     }
   }
 }

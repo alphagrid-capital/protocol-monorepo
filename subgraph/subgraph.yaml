@@ -1,0 +1,133 @@
+specVersion: 1.3.0
+indexerHints:
+  prune: auto
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum/contract
+    name: AgentRegistry
+    network: arbitrum-one
+    source:
+      abi: AgentRegistry
+      address: "0x0058D81cF44dfe2a35a06e5D1F0760a6b2985900"
+      startBlock: 473518496
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - Agent
+      abis:
+        - name: AgentRegistry
+          file: ./abis/AgentRegistry.json
+      eventHandlers:
+        - event: AgentRegistered(indexed uint256,indexed address,indexed
+            address,address,string,uint8)
+          handler: handleAgentRegistered
+        - event: AgentStatusChanged(indexed uint256,uint8,uint8)
+          handler: handleAgentStatusChanged
+        - event: AgentPromoted(indexed uint256,indexed address,uint8,uint8)
+          handler: handleAgentPromoted
+        - event: AgentSignerUpdated(indexed uint256,address)
+          handler: handleAgentSignerUpdated
+        - event: AgentOwnershipTransferred(indexed uint256,indexed address,indexed
+            address)
+          handler: handleAgentOwnershipTransferred
+        - event: ERC8004IdentityLinked(indexed uint256,indexed
+            address,uint256,uint256,indexed address)
+          handler: handleErc8004IdentityLinked
+      file: ./src/agent-registry.ts
+  - kind: ethereum/contract
+    name: AllocationManager
+    network: arbitrum-one
+    source:
+      abi: AllocationManager
+      address: "0xC0F8Eaf50a2eBed44aea3eC8dd05c087D49A5308"
+      startBlock: 473518502
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - Allocation
+      abis:
+        - name: AllocationManager
+          file: ./abis/AllocationManager.json
+      eventHandlers:
+        - event: AllocationCreated(indexed uint256,indexed address,uint256,uint256)
+          handler: handleAllocationCreated
+        - event: AllocationUpdated(indexed uint256,indexed address,uint256,uint256,uint8)
+          handler: handleAllocationUpdated
+        - event: AllocationUsedUpdated(indexed uint256,uint256)
+          handler: handleAllocationUsedUpdated
+      file: ./src/allocation-manager.ts
+  - kind: ethereum/contract
+    name: PositionManager
+    network: arbitrum-one
+    source:
+      abi: PositionManager
+      address: "0x852df17f4aB66aaDC45e8ec0EE1EdbefdeB384c3"
+      startBlock: 473518575
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - Position
+        - ExitRule
+        - AgentActivity
+      abis:
+        - name: PositionManager
+          file: ./abis/PositionManager.json
+      eventHandlers:
+        - event: PositionOpened(indexed uint256,indexed uint256,indexed
+            address,address,uint256,uint256,uint256)
+          handler: handlePositionOpened
+        - event: PositionIncreased(indexed uint256,indexed
+            uint256,uint256,uint256,uint256)
+          handler: handlePositionIncreased
+        - event: PositionReduced(indexed uint256,indexed uint256,uint256,uint256)
+          handler: handlePositionReduced
+        - event: PositionLadderExitApplied(indexed uint256,indexed
+            uint256,uint8,uint256,uint256)
+          handler: handlePositionLadderExitApplied
+        - event: PositionExitLadderUpdated(indexed uint256,indexed uint256,uint8)
+          handler: handlePositionExitLadderUpdated
+        - event: PositionClosed(indexed uint256,indexed uint256,int256)
+          handler: handlePositionClosed
+      file: ./src/position-manager.ts
+  - kind: ethereum/contract
+    name: TradeRouter
+    network: arbitrum-one
+    source:
+      abi: TradeRouter
+      address: "0xb78f0EAdAF1D6209D73a3C5eb8203f0cb3a6ccba"
+      startBlock: 473518588
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - AgentActivity
+      abis:
+        - name: TradeRouter
+          file: ./abis/TradeRouter.json
+      eventHandlers:
+        - event: PositionOpenedFromIntent(indexed uint256,indexed uint256,indexed
+            address,address,uint256)
+          handler: handlePositionOpenedFromIntent
+        - event: PositionIncreasedFromIntent(indexed uint256,indexed
+            uint256,uint256,uint256)
+          handler: handlePositionIncreasedFromIntent
+        - event: PositionReducedFromIntent(indexed uint256,indexed uint256,uint16,uint256)
+          handler: handlePositionReducedFromIntent
+        - event: PositionExitLadderUpdatedFromIntent(indexed uint256,indexed
+            uint256,uint8)
+          handler: handlePositionExitLadderUpdatedFromIntent
+        - event: ExitExecuted(indexed uint256,indexed uint256,uint8,indexed
+            address,uint256,uint256)
+          handler: handleExitExecuted
+        - event: PositionForceClosed(indexed uint256,indexed uint256,indexed
+            address,uint256)
+          handler: handlePositionForceClosed
+      file: ./src/trade-router.ts

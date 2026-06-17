@@ -1,0 +1,85 @@
+type Agent @entity(immutable: false) {
+  id: ID!
+  owner: Bytes!
+  signer: Bytes!
+  payoutRecipient: Bytes!
+  vault: Bytes!
+  track: Int!
+  status: Int!
+  name: String!
+  metadataURI: String!
+  createdAt: BigInt!
+  hasERC8004Identity: Boolean!
+  erc8004AgentId: BigInt!
+  positionsOpened: Int!
+  positionsClosed: Int!
+  openPositionCount: Int!
+  positions: [Position!]! @derivedFrom(field: "agent")
+  activities: [AgentActivity!]! @derivedFrom(field: "agent")
+}
+
+type Allocation @entity(immutable: false) {
+  id: ID!
+  agent: Agent!
+  vault: Bytes!
+  trackId: BigInt!
+  cap: BigInt!
+  used: BigInt!
+  status: Int!
+  createdAt: BigInt!
+  updatedAt: BigInt!
+}
+
+type Position @entity(immutable: false) {
+  id: ID!
+  agent: Agent!
+  vault: Bytes!
+  token: Bytes!
+  symbol: String!
+  tokenAmount: BigInt!
+  entryPriceUsdc: BigInt!
+  usdcCostBasis: BigInt!
+  maxSlippageBps: Int!
+  status: String!
+  nextRuleIndex: Int!
+  exitRules: [ExitRule!]! @derivedFrom(field: "position")
+  openedAt: BigInt!
+  closedAt: BigInt
+  realizedPnlUsdc: BigInt
+  openedTxHash: Bytes!
+  closedTxHash: Bytes
+}
+
+type ExitRule @entity(immutable: false) {
+  id: ID!
+  position: Position!
+  index: Int!
+  triggerType: String!
+  triggerBps: BigInt!
+  exitBps: Int!
+}
+
+type AgentActivity @entity(immutable: true) {
+  id: ID!
+  agent: Agent!
+  position: Position!
+  type: String!
+  source: String!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+  logIndex: Int!
+  vault: Bytes
+  token: Bytes
+  symbol: String
+  usdcIn: BigInt
+  usdcOut: BigInt
+  tokensAdded: BigInt
+  exitBps: Int
+  ruleIndex: Int
+  nextRuleIndex: Int
+  keeper: Bytes
+  keeperBounty: BigInt
+  operator: Bytes
+  realizedPnlUsdc: BigInt
+}

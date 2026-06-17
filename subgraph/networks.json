@@ -1,0 +1,38 @@
+{
+  "arbitrum-one": {
+    "AgentRegistry": {
+      "address": "0x0058D81cF44dfe2a35a06e5D1F0760a6b2985900",
+      "startBlock": 473518496
+    },
+    "AllocationManager": {
+      "address": "0xC0F8Eaf50a2eBed44aea3eC8dd05c087D49A5308",
+      "startBlock": 473518502
+    },
+    "PositionManager": {
+      "address": "0x852df17f4aB66aaDC45e8ec0EE1EdbefdeB384c3",
+      "startBlock": 473518575
+    },
+    "TradeRouter": {
+      "address": "0xb78f0EAdAF1D6209D73a3C5eb8203f0cb3a6ccba",
+      "startBlock": 473518588
+    }
+  },
+  "arbitrum-sepolia": {
+    "AgentRegistry": {
+      "address": "0x46d0b147E6D0898CE244Ba0F947e0eF2eB31747F",
+      "startBlock": 276471868
+    },
+    "AllocationManager": {
+      "address": "0x71C3E2237B4f5b19145ddf793B9DaAADFA13E165",
+      "startBlock": 276471875
+    },
+    "PositionManager": {
+      "address": "0x6C3116EcE1A10bF0418603D2949834deEB3a3f30",
+      "startBlock": 276472050
+    },
+    "TradeRouter": {
+      "address": "0xADaf3a37fFDC10447356E131DC316509c44885D2",
+      "startBlock": 276472066
+    }
+  }
+}

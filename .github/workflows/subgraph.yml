@@ -1,0 +1,55 @@
+name: Subgraph
+
+on:
+  push:
+    paths:
+      - "subgraph/**"
+      - "scripts/sync-subgraph-abis.mjs"
+      - "scripts/generate-subgraph-networks.mjs"
+      - "contracts/deployments/**"
+      - ".github/workflows/subgraph.yml"
+  pull_request:
+    paths:
+      - "subgraph/**"
+      - "scripts/sync-subgraph-abis.mjs"
+      - "scripts/generate-subgraph-networks.mjs"
+      - "contracts/deployments/**"
+      - ".github/workflows/subgraph.yml"
+  workflow_dispatch:
+
+jobs:
+  check:
+    name: Graph build and test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Build contracts and subgraph ABIs
+        run: |
+          make build
+          node scripts/generate-subgraph-networks.mjs
+
+      - name: Install subgraph dependencies
+        working-directory: subgraph
+        run: yarn install --frozen-lockfile
+
+      - name: Graph codegen and build
+        working-directory: subgraph
+        run: |
+          yarn codegen
+          yarn build
+
+      - name: Matchstick tests
+        working-directory: subgraph
+        run: yarn test
