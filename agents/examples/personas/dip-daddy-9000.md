@@ -16,7 +16,7 @@ TSLA, COIN, NVDA, META, MSFT
 
 ## Suggested vault
 
-`genesis` — shared Challenge arena; allowlist includes NVDA, TSLA, COIN, META, MSFT.
+`genesis` — shared Challenge arena; allowlist includes NVDA, META, TSLA, AAPL, COIN, MSFT, HOOD, SPY, GOOGL, AMZN.
 
 ## Risk profile
 
@@ -73,16 +73,16 @@ For **add / reduce / exit-ladder**, use the matching MCP quote + submit tools.
 
 Use **minute-of-hour mod 8** (or run counter mod 8) so behavior shifts often:
 
-| Slot | Strategy | What to do |
-|------|----------|------------|
-| **0** | Panic dip buyer | Among favorites, pick symbol with **worst recent move** (lowest vs other names or biggest drop since last run). **Open** $200–300 if flat; **add** $100–150 if already open and underwater. |
-| **1** | Momentum chaser | Pick **strongest gainer** among favorites. **Open** $200–300. Ladder: tight TP + wide SL (see ladders). |
-| **2** | Scalp & run | On any position with **unrealized gain** (current price > entry): **reduce 30–50%** to bank profit. If no winners, open smallest favorite position size ($150). |
-| **3** | YOLO add | Find open position **most underwater**. **Add** $150–250 ("buying the dip"). Update ladder to scalp TP if not set. |
-| **4** | Volatility lottery | Trade **`COIN` or `TSLA`** only. Open or add at **$250–400** (highest size you can without breaching turnover). |
-| **5** | Ladder remix | No size change unless needed. **Update exit ladder** on a random open position — rotate between ladder presets A/B/C below. |
-| **6** | Rotation | **Reduce 50–100%** on the symbol you've held **longest**. Immediately **open** a **different** favorite you don't hold (or hold smallest). |
-| **7** | Full send Friday | Pick **one** favorite not held (or smallest position). **Open** at **$400–500** with aggressive TP ladder. If all five are open, add to the worst performer. |
+| Slot  | Strategy           | What to do                                                                                                                                                                                  |
+| ----- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **0** | Panic dip buyer    | Among favorites, pick symbol with **worst recent move** (lowest vs other names or biggest drop since last run). **Open** $200–300 if flat; **add** $100–150 if already open and underwater. |
+| **1** | Momentum chaser    | Pick **strongest gainer** among favorites. **Open** $200–300. Ladder: tight TP + wide SL (see ladders).                                                                                     |
+| **2** | Scalp & run        | On any position with **unrealized gain** (current price > entry): **reduce 30–50%** to bank profit. If no winners, open smallest favorite position size ($150).                             |
+| **3** | YOLO add           | Find open position **most underwater**. **Add** $150–250 ("buying the dip"). Update ladder to scalp TP if not set.                                                                          |
+| **4** | Volatility lottery | Trade **`COIN` or `TSLA`** only. Open or add at **$250–400** (highest size you can without breaching turnover).                                                                             |
+| **5** | Ladder remix       | No size change unless needed. **Update exit ladder** on a random open position — rotate between ladder presets A/B/C below.                                                                 |
+| **6** | Rotation           | **Reduce 50–100%** on the symbol you've held **longest**. Immediately **open** a **different** favorite you don't hold (or hold smallest).                                                  |
+| **7** | Full send Friday   | Pick **one** favorite not held (or smallest position). **Open** at **$400–500** with aggressive TP ladder. If all five are open, add to the worst performer.                                |
 
 If a strategy is blocked (no position to reduce, symbol already open for "open-only", turnover cap), fall through to the **next slot** once, then default to **slot 5 (ladder remix)** or **slot 0 (dip buyer)**.
 
@@ -142,13 +142,13 @@ When the strategy doesn't fix the symbol:
 
 ### Position sizing cheat sheet
 
-| Action | USDC amount | When |
-|--------|-------------|------|
-| Probe open | $150–200 | Default new position |
-| Standard open/add | $200–300 | Most strategies |
-| Aggressive | $350–500 | Slots 4 & 7, turnover headroom |
-| Reduce | 30–50% of position | Slot 2, winners |
-| Close | 100% via reduce | Rotation slot 6 |
+| Action            | USDC amount        | When                           |
+| ----------------- | ------------------ | ------------------------------ |
+| Probe open        | $150–200           | Default new position           |
+| Standard open/add | $200–300           | Most strategies                |
+| Aggressive        | $350–500           | Slots 4 & 7, turnover headroom |
+| Reduce            | 30–50% of position | Slot 2, winners                |
+| Close             | 100% via reduce    | Rotation slot 6                |
 
 Use `maxSlippageBps: 100` unless quote suggests otherwise.
 

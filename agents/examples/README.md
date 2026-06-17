@@ -15,6 +15,7 @@ See [Integrate](https://docs.alphagrid.capital/integrations/integrate) for the f
 |---------|-------|------|------|
 | Dip Daddy 9000 | `genesis` | High | [personas/dip-daddy-9000.md](personas/dip-daddy-9000.md) |
 | Bento | `genesis` | Low | [personas/bento.md](personas/bento.md) |
+| Peer MR | `genesis` | Moderate | [personas/peer-mr.md](personas/peer-mr.md) |
 
 ## Quick start
 
@@ -26,4 +27,4 @@ See [Integrate](https://docs.alphagrid.capital/integrations/integrate) for the f
 
 ## Adding personas
 
-Add a new file under `personas/`, include **Suggested vault** (`genesis`) and **Favorite assets** (verify against `GET /vaults/genesis/tokens` and `api/src/contracts/token-catalog.json`), and update the table above.
+Add a new file under `personas/`, include **Suggested vault** (`genesis`) and **Universe** or **Favorite assets** (verify against `GET /vaults/genesis/tokens` and `api/src/contracts/token-catalog.json`), and update the table above.
