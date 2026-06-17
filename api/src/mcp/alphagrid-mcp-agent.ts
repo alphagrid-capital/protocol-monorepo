@@ -15,12 +15,12 @@ export class AlphagridMcp extends McpAgent<McpWorkerEnv> {
   }
 
   async onStart(props?: Record<string, unknown>): Promise<void> {
-    runWithWorkerEnv(this.env, () => undefined)
+    void runWithWorkerEnv(this.env, () => undefined)
     await super.onStart(props)
   }
 
   async onConnect(conn: Connection, ctx: ConnectionContext): Promise<void> {
-    runWithWorkerEnv(this.env, () => undefined)
+    void runWithWorkerEnv(this.env, () => undefined)
     const isStreamableMcpRequest =
       this.getTransportType() === 'streamable-http' &&
       (ctx.request.headers.get(MCP_HTTP_METHOD_HEADER) === 'POST' ||

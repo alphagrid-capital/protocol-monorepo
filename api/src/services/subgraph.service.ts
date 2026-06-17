@@ -31,7 +31,6 @@ export class SubgraphService {
     env: Record<string, string | undefined> = getWorkerEnv()
   ): SubgraphService | null {
     const subgraphUrl = env.SUBGRAPH_URL?.trim()
-    console.log('subgraphUrl', subgraphUrl)
     if (!subgraphUrl) {
       return null
     }
@@ -96,7 +95,7 @@ export class SubgraphService {
       )
     }
 
-    const payload = await response.json()
+    const payload = await response.json<GraphqlResponse<T>>()
     if (payload.errors?.length) {
       throw new SubgraphError(payload.errors.map((e) => e.message).join('; '))
     }

@@ -31,9 +31,13 @@ jobs:
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version-file: .nvmrc
+
+      - name: Install API dependencies (prettier for ABI sync)
+        working-directory: api
+        run: yarn install --frozen-lockfile
 
       - name: Build contracts and subgraph ABIs
         run: |

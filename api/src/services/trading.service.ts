@@ -33,7 +33,6 @@ import { isContractRevert } from '../lib/viem-revert.js'
 import type {
   AddPositionRequest,
   AgentRiskStateResponse,
-  ExitRuleInput,
   GetAgentPositionResponse,
   ListAgentPositionsResponse,
   ListAgentTradesResponse,
@@ -46,7 +45,6 @@ import type {
 } from '../schemas/trading.js'
 import { allocationManagerAbi } from './abis/allocation-manager.js'
 import { positionManagerAbi } from './abis/position-manager.js'
-import { tradeRouterAbi } from './abis/trade-router.js'
 import { tradeRouterLensAbi } from './abis/trade-router-lens.js'
 import { mandateVaultAbi } from './abis/mandate-vault.js'
 import { vaultTrackRegistryAbi } from './abis/vault-track-registry.js'

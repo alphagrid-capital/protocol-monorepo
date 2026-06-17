@@ -44,7 +44,7 @@ test('isLogBlockRangeLimitError detects provider block caps', () => {
 })
 
 test('fetchInAdaptiveBlockRange splits on block cap errors', async () => {
-  const calls: Array<[bigint, bigint]> = []
+  const calls: [bigint, bigint][] = []
 
   const logs = await fetchInAdaptiveBlockRange({
     fromBlock: 0n,
