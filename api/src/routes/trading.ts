@@ -1,9 +1,5 @@
-import {
-  createRoute,
-  OpenAPIHono,
-  z,
-  type RouteHandler,
-} from '@hono/zod-openapi'
+import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi'
+import type { RouteHandler } from '@hono/zod-openapi'
 import { AppError } from '../errors.js'
 import { agentIdParamSchema } from '../schemas/agent.js'
 import {
@@ -151,7 +147,7 @@ const getAgentClosedPositionsRoute = createRoute({
   tags: ['Trading'],
   summary: 'Agent closed positions',
   description:
-    'Scans recent global position ids (max 500) and returns closed positions for the agent. MVP/testnet scale; use indexer in production.',
+    'Returns closed positions for the agent. Uses the subgraph when SUBGRAPH_URL is set; otherwise scans recent global position ids (max 500).',
   request: {
     params: z.object({
       agentId: agentIdParamSchema.openapi({
@@ -334,7 +330,7 @@ const getAgentTradesRoute = createRoute({
   tags: ['Trading'],
   summary: 'Agent trade activity',
   description:
-    'On-chain v1 activity feed from TradeRouter and PositionManager event logs (newest first). Scans backwards from latest; lower bound is chain deploy block or ?fromBlock=.',
+    'Trade activity feed (newest first). Uses the subgraph when SUBGRAPH_URL is set (source: indexed); otherwise scans TradeRouter and PositionManager event logs.',
   request: {
     params: z.object({
       agentId: agentIdParamSchema.openapi({

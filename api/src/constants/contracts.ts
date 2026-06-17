@@ -76,6 +76,7 @@ export const contracts: Record<number, ChainContracts> = {
     TradeRouterLens: '0xB9acd4CeB37FF72260aE2f3721f19D602d07d02C',
     SwapAdapter: '0xDb74cb1308460e68eB8a0F83A1e61A89D58259bd',
     GenesisVault: '0x02D1405597bf1c7B9B7D5d0057119b66c02bc785',
+    tradingLogFromBlock: 473_518_588n,
     feeAsset: {
       address: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
       symbol: 'USDC',

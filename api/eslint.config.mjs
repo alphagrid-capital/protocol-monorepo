@@ -27,6 +27,7 @@ export default defineConfig(
       '@typescript-eslint/no-unsafe-call': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unnecessary-type-conversion': 'off',
+      '@typescript-eslint/consistent-type-definitions': 'off',
       'import-x/order': 'off',
     },
   }

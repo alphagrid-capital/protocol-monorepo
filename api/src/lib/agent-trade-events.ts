@@ -195,8 +195,8 @@ async function fetchTradeRouterActivitiesInRange(params: {
   return routerLogs.flatMap((logs, index) =>
     logs.map((log) =>
       mapTradeRouterLog(chainId, {
-        eventName: TRADE_ROUTER_EVENT_NAMES[index]!,
-        args: log.args as Record<string, unknown>,
+        eventName: TRADE_ROUTER_EVENT_NAMES[index],
+        args: log.args,
         blockNumber: log.blockNumber,
         transactionHash: log.transactionHash,
         logIndex: log.logIndex,
@@ -230,7 +230,7 @@ async function fetchPositionClosedInRange(params: {
 
   return closedLogs.map((log) =>
     mapPositionClosedLog({
-      args: log.args as Record<string, unknown>,
+      args: log.args,
       blockNumber: log.blockNumber,
       transactionHash: log.transactionHash,
       logIndex: log.logIndex,

@@ -25,7 +25,8 @@ import {
 } from '../lib/trading-intent-builder.js'
 import { fetchAgentTradeActivity } from '../lib/agent-trade-events.js'
 import { resolveMinLogScanBlock } from '../lib/trading-log-from-block.js'
-import { loadTradingConfig, type TradingConfig } from '../lib/trading-config.js'
+import { loadTradingConfig } from '../lib/trading-config.js'
+import type { TradingConfig } from '../lib/trading-config.js'
 import { tokenCatalog } from '../lib/token-catalog.js'
 import { getWorkerEnv } from '../lib/worker-env.js'
 import { isContractRevert } from '../lib/viem-revert.js'
@@ -50,10 +51,15 @@ import { tradeRouterLensAbi } from './abis/trade-router-lens.js'
 import { mandateVaultAbi } from './abis/mandate-vault.js'
 import { vaultTrackRegistryAbi } from './abis/vault-track-registry.js'
 import {
+  mapSubgraphActivity,
+  mapSubgraphClosedPositions,
+} from '../lib/subgraph-mappers.js'
+import {
   AgentNotFoundError,
   AgentRegistryService,
 } from './agent-registry.service.js'
 import { ProviderService } from './provider.service.js'
+import { SubgraphService } from './subgraph.service.js'
 import { TradeRouterService } from './trade-router.service.js'
 
 /** AgentRegistry AgentStatus.Active */
@@ -610,7 +616,6 @@ export class TradingService {
   ): Promise<ListAgentPositionsResponse> {
     const agentId = BigInt(agentIdStr)
     const registry = this.agentRegistryService()
-    const tradeRouter = this.tradeRouterService()
 
     try {
       await registry.getAgent(agentId)
@@ -621,6 +626,16 @@ export class TradingService {
       throw error
     }
 
+    const subgraph = SubgraphService.fromEnv()
+    if (subgraph) {
+      const indexed = await subgraph.listClosedPositions(agentIdStr, limit)
+      return {
+        agentId: agentIdStr,
+        positions: mapSubgraphClosedPositions(agentIdStr, indexed.positions),
+      }
+    }
+
+    const tradeRouter = this.tradeRouterService()
     const total = await tradeRouter.positionCount()
     if (total === 0n) {
       return { agentId: agentIdStr, positions: [] }
@@ -655,22 +670,22 @@ export class TradingService {
         })),
       })
 
-      const closedMatches: Array<{
+      const closedMatches: {
         positionId: bigint
         position: OnChainPosition
-      }> = []
+      }[] = []
       for (let index = 0; index < batchIds.length; index++) {
         const result = positionResults[index]
         if (result.status === 'failure') {
           throw result.error
         }
-        const position = result.result as OnChainPosition
+        const position = result.result
         if (
           position.agentId === agentId &&
           position.status === POSITION_STATUS_CLOSED &&
           position.positionId !== 0n
         ) {
-          closedMatches.push({ positionId: batchIds[index]!, position })
+          closedMatches.push({ positionId: batchIds[index], position })
         }
       }
 
@@ -709,13 +724,13 @@ export class TradingService {
           throw exitRulesResult.error
         }
 
-        const { position } = closedMatches[index]!
+        const { position } = closedMatches[index]
         positions.push(
           this.mapPositionRecord({
             position,
-            exitRules: exitRulesResult!.result as readonly OnChainExitRule[],
+            exitRules: exitRulesResult.result,
             agentIdStr,
-            realizedPnlUsdc: realizedResult!.result.toString(),
+            realizedPnlUsdc: realizedResult.result.toString(),
           })
         )
       }
@@ -739,6 +754,17 @@ export class TradingService {
         throw new TradingError(error.message, 404)
       }
       throw error
+    }
+
+    const subgraph = SubgraphService.fromEnv()
+    if (subgraph) {
+      const indexed = await subgraph.listAgentActivities(agentIdStr, limit)
+      return {
+        agentId: agentIdStr,
+        source: 'indexed',
+        indexedThroughBlock: indexed.indexedThroughBlock ?? undefined,
+        trades: indexed.activities.map(mapSubgraphActivity),
+      }
     }
 
     const minScanBlock = resolveMinLogScanBlock({
@@ -797,7 +823,7 @@ export class TradingService {
     return {
       positionId: position.positionId.toString(),
       agentId: agentIdStr,
-      symbol: this.symbolForToken(position.token as Address),
+      symbol: this.symbolForToken(position.token),
       token: position.token,
       vault: position.vault,
       tokenAmount: position.tokenAmount.toString(),
@@ -855,10 +881,7 @@ export class TradingService {
       agentIdStr,
     })
 
-    const exitBounds = await this.getExitBounds(
-      position.vault as Address,
-      trackId
-    )
+    const exitBounds = await this.getExitBounds(position.vault, trackId)
 
     const base = {
       agentId: agentIdStr,

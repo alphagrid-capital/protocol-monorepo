@@ -52,6 +52,7 @@ name = "alphagrid-api-arbitrum-sepolia"
 CHAIN_ID = "421614"
 X402_NETWORK = "eip155:421614"
 ENABLE_SWAGGER = "true"
+SUBGRAPH_URL = "https://api.studio.thegraph.com/query/1724541/alphagrid-protocol-subgraph-arbitrum-sepolia/version/latest"
 
 [[env.arbitrum-sepolia.durable_objects.bindings]]
 name = "MCP_OBJECT"
@@ -62,7 +63,7 @@ tag = "v1"
 new_sqlite_classes = ["AlphagridMcp"]
 
 [env.arbitrum-sepolia.triggers]
-crons = ["*/15 * * * *"]
+crons = ["* * * * *"]
 
 [env.robinhood-testnet]
 name = "alphagrid-api-robinhood"
@@ -90,6 +91,7 @@ name = "alphagrid-api-arbitrum-one"
 CHAIN_ID = "42161"
 X402_NETWORK = "eip155:42161"
 ENABLE_SWAGGER = "false"
+SUBGRAPH_URL = "https://api.studio.thegraph.com/query/1724541/alphagrid-protocol-subgraph-arbitrum-one/version/latest"
 
 [[env.arbitrum-one.durable_objects.bindings]]
 name = "MCP_OBJECT"

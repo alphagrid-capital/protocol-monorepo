@@ -1,9 +1,5 @@
-import {
-  createRoute,
-  OpenAPIHono,
-  z,
-  type RouteHandler,
-} from '@hono/zod-openapi'
+import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi'
+import type { RouteHandler } from '@hono/zod-openapi'
 import { AppError } from '../errors.js'
 import {
   TransactionStatusResponseSchema,
@@ -74,7 +70,4 @@ const getTransactionHandler = async (
   }
 }
 
-transactionRoutes.openapi(
-  getTransactionRoute,
-  getTransactionHandler as RouteHandler<typeof getTransactionRoute>
-)
+transactionRoutes.openapi(getTransactionRoute, getTransactionHandler)

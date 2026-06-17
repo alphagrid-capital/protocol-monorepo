@@ -361,12 +361,15 @@ export const ListAgentTradesQuerySchema = z.object({
 export const ListAgentTradesResponseSchema = z
   .object({
     agentId: agentIdParamSchema,
-    source: z.literal('on-chain-events').openapi({
+    source: z.enum(['on-chain-events', 'indexed']).openapi({
       description:
-        'v1 activity feed from TradeRouter and PositionManager event logs (not indexed fills)',
+        'Activity feed source: indexed subgraph or on-chain event log scan fallback',
     }),
-    scannedFromBlock: z.string().openapi({
-      description: 'Lower block bound used for this scan',
+    scannedFromBlock: z.string().optional().openapi({
+      description: 'Lower block bound used for RPC log scan fallback',
+    }),
+    indexedThroughBlock: z.string().optional().openapi({
+      description: 'Latest indexed block when source is indexed',
     }),
     trades: z.array(AgentTradeActivitySchema),
   })

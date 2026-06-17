@@ -8,7 +8,9 @@
     { "symbol": "MSFT", "finnhubSymbol": "MSFT" },
     { "symbol": "COIN", "finnhubSymbol": "COIN" },
     { "symbol": "HOOD", "finnhubSymbol": "HOOD" },
-    { "symbol": "SPY", "finnhubSymbol": "SPY" }
+    { "symbol": "SPY", "finnhubSymbol": "SPY" },
+    { "symbol": "GOOGL", "finnhubSymbol": "GOOGL" },
+    { "symbol": "AMZN", "finnhubSymbol": "AMZN" }
   ],
   "chains": {
     "84532": {
@@ -32,7 +34,9 @@
         "MSFT": "0x60a8463c9055839c1d7c91944F274298d51b570d",
         "COIN": "0x371d91FDAee315937f43e280Ab2b0683Bd7F38c9",
         "HOOD": "0xf8A5E376d301579E4A0cD9C47273321e03ce5BAB",
-        "SPY": "0x0641f3e1859733ea9044799C446E9DDbFA8810Fc"
+        "SPY": "0x0641f3e1859733ea9044799C446E9DDbFA8810Fc",
+        "GOOGL": "0x5B34AAa99A1aD9934760123063dbB0213D40818d",
+        "AMZN": "0xf7C6F5A244e3394512BDD7b7a54aD74635BD92eA"
       }
     },
     "42161": {
@@ -44,7 +48,9 @@
         "MSFT": "0x71fdCB5D39652be80Da54DC0EcB6FDa532a3699D",
         "COIN": "0x4aE9D619d5c2B009419ef10b6A07eb6a4AAeA4db",
         "HOOD": "0x22Ec9a44e54339d1DcE184A02161E42df857648D",
-        "SPY": "0xa938FA961d29d533c9057f2B0e72854a7753F26e"
+        "SPY": "0xa938FA961d29d533c9057f2B0e72854a7753F26e",
+        "GOOGL": "0xf545FC068efB8bA7Aa3DA064Be0630C46d97dc68",
+        "AMZN": "0x78222A21f4CCE8a4737fF558745aAf48A81153D6"
       }
     },
     "46630": {
@@ -56,7 +62,9 @@
         "MSFT": "0x71fdCB5D39652be80Da54DC0EcB6FDa532a3699D",
         "COIN": "0x4aE9D619d5c2B009419ef10b6A07eb6a4AAeA4db",
         "HOOD": "0x22Ec9a44e54339d1DcE184A02161E42df857648D",
-        "SPY": "0xa938FA961d29d533c9057f2B0e72854a7753F26e"
+        "SPY": "0xa938FA961d29d533c9057f2B0e72854a7753F26e",
+        "GOOGL": "0xf545FC068efB8bA7Aa3DA064Be0630C46d97dc68",
+        "AMZN": "0x78222A21f4CCE8a4737fF558745aAf48A81153D6"
       }
     }
   }

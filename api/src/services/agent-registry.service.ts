@@ -56,7 +56,7 @@ export class AgentRegistryService {
 
   async listAgentsByOwner(
     owner: Address
-  ): Promise<Array<{ agentId: string; agent: AgentRecord }>> {
+  ): Promise<{ agentId: string; agent: AgentRecord }[]> {
     const client = this.providerService.createPublicClient()
     const count = await client.readContract({
       address: this.registryAddress,
