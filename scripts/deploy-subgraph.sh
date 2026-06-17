@@ -29,14 +29,29 @@ case "$NETWORK" in
     ;;
 esac
 
+resolve_version_label() {
+  if [[ -n "${VERSION_LABEL:-}" ]]; then
+    echo "$VERSION_LABEL"
+    return
+  fi
+  if git -C "$ROOT" rev-parse --short HEAD >/dev/null 2>&1; then
+    echo "build-$(git -C "$ROOT" rev-parse --short HEAD)"
+    return
+  fi
+  echo "build-$(date -u +%Y%m%dT%H%M%SZ)"
+}
+
+VERSION_LABEL="$(resolve_version_label)"
+
 cd "$ROOT"
 make subgraph-build
 
 cd "$ROOT/subgraph"
 yarn graph auth "$DEPLOY_KEY"
+echo "Deploying $SLUG with version label: $VERSION_LABEL"
 yarn graph deploy "$SLUG" \
   --network "$NETWORK" \
-  --version-label "${VERSION_LABEL:-v0.0.1}"
+  --version-label "$VERSION_LABEL"
 
-echo "Deployed $SLUG on $NETWORK"
-echo "Set SUBGRAPH_URL on the matching API Worker (see subgraph/README.md)."
+echo "Deployed $SLUG on $NETWORK (version: $VERSION_LABEL)"
+echo "Verify schema includes equitySnapshots on Agent, then set SUBGRAPH_URL (see subgraph/README.md)."

@@ -375,6 +375,58 @@ export const ListAgentTradesResponseSchema = z
   })
   .openapi('ListAgentTradesResponse')
 
+export const ListAgentEquityHistoryQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(500).default(200).optional(),
+  fromTimestamp: z.string().regex(/^\d+$/).optional().openapi({
+    description: 'Optional lower bound (unix seconds) on snapshot timestamps',
+  }),
+  toTimestamp: z.string().regex(/^\d+$/).optional().openapi({
+    description: 'Optional upper bound (unix seconds) on snapshot timestamps',
+  }),
+  includeCurrent: z.coerce.boolean().default(true).optional().openapi({
+    description:
+      'When true, append a live equity tip from risk-state (default true)',
+  }),
+})
+
+export const AgentEquityHistoryPointSchema = z
+  .object({
+    timestamp: z.string(),
+    blockNumber: z.string(),
+    transactionHash: z.string().optional(),
+    logIndex: z.number().int().optional(),
+    trigger: z.string(),
+    allocationCap: z.string(),
+    lifetimeRealizedPnlUsdc: z.string(),
+    unrealizedPnlUsdc: z.string(),
+    equityUsdc: z.string(),
+    peakEquityUsdc: z.string(),
+    drawdownBps: z.number().int(),
+    returnBps: z.number().int().optional(),
+  })
+  .openapi('AgentEquityHistoryPoint')
+
+export const AgentEquityHistoryCurrentSchema = z
+  .object({
+    timestamp: z.string(),
+    equityUsdc: z.string(),
+    peakEquityUsdc: z.string(),
+    drawdownBps: z.number().int(),
+    returnBps: z.number().int().nullable(),
+  })
+  .openapi('AgentEquityHistoryCurrent')
+
+export const ListAgentEquityHistoryResponseSchema = z
+  .object({
+    agentId: agentIdParamSchema,
+    source: z.enum(['indexed', 'unavailable']),
+    granularity: z.literal('trade-boundary'),
+    indexedThroughBlock: z.string().optional(),
+    points: z.array(AgentEquityHistoryPointSchema),
+    current: AgentEquityHistoryCurrentSchema.optional(),
+  })
+  .openapi('ListAgentEquityHistoryResponse')
+
 export const GetAgentTradingInputSchema = z
   .object({
     agentId: agentIdParamSchema,
@@ -424,4 +476,7 @@ export type SubmitAdjustIntentResponse = z.infer<
 >
 export type ListAgentTradesResponse = z.infer<
   typeof ListAgentTradesResponseSchema
+>
+export type ListAgentEquityHistoryResponse = z.infer<
+  typeof ListAgentEquityHistoryResponseSchema
 >

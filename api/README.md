@@ -26,7 +26,7 @@ The same codebase deploys to **three** Cloudflare Workers. Each instance has its
 
 Public URLs use `https://api-{chainId}.alphagrid.capital` — attach each hostname in the Cloudflare dashboard (**Workers & Pages → Worker → Settings → Domains & Routes → Add Custom Domain**). `*.workers.dev` URLs work immediately after deploy.
 
-`CHAIN_ID` and `X402_NETWORK` are set in `wrangler.toml` per env. Contract addresses for each chain are in `src/constants/contracts.ts`. Optional `SUBGRAPH_URL` (Arbitrum Sepolia / Arbitrum One) switches `/trades` and `/closed-positions` to the indexed subgraph — see [`subgraph/README.md`](../subgraph/README.md).
+`CHAIN_ID` and `X402_NETWORK` are set in `wrangler.toml` per env. Contract addresses for each chain are in `src/constants/contracts.ts`. Optional `SUBGRAPH_URL` (Arbitrum Sepolia / Arbitrum One) switches `/trades`, `/closed-positions`, and `/equity-history` to the indexed subgraph — see [`subgraph/README.md`](../subgraph/README.md).
 
 ## Commands
 
@@ -44,34 +44,35 @@ yarn deploy:all                 # Deploy all three sequentially
 
 ## Endpoints
 
-| Method | Path                                          | Description                                                                     |
-| ------ | --------------------------------------------- | ------------------------------------------------------------------------------- |
-| `GET`  | `/`                                           | API discovery JSON (generated from OpenAPI)                                     |
-| `GET`  | `/llms.txt`                                   | LLM-oriented index ([llms.txt spec](https://llmstxt.org/))                      |
-| `GET`  | `/health`                                     | Liveness probe                                                                  |
-| `GET`  | `/vaults`                                     | Vault catalog (`?format=md` for markdown)                                       |
-| `GET`  | `/vaults/{id}/tokens`                         | Tradable tokens for a vault mandate + oracle prices                             |
-| `GET`  | `/tokens`                                     | Global token catalog + on-chain registry state                                  |
-| `GET`  | `/prices`                                     | MockPriceOracle quotes indexed by symbol (e.g. `NVDA`)                          |
-| `POST` | `/prices/refresh`                             | Manually fetch Finnhub quotes and update the oracle                             |
-| `GET`  | `/agents/by-owner/{owner}`                    | List agents owned by address (`agentCountByOwner` + `getAgent`)                 |
-| `GET`  | `/agents/{agentId}/trade-intents/quote`       | EIP-712 quote for open-position intent (nonce, vault, allocation, exit bounds)  |
-| `POST` | `/agents/{agentId}/trade-intents`             | Verify signed open intent; relay `TradeRouter.openPosition` (201)               |
-| `GET`  | `/agents/{agentId}/add-intents/quote`         | Quote for `AddToPosition` (`?positionId=`)                                      |
-| `POST` | `/agents/{agentId}/add-intents`               | Relay signed add-to-position intent (201)                                       |
-| `GET`  | `/agents/{agentId}/reduce-intents/quote`      | Quote for `ReducePosition` (`?positionId=`)                                     |
-| `POST` | `/agents/{agentId}/reduce-intents`            | Relay signed reduce intent — partial or full close (201)                        |
-| `GET`  | `/agents/{agentId}/exit-ladder-intents/quote` | Quote for `UpdateExitLadder` (`?positionId=`)                                   |
-| `POST` | `/agents/{agentId}/exit-ladder-intents`       | Relay signed pending TP/SL update (201)                                         |
-| `GET`  | `/agents/{agentId}/positions`                 | Agent open positions (`getOpenPositionIds` + multicall; includes `derived`)     |
-| `GET`  | `/agents/{agentId}/closed-positions`          | Closed positions via bounded global id scan (`?limit=`, max 100)                |
-| `GET`  | `/agents/{agentId}/positions/{positionId}`    | Single position by id (open or closed; realized/unrealized PnL + `derived`)     |
-| `GET`  | `/agents/{agentId}/risk-state`                | Equity, drawdown, PnL, `derived`, `promotionReadiness`, breach flags            |
-| `GET`  | `/agents/{agentId}/trades`                    | Trade activity (`source`: `indexed` when `SUBGRAPH_URL` set, else RPC log scan) |
-| `GET`  | `/transactions/{txHash}`                      | Transaction receipt status (confirm intent submit)                              |
-| `GET`  | `/docs`                                       | Swagger UI (humans; poor fit for URL paste in chat)                             |
-| `GET`  | `/docs/swagger.json`                          | OpenAPI 3.1 (Custom GPT Actions)                                                |
-| `POST` | `/mcp`                                        | MCP Streamable HTTP (Durable Object sessions)                                   |
+| Method | Path                                          | Description                                                                            |
+| ------ | --------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `GET`  | `/`                                           | API discovery JSON (generated from OpenAPI)                                            |
+| `GET`  | `/llms.txt`                                   | LLM-oriented index ([llms.txt spec](https://llmstxt.org/))                             |
+| `GET`  | `/health`                                     | Liveness probe                                                                         |
+| `GET`  | `/vaults`                                     | Vault catalog (`?format=md` for markdown)                                              |
+| `GET`  | `/vaults/{id}/tokens`                         | Tradable tokens for a vault mandate + oracle prices                                    |
+| `GET`  | `/tokens`                                     | Global token catalog + on-chain registry state                                         |
+| `GET`  | `/prices`                                     | MockPriceOracle quotes indexed by symbol (e.g. `NVDA`)                                 |
+| `POST` | `/prices/refresh`                             | Manually fetch Finnhub quotes and update the oracle                                    |
+| `GET`  | `/agents/by-owner/{owner}`                    | List agents owned by address (`agentCountByOwner` + `getAgent`)                        |
+| `GET`  | `/agents/{agentId}/trade-intents/quote`       | EIP-712 quote for open-position intent (nonce, vault, allocation, exit bounds)         |
+| `POST` | `/agents/{agentId}/trade-intents`             | Verify signed open intent; relay `TradeRouter.openPosition` (201)                      |
+| `GET`  | `/agents/{agentId}/add-intents/quote`         | Quote for `AddToPosition` (`?positionId=`)                                             |
+| `POST` | `/agents/{agentId}/add-intents`               | Relay signed add-to-position intent (201)                                              |
+| `GET`  | `/agents/{agentId}/reduce-intents/quote`      | Quote for `ReducePosition` (`?positionId=`)                                            |
+| `POST` | `/agents/{agentId}/reduce-intents`            | Relay signed reduce intent — partial or full close (201)                               |
+| `GET`  | `/agents/{agentId}/exit-ladder-intents/quote` | Quote for `UpdateExitLadder` (`?positionId=`)                                          |
+| `POST` | `/agents/{agentId}/exit-ladder-intents`       | Relay signed pending TP/SL update (201)                                                |
+| `GET`  | `/agents/{agentId}/positions`                 | Agent open positions (`getOpenPositionIds` + multicall; includes `derived`)            |
+| `GET`  | `/agents/{agentId}/closed-positions`          | Closed positions via bounded global id scan (`?limit=`, max 100)                       |
+| `GET`  | `/agents/{agentId}/positions/{positionId}`    | Single position by id (open or closed; realized/unrealized PnL + `derived`)            |
+| `GET`  | `/agents/{agentId}/risk-state`                | Equity, drawdown, PnL, `derived`, `promotionReadiness`, breach flags                   |
+| `GET`  | `/agents/{agentId}/trades`                    | Trade activity (`source`: `indexed` when `SUBGRAPH_URL` set, else RPC log scan)        |
+| `GET`  | `/agents/{agentId}/equity-history`            | Trade-boundary equity snapshots (`SUBGRAPH_URL` required; optional live `current` tip) |
+| `GET`  | `/transactions/{txHash}`                      | Transaction receipt status (confirm intent submit)                                     |
+| `GET`  | `/docs`                                       | Swagger UI (humans; poor fit for URL paste in chat)                                    |
+| `GET`  | `/docs/swagger.json`                          | OpenAPI 3.1 (Custom GPT Actions)                                                       |
+| `POST` | `/mcp`                                        | MCP Streamable HTTP (Durable Object sessions)                                          |
 
 ## Using with ChatGPT and other LLMs
 
@@ -112,6 +113,7 @@ ChatGPT **browsing** only performs simple `GET` requests on **public** URLs. It 
 | `alphagrid_get_agent_position`           | `GET /agents/{agentId}/positions/{positionId}`    |
 | `alphagrid_get_risk_state`               | `GET /agents/{agentId}/risk-state`                |
 | `alphagrid_get_trade_history`            | `GET /agents/{agentId}/trades`                    |
+| `alphagrid_get_equity_history`           | `GET /agents/{agentId}/equity-history`            |
 
 Open/add/reduce/exit-ladder intent submits require executor config for writes; on-chain reads need `RPC_URL` + `CHAIN_ID` (see below). After submit, confirm execution with `GET /transactions/{txHash}` or read positions/trades.
 

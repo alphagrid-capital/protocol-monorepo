@@ -16,6 +16,7 @@ type Agent @entity(immutable: false) {
   openPositionCount: Int!
   positions: [Position!]! @derivedFrom(field: "agent")
   activities: [AgentActivity!]! @derivedFrom(field: "agent")
+  equitySnapshots: [AgentEquitySnapshot!]! @derivedFrom(field: "agent")
 }
 
 type Allocation @entity(immutable: false) {
@@ -82,4 +83,21 @@ type AgentActivity @entity(immutable: true) {
   keeperBounty: BigInt
   operator: Bytes
   realizedPnlUsdc: BigInt
+}
+
+type AgentEquitySnapshot @entity(immutable: true) {
+  id: ID!
+  agent: Agent!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes
+  logIndex: Int
+  trigger: String!
+  allocationCap: BigInt!
+  lifetimeRealizedPnlUsdc: BigInt!
+  unrealizedPnlUsdc: BigInt!
+  equityUsdc: BigInt!
+  peakEquityUsdc: BigInt!
+  drawdownBps: Int!
+  returnBps: Int
 }

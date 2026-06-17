@@ -161,3 +161,61 @@ export type SubgraphActivitiesResult = {
 export type SubgraphClosedPositionsResult = {
   positions: GraphClosedPosition[]
 }
+
+type GraphEquitySnapshot = {
+  blockNumber: string
+  blockTimestamp: string
+  transactionHash?: string | null
+  logIndex?: number | null
+  trigger: string
+  allocationCap: string
+  lifetimeRealizedPnlUsdc: string
+  unrealizedPnlUsdc: string
+  equityUsdc: string
+  peakEquityUsdc: string
+  drawdownBps: number
+  returnBps?: number | null
+}
+
+export type SubgraphEquitySnapshotsResult = {
+  indexedThroughBlock: string | null
+  snapshots: GraphEquitySnapshot[]
+}
+
+export function mapSubgraphEquitySnapshot(snapshot: GraphEquitySnapshot) {
+  return {
+    timestamp: snapshot.blockTimestamp,
+    blockNumber: snapshot.blockNumber,
+    ...(snapshot.transactionHash
+      ? { transactionHash: snapshot.transactionHash }
+      : {}),
+    ...(snapshot.logIndex != null ? { logIndex: snapshot.logIndex } : {}),
+    trigger: snapshot.trigger,
+    allocationCap: snapshot.allocationCap,
+    lifetimeRealizedPnlUsdc: snapshot.lifetimeRealizedPnlUsdc,
+    unrealizedPnlUsdc: snapshot.unrealizedPnlUsdc,
+    equityUsdc: snapshot.equityUsdc,
+    peakEquityUsdc: snapshot.peakEquityUsdc,
+    drawdownBps: snapshot.drawdownBps,
+    ...(snapshot.returnBps != null ? { returnBps: snapshot.returnBps } : {}),
+  }
+}
+
+export function mapSubgraphEquitySnapshots(
+  snapshots: GraphEquitySnapshot[],
+  fromTimestamp?: bigint,
+  toTimestamp?: bigint
+) {
+  return snapshots
+    .filter((snapshot) => {
+      const ts = BigInt(snapshot.blockTimestamp)
+      if (fromTimestamp !== undefined && ts < fromTimestamp) {
+        return false
+      }
+      if (toTimestamp !== undefined && ts > toTimestamp) {
+        return false
+      }
+      return true
+    })
+    .map(mapSubgraphEquitySnapshot)
+}

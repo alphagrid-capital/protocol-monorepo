@@ -11,6 +11,8 @@ import {
   ListAgentPositionsResponseSchema,
   ListAgentTradesQuerySchema,
   ListAgentTradesResponseSchema,
+  ListAgentEquityHistoryQuerySchema,
+  ListAgentEquityHistoryResponseSchema,
   ListClosedPositionsQuerySchema,
   OpenPositionRequestSchema,
   PositionIntentQuoteQuerySchema,
@@ -351,6 +353,33 @@ const getAgentTradesRoute = createRoute({
   },
 })
 
+const getAgentEquityHistoryRoute = createRoute({
+  method: 'get',
+  path: '/agents/{agentId}/equity-history',
+  tags: ['Trading'],
+  summary: 'Agent equity history',
+  description:
+    'Trade-boundary equity snapshots from the subgraph (requires SUBGRAPH_URL). Appends a live tip from risk-state when includeCurrent=true.',
+  request: {
+    params: z.object({
+      agentId: agentIdParamSchema.openapi({
+        param: { name: 'agentId', in: 'path' },
+        example: '1',
+      }),
+    }),
+    query: ListAgentEquityHistoryQuerySchema,
+  },
+  responses: {
+    200: {
+      description: 'Agent equity history',
+      content: {
+        'application/json': { schema: ListAgentEquityHistoryResponseSchema },
+      },
+    },
+    ...tradingErrorResponses,
+  },
+})
+
 const getAgentRiskStateRoute = createRoute({
   method: 'get',
   path: '/agents/{agentId}/risk-state',
@@ -459,6 +488,28 @@ const getAgentTradesHandler = async (
       query.limit ?? 50,
       query.fromBlock
     )
+    return c.json(result, 200)
+  } catch (error) {
+    if (error instanceof TradingError || error instanceof AppError) {
+      return c.json({ error: error.message }, statusFromTradingError(error))
+    }
+    throw error
+  }
+}
+
+const getAgentEquityHistoryHandler = async (
+  c: Parameters<RouteHandler<typeof getAgentEquityHistoryRoute>>[0]
+) => {
+  try {
+    const query = c.req.valid('query')
+    const result = await TradingService.fromEnv(
+      getWorkerEnv()
+    ).listEquityHistory(c.req.param('agentId'), {
+      limit: query.limit,
+      fromTimestamp: query.fromTimestamp,
+      toTimestamp: query.toTimestamp,
+      includeCurrent: query.includeCurrent,
+    })
     return c.json(result, 200)
   } catch (error) {
     if (error instanceof TradingError || error instanceof AppError) {
@@ -669,6 +720,12 @@ tradingRoutes.openapi(
 tradingRoutes.openapi(
   getAgentTradesRoute,
   getAgentTradesHandler as RouteHandler<typeof getAgentTradesRoute>
+)
+tradingRoutes.openapi(
+  getAgentEquityHistoryRoute,
+  getAgentEquityHistoryHandler as RouteHandler<
+    typeof getAgentEquityHistoryRoute
+  >
 )
 tradingRoutes.openapi(
   getAgentRiskStateRoute,

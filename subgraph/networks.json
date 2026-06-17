@@ -15,6 +15,10 @@
     "TradeRouter": {
       "address": "0xb78f0EAdAF1D6209D73a3C5eb8203f0cb3a6ccba",
       "startBlock": 473518588
+    },
+    "TradeRouterLens": {
+      "address": "0xB9acd4CeB37FF72260aE2f3721f19D602d07d02C",
+      "startBlock": 473518595
     }
   },
   "arbitrum-sepolia": {
@@ -33,6 +37,10 @@
     "TradeRouter": {
       "address": "0xADaf3a37fFDC10447356E131DC316509c44885D2",
       "startBlock": 276472066
+    },
+    "TradeRouterLens": {
+      "address": "0x62272B653a128e2d5786Ae63C063157dfD3aa2bE",
+      "startBlock": 276472092
     }
   }
 }

@@ -27,6 +27,10 @@ const contracts = [
     artifact: 'contracts/out/TradeRouter.sol/TradeRouter.json',
     out: 'subgraph/abis/TradeRouter.json',
   },
+  {
+    artifact: 'contracts/out/TradeRouterLens.sol/TradeRouterLens.json',
+    out: 'subgraph/abis/TradeRouterLens.json',
+  },
 ]
 
 mkdirSync(join(root, 'subgraph/abis'), { recursive: true })

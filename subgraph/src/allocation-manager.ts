@@ -6,6 +6,7 @@ import {
 } from '../generated/AllocationManager/AllocationManager'
 import { Allocation } from '../generated/schema'
 import { loadOrCreateAgent } from './lib/entities'
+import { recordEquitySnapshot } from './lib/equity-snapshot'
 import { agentIdToString } from './lib/ids'
 
 function loadOrCreateAllocation(agentId: string): Allocation {
@@ -37,6 +38,13 @@ export function handleAllocationCreated(event: AllocationCreated): void {
   allocation.createdAt = event.block.timestamp
   allocation.updatedAt = event.block.timestamp
   allocation.save()
+
+  recordEquitySnapshot(
+    agentId,
+    event.params.agentId,
+    event,
+    'AllocationCreated'
+  )
 }
 
 export function handleAllocationUpdated(event: AllocationUpdated): void {
@@ -48,6 +56,13 @@ export function handleAllocationUpdated(event: AllocationUpdated): void {
   allocation.status = event.params.status
   allocation.updatedAt = event.block.timestamp
   allocation.save()
+
+  recordEquitySnapshot(
+    agentId,
+    event.params.agentId,
+    event,
+    'AllocationUpdated'
+  )
 }
 
 export function handleAllocationUsedUpdated(event: AllocationUsedUpdated): void {

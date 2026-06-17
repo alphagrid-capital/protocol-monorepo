@@ -36,6 +36,7 @@ import type {
   GetAgentPositionResponse,
   ListAgentPositionsResponse,
   ListAgentTradesResponse,
+  ListAgentEquityHistoryResponse,
   OpenPositionRequest,
   ReducePositionRequest,
   SubmitAdjustIntentResponse,
@@ -51,6 +52,7 @@ import { vaultTrackRegistryAbi } from './abis/vault-track-registry.js'
 import {
   mapSubgraphActivity,
   mapSubgraphClosedPositions,
+  mapSubgraphEquitySnapshots,
 } from '../lib/subgraph-mappers.js'
 import {
   AgentNotFoundError,
@@ -788,6 +790,73 @@ export class TradingService {
       scannedFromBlock: minScanBlock.toString(),
       trades,
     }
+  }
+
+  async listEquityHistory(
+    agentIdStr: string,
+    options: {
+      limit?: number
+      fromTimestamp?: string
+      toTimestamp?: string
+      includeCurrent?: boolean
+    } = {}
+  ): Promise<ListAgentEquityHistoryResponse> {
+    const agentId = BigInt(agentIdStr)
+    const registry = this.agentRegistryService()
+
+    try {
+      await registry.getAgent(agentId)
+    } catch (error) {
+      if (error instanceof AgentNotFoundError) {
+        throw new TradingError(error.message, 404)
+      }
+      throw error
+    }
+
+    const subgraph = SubgraphService.fromEnv()
+    if (!subgraph) {
+      throw new TradingError(
+        'Equity history requires SUBGRAPH_URL to be configured',
+        503
+      )
+    }
+
+    const limit = options.limit ?? 200
+    const indexed = await subgraph.listAgentEquitySnapshots(agentIdStr, limit)
+    const fromTimestamp =
+      options.fromTimestamp !== undefined
+        ? BigInt(options.fromTimestamp)
+        : undefined
+    const toTimestamp =
+      options.toTimestamp !== undefined
+        ? BigInt(options.toTimestamp)
+        : undefined
+
+    const response: ListAgentEquityHistoryResponse = {
+      agentId: agentIdStr,
+      source: 'indexed',
+      granularity: 'trade-boundary',
+      indexedThroughBlock: indexed.indexedThroughBlock ?? undefined,
+      points: mapSubgraphEquitySnapshots(
+        indexed.snapshots,
+        fromTimestamp,
+        toTimestamp
+      ),
+    }
+
+    const includeCurrent = options.includeCurrent ?? true
+    if (includeCurrent) {
+      const riskState = await this.getRiskState(agentIdStr)
+      response.current = {
+        timestamp: String(Math.floor(Date.now() / 1000)),
+        equityUsdc: riskState.equity.currentUsdc,
+        peakEquityUsdc: riskState.equity.peakUsdc,
+        drawdownBps: riskState.equity.currentDrawdownBps,
+        returnBps: riskState.derived.returnBps,
+      }
+    }
+
+    return response
   }
 
   private mapPositionRecord(params: {

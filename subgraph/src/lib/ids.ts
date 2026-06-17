@@ -22,6 +22,18 @@ export function exitRuleId(positionId: string, index: number): string {
   return positionId.concat('-').concat(index.toString())
 }
 
+export function equitySnapshotId(
+  agentId: string,
+  blockNumber: BigInt,
+  logIndex: number
+): string {
+  return agentId
+    .concat('-')
+    .concat(blockNumber.toString())
+    .concat('-')
+    .concat(logIndex.toString())
+}
+
 export function triggerTypeLabel(triggerType: number): string {
   if (triggerType == 0) {
     return 'StopLoss'

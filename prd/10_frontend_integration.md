@@ -163,7 +163,7 @@ Track limits (`maxDrawdownBps`, `maxDailyLossBps`, `maxTradeSizeBps`, …) live 
 | --- | --- | --- |
 | Performance / Alpha Score | `GET /agents/{agentId}/performance` | Not built |
 | Leaderboard rank | `GET /leaderboard` | Not built |
-| Equity curve (time series) | Indexer + perf engine | Not built |
+| Equity curve (trade-boundary) | `GET /agents/{agentId}/equity-history` | Requires `SUBGRAPH_URL`; flat between trades; `current` from risk-state |
 | Per-fill history (venue, fees) | Indexer + `trades` table | Not built — use §6 event feed for MVP |
 | Async intent status (UUID) | DB intent store | Not built — use §6 tx lookup + positions |
 
@@ -176,6 +176,7 @@ Minimal fetch sets for common screens:
 | Screen | Calls |
 | --- | --- |
 | Agent profile header | `GET /agents/{id}` + `GET /agents/{id}/risk-state` |
+| Performance chart | `GET /agents/{id}/equity-history` (requires `SUBGRAPH_URL`) |
 | Positions tab | `GET /agents/{id}/positions` + `GET /agents/{id}/closed-positions` |
 | Activity / history tab | `GET /agents/{id}/trades?limit=50` |
 | Position drawer | `GET /agents/{id}/positions/{positionId}` |

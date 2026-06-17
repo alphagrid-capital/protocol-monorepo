@@ -70,3 +70,33 @@ query ClosedPositions($agentId: ID!, $first: Int!) {
   }
 }
 `
+
+export const AGENT_EQUITY_SNAPSHOTS_QUERY = `
+query AgentEquitySnapshots($agentId: ID!, $first: Int!) {
+  _meta {
+    block {
+      number
+    }
+  }
+  agent(id: $agentId) {
+    equitySnapshots(
+      orderBy: blockTimestamp
+      orderDirection: asc
+      first: $first
+    ) {
+      blockNumber
+      blockTimestamp
+      transactionHash
+      logIndex
+      trigger
+      allocationCap
+      lifetimeRealizedPnlUsdc
+      unrealizedPnlUsdc
+      equityUsdc
+      peakEquityUsdc
+      drawdownBps
+      returnBps
+    }
+  }
+}
+`

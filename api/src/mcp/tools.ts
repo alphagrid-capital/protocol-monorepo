@@ -37,6 +37,8 @@ import {
   ListAgentPositionsResponseSchema,
   ListAgentTradesQuerySchema,
   ListAgentTradesResponseSchema,
+  ListAgentEquityHistoryQuerySchema,
+  ListAgentEquityHistoryResponseSchema,
   ListClosedPositionsQuerySchema,
 } from '../schemas/trading.js'
 import { ListVaultsResponseSchema } from '../schemas/vault.js'
@@ -528,6 +530,40 @@ export function registerMcpTools(server: McpServer): void {
         return mcpToolSuccess(output)
       } catch (error) {
         return mcpToolErrorFromUnknown(error, 'Failed to load risk state')
+      }
+    }
+  )
+
+  const equityHistoryInputSchema = GetAgentTradingInputSchema.extend({
+    limit: ListAgentEquityHistoryQuerySchema.shape.limit,
+    fromTimestamp: ListAgentEquityHistoryQuerySchema.shape.fromTimestamp,
+    toTimestamp: ListAgentEquityHistoryQuerySchema.shape.toTimestamp,
+    includeCurrent: ListAgentEquityHistoryQuerySchema.shape.includeCurrent,
+  }).strict()
+
+  server.registerTool(
+    MCP_TOOL_NAMES.getEquityHistory,
+    {
+      title: 'Agent equity history',
+      description:
+        'Mirrors GET /agents/{agentId}/equity-history. Trade-boundary snapshots from the subgraph.',
+      inputSchema: equityHistoryInputSchema,
+      outputSchema: ListAgentEquityHistoryResponseSchema,
+      annotations: READ_ONLY_TOOL_ANNOTATIONS,
+    },
+    async ({ agentId, limit, fromTimestamp, toTimestamp, includeCurrent }) => {
+      try {
+        const output = await TradingService.fromEnv(
+          getWorkerEnv()
+        ).listEquityHistory(agentId, {
+          limit,
+          fromTimestamp,
+          toTimestamp,
+          includeCurrent,
+        })
+        return mcpToolSuccess(output)
+      } catch (error) {
+        return mcpToolErrorFromUnknown(error, 'Failed to load equity history')
       }
     }
   )

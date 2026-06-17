@@ -48,15 +48,25 @@ graph build --network arbitrum-one
 
 1. Create two subgraphs in [Subgraph Studio](https://thegraph.com/studio/): `alphagrid-protocol-subgraph-arbitrum-sepolia` and `alphagrid-protocol-subgraph-arbitrum-one`.
 2. Authenticate: `graph auth $DEPLOY_KEY`
-3. Deploy:
+3. Deploy from repo root (recommended — builds first, unique version label per commit):
 
 ```bash
-cd subgraph
-yarn deploy:arbitrum-sepolia
-yarn deploy:arbitrum-one
+export DEPLOY_KEY='<studio-deploy-key>'
+scripts/deploy-subgraph.sh arbitrum-sepolia
+scripts/deploy-subgraph.sh arbitrum-one
+```
+
+Each deploy gets a new Studio version label: `build-<git-sha>` by default. Override with `VERSION_LABEL=v0.0.2` if you need a specific name. Labels are immutable — reusing one fails with "Version label already exists".
+
+Or from `subgraph/` (set `--version-label` yourself):
+
+```bash
+yarn deploy:arbitrum-sepolia --version-label build-$(git rev-parse --short HEAD)
 ```
 
 4. Copy each query URL into the matching API Worker env as `SUBGRAPH_URL` (see [`api/wrangler.toml`](../api/wrangler.toml)).
+
+**Reindex:** adding `AgentEquitySnapshot` requires redeploying and reindexing existing Studio subgraphs (no graft from prior schema).
 
 Example:
 
@@ -68,14 +78,16 @@ When `SUBGRAPH_URL` is set, the API serves:
 
 - `GET /agents/{id}/trades` from `agentActivities` (source: `indexed`)
 - `GET /agents/{id}/closed-positions` from indexed `positions` (no global id scan)
+- `GET /agents/{id}/equity-history` from `agentEquitySnapshots` (trade-boundary granularity)
 
-Oracle-dependent fields (`unrealizedPnlUsdc`, equity, drawdown) still use live RPC.
+Oracle-dependent fields (`unrealizedPnlUsdc`, equity, drawdown) still use live RPC for `risk-state` and the optional `current` tip on equity history.
 
 ## Schema entities
 
 - `Agent`, `Allocation` — registry and capital state
 - `Position`, `ExitRule` — mutable position snapshots
 - `AgentActivity` — immutable trade timeline (TradeRouter + PositionClosed)
+- `AgentEquitySnapshot` — trade-boundary equity points (lens eth_calls at each trade/allocation event)
 
 ## ABI sync
 

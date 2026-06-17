@@ -19,6 +19,7 @@ import {
   positionIdToString,
 } from './lib/ids'
 import { loadOrCreatePosition, syncExitRules } from './lib/position'
+import { recordEquitySnapshot } from './lib/equity-snapshot'
 import { symbolForToken } from './lib/token-symbol'
 
 function applyPositionFromChain(
@@ -99,20 +100,47 @@ export function handlePositionOpened(event: PositionOpened): void {
   position.save()
 
   applyPositionFromChain(event.address, positionId)
+  recordEquitySnapshot(
+    agentId,
+    event.params.agentId,
+    event,
+    'PositionOpened'
+  )
 }
 
 export function handlePositionIncreased(event: PositionIncreased): void {
   applyPositionFromChain(event.address, event.params.positionId)
+  const agentId = agentIdToString(event.params.agentId)
+  recordEquitySnapshot(
+    agentId,
+    event.params.agentId,
+    event,
+    'PositionIncreased'
+  )
 }
 
 export function handlePositionReduced(event: PositionReduced): void {
   applyPositionFromChain(event.address, event.params.positionId)
+  const agentId = agentIdToString(event.params.agentId)
+  recordEquitySnapshot(
+    agentId,
+    event.params.agentId,
+    event,
+    'PositionReduced'
+  )
 }
 
 export function handlePositionLadderExitApplied(
   event: PositionLadderExitApplied
 ): void {
   applyPositionFromChain(event.address, event.params.positionId)
+  const agentId = agentIdToString(event.params.agentId)
+  recordEquitySnapshot(
+    agentId,
+    event.params.agentId,
+    event,
+    'PositionLadderExitApplied'
+  )
 }
 
 export function handlePositionExitLadderUpdated(
@@ -146,5 +174,12 @@ export function handlePositionClosed(event: PositionClosed): void {
     agentId,
     positionKey,
     event.params.realizedPnlUsdc
+  )
+
+  recordEquitySnapshot(
+    agentId,
+    event.params.agentId,
+    event,
+    'PositionClosed'
   )
 }
