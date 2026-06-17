@@ -33,6 +33,8 @@ abstract contract DeploymentArtifacts is DeploymentEnv {
         address tokenCoin;
         address tokenHood;
         address tokenSpy;
+        address tokenGoogl;
+        address tokenAmzn;
     }
 
     function writeSnapshot(Snapshot memory snapshot) internal {
@@ -62,7 +64,9 @@ abstract contract DeploymentArtifacts is DeploymentEnv {
         objectKey.serialize("tokens.MSFT", snapshot.tokenMsft);
         objectKey.serialize("tokens.COIN", snapshot.tokenCoin);
         objectKey.serialize("tokens.HOOD", snapshot.tokenHood);
-        string memory json = objectKey.serialize("tokens.SPY", snapshot.tokenSpy);
+        objectKey.serialize("tokens.SPY", snapshot.tokenSpy);
+        objectKey.serialize("tokens.GOOGL", snapshot.tokenGoogl);
+        string memory json = objectKey.serialize("tokens.AMZN", snapshot.tokenAmzn);
 
         string memory path = string.concat("./deployments/", vm.toString(snapshot.chainId), ".json");
         json.write(path);

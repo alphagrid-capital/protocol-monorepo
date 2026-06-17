@@ -12,7 +12,7 @@ library TokenCatalog {
     }
 
     function stockDefs() internal pure returns (StockDef[] memory stocks) {
-        stocks = new StockDef[](8);
+        stocks = new StockDef[](10);
         stocks[0] = StockDef({ name: "Mock NVIDIA", symbol: "mNVDA" });
         stocks[1] = StockDef({ name: "Mock Meta", symbol: "mMETA" });
         stocks[2] = StockDef({ name: "Mock Tesla", symbol: "mTSLA" });
@@ -21,6 +21,8 @@ library TokenCatalog {
         stocks[5] = StockDef({ name: "Mock Coinbase", symbol: "mCOIN" });
         stocks[6] = StockDef({ name: "Mock Robinhood", symbol: "mHOOD" });
         stocks[7] = StockDef({ name: "Mock SPY", symbol: "mSPY" });
+        stocks[8] = StockDef({ name: "Mock Alphabet", symbol: "mGOOGL" });
+        stocks[9] = StockDef({ name: "Mock Amazon", symbol: "mAMZN" });
     }
 
     function registerAll(TokenRegistry registry, address[] memory tokens) internal {
@@ -30,17 +32,11 @@ library TokenCatalog {
         }
     }
 
-    /// @dev Genesis allowlist matches the former Tech vault: NVDA, META, TSLA, MSFT, COIN.
+    /// @dev Enables every mock stock on the Genesis vault allowlist.
     function enableGenesisVaultTokens(address[] memory tokens, MandateVault genesis) internal {
-        // indices: 0 NVDA, 1 META, 2 TSLA, 3 AAPL, 4 MSFT, 5 COIN, 6 HOOD, 7 SPY
-        _enable5(genesis, tokens[0], tokens[1], tokens[2], tokens[4], tokens[5]);
-    }
-
-    function _enable5(MandateVault vault, address t0, address t1, address t2, address t3, address t4) private {
-        vault.enableToken(t0);
-        vault.enableToken(t1);
-        vault.enableToken(t2);
-        vault.enableToken(t3);
-        vault.enableToken(t4);
+        uint256 len = tokens.length;
+        for (uint256 i = 0; i < len; i++) {
+            genesis.enableToken(tokens[i]);
+        }
     }
 }

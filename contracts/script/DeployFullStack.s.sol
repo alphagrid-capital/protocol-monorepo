@@ -97,7 +97,9 @@ contract DeployFullStack is AgentCoreDeploy, VaultDeploy, AssetDeploy, Deploymen
                 tokenMsft: tokens[4],
                 tokenCoin: tokens[5],
                 tokenHood: tokens[6],
-                tokenSpy: tokens[7]
+                tokenSpy: tokens[7],
+                tokenGoogl: tokens[8],
+                tokenAmzn: tokens[9]
             })
         );
 

@@ -44,7 +44,7 @@ contract EnableGenesisVaultTokens is DeploymentEnv {
             vm.envOr("DEPLOYMENT_ARTIFACT", string.concat("./deployments/", vm.toString(block.chainid), ".json"));
         string memory json = vm.readFile(path);
 
-        tokens = new address[](8);
+        tokens = new address[](10);
         tokens[0] = readTokenAddress(json, "NVDA");
         tokens[1] = readTokenAddress(json, "META");
         tokens[2] = readTokenAddress(json, "TSLA");
@@ -53,6 +53,8 @@ contract EnableGenesisVaultTokens is DeploymentEnv {
         tokens[5] = readTokenAddress(json, "COIN");
         tokens[6] = readTokenAddress(json, "HOOD");
         tokens[7] = readTokenAddress(json, "SPY");
+        tokens[8] = readTokenAddress(json, "GOOGL");
+        tokens[9] = readTokenAddress(json, "AMZN");
     }
 
     /// @dev DeploymentArtifacts writes flat keys (`tokens.NVDA`); example schema uses nested `tokens.NVDA`.
