@@ -24,10 +24,11 @@ Simple map from **UI stats** to **HTTP API** routes for the AlphaGrid app. Use t
 | Track (Challenge / Funded / Prime) | `GET /agents/{agentId}` | `agent.track` (`0` / `1` / `2`) |
 | Status (Active, Failed, …) | `GET /agents/{agentId}` | `agent.status` |
 | Registered at | `GET /agents/{agentId}` | `agent.createdAt` |
+| Managed flag | `GET /agents/{agentId}` | `managed.isManaged`, `managed.archivedAt` |
 | ERC-8004 linked | `GET /agents/{agentId}` | `agent.hasERC8004Identity`, `agent.erc8004AgentId` |
-| Agents for connected wallet | `GET /agents/by-owner/{owner}` | `agents[].agentId`, `agents[].agent` |
-| Owner agent list (off-chain) | `GET /users/me/agents` (Privy) | `agents[]`, `activeCount`, `maxAgents` |
-| Archived flag | `GET /users/me/agents` or `GET /agents/{agentId}/profile` | `archivedAt` (`null` = active) |
+| Agents for connected wallet | `GET /agents/by-owner/{owner}` | `agents[].agentId`, `agents[].agent`, `agents[].managed` |
+| Managed agent list | `GET /managed-agents/me` (Privy) | `agents[]`, `activeCount`, `maxAgents` |
+| Archived flag | `GET /agents/by-owner/{owner}` or `GET /managed-agents/{agentId}` | `managed.archivedAt` or `profile.archivedAt` |
 
 ---
 
@@ -136,10 +137,10 @@ After launch, the backend cron evaluates each agent on `botFrequency` (`1h` / `1
 
 | UI stat | Endpoint | Response field(s) |
 | --- | --- | --- |
-| Current strategy profile | `GET /agents/{agentId}/profile` | `profile.strategy`, `profile.botFrequency`, `profile.nextRunAt`, `profile.archivedAt` (Privy; caller must be agent owner) |
-| Update future strategy runs | `PATCH /agents/{agentId}/profile` | body: `strategy` and/or `botFrequency`; returns updated `profile` (archived agents → **400**) |
-| Archive agent | `POST /agents/{agentId}/archive` | returns archived `profile`; stops strategy runs; frees slot toward 5-agent limit (Privy; owner only) |
-| Active agent count / limit | `GET /users/me/agents` | `activeCount`, `maxAgents` (currently 5) |
+| Current strategy profile | `GET /managed-agents/{agentId}` | `profile.strategy`, `profile.botFrequency`, `profile.nextRunAt`, `profile.archivedAt` (Privy; on-chain owner) |
+| Update future strategy runs | `PATCH /managed-agents/{agentId}` | body: `strategy` and/or `botFrequency`; returns updated `profile` (archived agents → **400**) |
+| Archive managed agent | `POST /managed-agents/{agentId}/archive` | returns archived `profile`; stops strategy runs; frees slot toward 5-agent limit (Privy; on-chain owner) |
+| Active managed count / limit | `GET /managed-agents/me` | `activeCount`, `maxAgents` (currently 5) |
 | Run history | `GET /agents/{agentId}/strategy-runs?limit=20` | `runs[]` (Privy; caller must be agent owner) |
 | Run status | same | `runs[].status` — `running`, `completed`, `failed` |
 | Decision summary | same | `runs[].summary` |
@@ -147,7 +148,7 @@ After launch, the backend cron evaluates each agent on `botFrequency` (`1h` / `1
 | Execution results | same | `runs[].execution[]` (`status`, `txHash`, `error`) |
 | Timestamps | same | `runs[].startedAt`, `runs[].completedAt` |
 
-`strategy` and `botFrequency` are **not** returned by on-chain `GET /agents/{id}`; they stay in D1 `agent_profiles`. Owners can read/update them through `/profile` (not when archived); archive via `POST /agents/{agentId}/archive`. Public views should show only run outcomes unless a separate public strategy field is added later.
+`strategy` and `botFrequency` are **not** returned by on-chain `GET /agents/{id}`; they stay in D1 `agent_profiles`. Owners can read/update them through `/managed-agents/{id}` (not when archived); archive via `POST /managed-agents/{agentId}/archive`. Public views should show only run outcomes unless a separate public strategy field is added later.
 
 ---
 
@@ -189,7 +190,7 @@ Track limits (`maxDrawdownBps`, `maxDailyLossBps`, `maxTradeSizeBps`, …) live 
 | Leaderboard rank | `GET /leaderboard` | Not built |
 | Per-fill history (venue, fees) | Indexer + `trades` table | Not built — use §6 event feed for MVP |
 | Async intent status (UUID) | DB intent store | Not built — use §6 tx lookup + positions |
-| Strategy text (off-chain) | `GET /agents/{agentId}/profile` | Done — owner-only via Privy |
+| Strategy text (off-chain) | `GET /managed-agents/{agentId}` | Done — on-chain owner via Privy |
 | Autonomous strategy trading | Cron + `decideStrategy` | Scaffold only — decisions are hold stub |
 
 **Partial (wire when `SUBGRAPH_URL` is set on the target chain):** `GET /agents/{agentId}/equity-history` — trade-boundary equity snapshots; flat between trades; optional live `current` tip from risk-state.
@@ -203,7 +204,7 @@ Minimal fetch sets for common screens:
 | Screen | Calls |
 | --- | --- |
 | Agent launch wizard | See [`prd/11_agent_launch_frontend.md`](../prd/11_agent_launch_frontend.md) |
-| My agents dashboard | `GET /users/me/agents` (Privy) + `GET /agents/by-owner/{owner}` for on-chain status |
+| My agents dashboard | `GET /agents/by-owner/{owner}` + `GET /managed-agents/me` |
 | Agent profile header | `GET /agents/{id}` + `GET /agents/{id}/risk-state` |
 | Strategy run log (owner) | `GET /agents/{id}/strategy-runs?limit=20` (Privy) |
 | Performance chart | `GET /agents/{id}/equity-history` (requires `SUBGRAPH_URL`) |
@@ -212,7 +213,7 @@ Minimal fetch sets for common screens:
 | Position drawer | `GET /agents/{id}/positions/{positionId}` |
 | Open trade form | `GET /agents/{id}/trade-intents/quote?symbol=…` + `GET /prices` |
 | After intent submit | `GET /transactions/{txHash}` until mined → refresh positions or trades |
-| Wallet agent list | `GET /agents/by-owner/{owner}` (+ `GET /users/me/agents` for archive state and limit) |
+| Wallet agent list | `GET /agents/by-owner/{owner}` (`managed.isManaged`, `managed.archivedAt`) |
 | Vault picker | `GET /vaults` |
 
 Poll `risk-state`, `positions`, and `trades` on an interval or after successful intent submit; no WebSocket yet.
