@@ -4,6 +4,7 @@ import {
   AgentDraftsRepository,
 } from '../db/agent-drafts.repository.js'
 import type { AgentDraftRow, UpdateAgentDraftInput  } from '../db/agent-drafts.repository.js'
+import { AgentProfilesRepository } from '../db/agent-profiles.repository.js'
 import { getWorkerEnv } from '../lib/worker-env.js'
 import { normalizeAddress } from '../lib/evm/utils.js'
 import type {
@@ -77,18 +78,33 @@ function requireGenesisVault(chainId: number): `0x${string}` {
 export class AgentDraftsService {
   constructor(
     private readonly repository: AgentDraftsRepository,
+    private readonly profilesRepository: AgentProfilesRepository,
     private readonly env: WorkerEnv
   ) {}
 
   static fromEnv(env: WorkerEnv = getWorkerEnv()): AgentDraftsService {
-    return new AgentDraftsService(new AgentDraftsRepository(env), env)
+    return new AgentDraftsService(
+      new AgentDraftsRepository(env),
+      new AgentProfilesRepository(env),
+      env
+    )
+  }
+
+  private async isHandleTaken(
+    handle: string,
+    excludeDraftId?: string
+  ): Promise<boolean> {
+    if (await this.repository.isHandleTaken(handle, excludeDraftId)) {
+      return true
+    }
+    return this.profilesRepository.isHandleTaken(handle)
   }
 
   async createDraft(
     ownerAddress: string,
     identity: AgentIdentity
   ): Promise<AgentDraft> {
-    if (await this.repository.isHandleTaken(identity.handle)) {
+    if (await this.isHandleTaken(identity.handle)) {
       throw new AppError('Handle is already taken', 400, 'INVALID_REQUEST')
     }
 
@@ -123,7 +139,7 @@ export class AgentDraftsService {
     const patch: UpdateAgentDraftInput = { updatedAt }
 
     if (body.identity !== undefined) {
-      if (await this.repository.isHandleTaken(body.identity.handle, draftId)) {
+      if (await this.isHandleTaken(body.identity.handle, draftId)) {
         throw new AppError('Handle is already taken', 400, 'INVALID_REQUEST')
       }
       patch.identityJson = JSON.stringify(body.identity)

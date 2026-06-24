@@ -53,6 +53,7 @@ yarn deploy:all                 # Deploy all three sequentially
 | `POST` | `/auth/logout`                                | Logout acknowledgement (client discards Privy tokens)                                  |
 | `GET`  | `/users/me`                                   | Full user profile (Privy tokens)                                                       |
 | `GET`  | `/users/me/agent-drafts`                      | In-progress agent launch drafts for authenticated wallet                               |
+| `GET`  | `/users/me/agents`                            | Off-chain agent profiles for authenticated wallet (active + archived)                  |
 | `PATCH`| `/users/me`                                   | Update display name and/or preferred currency                                          |
 | `POST` | `/agent-drafts`                               | Create agent launch draft (Privy)                                                      |
 | `PUT`  | `/agent-drafts/{draftId}`                     | Partial update: `identity`, `strategy`, `botFrequency` (`1h` / `1d`) (Privy)           |
@@ -76,6 +77,7 @@ yarn deploy:all                 # Deploy all three sequentially
 | `POST` | `/agents/{agentId}/exit-ladder-intents`       | Relay signed pending TP/SL update (201)                                                |
 | `GET`  | `/agents/{agentId}/profile`                   | Owner-only off-chain strategy profile (Privy)                                          |
 | `PATCH`| `/agents/{agentId}/profile`                   | Update strategy and/or bot frequency for future runs (Privy)                           |
+| `POST` | `/agents/{agentId}/archive`                   | Archive agent; stops strategy runs; frees agent slot (Privy)                           |
 | `GET`  | `/agents/{agentId}/positions`                 | Agent open positions (`getOpenPositionIds` + multicall; includes `derived`)            |
 | `GET`  | `/agents/{agentId}/closed-positions`          | Closed positions via bounded global id scan (`?limit=`, max 100)                       |
 | `GET`  | `/agents/{agentId}/positions/{positionId}`    | Single position by id (open or closed; realized/unrealized PnL + `derived`)            |
@@ -259,7 +261,11 @@ Off-chain launch wizard state for the frontend app. Step order is client-defined
 
 **Flow:** `POST /agent-drafts` → `POST .../provision-wallet` → `PUT` (`identity`, `strategy`, `botFrequency`) → `POST .../launch`.
 
-**Frontend notes:** API returns numeric `agentId` (format `ag_{id}` in UI). No wallet signature popup at launch; x402 may charge the user's wallet for the registration fee. Use `GET /users/me/agent-drafts` to resume after refresh.
+**Per-user limit:** Each wallet may have at most **5 active** (non-archived) launched agents. Launch returns **400** `Maximum of 5 active agents per user` when the limit is reached. Use `GET /users/me/agents` (`activeCount`, `maxAgents`) to gate the wizard. Drafts do not count toward the limit.
+
+**Archive:** `POST /agents/{agentId}/archive` (owner, Privy) sets `archivedAt` on the off-chain profile. Archived agents stop strategy runner executions, no longer count toward the limit, and cannot be updated via `PATCH .../profile`. The on-chain agent record is unchanged. Archiving releases the handle for reuse on a future launch.
+
+**Frontend notes:** API returns numeric `agentId` (format `ag_{id}` in UI). No wallet signature popup at launch; x402 may charge the user's wallet for the registration fee. Use `GET /users/me/agent-drafts` to resume after refresh. Use `GET /users/me/agents` for the owner's agent list (includes `archivedAt`).
 
 **On-chain metadata:** `metadataURI` is a `data:application/json;base64,...` profile with `handle`, `description`, and `links` only. `strategy` stays off-chain in `agent_profiles`. `pricingTier` (`free` / `paid`) is set at launch from on-chain `FeeManager.getRegistrationFee()` (zero fee → `free`, otherwise `paid`), not by the frontend.
 

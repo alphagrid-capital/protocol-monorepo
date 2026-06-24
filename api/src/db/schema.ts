@@ -73,12 +73,15 @@ export const agentProfiles = sqliteTable(
     botFrequency: text('bot_frequency').notNull().default('1h'),
     pricingTier: text('pricing_tier').notNull(),
     nextRunAt: text('next_run_at').notNull(),
+    archivedAt: text('archived_at'),
     createdAt: text('created_at').notNull(),
   },
   (table) => [
     index('idx_agent_profiles_owner').on(table.ownerAddress),
     index('idx_agent_profiles_next_run_at').on(table.nextRunAt),
-    uniqueIndex('idx_agent_profiles_handle').on(table.handle),
+    uniqueIndex('idx_agent_profiles_handle_active')
+      .on(table.handle)
+      .where(sql`archived_at IS NULL`),
   ]
 )
 

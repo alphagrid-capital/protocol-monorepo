@@ -212,7 +212,7 @@ const launchDraftRoute = createRoute({
       },
     },
     400: {
-      description: 'Draft incomplete or invalid',
+      description: 'Draft incomplete, invalid, or active agent limit reached',
       content: { 'application/json': { schema: AgentDraftErrorSchema } },
     },
     402: { description: 'x402 payment required' },

@@ -96,9 +96,13 @@ Optional: call `GET /auth/me` on app load to upsert the user profile in D1.
 | `PUT` | `/agent-drafts/{draftId}` | Partial update (`identity`, `strategy`, `botFrequency`) |
 | `GET` | `/agent-drafts/{draftId}` | Load one draft (resume) |
 | `GET` | `/users/me/agent-drafts` | List in-progress drafts for the wallet |
+| `GET` | `/users/me/agents` | List launched agent profiles (active + archived) |
 | `DELETE` | `/agent-drafts/{draftId}` | Abandon draft (wipes custodial key) |
 | `POST` | `/agent-drafts/{draftId}/provision-wallet` | Generate custodial signer + bind Genesis vault |
 | `POST` | `/agent-drafts/{draftId}/launch` | x402 (if fee > 0) + on-chain register |
+| `POST` | `/agents/{agentId}/archive` | Archive launched agent (owner only) |
+
+**Per-user limit:** At most **5 active** (non-archived) launched agents per wallet. Enforced at launch (**400**). Drafts do not count. Check `GET /users/me/agents` → `activeCount` / `maxAgents` before opening the wizard.
 
 **Fee preview (optional UI):** `GET /agents/register/quote?signer=0x...` — same registration fee the launch path uses (read `registrationFee` / x402 fields). You do not need the agent signer address for launch; any valid address works for quote if you only need the fee amount.
 
@@ -143,7 +147,72 @@ export interface LaunchAgentResponse {
   status: 'pending'
   redirectUrl: string // e.g. "/app/agents/ag_42"
 }
+
+export interface AgentProfile {
+  agentId: string
+  handle: string
+  strategy: string
+  botFrequency: BotFrequency
+  pricingTier: string
+  nextRunAt: string
+  archivedAt: string | null // null = active
+  createdAt: string
+}
+
+export interface AgentProfileList {
+  agents: AgentProfile[]
+  total: number
+  activeCount: number
+  maxAgents: number // currently 5
+}
 ```
+
+---
+
+## 5b. Agent limits & archive
+
+| Rule | Detail |
+| --- | --- |
+| Active limit | **5** launched agents per wallet (`maxAgents` on list response) |
+| What counts | Non-archived rows in `agent_profiles` (`archivedAt === null`) |
+| What does not count | Drafts, archived agents |
+| When enforced | `POST .../launch` returns **400** if `activeCount >= maxAgents` |
+| Archive | `POST /agents/{agentId}/archive` — owner only (Privy) |
+| Archive effect | Sets `archivedAt`; stops strategy runner; frees a slot; releases handle for reuse |
+| On-chain | Archive is **off-chain only** — `GET /agents/{agentId}` still returns the on-chain record |
+
+Archived agents cannot be updated via `PATCH /agents/{agentId}/profile`. Owners can still read on-chain stats, positions, and run history.
+
+```http
+GET /users/me/agents
+```
+
+```json
+{
+  "agents": [
+    {
+      "agentId": "42",
+      "handle": "alpha-bot",
+      "strategy": "…",
+      "botFrequency": "1h",
+      "pricingTier": "free",
+      "nextRunAt": "2026-06-24T12:00:00.000Z",
+      "archivedAt": null,
+      "createdAt": "2026-06-20T10:00:00.000Z"
+    }
+  ],
+  "total": 1,
+  "activeCount": 1,
+  "maxAgents": 5
+}
+```
+
+```http
+POST /agents/42/archive
+```
+
+**200:** `{ "profile": { /* AgentProfile with archivedAt set */ } }`  
+**400:** `Agent is already archived`
 
 ---
 
@@ -285,6 +354,7 @@ No body.
 
 - Display agent as `ag_{agentId}` in the UI (`ag_42`).
 - Poll `GET /transactions/{txHash}` until `status` is `success` or `reverted`, then navigate to `redirectUrl` or `GET /agents/{agentId}`.
+- If **400** `Maximum of 5 active agents per user`, prompt the user to archive an agent (`POST /agents/{agentId}/archive`) or manage existing agents via `GET /users/me/agents`.
 
 ### Resume after refresh
 
@@ -346,7 +416,7 @@ Mirror API rules for better UX:
 
 | Status | Meaning | Typical `error` |
 | --- | --- | --- |
-| **400** | Invalid input or incomplete draft | `Draft is incomplete`, `Handle is already taken`, Zod message |
+| **400** | Invalid input or incomplete draft | `Draft is incomplete`, `Handle is already taken`, `Maximum of 5 active agents per user`, `Agent is already archived`, Zod message |
 | **401** | Missing/invalid Privy session | `Unauthorized` |
 | **402** | x402 payment required (launch) | x402 payload |
 | **404** | Draft not found or wrong owner | `Agent draft not found` |
@@ -375,12 +445,14 @@ Strategy and bot frequency are **not** in public metadata.
 | Screen | API calls |
 | --- | --- |
 | Wizard entry / resume | `GET /users/me/agent-drafts` |
+| Agent list / limit gate | `GET /users/me/agents` (`activeCount`, `maxAgents`) |
 | Step: identity | `POST /agent-drafts` or `PUT` with `identity` |
 | Step: wallet (auto) | `POST .../provision-wallet` on entering step or before review |
 | Step: strategy & frequency | `PUT` with `strategy`, `botFrequency` |
 | Review | `GET /agent-drafts/{id}` + optional `GET /agents/register/quote` for fee |
 | Launch | `POST .../launch` (+ x402 retry) |
 | After launch | `GET /transactions/{txHash}` → redirect to `redirectUrl`; optional `GET /agents/{agentId}/strategy-runs` for run history |
+| Archive agent | `POST /agents/{agentId}/archive` |
 | Cancel wizard | `DELETE /agent-drafts/{id}` |
 
 Persist `draftId` in the route query (`?draft=draft_…`) or app state so refresh can call `GET /agent-drafts/{draftId}`.
@@ -407,4 +479,6 @@ Persist `draftId` in the route query (`?draft=draft_…`) or app state so refres
 - [ ] Handle **402** on launch when fee > 0
 - [ ] Show `ag_{agentId}`; poll tx status before success UI
 - [ ] Resume via `GET /users/me/agent-drafts` or stored `draftId`
+- [ ] Gate new launches on `GET /users/me/agents` (`activeCount < maxAgents`)
+- [ ] Wire archive action on agent settings (`POST /agents/{agentId}/archive`)
 - [ ] Client validation for handle, strategy length, `botFrequency` enum

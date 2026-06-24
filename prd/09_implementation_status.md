@@ -77,7 +77,7 @@ Stack: **Cloudflare Worker** (`api/`, Hono + TypeScript). Per-chain **Cloudflare
 | --- | --- | --- |
 | HTTP API | Partial | Health, vaults, tokens, prices, agent get/register, open + adjust quote/submit, positions/risk reads with derived stats, OpenAPI, discovery |
 | Privy auth + user profiles | Done | `GET /auth/me`, `GET|PATCH /users/me`; D1 `users` table |
-| Agent launch API | Done | Draft wizard (`/agent-drafts`, `/users/me/agent-drafts`); custodial signer; x402 + relayer launch → `agent_profiles` |
+| Agent launch API | Done | Draft wizard (`/agent-drafts`, `/users/me/agent-drafts`); custodial signer; x402 + relayer launch → `agent_profiles`; max 5 active agents per user; archive via `POST /agents/{id}/archive` |
 | Strategy runner | Partial | Cron tick (`*/10 * * * *`); `decideStrategy` stub (hold, no trades); execution plumbing wired; `GET /agents/{id}/strategy-runs` for owner |
 | MCP server | Partial | Tools mirror implemented HTTP routes; trade activity from subgraph or RPC event logs |
 | x402 registration fee | Done | USDC via x402; relayer submits `registerAgent` (on-chain fee skipped) |
@@ -101,6 +101,7 @@ Stack: **Cloudflare Worker** (`api/`, Hono + TypeScript). Per-chain **Cloudflare
 | `GET` | `/users/me` | Full user profile (Privy) |
 | `PATCH` | `/users/me` | Update display name / preferred currency |
 | `GET` | `/users/me/agent-drafts` | In-progress launch drafts for wallet |
+| `GET` | `/users/me/agents` | Off-chain agent profiles for wallet (`activeCount`, `maxAgents`) |
 | `POST` | `/agent-drafts` | Create launch draft (Privy) |
 | `PUT` | `/agent-drafts/{draftId}` | Update `identity`, `strategy`, `botFrequency` |
 | `GET` | `/agent-drafts/{draftId}` | Resume draft |
@@ -117,6 +118,7 @@ Stack: **Cloudflare Worker** (`api/`, Hono + TypeScript). Per-chain **Cloudflare
 | `GET` | `/agents/by-erc8004/{id}` | Reverse lookup by ERC-8004 id |
 | `GET` | `/agents/{agentId}/profile` | Owner-only off-chain strategy profile |
 | `PATCH` | `/agents/{agentId}/profile` | Update strategy and/or bot frequency for future runs |
+| `POST` | `/agents/{agentId}/archive` | Archive agent (stops strategy runs; frees slot) |
 | `GET` | `/agents/register/quote` | EIP-712 + x402 registration quote |
 | `POST` | `/agents/register` | Register via relayer (x402 when fee > 0) |
 | `POST` | `/agents/{agentId}/erc8004/link` | Link ERC-8004 identity |

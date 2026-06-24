@@ -50,6 +50,17 @@ jobs:
       - name: Typecheck
         run: yarn type-check
 
+      - name: Check database migrations
+        run: |
+          yarn drizzle-kit generate --name ci_drift_check
+          DRIFT="$(git status --porcelain -- migrations)"
+          if [ -n "$DRIFT" ]; then
+            echo "::error::Database schema and migrations are out of sync. Run 'yarn db:generate <snake_case_name>' from api/ and commit the generated migration files."
+            echo "$DRIFT"
+            git --no-pager diff -- migrations
+            exit 1
+          fi
+
   resolve-deploy-matrix:
     name: Resolve deploy targets
     needs: check

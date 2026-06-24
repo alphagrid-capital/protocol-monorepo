@@ -1,5 +1,6 @@
 import type { Address, Hex } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
+import { MAX_AGENTS_PER_USER } from '../constants/agent-limits.js'
 import { AgentDraftsRepository  } from '../db/agent-drafts.repository.js'
 import type {AgentDraftRow} from '../db/agent-drafts.repository.js';
 import { AgentProfilesRepository } from '../db/agent-profiles.repository.js'
@@ -62,6 +63,17 @@ export class AgentLaunchService {
       ownerAddress
     )
     this.assertLaunchReady(row)
+
+    const activeAgents = await this.profilesRepository.countActiveByOwner(
+      ownerAddress
+    )
+    if (activeAgents >= MAX_AGENTS_PER_USER) {
+      throw new AppError(
+        `Maximum of ${MAX_AGENTS_PER_USER} active agents per user`,
+        400,
+        'INVALID_REQUEST'
+      )
+    }
 
     const identity = JSON.parse(row.identity_json!) as AgentIdentity
     const wallet = JSON.parse(row.wallet_json!) as AgentWallet
