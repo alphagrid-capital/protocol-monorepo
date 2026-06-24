@@ -141,6 +141,7 @@ jobs:
             RELAYER_PRIVATE_KEY
             EXECUTOR_PRIVATE_KEY
             FINNHUB_API_KEY
+            PRIVY_APP_ID
             PRIVY_JWT_VERIFICATION_KEY
         env:
           RPC_URL: ${{ secrets.RPC_URL }}
@@ -149,4 +150,5 @@ jobs:
           RELAYER_PRIVATE_KEY: ${{ secrets.RELAYER_PRIVATE_KEY }}
           EXECUTOR_PRIVATE_KEY: ${{ secrets.EXECUTOR_PRIVATE_KEY }}
           FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+          PRIVY_APP_ID: ${{ secrets.PRIVY_APP_ID }}
           PRIVY_JWT_VERIFICATION_KEY: ${{ secrets.PRIVY_JWT_VERIFICATION_KEY }}
