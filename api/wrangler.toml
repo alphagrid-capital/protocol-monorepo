@@ -19,7 +19,6 @@ head_sampling_rate = 1
 # Local dev defaults (override with api/.dev.vars or `wrangler dev --env <name>`).
 [vars]
 ENABLE_SWAGGER = "true"
-STRATEGY_DECISION_PROVIDER = "none"
 # RPC_URL — api/.dev.vars or `wrangler secret put RPC_URL --env <name>`
 # RELAYER_PRIVATE_KEY — `wrangler secret put RELAYER_PRIVATE_KEY --env <name>`
 # EXECUTOR_PRIVATE_KEY — `wrangler secret put EXECUTOR_PRIVATE_KEY --env <name>`
