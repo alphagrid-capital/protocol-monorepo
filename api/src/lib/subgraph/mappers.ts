@@ -1,8 +1,5 @@
 import type { AgentTradeActivity } from '../trading/trade-events.js'
-import {
-  positionReturnBps,
-  positionTotalPnlUsdc,
-} from '../trading/metrics.js'
+import { positionReturnBps, positionTotalPnlUsdc } from '../trading/metrics.js'
 import type {
   GetAgentPositionResponse,
   ListAgentPositionsResponse,

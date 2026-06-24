@@ -75,7 +75,10 @@ export class AgentDraftsRepository {
     return result.results ?? []
   }
 
-  async isHandleTaken(handle: string, excludeDraftId?: string): Promise<boolean> {
+  async isHandleTaken(
+    handle: string,
+    excludeDraftId?: string
+  ): Promise<boolean> {
     const db = requireDb(this.env)
     const query = excludeDraftId
       ? `SELECT 1 FROM agent_drafts WHERE handle = ? AND status = 'draft' AND id != ? LIMIT 1`
@@ -108,12 +111,19 @@ export class AgentDraftsRepository {
       .first<AgentDraftRow>()
 
     if (!row) {
-      throw new AppError('Failed to create agent draft', 503, 'SERVICE_UNAVAILABLE')
+      throw new AppError(
+        'Failed to create agent draft',
+        503,
+        'SERVICE_UNAVAILABLE'
+      )
     }
     return row
   }
 
-  async update(id: string, input: UpdateAgentDraftInput): Promise<AgentDraftRow> {
+  async update(
+    id: string,
+    input: UpdateAgentDraftInput
+  ): Promise<AgentDraftRow> {
     const db = requireDb(this.env)
     const sets: string[] = ['updated_at = ?']
     const values: unknown[] = [input.updatedAt]

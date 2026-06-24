@@ -1,8 +1,8 @@
 import type { Address, Hex } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 import { MAX_AGENTS_PER_USER } from '../constants/agent-limits.js'
-import { AgentDraftsRepository  } from '../db/agent-drafts.repository.js'
-import type {AgentDraftRow} from '../db/agent-drafts.repository.js';
+import { AgentDraftsRepository } from '../db/agent-drafts.repository.js'
+import type { AgentDraftRow } from '../db/agent-drafts.repository.js'
 import { AgentProfilesRepository } from '../db/agent-profiles.repository.js'
 import { AgentSignersRepository } from '../db/agent-signers.repository.js'
 import { AppError } from '../errors.js'
@@ -12,11 +12,16 @@ import { buildAgentMetadataUri } from '../lib/agent/launch-metadata.js'
 import { normalizeAddress } from '../lib/evm/utils.js'
 import { computeNextRunAt } from '../lib/strategy/schedule.js'
 import { getWorkerEnv } from '../lib/worker-env.js'
-import type { AgentIdentity, AgentWallet, BotFrequency } from '../schemas/agent-draft.js'
+import type {
+  AgentIdentity,
+  AgentWallet,
+  BotFrequency,
+} from '../schemas/agent-draft.js'
 import { AgentDraftsService } from './agent-drafts.service.js'
 import { AgentDraftWalletService } from './agent-draft-wallet.service.js'
 import { AgentRegistryService } from './agent-registry.service.js'
 import { FeeManagerService } from './fee-manager.service.js'
+import { ManagedAgentService } from './managed-agent.service.js'
 import { ProviderService } from './provider.service.js'
 import type { WorkerEnv } from '../types/worker-env.js'
 
@@ -40,6 +45,7 @@ export class AgentLaunchService {
     private readonly draftsRepository: AgentDraftsRepository,
     private readonly signersRepository: AgentSignersRepository,
     private readonly profilesRepository: AgentProfilesRepository,
+    private readonly managedAgentService: ManagedAgentService,
     private readonly env: WorkerEnv
   ) {}
 
@@ -50,6 +56,7 @@ export class AgentLaunchService {
       new AgentDraftsRepository(env),
       new AgentSignersRepository(env),
       new AgentProfilesRepository(env),
+      ManagedAgentService.fromEnv(env),
       env
     )
   }
@@ -64,9 +71,10 @@ export class AgentLaunchService {
     )
     this.assertLaunchReady(row)
 
-    const activeAgents = await this.profilesRepository.countActiveByOwner(
-      ownerAddress
-    )
+    const activeAgents =
+      await this.managedAgentService.countActiveManagedForOwner(
+        normalizeAddress(ownerAddress) as Address
+      )
     if (activeAgents >= MAX_AGENTS_PER_USER) {
       throw new AppError(
         `Maximum of ${MAX_AGENTS_PER_USER} active agents per user`,

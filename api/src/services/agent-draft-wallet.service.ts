@@ -92,15 +92,23 @@ export class AgentDraftWalletService {
     draftId: string,
     ownerAddress: string
   ): Promise<{ privateKey: Hex; signerAddress: Address }> {
-    const row = await this.draftsService.requireOwnedDraft(draftId, ownerAddress)
+    const row = await this.draftsService.requireOwnedDraft(
+      draftId,
+      ownerAddress
+    )
     return this.decryptSignerFromRow(row)
   }
 
-  async decryptSignerFromRow(
-    row: { encrypted_signer_key: string | null; signer_address: string | null }
-  ): Promise<{ privateKey: Hex; signerAddress: Address }> {
+  async decryptSignerFromRow(row: {
+    encrypted_signer_key: string | null
+    signer_address: string | null
+  }): Promise<{ privateKey: Hex; signerAddress: Address }> {
     if (!row.encrypted_signer_key || !row.signer_address) {
-      throw new AppError('Agent signer is not provisioned', 400, 'INVALID_REQUEST')
+      throw new AppError(
+        'Agent signer is not provisioned',
+        400,
+        'INVALID_REQUEST'
+      )
     }
     const privateKey = await decryptSignerPrivateKey(
       row.encrypted_signer_key,

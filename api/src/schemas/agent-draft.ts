@@ -6,12 +6,16 @@ const addressSchema = z
 
 const handleSchema = z
   .string()
-  .regex(/^[a-z0-9-]{1,20}$/, 'Handle must be 1-20 chars: lowercase letters, digits, hyphens')
+  .regex(
+    /^[a-z0-9-]{1,20}$/,
+    'Handle must be 1-20 chars: lowercase letters, digits, hyphens'
+  )
 
 /** Strategy runner tick interval. Only `1h` and `1d` are supported (`1m` / `1s` rejected). */
 export const BotFrequencySchema = z.enum(['1h', '1d']).openapi({
   example: '1h',
-  description: 'Bot run frequency: `1h` (hourly) or `1d` (daily). Minute/second values are not supported.',
+  description:
+    'Bot run frequency: `1h` (hourly) or `1d` (daily). Minute/second values are not supported.',
 })
 
 export const AgentIdentitySchema = z

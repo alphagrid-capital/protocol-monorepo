@@ -59,7 +59,11 @@ export class AgentProfilesRepository {
       .first<AgentProfileRow>()
 
     if (!row) {
-      throw new AppError('Failed to store agent profile', 503, 'SERVICE_UNAVAILABLE')
+      throw new AppError(
+        'Failed to store agent profile',
+        503,
+        'SERVICE_UNAVAILABLE'
+      )
     }
     return row
   }
@@ -70,6 +74,47 @@ export class AgentProfilesRepository {
       .prepare('SELECT * FROM agent_profiles WHERE agent_id = ?')
       .bind(agentId)
       .first<AgentProfileRow>()
+  }
+
+  async findByAgentIds(
+    agentIds: string[]
+  ): Promise<Map<string, AgentProfileRow>> {
+    if (agentIds.length === 0) {
+      return new Map()
+    }
+
+    const db = requireDb(this.env)
+    const placeholders = agentIds.map(() => '?').join(', ')
+    const result = await db
+      .prepare(
+        `SELECT * FROM agent_profiles WHERE agent_id IN (${placeholders})`
+      )
+      .bind(...agentIds)
+      .all<AgentProfileRow>()
+
+    const profiles = new Map<string, AgentProfileRow>()
+    for (const row of result.results ?? []) {
+      profiles.set(row.agent_id, row)
+    }
+    return profiles
+  }
+
+  async syncOwnerAddress(
+    agentId: string,
+    ownerAddress: string
+  ): Promise<AgentProfileRow | null> {
+    const db = requireDb(this.env)
+    const row = await db
+      .prepare(
+        `UPDATE agent_profiles
+         SET owner_address = ?
+         WHERE agent_id = ?
+         RETURNING *`
+      )
+      .bind(normalizeAddress(ownerAddress), agentId)
+      .first<AgentProfileRow>()
+
+    return row ?? null
   }
 
   async findByOwner(ownerAddress: string): Promise<AgentProfileRow[]> {
@@ -135,7 +180,10 @@ export class AgentProfilesRepository {
       .run()
   }
 
-  async archive(agentId: string, archivedAt: string): Promise<AgentProfileRow | null> {
+  async archive(
+    agentId: string,
+    archivedAt: string
+  ): Promise<AgentProfileRow | null> {
     const db = requireDb(this.env)
     const row = await db
       .prepare(

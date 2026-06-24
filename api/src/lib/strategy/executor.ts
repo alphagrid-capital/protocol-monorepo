@@ -45,7 +45,13 @@ export async function executeStrategyDecision(
 
   for (const action of decision.actions) {
     try {
-      const outcome = await executeAction(trading, agentId, account, config, action)
+      const outcome = await executeAction(
+        trading,
+        agentId,
+        account,
+        config,
+        action
+      )
       results.push({ action, status: 'ok', ...outcome })
     } catch (error) {
       results.push({

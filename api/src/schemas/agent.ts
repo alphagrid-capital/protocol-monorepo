@@ -123,6 +123,15 @@ export const AgentRecordSchema = z
 
 export type AgentRecord = z.infer<typeof AgentRecordSchema>
 
+export const ManagedAgentStatusSchema = z
+  .object({
+    isManaged: z.boolean(),
+    archivedAt: z.string().nullable(),
+  })
+  .openapi('ManagedAgentStatus')
+
+export type ManagedAgentStatus = z.infer<typeof ManagedAgentStatusSchema>
+
 export const erc8004AgentIdParamSchema = z
   .string()
   .regex(/^\d+$/, 'Expected a non-negative integer ERC-8004 token id')
@@ -172,6 +181,7 @@ export const GetAgentResponseSchema = z
     agentId: agentIdParamSchema,
     agent: AgentRecordSchema,
     agentRegistry: addressSchema,
+    managed: ManagedAgentStatusSchema,
   })
   .openapi('GetAgentResponse')
 
@@ -190,6 +200,7 @@ export const ListAgentsByOwnerResponseSchema = z
       z.object({
         agentId: agentIdParamSchema,
         agent: AgentRecordSchema,
+        managed: ManagedAgentStatusSchema,
       })
     ),
   })
@@ -198,6 +209,18 @@ export const ListAgentsByOwnerResponseSchema = z
 export type ListAgentsByOwnerResponse = z.infer<
   typeof ListAgentsByOwnerResponseSchema
 >
+
+export type GetAgentResponse = z.infer<typeof GetAgentResponseSchema>
+
+export interface OnChainAgentsByOwnerResponse {
+  owner: `0x${string}`
+  agentRegistry: `0x${string}`
+  count: number
+  agents: {
+    agentId: string
+    agent: AgentRecord
+  }[]
+}
 
 export const AgentNotFoundSchema = z
   .object({

@@ -15,6 +15,7 @@ import {
   ListAgentsByOwnerInputSchema,
   ListAgentsByOwnerResponseSchema,
 } from '../schemas/agent.js'
+import { ManagedAgentService } from '../services/managed-agent.service.js'
 import { AgentRegistrationService } from '../services/agent-registration.service.js'
 import { TokensService } from '../services/tokens.service.js'
 import { VaultsService } from '../services/vaults.service.js'
@@ -131,9 +132,7 @@ export function registerMcpTools(server: McpServer): void {
     async ({ agentId }) => {
       try {
         const output =
-          await AgentRegistrationService.fromEnv(getWorkerEnv()).getAgent(
-            agentId
-          )
+          await ManagedAgentService.fromEnv(getWorkerEnv()).getAgent(agentId)
         return mcpToolSuccess(output)
       } catch (error) {
         return mcpToolErrorFromUnknown(error, 'Failed to load agent')
@@ -154,9 +153,9 @@ export function registerMcpTools(server: McpServer): void {
     async ({ erc8004AgentId }) => {
       try {
         const output =
-          await AgentRegistrationService.fromEnv(
-            getWorkerEnv()
-          ).getAgentByErc8004(erc8004AgentId)
+          await ManagedAgentService.fromEnv(getWorkerEnv()).getAgentByErc8004(
+            erc8004AgentId
+          )
         return mcpToolSuccess(output)
       } catch (error) {
         return mcpToolErrorFromUnknown(
@@ -179,7 +178,7 @@ export function registerMcpTools(server: McpServer): void {
     },
     async ({ owner }) => {
       try {
-        const output = await AgentRegistrationService.fromEnv(
+        const output = await ManagedAgentService.fromEnv(
           getWorkerEnv()
         ).listAgentsByOwner(owner as `0x${string}`)
         return mcpToolSuccess(output)

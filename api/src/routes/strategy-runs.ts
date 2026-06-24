@@ -1,9 +1,7 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi'
 import type { RouteHandler } from '@hono/zod-openapi'
 import { ROUTE_PATHS } from '../constants/routes.js'
-import { AgentProfilesRepository } from '../db/agent-profiles.repository.js'
 import { StrategyRunsRepository } from '../db/strategy-runs.repository.js'
-import { normalizeAddress } from '../lib/evm/utils.js'
 import { getWorkerEnv } from '../lib/worker-env.js'
 import { requirePrivyAuth } from '../middleware/privy-auth.js'
 import { PrivyAuthHeadersSchema } from '../schemas/auth-headers.js'
@@ -16,6 +14,7 @@ import {
 } from '../schemas/strategy-run.js'
 import type { StrategyDecision } from '../lib/strategy/decision.js'
 import type { ExecutionActionResult } from '../lib/strategy/executor.js'
+import { ManagedAgentService } from '../services/managed-agent.service.js'
 
 const strategyRunRoutes = new OpenAPIHono()
 
@@ -27,7 +26,7 @@ const listStrategyRunsRoute = createRoute({
   tags: ['Strategy'],
   summary: 'List strategy runs for an agent',
   description:
-    'Returns recent strategy runner executions for an agent. Caller must be the on-chain owner (Privy wallet).',
+    'Returns recent strategy runner executions for a managed agent. Caller must be the on-chain owner (Privy wallet).',
   security: [{ bearerAuth: [] }],
   request: {
     headers: PrivyAuthHeadersSchema,
@@ -51,33 +50,31 @@ const listStrategyRunsRoute = createRoute({
       content: { 'application/json': { schema: StrategyRunErrorSchema } },
     },
     403: {
-      description: 'Caller is not the agent owner',
+      description: 'Caller is not the on-chain agent owner',
       content: { 'application/json': { schema: StrategyRunErrorSchema } },
     },
     404: {
-      description: 'Agent profile not found',
+      description: 'Managed agent profile not found',
       content: { 'application/json': { schema: StrategyRunErrorSchema } },
     },
   },
 })
 
-const listStrategyRunsHandler: RouteHandler<typeof listStrategyRunsRoute> = async (
-  c
-) => {
+const listStrategyRunsHandler: RouteHandler<
+  typeof listStrategyRunsRoute
+> = async (c) => {
   const env = getWorkerEnv()
   const { agentId } = c.req.valid('param')
   const { limit } = c.req.valid('query')
   const ownerAddress = c.get('authAddress')
 
-  const profile = await new AgentProfilesRepository(env).findByAgentId(agentId)
-  if (!profile) {
-    return c.json({ error: 'Agent profile not found' }, 404)
-  }
-
-  if (
-    normalizeAddress(profile.owner_address) !== normalizeAddress(ownerAddress)
-  ) {
-    return c.json({ error: 'Forbidden' }, 403)
+  const access = await ManagedAgentService.fromEnv(env).requireManagedOwner(
+    agentId,
+    ownerAddress
+  )
+  if ('error' in access) {
+    const status = access.error.status === 403 ? 403 : 404
+    return c.json({ error: access.error.message }, status)
   }
 
   const rows = await new StrategyRunsRepository(env).listByAgentId(

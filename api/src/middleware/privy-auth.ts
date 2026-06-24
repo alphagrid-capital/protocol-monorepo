@@ -40,10 +40,7 @@ export const requirePrivyAuth: MiddlewareHandler = async (c, next) => {
     await next()
   } catch (error) {
     if (error instanceof AppError) {
-      return c.json(
-        { error: error.message },
-        error.status === 503 ? 503 : 401
-      )
+      return c.json({ error: error.message }, error.status === 503 ? 503 : 401)
     }
     throw error
   }

@@ -63,7 +63,9 @@ const createDraftRoute = createRoute({
   summary: 'Create agent launch draft',
   request: {
     headers: PrivyAuthHeadersSchema,
-    body: { content: { 'application/json': { schema: CreateAgentDraftSchema } } },
+    body: {
+      content: { 'application/json': { schema: CreateAgentDraftSchema } },
+    },
   },
   responses: {
     201: {
@@ -88,7 +90,9 @@ const updateDraftRoute = createRoute({
   request: {
     headers: PrivyAuthHeadersSchema,
     params: draftIdParam,
-    body: { content: { 'application/json': { schema: UpdateAgentDraftSchema } } },
+    body: {
+      content: { 'application/json': { schema: UpdateAgentDraftSchema } },
+    },
   },
   responses: {
     200: {

@@ -77,9 +77,13 @@ function assertExitRules(
   }
 }
 
-function assertOpenPosition(positionId: string, context: StrategyContext): void {
+function assertOpenPosition(
+  positionId: string,
+  context: StrategyContext
+): void {
   const exists = context.positions.some(
-    (position) => position.positionId === positionId && position.status === 'Open'
+    (position) =>
+      position.positionId === positionId && position.status === 'Open'
   )
   if (!exists) {
     fail(`Position ${positionId} is not open or does not belong to this agent`)

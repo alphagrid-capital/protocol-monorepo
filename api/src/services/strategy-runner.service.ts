@@ -3,8 +3,12 @@ import { AgentProfilesRepository } from '../db/agent-profiles.repository.js'
 import { AgentSignersRepository } from '../db/agent-signers.repository.js'
 import { StrategyRunsRepository } from '../db/strategy-runs.repository.js'
 import { AppError } from '../errors.js'
+import { normalizeAddress } from '../lib/evm/utils.js'
 import { decideStrategy } from '../lib/strategy/decision.js'
-import type { StrategyContext, StrategyDecision } from '../lib/strategy/decision.js'
+import type {
+  StrategyContext,
+  StrategyDecision,
+} from '../lib/strategy/decision.js'
 import { executeStrategyDecision } from '../lib/strategy/executor.js'
 import type { ExecutionActionResult } from '../lib/strategy/executor.js'
 import { assertStrategyDecisionGuardrails } from '../lib/strategy/guardrails.js'
@@ -18,6 +22,7 @@ import { getWorkerEnv } from '../lib/worker-env.js'
 import { BotFrequencySchema } from '../schemas/agent-draft.js'
 import { TokensService } from './tokens.service.js'
 import { TradingService } from './trading.service.js'
+import { AgentRegistrationService } from './agent-registration.service.js'
 import type { WorkerEnv } from '../types/worker-env.js'
 
 const DUE_LIMIT = 10
@@ -117,6 +122,23 @@ export class StrategyRunnerService {
     let runCreated = false
 
     try {
+      const onChain = await AgentRegistrationService.fromEnv(this.env).getAgent(
+        profile.agent_id
+      )
+      if (
+        normalizeAddress(onChain.agent.owner) !==
+        normalizeAddress(profile.owner_address)
+      ) {
+        await this.profilesRepository.syncOwnerAddress(
+          profile.agent_id,
+          onChain.agent.owner
+        )
+        await this.signersRepository.syncOwnerAddress(
+          profile.agent_id,
+          onChain.agent.owner
+        )
+      }
+
       const trading = TradingService.fromEnv(this.env)
       const [positionsResponse, risk, quote] = await Promise.all([
         trading.listOpenPositions(profile.agent_id),
@@ -155,12 +177,19 @@ export class StrategyRunnerService {
       decision = await decideStrategy(context, this.env)
       assertStrategyDecisionGuardrails(decision, context)
 
-      if (isStrategyRunnerExecuteEnabled(this.env) && decision.actions.length > 0) {
+      if (
+        isStrategyRunnerExecuteEnabled(this.env) &&
+        decision.actions.length > 0
+      ) {
         const signerRow = await this.signersRepository.findByAgentId(
           profile.agent_id
         )
         if (!signerRow) {
-          throw new AppError('Agent signer not found', 503, 'SERVICE_UNAVAILABLE')
+          throw new AppError(
+            'Agent signer not found',
+            503,
+            'SERVICE_UNAVAILABLE'
+          )
         }
         const privateKey = await decryptSignerPrivateKey(
           signerRow.encrypted_signer_key,

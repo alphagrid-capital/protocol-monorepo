@@ -112,9 +112,12 @@ test('blocks open action for disallowed symbol', () => {
     actions: [{ type: 'open', symbol: 'TSLA', usdcAmount: '50' }],
   }
 
-  assert.throws(() => assertStrategyDecisionGuardrails(decision, baseContext()), {
-    message: /Symbol is not allowed/,
-  })
+  assert.throws(
+    () => assertStrategyDecisionGuardrails(decision, baseContext()),
+    {
+      message: /Symbol is not allowed/,
+    }
+  )
 })
 
 test('blocks open action above available allocation', () => {
@@ -123,9 +126,12 @@ test('blocks open action above available allocation', () => {
     actions: [{ type: 'open', symbol: 'NVDA', usdcAmount: '101' }],
   }
 
-  assert.throws(() => assertStrategyDecisionGuardrails(decision, baseContext()), {
-    message: /exceeds available allocation/,
-  })
+  assert.throws(
+    () => assertStrategyDecisionGuardrails(decision, baseContext()),
+    {
+      message: /exceeds available allocation/,
+    }
+  )
 })
 
 test('blocks open action during risk breach', () => {
@@ -147,7 +153,10 @@ test('blocks close action for unknown position', () => {
     actions: [{ type: 'close', positionId: '1' }],
   }
 
-  assert.throws(() => assertStrategyDecisionGuardrails(decision, baseContext()), {
-    message: /not open or does not belong/,
-  })
+  assert.throws(
+    () => assertStrategyDecisionGuardrails(decision, baseContext()),
+    {
+      message: /not open or does not belong/,
+    }
+  )
 })

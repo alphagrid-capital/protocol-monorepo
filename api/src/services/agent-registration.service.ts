@@ -25,8 +25,8 @@ import type {
   AgentRegistrationResponse,
   LinkErc8004Request,
   LinkErc8004Response,
-  ListAgentsByOwnerResponse,
 } from '../schemas/agent.js'
+import type { OnChainAgentsByOwnerResponse } from '../schemas/agent.js'
 
 export interface GetAgentResult {
   agentId: string
@@ -188,7 +188,9 @@ export class AgentRegistrationService {
     }
   }
 
-  async listAgentsByOwner(owner: Address): Promise<ListAgentsByOwnerResponse> {
+  async listAgentsByOwner(
+    owner: Address
+  ): Promise<OnChainAgentsByOwnerResponse> {
     const agents = await this.agentRegistryService().listAgentsByOwner(owner)
     return {
       owner,

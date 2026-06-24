@@ -1,11 +1,8 @@
 import { AppError } from '../errors.js'
-import {
-  isPreferredCurrency
-  
-} from '../constants/currencies.js'
-import type {PreferredCurrency} from '../constants/currencies.js';
-import { UsersRepository  } from '../db/users.repository.js'
-import type {UserRow} from '../db/users.repository.js';
+import { isPreferredCurrency } from '../constants/currencies.js'
+import type { PreferredCurrency } from '../constants/currencies.js'
+import { UsersRepository } from '../db/users.repository.js'
+import type { UserRow } from '../db/users.repository.js'
 import { getWorkerEnv } from '../lib/worker-env.js'
 import type { WorkerEnv } from '../types/worker-env.js'
 
@@ -54,7 +51,10 @@ export class UsersService {
     return new UsersService(new UsersRepository(env))
   }
 
-  async upsertOnLogin(address: string, ip: string | null): Promise<UserProfile> {
+  async upsertOnLogin(
+    address: string,
+    ip: string | null
+  ): Promise<UserProfile> {
     const row = await this.repository.upsertOnLogin(address, ip)
     return toProfile(row)
   }

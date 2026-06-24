@@ -1,9 +1,8 @@
 import { z } from '@hono/zod-openapi'
-import { MAX_AGENTS_PER_USER } from '../constants/agent-limits.js'
 import { agentIdParamSchema } from './agent.js'
 import { BotFrequencySchema } from './agent-draft.js'
 
-export const AgentProfileSchema = z
+export const ManagedAgentProfileSchema = z
   .object({
     agentId: agentIdParamSchema,
     handle: z.string(),
@@ -14,9 +13,9 @@ export const AgentProfileSchema = z
     archivedAt: z.string().nullable(),
     createdAt: z.string(),
   })
-  .openapi('AgentProfile')
+  .openapi('ManagedAgentProfile')
 
-export const UpdateAgentProfileSchema = z
+export const UpdateManagedAgentSchema = z
   .object({
     strategy: z.string().min(1).max(8192).optional(),
     botFrequency: BotFrequencySchema.optional(),
@@ -27,31 +26,31 @@ export const UpdateAgentProfileSchema = z
     { message: 'At least one field must be provided' }
   )
 
-export const AgentProfileResponseSchema = z
+export const ManagedAgentResponseSchema = z
   .object({
-    profile: AgentProfileSchema,
+    profile: ManagedAgentProfileSchema,
   })
-  .openapi('AgentProfileResponse')
+  .openapi('ManagedAgentResponse')
 
-export const AgentProfileErrorSchema = z
+export const ManagedAgentErrorSchema = z
   .object({
     error: z.string(),
   })
-  .openapi('AgentProfileError')
+  .openapi('ManagedAgentError')
 
-export const AgentProfileListSchema = z
+export const ManagedAgentListSchema = z
   .object({
-    agents: z.array(AgentProfileSchema),
+    agents: z.array(ManagedAgentProfileSchema),
     total: z.number().int(),
     activeCount: z.number().int(),
     maxAgents: z.number().int(),
   })
-  .openapi('AgentProfileList')
+  .openapi('ManagedAgentList')
 
-export const ArchiveAgentResponseSchema = z
+export const ArchiveManagedAgentResponseSchema = z
   .object({
-    profile: AgentProfileSchema,
+    profile: ManagedAgentProfileSchema,
   })
-  .openapi('ArchiveAgentResponse')
+  .openapi('ArchiveManagedAgentResponse')
 
-export type UpdateAgentProfile = z.infer<typeof UpdateAgentProfileSchema>
+export type UpdateManagedAgent = z.infer<typeof UpdateManagedAgentSchema>

@@ -56,7 +56,11 @@ export class StrategyRunsRepository {
       .first<StrategyRunRow>()
 
     if (!row) {
-      throw new AppError('Failed to create strategy run', 503, 'SERVICE_UNAVAILABLE')
+      throw new AppError(
+        'Failed to create strategy run',
+        503,
+        'SERVICE_UNAVAILABLE'
+      )
     }
     return row
   }
@@ -93,7 +97,10 @@ export class StrategyRunsRepository {
     return row
   }
 
-  async listByAgentId(agentId: string, limit: number): Promise<StrategyRunListRow[]> {
+  async listByAgentId(
+    agentId: string,
+    limit: number
+  ): Promise<StrategyRunListRow[]> {
     const db = requireDb(this.env)
     const result = await db
       .prepare(

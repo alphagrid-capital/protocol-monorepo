@@ -1,9 +1,10 @@
 import { contracts } from '../constants/contracts.js'
 import { AppError } from '../errors.js'
-import {
-  AgentDraftsRepository,
+import { AgentDraftsRepository } from '../db/agent-drafts.repository.js'
+import type {
+  AgentDraftRow,
+  UpdateAgentDraftInput,
 } from '../db/agent-drafts.repository.js'
-import type { AgentDraftRow, UpdateAgentDraftInput  } from '../db/agent-drafts.repository.js'
 import { AgentProfilesRepository } from '../db/agent-profiles.repository.js'
 import { getWorkerEnv } from '../lib/worker-env.js'
 import { normalizeAddress } from '../lib/evm/utils.js'
@@ -180,7 +181,9 @@ export class AgentDraftsService {
     if (!row) {
       throw new AppError('Agent draft not found', 404, 'INVALID_REQUEST')
     }
-    if (normalizeAddress(row.owner_address) !== normalizeAddress(ownerAddress)) {
+    if (
+      normalizeAddress(row.owner_address) !== normalizeAddress(ownerAddress)
+    ) {
       throw new AppError('Agent draft not found', 404, 'INVALID_REQUEST')
     }
     return row
@@ -189,7 +192,11 @@ export class AgentDraftsService {
   getGenesisVaultAddress(): `0x${string}` {
     const chainId = Number(this.env.CHAIN_ID)
     if (!Number.isFinite(chainId)) {
-      throw new AppError('CHAIN_ID is not configured', 503, 'SERVICE_UNAVAILABLE')
+      throw new AppError(
+        'CHAIN_ID is not configured',
+        503,
+        'SERVICE_UNAVAILABLE'
+      )
     }
     return requireGenesisVault(chainId)
   }

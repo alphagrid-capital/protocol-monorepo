@@ -45,7 +45,11 @@ export class AgentSignersRepository {
       .first<AgentSignerRow>()
 
     if (!row) {
-      throw new AppError('Failed to store agent signer', 503, 'SERVICE_UNAVAILABLE')
+      throw new AppError(
+        'Failed to store agent signer',
+        503,
+        'SERVICE_UNAVAILABLE'
+      )
     }
     return row
   }
@@ -56,5 +60,23 @@ export class AgentSignersRepository {
       .prepare('SELECT * FROM agent_signers WHERE agent_id = ?')
       .bind(agentId)
       .first<AgentSignerRow>()
+  }
+
+  async syncOwnerAddress(agentId: string, ownerAddress: string): Promise<void> {
+    const db = requireDb(this.env)
+    await db
+      .prepare('UPDATE agent_signers SET owner_address = ? WHERE agent_id = ?')
+      .bind(normalizeAddress(ownerAddress), agentId)
+      .run()
+  }
+
+  async wipeEncryptedKey(agentId: string): Promise<void> {
+    const db = requireDb(this.env)
+    await db
+      .prepare(
+        'UPDATE agent_signers SET encrypted_signer_key = ? WHERE agent_id = ?'
+      )
+      .bind('', agentId)
+      .run()
   }
 }

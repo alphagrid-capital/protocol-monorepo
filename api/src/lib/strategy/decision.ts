@@ -9,7 +9,10 @@ import type { OraclePriceEntry } from '../../services/tokens.service.js'
 import type { WorkerEnv } from '../../types/worker-env.js'
 import { resolveStrategyDecisionAdapter } from './adapters/resolve.js'
 
-export type { StrategyAction, StrategyDecision } from '../../schemas/strategy.js'
+export type {
+  StrategyAction,
+  StrategyDecision,
+} from '../../schemas/strategy.js'
 
 export interface StrategyGuardrails {
   allowedSymbols: TradeIntentQuote['allowedSymbols']

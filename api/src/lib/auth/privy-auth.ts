@@ -2,10 +2,9 @@ import {
   InvalidAuthTokenError,
   isEmbeddedWalletLinkedAccount,
   verifyAccessToken,
-  verifyIdentityToken
-  
+  verifyIdentityToken,
 } from '@privy-io/node'
-import type {LinkedAccount} from '@privy-io/node';
+import type { LinkedAccount } from '@privy-io/node'
 import { AppError } from '../../errors.js'
 import { loadAuthConfig } from './auth-config.js'
 import { normalizeAddress } from '../evm/utils.js'

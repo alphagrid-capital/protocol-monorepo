@@ -46,7 +46,11 @@ export class UsersRepository {
       .first<UserRow>()
 
     if (!row) {
-      throw new AppError('Failed to upsert user row', 503, 'SERVICE_UNAVAILABLE')
+      throw new AppError(
+        'Failed to upsert user row',
+        503,
+        'SERVICE_UNAVAILABLE'
+      )
     }
     return row
   }
@@ -81,7 +85,11 @@ export class UsersRepository {
       .first<UserRow>()
 
     if (!updated) {
-      throw new AppError('Failed to update user row', 503, 'SERVICE_UNAVAILABLE')
+      throw new AppError(
+        'Failed to update user row',
+        503,
+        'SERVICE_UNAVAILABLE'
+      )
     }
     return updated
   }

@@ -15,6 +15,7 @@ import {
   AgentRegistrationService,
   AgentRegistrationError,
 } from '../services/agent-registration.service.js'
+import { ManagedAgentService } from '../services/managed-agent.service.js'
 import { createRegistrationPaymentMiddleware } from '../lib/agent/x402-registration.js'
 import { getWorkerEnv } from '../lib/worker-env.js'
 import { AppError } from '../errors.js'
@@ -89,7 +90,7 @@ const listAgentsByOwnerRoute = createRoute({
   tags: ['Agents'],
   summary: 'List agents by owner',
   description:
-    'Reads AgentRegistry via `agentCountByOwner` and `agentIdByOwnerAt`, then loads each record with `getAgent`. Returns current ownership only.',
+    'Reads AgentRegistry via `agentCountByOwner` and `agentIdByOwnerAt`, then loads each record with `getAgent`. Returns current ownership only. Each agent includes a `managed` flag from local D1 state.',
   request: {
     params: z.object({
       owner: z
@@ -119,7 +120,7 @@ const getAgentRoute = createRoute({
   tags: ['Agents'],
   summary: 'Get agent by id',
   description:
-    'Reads the on-chain AgentRegistry record via `getAgent(uint256)`. Requires a deployed registry and RPC_URL.',
+    'Reads the on-chain AgentRegistry record via `getAgent(uint256)`. Requires a deployed registry and RPC_URL. Includes a `managed` flag from local D1 state.',
   request: {
     params: z.object({
       agentId: agentIdParamSchema.openapi({
@@ -240,7 +241,7 @@ agentRoutes.openapi(registerRoute, async (c) => {
 
 agentRoutes.openapi(getAgentByErc8004Route, async (c) => {
   try {
-    const result = await AgentRegistrationService.fromEnv(
+    const result = await ManagedAgentService.fromEnv(
       getWorkerEnv()
     ).getAgentByErc8004(c.req.param('erc8004AgentId'))
     return c.json(result, 200, {
@@ -256,7 +257,7 @@ agentRoutes.openapi(getAgentByErc8004Route, async (c) => {
 
 agentRoutes.openapi(listAgentsByOwnerRoute, async (c) => {
   try {
-    const result = await AgentRegistrationService.fromEnv(
+    const result = await ManagedAgentService.fromEnv(
       getWorkerEnv()
     ).listAgentsByOwner(c.req.param('owner') as `0x${string}`)
     return c.json(result, 200, {
@@ -272,9 +273,9 @@ agentRoutes.openapi(listAgentsByOwnerRoute, async (c) => {
 
 agentRoutes.openapi(getAgentRoute, async (c) => {
   try {
-    const result = await AgentRegistrationService.fromEnv(
-      getWorkerEnv()
-    ).getAgent(c.req.param('agentId'))
+    const result = await ManagedAgentService.fromEnv(getWorkerEnv()).getAgent(
+      c.req.param('agentId')
+    )
     return c.json(result, 200, {
       'Cache-Control': 'public, max-age=15',
     })

@@ -12,10 +12,9 @@ if (!name || !/^[a-z][a-z0-9_]*$/.test(name)) {
   process.exit(1)
 }
 
-const result = spawnSync(
-  'drizzle-kit',
-  ['generate', '--name', name],
-  { cwd: apiRoot, stdio: 'inherit' }
-)
+const result = spawnSync('drizzle-kit', ['generate', '--name', name], {
+  cwd: apiRoot,
+  stdio: 'inherit',
+})
 
 process.exit(result.status ?? 1)
