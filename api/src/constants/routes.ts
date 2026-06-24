@@ -22,6 +22,7 @@ export const ROUTE_PATHS = {
   agentByOwner: '/agents/by-owner/{owner}',
   agentByErc8004: '/agents/by-erc8004/{erc8004AgentId}',
   agentLinkErc8004: '/agents/{agentId}/erc8004/link',
+  agentProfile: '/agents/{agentId}/profile',
   agentRegister: '/agents/register',
   agentRegisterQuote: '/agents/register/quote',
   agentTradeIntents: '/agents/{agentId}/trade-intents',

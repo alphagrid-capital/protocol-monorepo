@@ -74,12 +74,15 @@ yarn deploy:all                 # Deploy all three sequentially
 | `POST` | `/agents/{agentId}/reduce-intents`            | Relay signed reduce intent — partial or full close (201)                               |
 | `GET`  | `/agents/{agentId}/exit-ladder-intents/quote` | Quote for `UpdateExitLadder` (`?positionId=`)                                          |
 | `POST` | `/agents/{agentId}/exit-ladder-intents`       | Relay signed pending TP/SL update (201)                                                |
+| `GET`  | `/agents/{agentId}/profile`                   | Owner-only off-chain strategy profile (Privy)                                          |
+| `PATCH`| `/agents/{agentId}/profile`                   | Update strategy and/or bot frequency for future runs (Privy)                           |
 | `GET`  | `/agents/{agentId}/positions`                 | Agent open positions (`getOpenPositionIds` + multicall; includes `derived`)            |
 | `GET`  | `/agents/{agentId}/closed-positions`          | Closed positions via bounded global id scan (`?limit=`, max 100)                       |
 | `GET`  | `/agents/{agentId}/positions/{positionId}`    | Single position by id (open or closed; realized/unrealized PnL + `derived`)            |
 | `GET`  | `/agents/{agentId}/risk-state`                | Equity, drawdown, PnL, `derived`, `promotionReadiness`, breach flags                   |
 | `GET`  | `/agents/{agentId}/trades`                    | Trade activity (`source`: `indexed` when `SUBGRAPH_URL` set, else RPC log scan)        |
 | `GET`  | `/agents/{agentId}/equity-history`            | Trade-boundary equity snapshots (`SUBGRAPH_URL` required; optional live `current` tip) |
+| `GET`  | `/agents/{agentId}/strategy-runs`             | Strategy runner history for the agent owner (Privy; `?limit=`)                         |
 | `GET`  | `/transactions/{txHash}`                      | Transaction receipt status (confirm intent submit)                                     |
 | `GET`  | `/docs`                                       | Swagger UI (humans; poor fit for URL paste in chat)                                    |
 | `GET`  | `/docs/swagger.json`                          | OpenAPI 3.1 (Custom GPT Actions)                                                       |

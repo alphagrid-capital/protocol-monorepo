@@ -649,7 +649,7 @@ Responsibilities (full MVP):
 Suggested stack for remaining MVP services:
 
 - TypeScript (Worker or Node)
-- PostgreSQL _(deferred until indexer/leaderboard; current API uses RPC reads)_
+- PostgreSQL _(deferred until full indexer/leaderboard; current API uses RPC reads + per-chain D1 for launch/strategy runs)_
 - Redis for caching / queues _(optional)_
 - REST or GraphQL API
 
@@ -899,7 +899,7 @@ Risk checks:
 
 ## 7. Database Model
 
-**Implementation note:** The `api/` Worker does not use PostgreSQL yet. Agent and vault reads go through RPC (`viem`). Progress on indexer and DB: `09_implementation_status.md` §4. The schema below is the target model once an indexer and leaderboard land.
+**Implementation note:** The `api/` Worker does not use PostgreSQL yet. Per-chain **Cloudflare D1** stores user profiles, agent launch drafts, off-chain agent profiles (`strategy`, `botFrequency`), and strategy run history — see `09_implementation_status.md` §4. On-chain agent and vault reads go through RPC (`viem`). The schema below is the target model once a full indexer and leaderboard land.
 
 ### 7.1 Tables
 

@@ -6,6 +6,7 @@ import { openApiJsonResponse } from './openapi.js'
 import { authRoutes } from './routes/auth.js'
 import { registerDiscoveryRoutes } from './routes/discovery.js'
 import { agentDraftRoutes } from './routes/agent-drafts.js'
+import { agentProfileRoutes } from './routes/agent-profiles.js'
 import { agentRoutes } from './routes/agents.js'
 import { healthRoutes } from './routes/health.js'
 import { strategyRunRoutes } from './routes/strategy-runs.js'
@@ -65,6 +66,7 @@ function registerHttpRoutes(app: OpenAPIHono): void {
   app.route('/', vaultRoutes)
   app.route('/', tokenRoutes)
   app.route('/', agentRoutes)
+  app.route('/', agentProfileRoutes)
   app.route('/', agentDraftRoutes)
   app.route('/', tradingRoutes)
   app.route('/', strategyRunRoutes)

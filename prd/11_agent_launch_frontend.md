@@ -363,7 +363,7 @@ Errors are JSON: `{ "error": string }` unless x402 returns a structured 402 body
 | --- | --- |
 | `identity.name` | On-chain agent name |
 | `identity.handle`, `description`, `links` | On-chain `metadataURI` (base64 JSON profile) |
-| `strategy`, `botFrequency` | Off-chain `agent_profiles` (for future scheduler) |
+| `strategy`, `botFrequency` | Off-chain `agent_profiles`; scheduler uses `next_run_at` after launch |
 | Custodial signer key | Encrypted in D1 (`agent_signers`) |
 
 Strategy and bot frequency are **not** in public metadata.
@@ -380,7 +380,7 @@ Strategy and bot frequency are **not** in public metadata.
 | Step: strategy & frequency | `PUT` with `strategy`, `botFrequency` |
 | Review | `GET /agent-drafts/{id}` + optional `GET /agents/register/quote` for fee |
 | Launch | `POST .../launch` (+ x402 retry) |
-| After launch | `GET /transactions/{txHash}` → redirect to `redirectUrl` |
+| After launch | `GET /transactions/{txHash}` → redirect to `redirectUrl`; optional `GET /agents/{agentId}/strategy-runs` for run history |
 | Cancel wizard | `DELETE /agent-drafts/{id}` |
 
 Persist `draftId` in the route query (`?draft=draft_…`) or app state so refresh can call `GET /agent-drafts/{draftId}`.
@@ -394,7 +394,7 @@ Persist `draftId` in the route query (`?draft=draft_…`) or app state so refres
 | ERC-8004 in wizard | Not in launch API; link later via `POST /agents/{id}/erc8004/link` |
 | User EIP-712 sign at launch | Custodial signer only |
 | `pricingTier` in UI | Derived server-side from registration fee |
-| Strategy execution / cron | Backend not implemented yet |
+| Strategy execution / cron | **Partial** — cron runs every 10 min; `decideStrategy` is a stub (hold, no trades); owners can update future runs via `PATCH /agents/{agentId}/profile` and view run history via `GET /agents/{agentId}/strategy-runs`. Do not promise autonomous trading in UI yet. |
 | IPFS `metadataURI` | API uses `data:application/json;base64,…` for now |
 
 ---

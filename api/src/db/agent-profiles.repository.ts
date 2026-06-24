@@ -26,6 +26,12 @@ export interface CreateAgentProfileInput {
   createdAt: string
 }
 
+export interface UpdateAgentProfileInput {
+  strategy?: string
+  botFrequency?: BotFrequency
+  nextRunAt?: string
+}
+
 export class AgentProfilesRepository {
   constructor(private readonly env: WorkerEnv) {}
 
@@ -86,5 +92,43 @@ export class AgentProfilesRepository {
       .prepare('UPDATE agent_profiles SET next_run_at = ? WHERE agent_id = ?')
       .bind(nextRunAt, agentId)
       .run()
+  }
+
+  async update(
+    agentId: string,
+    input: UpdateAgentProfileInput
+  ): Promise<AgentProfileRow | null> {
+    const db = requireDb(this.env)
+    const sets: string[] = []
+    const values: string[] = []
+
+    if (input.strategy !== undefined) {
+      sets.push('strategy = ?')
+      values.push(input.strategy)
+    }
+    if (input.botFrequency !== undefined) {
+      sets.push('bot_frequency = ?')
+      values.push(input.botFrequency)
+    }
+    if (input.nextRunAt !== undefined) {
+      sets.push('next_run_at = ?')
+      values.push(input.nextRunAt)
+    }
+
+    if (sets.length === 0) {
+      return this.findByAgentId(agentId)
+    }
+
+    const row = await db
+      .prepare(
+        `UPDATE agent_profiles
+         SET ${sets.join(', ')}
+         WHERE agent_id = ?
+         RETURNING *`
+      )
+      .bind(...values, agentId)
+      .first<AgentProfileRow>()
+
+    return row ?? null
   }
 }

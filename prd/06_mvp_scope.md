@@ -297,11 +297,11 @@ Build phases and per-phase status: **`09_implementation_status.md` §5**.
 
 Summary:
 
-| Phase | Focus | Status (2026-06-06) |
+| Phase | Focus | Status (2026-06-24) |
 | --- | --- | --- |
-| 1 | Product foundation (frontend shell) | Not started |
-| 2 | Contracts + core state + vault API | On-chain done; API partial |
-| 3 | Execution + indexing | On-chain done; intent gateway / executor / indexer not built |
+| 1 | Product foundation (frontend shell) | Not started; agent launch API done |
+| 2 | Contracts + core state + vault API | On-chain done; API partial (incl. launch) |
+| 3 | Execution + indexing | On-chain done; executor done; subgraph partial; full indexer not built |
 | 4 | Performance + risk | Not started |
 | 5 | Leaderboard + public demo | Not started |
 | 6 | Admin + hardening | Not started |

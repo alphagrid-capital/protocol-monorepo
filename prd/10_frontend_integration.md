@@ -97,7 +97,7 @@ For a **chronological activity feed** (opens, adds, reduces, keeper exits), pref
 
 ## 6. Trade activity (on-chain v1)
 
-Chronological feed from `TradeRouter` + `PositionManager` event logs. Not indexed per-fill history — `source` is always `on-chain-events`.
+Chronological feed from `TradeRouter` + `PositionManager` events. `source` is `indexed` when the API has `SUBGRAPH_URL` (Arbitrum Sepolia / Arbitrum One); otherwise `on-chain-events` (RPC log scan).
 
 | UI stat | Endpoint | Response field(s) |
 | --- | --- | --- |
@@ -125,6 +125,25 @@ Submit routes return `transactionHash` (201). Confirm landing before refreshing 
 | Block number | same | `blockNumber` |
 
 Poll until `status !== pending`, then refresh `GET /agents/{id}/positions` or `GET /agents/{id}/trades`. No UUID intent-id lookup — submit is synchronous via the executor.
+
+---
+
+## 6b. Strategy runs (off-chain, owner-only)
+
+After launch, the backend cron evaluates each agent on `botFrequency` (`1h` / `1d`). Today `decideStrategy` returns hold (no trades); runs are still persisted for observability.
+
+| UI stat | Endpoint | Response field(s) |
+| --- | --- | --- |
+| Current strategy profile | `GET /agents/{agentId}/profile` | `profile.strategy`, `profile.botFrequency`, `profile.nextRunAt` (Privy; caller must be agent owner) |
+| Update future strategy runs | `PATCH /agents/{agentId}/profile` | body: `strategy` and/or `botFrequency`; returns updated `profile` |
+| Run history | `GET /agents/{agentId}/strategy-runs?limit=20` | `runs[]` (Privy; caller must be agent owner) |
+| Run status | same | `runs[].status` — `running`, `completed`, `failed` |
+| Decision summary | same | `runs[].summary` |
+| Planned actions | same | `runs[].actions[]` (`open`, `close`, `add`, `reduce`) |
+| Execution results | same | `runs[].execution[]` (`status`, `txHash`, `error`) |
+| Timestamps | same | `runs[].startedAt`, `runs[].completedAt` |
+
+`strategy` and `botFrequency` are **not** returned by on-chain `GET /agents/{id}`; they stay in D1 `agent_profiles`. Owners can read/update them through `/profile`; public views should show only run outcomes unless a separate public strategy field is added later.
 
 ---
 
@@ -164,9 +183,12 @@ Track limits (`maxDrawdownBps`, `maxDailyLossBps`, `maxTradeSizeBps`, …) live 
 | --- | --- | --- |
 | Performance / Alpha Score | `GET /agents/{agentId}/performance` | Not built |
 | Leaderboard rank | `GET /leaderboard` | Not built |
-| Equity curve (trade-boundary) | `GET /agents/{agentId}/equity-history` | Requires `SUBGRAPH_URL`; flat between trades; `current` from risk-state |
 | Per-fill history (venue, fees) | Indexer + `trades` table | Not built — use §6 event feed for MVP |
 | Async intent status (UUID) | DB intent store | Not built — use §6 tx lookup + positions |
+| Strategy text (off-chain) | — | Stored in D1 only; no read API yet |
+| Autonomous strategy trading | Cron + `decideStrategy` | Scaffold only — decisions are hold stub |
+
+**Partial (wire when `SUBGRAPH_URL` is set on the target chain):** `GET /agents/{agentId}/equity-history` — trade-boundary equity snapshots; flat between trades; optional live `current` tip from risk-state.
 
 ---
 
@@ -178,6 +200,7 @@ Minimal fetch sets for common screens:
 | --- | --- |
 | Agent launch wizard | See [`prd/11_agent_launch_frontend.md`](../prd/11_agent_launch_frontend.md) |
 | Agent profile header | `GET /agents/{id}` + `GET /agents/{id}/risk-state` |
+| Strategy run log (owner) | `GET /agents/{id}/strategy-runs?limit=20` (Privy) |
 | Performance chart | `GET /agents/{id}/equity-history` (requires `SUBGRAPH_URL`) |
 | Positions tab | `GET /agents/{id}/positions` + `GET /agents/{id}/closed-positions` |
 | Activity / history tab | `GET /agents/{id}/trades?limit=50` |
