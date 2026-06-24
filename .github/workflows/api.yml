@@ -104,6 +104,16 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
+      - name: Apply D1 migrations
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: api
+          wranglerVersion: "4"
+          environment: ${{ matrix.environment }}
+          command: d1 migrations apply alphagrid-users-${{ matrix.environment }} --env ${{ matrix.environment }}
+
       - name: Deploy Worker
         uses: cloudflare/wrangler-action@v4
         with:

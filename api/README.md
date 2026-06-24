@@ -49,6 +49,10 @@ yarn deploy:all                 # Deploy all three sequentially
 | `GET`  | `/`                                           | API discovery JSON (generated from OpenAPI)                                            |
 | `GET`  | `/llms.txt`                                   | LLM-oriented index ([llms.txt spec](https://llmstxt.org/))                             |
 | `GET`  | `/health`                                     | Liveness probe                                                                         |
+| `GET`  | `/auth/me`                                    | Session + profile summary (Privy access + identity tokens)                             |
+| `POST` | `/auth/logout`                                | Logout acknowledgement (client discards Privy tokens)                                  |
+| `GET`  | `/users/me`                                   | Full user profile (Privy tokens)                                                       |
+| `PATCH`| `/users/me`                                   | Update display name and/or preferred currency                                          |
 | `GET`  | `/vaults`                                     | Vault catalog (`?format=md` for markdown)                                              |
 | `GET`  | `/vaults/{id}/tokens`                         | Tradable tokens for a vault mandate + oracle prices                                    |
 | `GET`  | `/tokens`                                     | Global token catalog + on-chain registry state                                         |
@@ -131,12 +135,68 @@ api/
     mcp/alphagrid-mcp-agent.ts  # McpAgent (Durable Object per session)
     mcp/server.ts               # MCP tool registration
     routes/            # OpenAPI HTTP routes
+    db/                # D1 repositories
     services/          # Shared business logic (used by HTTP + MCP)
     schemas/           # Zod / OpenAPI schemas
     types/             # TypeScript types
   wrangler.toml
   package.json
 ```
+
+## Privy auth
+
+Optional session auth via [Privy](https://docs.privy.io/authentication/user-authentication/privy-auth). Login happens in the Privy client SDK (wallet SIWE, email, OAuth, embedded wallets, etc.); the API verifies Privy-issued tokens. Does not replace EIP-712 agent/trade signatures or x402 registration payments.
+
+| Variable                     | Role                                                                 |
+| ---------------------------- | -------------------------------------------------------------------- |
+| `PRIVY_APP_ID`               | Privy app ID — set in `[env.*.vars]` or `api/.dev.vars`              |
+| `PRIVY_JWT_VERIFICATION_KEY` | Secret (`wrangler secret put`); PEM verification key from Privy Dashboard → App settings → **Verify with key instead** |
+
+**Client flow:**
+
+1. Authenticate with the Privy SDK (`@privy-io/react-auth` or `@privy-io/js`)
+2. Read tokens: `getAccessToken()` and `getIdentityToken()`
+3. Call protected routes with headers:
+   - `Authorization: Bearer <access_token>`
+   - `privy-id-token: <identity_token>`
+4. `GET /auth/me` upserts the D1 user row and returns `{ address, valid, profile }`
+
+Without auth secrets, `/auth/*` and `/users/me` return **503** (config) or **401** (missing/invalid tokens). Existing public and agent routes are unchanged.
+
+## User profiles (D1)
+
+Per-chain Cloudflare D1 stores wallet user profiles (display name, preferred currency, registration/login timestamps and IPs). Each Wrangler env has its own database — the same wallet on different chains has independent profiles.
+
+| Binding | Role |
+| ------- | ---- |
+| `DB` | D1 database (`users` table) |
+
+**One-time setup (per env):**
+
+```bash
+cd api
+wrangler d1 create alphagrid-users-arbitrum-sepolia
+# Paste the returned database_id into wrangler.toml under [env.arbitrum-sepolia.d1_databases]
+wrangler d1 migrations apply alphagrid-users-arbitrum-sepolia --env arbitrum-sepolia
+```
+
+Repeat for `alphagrid-users-robinhood-testnet` and `alphagrid-users-arbitrum-one`.
+
+**Local dev:**
+
+```bash
+wrangler d1 migrations apply alphagrid-users-arbitrum-sepolia --local --env arbitrum-sepolia
+yarn dev:arbitrum-sepolia
+```
+
+| Method | Path | Description |
+| ------ | ---- | ----------- |
+| `GET` | `/users/me` | Full profile (Bearer JWT) |
+| `PATCH` | `/users/me` | Update `displayName` and/or `preferredCurrency` (`USD`, `EUR`, `GBP`, `CHF`, `CZK`) |
+
+`GET /auth/me` upserts the user row (registration IP/time on first login, last login IP/time on every call). `GET /users/me` reads the profile without mutating login timestamps. IPs are stored server-side only.
+
+Without the `DB` binding or applied migrations, auth routes that persist profiles return **503**.
 
 ## Agent registration (x402)
 

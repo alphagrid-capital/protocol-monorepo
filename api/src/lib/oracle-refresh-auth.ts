@@ -1,4 +1,5 @@
 import type { WorkerEnv } from '../types/worker-env.js'
+import { extractBearerToken } from './bearer-auth.js'
 
 export function isOracleRefreshAuthorized(
   env: WorkerEnv,
@@ -8,8 +9,9 @@ export function isOracleRefreshAuthorized(
   if (!secret) {
     return true
   }
-  if (!authorizationHeader?.startsWith('Bearer ')) {
+  const token = extractBearerToken(authorizationHeader)
+  if (!token) {
     return false
   }
-  return authorizationHeader.slice('Bearer '.length) === secret
+  return token === secret
 }

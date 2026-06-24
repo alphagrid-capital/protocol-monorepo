@@ -5,3 +5,7 @@ export type WorkerEnv = Record<string, string | undefined>
 export type McpWorkerEnv = WorkerEnv & {
   MCP_OBJECT: DurableObjectNamespace
 }
+
+export type WorkerEnvWithDb = WorkerEnv & {
+  DB?: D1Database
+}

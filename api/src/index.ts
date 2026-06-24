@@ -3,6 +3,7 @@ import { runWithWorkerEnv } from './lib/worker-env.js'
 import { AlphagridMcp } from './mcp/alphagrid-mcp-agent.js'
 import { alphagridMcpHandler } from './mcp/handler.js'
 import { handleScheduled } from './scheduled.js'
+import './types/hono-env.js'
 import type { McpWorkerEnv, WorkerEnv } from './types/worker-env.js'
 
 export { AlphagridMcp }

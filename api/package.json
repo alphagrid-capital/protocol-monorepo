@@ -44,6 +44,7 @@
     "@modelcontextprotocol/hono": "^2.0.0-alpha.2",
     "@modelcontextprotocol/sdk": "1.29.0",
     "@modelcontextprotocol/server": "^2.0.0-alpha.2",
+    "@privy-io/node": "^0.23.0",
     "@x402/core": "^2.14.0",
     "@x402/evm": "^2.14.0",
     "@x402/hono": "^2.14.0",

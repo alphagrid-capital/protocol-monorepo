@@ -5,6 +5,10 @@ export function parseAddress(value: string | undefined): `0x${string}` | null {
   return value as `0x${string}`
 }
 
+export function normalizeAddress(value: string): string {
+  return value.toLowerCase()
+}
+
 export function parsePrivateKey(
   value: string | undefined
 ): `0x${string}` | null {
