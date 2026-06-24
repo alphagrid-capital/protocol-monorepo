@@ -104,6 +104,15 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
+      - name: Resolve D1 database name
+        id: d1
+        run: |
+          case "${{ matrix.environment }}" in
+            arbitrum-sepolia) echo "name=alphagrid-db-421614" >> "$GITHUB_OUTPUT" ;;
+            arbitrum-one) echo "name=alphagrid-db-42161" >> "$GITHUB_OUTPUT" ;;
+            robinhood-testnet) echo "name=alphagrid-db-46630" >> "$GITHUB_OUTPUT" ;;
+          esac
+
       - name: Apply D1 migrations
         uses: cloudflare/wrangler-action@v4
         with:
@@ -112,7 +121,7 @@ jobs:
           workingDirectory: api
           wranglerVersion: "4"
           environment: ${{ matrix.environment }}
-          command: d1 migrations apply alphagrid-users-${{ matrix.environment }} --env ${{ matrix.environment }}
+          command: d1 migrations apply ${{ steps.d1.outputs.name }} --env ${{ matrix.environment }}
 
       - name: Deploy Worker
         uses: cloudflare/wrangler-action@v4

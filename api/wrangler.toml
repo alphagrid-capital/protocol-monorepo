@@ -64,8 +64,8 @@ SUBGRAPH_URL = "https://api.studio.thegraph.com/query/1724541/alphagrid-protocol
 
 [[env.arbitrum-sepolia.d1_databases]]
 binding = "DB"
-database_name = "alphagrid-users-arbitrum-sepolia"
-database_id = "00000000-0000-0000-0000-000000000010"
+database_name = "alphagrid-db-421614"
+database_id = "af9cdf5b-a3a8-4ed7-aeab-e36788e3d3f5"
 migrations_dir = "migrations"
 
 [[env.arbitrum-sepolia.durable_objects.bindings]]
@@ -89,8 +89,8 @@ ENABLE_SWAGGER = "true"
 
 [[env.robinhood-testnet.d1_databases]]
 binding = "DB"
-database_name = "alphagrid-users-robinhood-testnet"
-database_id = "00000000-0000-0000-0000-000000000020"
+database_name = "alphagrid-db-46630"
+database_id = "f9d962f0-b189-4f40-a797-a1b9d7acdfa9"
 migrations_dir = "migrations"
 
 [[env.robinhood-testnet.durable_objects.bindings]]
@@ -115,8 +115,8 @@ SUBGRAPH_URL = "https://api.studio.thegraph.com/query/1724541/alphagrid-protocol
 
 [[env.arbitrum-one.d1_databases]]
 binding = "DB"
-database_name = "alphagrid-users-arbitrum-one"
-database_id = "00000000-0000-0000-0000-000000000030"
+database_name = "alphagrid-db-42161"
+database_id = "adaaaffc-0c49-4b9a-9581-628f701d0e5a"
 migrations_dir = "migrations"
 
 [[env.arbitrum-one.durable_objects.bindings]]
