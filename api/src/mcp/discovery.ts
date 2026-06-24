@@ -1,6 +1,6 @@
-import type { McpDiscovery } from '../lib/discovery-from-openapi.js'
+import type { McpDiscovery } from '../lib/discovery/from-openapi.js'
 import { ROUTE_PATHS } from '../constants/routes.js'
-import { absoluteUrl } from '../lib/url-utils.js'
+import { absoluteUrl } from '../lib/http/url-utils.js'
 import { MCP_TOOL_NAME_LIST } from './constants.js'
 
 export function mcpDiscovery(requestUrl: string): McpDiscovery {

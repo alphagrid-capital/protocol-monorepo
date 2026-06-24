@@ -1,4 +1,4 @@
-import type { AgentIdentity } from '../schemas/agent-draft.js'
+import type { AgentIdentity } from '../../schemas/agent-draft.js'
 
 function bytesToBase64(bytes: Uint8Array): string {
   let binary = ''

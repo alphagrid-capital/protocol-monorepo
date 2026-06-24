@@ -1,7 +1,7 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { ROUTE_PATHS } from '../constants/routes.js'
 import { AppError } from '../errors.js'
-import { getClientIp } from '../lib/client-ip.js'
+import { getClientIp } from '../lib/auth/client-ip.js'
 import { requirePrivyAuth } from '../middleware/privy-auth.js'
 import { PrivyAuthHeadersSchema } from '../schemas/auth-headers.js'
 import {

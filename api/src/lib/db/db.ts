@@ -1,5 +1,5 @@
-import { AppError } from '../errors.js'
-import type { WorkerEnv, WorkerEnvWithDb } from '../types/worker-env.js'
+import { AppError } from '../../errors.js'
+import type { WorkerEnv, WorkerEnvWithDb } from '../../types/worker-env.js'
 
 export function requireDb(env: WorkerEnv): D1Database {
   const db = (env as WorkerEnvWithDb).DB

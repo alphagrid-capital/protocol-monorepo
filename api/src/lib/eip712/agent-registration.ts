@@ -6,7 +6,7 @@ import {
   verifyTypedData,
 } from 'viem'
 import type { Address, Hex } from 'viem'
-import { SELF_REGISTER_TYPEHASH } from '../constants/agent-registration.js'
+import { SELF_REGISTER_TYPEHASH } from '../../constants/agent-registration.js'
 
 export const AGENT_REGISTRY_EIP712_DOMAIN = {
   name: 'AlphaGrid AgentRegistry',

@@ -8,7 +8,7 @@ import type { Address, Hex } from 'viem'
 import type {
   OnChainExitRule,
   OnChainPositionIntent,
-} from './trading-intent-builder.js'
+} from '../trading/intent-builder.js'
 
 export function hashExitRules(exits: OnChainExitRule[]): Hex {
   const ruleHashes = exits.map((rule) =>

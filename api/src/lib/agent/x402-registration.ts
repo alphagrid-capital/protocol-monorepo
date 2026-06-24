@@ -1,10 +1,10 @@
 import type { MiddlewareHandler } from 'hono'
-import { ROUTE_PATHS } from '../constants/routes.js'
-import { loadAgentRegistrationConfig } from './agent-registration-config.js'
-import { FeeManagerService } from '../services/fee-manager.service.js'
-import { getWorkerEnv } from './worker-env.js'
-import { runX402HonoPayment, runX402ProtectedRequest } from './x402.js'
-import type { X402PaymentConfig } from './x402.js'
+import { ROUTE_PATHS } from '../../constants/routes.js'
+import { loadAgentRegistrationConfig } from './registration-config.js'
+import { FeeManagerService } from '../../services/fee-manager.service.js'
+import { getWorkerEnv } from '../worker-env.js'
+import { runX402HonoPayment, runX402ProtectedRequest } from '../payments/x402.js'
+import type { X402PaymentConfig } from '../payments/x402.js'
 
 const REGISTER_METHOD = 'POST'
 interface RegistrationFeeState {

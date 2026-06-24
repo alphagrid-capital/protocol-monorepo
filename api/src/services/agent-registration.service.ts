@@ -1,16 +1,16 @@
 import type { Address, Hex } from 'viem'
-import { loadAgentRegistrationConfig } from '../lib/agent-registration-config.js'
-import type { AgentRegistrationConfig } from '../lib/agent-registration-config.js'
+import { loadAgentRegistrationConfig } from '../lib/agent/registration-config.js'
+import type { AgentRegistrationConfig } from '../lib/agent/registration-config.js'
 import { SELF_REGISTER_TYPEHASH } from '../constants/agent-registration.js'
 import {
   AGENT_REGISTRY_EIP712_DOMAIN,
   verifySelfRegisterSignature,
-} from '../lib/eip712-agent-registration.js'
-import type { SelfRegisterTypedData } from '../lib/eip712-agent-registration.js'
+} from '../lib/eip712/agent-registration.js'
+import type { SelfRegisterTypedData } from '../lib/eip712/agent-registration.js'
 import { HTTP_ROUTES } from '../constants/routes.js'
 import { getWorkerEnv } from '../lib/worker-env.js'
 import { AppError } from '../errors.js'
-import { isContractRevert } from '../lib/viem-revert.js'
+import { isContractRevert } from '../lib/evm/viem-revert.js'
 import { ProviderService } from './provider.service.js'
 import {
   AgentNotFoundError,

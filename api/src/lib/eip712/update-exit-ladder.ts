@@ -1,7 +1,7 @@
 import { verifyTypedData } from 'viem'
 import type { Address, Hex } from 'viem'
-import { hashExitRules } from './eip712-open-position.js'
-import type { OnChainExitRule } from './trading-intent-builder.js'
+import { hashExitRules } from '../eip712/open-position.js'
+import type { OnChainExitRule } from '../trading/intent-builder.js'
 
 export interface OnChainUpdateExitLadderIntent {
   agentId: bigint

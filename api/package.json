@@ -21,7 +21,7 @@
     "deploy:arbitrum-one": "wrangler deploy --env arbitrum-one",
     "deploy:all": "yarn deploy:arbitrum-sepolia && yarn deploy:robinhood-testnet && yarn deploy:arbitrum-one",
     "type-check": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test src/lib/trading-metrics.test.ts src/lib/agent-trade-log-scan.test.ts src/lib/trading-log-from-block.test.ts src/lib/signer-key-crypto.test.ts src/lib/agent-launch-metadata.test.ts",
+    "test": "node --experimental-strip-types --test src/lib/trading/metrics.test.ts src/lib/trading/trade-log-scan.test.ts src/lib/trading/log-from-block.test.ts src/lib/crypto/signer-key-crypto.test.ts src/lib/agent/launch-metadata.test.ts",
     "format": "prettier --write .",
     "lint:ts": "eslint \"src/**/*.ts\" --fix",
     "lint:fix": "eslint \"src/**/*.ts\" --fix",

@@ -1,6 +1,6 @@
 import type { Address, Hex } from 'viem'
 import { contracts } from '../constants/contracts.js'
-import { tokenCatalog, finnhubSymbolFor } from '../lib/token-catalog.js'
+import { tokenCatalog, finnhubSymbolFor } from '../lib/tokens/catalog.js'
 import { mockPriceOracleAbi } from '../services/abis/mock-price-oracle.js'
 import { ProviderService } from '../services/provider.service.js'
 

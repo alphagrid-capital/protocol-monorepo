@@ -6,10 +6,10 @@ import {
   
 } from '@privy-io/node'
 import type {LinkedAccount} from '@privy-io/node';
-import { AppError } from '../errors.js'
+import { AppError } from '../../errors.js'
 import { loadAuthConfig } from './auth-config.js'
-import { normalizeAddress } from './evm-uilts.js'
-import type { WorkerEnv } from '../types/worker-env.js'
+import { normalizeAddress } from '../evm/utils.js'
+import type { WorkerEnv } from '../../types/worker-env.js'
 
 function isEthereumLinkedAccount(
   account: LinkedAccount

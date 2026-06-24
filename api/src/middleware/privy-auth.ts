@@ -1,7 +1,7 @@
 import type { MiddlewareHandler } from 'hono'
 import { AppError } from '../errors.js'
-import { extractBearerToken } from '../lib/bearer-auth.js'
-import { verifyPrivySession } from '../lib/privy-auth.js'
+import { extractBearerToken } from '../lib/auth/bearer-auth.js'
+import { verifyPrivySession } from '../lib/auth/privy-auth.js'
 import { getWorkerEnv } from '../lib/worker-env.js'
 import { PRIVY_ID_TOKEN_HEADER } from '../schemas/auth-headers.js'
 

@@ -1,12 +1,12 @@
-import type { AgentTradeActivity } from '../lib/agent-trade-events.js'
+import type { AgentTradeActivity } from '../trading/trade-events.js'
 import {
   positionReturnBps,
   positionTotalPnlUsdc,
-} from '../lib/trading-metrics.js'
+} from '../trading/metrics.js'
 import type {
   GetAgentPositionResponse,
   ListAgentPositionsResponse,
-} from '../schemas/trading.js'
+} from '../../schemas/trading.js'
 
 type GraphExitRule = {
   index: number

@@ -1,6 +1,6 @@
 import type { Address, PublicClient } from 'viem'
-import { positionManagerAbi } from '../services/abis/position-manager.js'
-import { tradeRouterAbi } from '../services/abis/trade-router.js'
+import { positionManagerAbi } from '../../services/abis/position-manager.js'
+import { tradeRouterAbi } from '../../services/abis/trade-router.js'
 import {
   fetchInAdaptiveBlockRange,
   logScanWindow,
@@ -8,8 +8,8 @@ import {
   MAX_LOG_BLOCK_RANGE,
   MAX_LOG_SCAN_CHUNKS,
   sortActivitiesNewestFirst,
-} from './agent-trade-log-scan.js'
-import { catalogEntryForAddress } from './token-catalog.js'
+} from '../trading/trade-log-scan.js'
+import { catalogEntryForAddress } from '../tokens/catalog.js'
 
 export type AgentTradeActivityType =
   | 'PositionOpened'

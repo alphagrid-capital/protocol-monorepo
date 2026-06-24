@@ -1,10 +1,10 @@
 import type { Address, Hex } from 'viem'
 import { AppError } from '../errors.js'
-import { verifyAddToPositionSignature } from '../lib/eip712-add-position.js'
-import { verifyOpenPositionSignature } from '../lib/eip712-open-position.js'
-import { verifyReducePositionSignature } from '../lib/eip712-reduce-position.js'
-import { verifyUpdateExitLadderSignature } from '../lib/eip712-update-exit-ladder.js'
-import { parseHumanAmount } from '../lib/amount-utils.js'
+import { verifyAddToPositionSignature } from '../lib/eip712/add-position.js'
+import { verifyOpenPositionSignature } from '../lib/eip712/open-position.js'
+import { verifyReducePositionSignature } from '../lib/eip712/reduce-position.js'
+import { verifyUpdateExitLadderSignature } from '../lib/eip712/update-exit-ladder.js'
+import { parseHumanAmount } from '../lib/tokens/amount-utils.js'
 import {
   accountReturnBps,
   accountUnrealizedUsdc,
@@ -15,21 +15,21 @@ import {
   positionTotalPnlUsdc,
   utilizationBps,
   utilizationBpsFromBigint,
-} from '../lib/trading-metrics.js'
+} from '../lib/trading/metrics.js'
 import {
   DEFAULT_EXIT_LADDER,
   buildOnChainIntent,
   mapExitRules,
   mapOnChainExitRule,
   resolveTokenAddress,
-} from '../lib/trading-intent-builder.js'
-import { fetchAgentTradeActivity } from '../lib/agent-trade-events.js'
-import { resolveMinLogScanBlock } from '../lib/trading-log-from-block.js'
-import { loadTradingConfig } from '../lib/trading-config.js'
-import type { TradingConfig } from '../lib/trading-config.js'
-import { tokenCatalog } from '../lib/token-catalog.js'
+} from '../lib/trading/intent-builder.js'
+import { fetchAgentTradeActivity } from '../lib/trading/trade-events.js'
+import { resolveMinLogScanBlock } from '../lib/trading/log-from-block.js'
+import { loadTradingConfig } from '../lib/trading/config.js'
+import type { TradingConfig } from '../lib/trading/config.js'
+import { tokenCatalog } from '../lib/tokens/catalog.js'
 import { getWorkerEnv } from '../lib/worker-env.js'
-import { isContractRevert } from '../lib/viem-revert.js'
+import { isContractRevert } from '../lib/evm/viem-revert.js'
 import type {
   AddPositionRequest,
   AgentRiskStateResponse,
@@ -53,7 +53,7 @@ import {
   mapSubgraphActivity,
   mapSubgraphClosedPositions,
   mapSubgraphEquitySnapshots,
-} from '../lib/subgraph-mappers.js'
+} from '../lib/subgraph/mappers.js'
 import {
   AgentNotFoundError,
   AgentRegistryService,

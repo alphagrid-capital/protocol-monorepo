@@ -1,6 +1,6 @@
 import type { Network } from '@x402/core/types'
-import { contracts } from '../constants/contracts.js'
-import { parsePrivateKey } from './evm-uilts.js'
+import { contracts } from '../../constants/contracts.js'
+import { parsePrivateKey } from '../evm/utils.js'
 
 export interface AgentRegistrationConfig {
   agentRegistryAddress: `0x${string}`

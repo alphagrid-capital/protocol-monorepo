@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi'
 import type { StrategyRunStatus } from '../db/strategy-runs.repository.js'
 import { agentIdParamSchema } from './agent.js'
-import { StrategyActionSchema } from '../lib/strategy-decision.js'
+import { StrategyActionSchema } from './strategy.js'
 
 export const StrategyRunStatusSchema = z.enum([
   'running',

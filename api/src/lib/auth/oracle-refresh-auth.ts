@@ -1,4 +1,4 @@
-import type { WorkerEnv } from '../types/worker-env.js'
+import type { WorkerEnv } from '../../types/worker-env.js'
 import { extractBearerToken } from './bearer-auth.js'
 
 export function isOracleRefreshAuthorized(

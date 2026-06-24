@@ -9,7 +9,7 @@ import {
   positionReturnBps,
   utilizationBps,
   utilizationBpsFromBigint,
-} from './trading-metrics.ts'
+} from './metrics.ts'
 
 describe('trading-metrics', () => {
   it('accountReturnBps', () => {

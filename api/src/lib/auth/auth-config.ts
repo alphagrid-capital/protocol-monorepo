@@ -1,5 +1,5 @@
-import { AppError } from '../errors.js'
-import type { WorkerEnv } from '../types/worker-env.js'
+import { AppError } from '../../errors.js'
+import type { WorkerEnv } from '../../types/worker-env.js'
 
 export interface AuthConfig {
   appId: string

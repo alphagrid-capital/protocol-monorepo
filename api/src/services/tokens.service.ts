@@ -7,8 +7,8 @@ import {
   catalogEntryForAddress,
   chainTokenAddress,
   tokenCatalog,
-} from '../lib/token-catalog.js'
-import type { TokenCatalogEntry } from '../lib/token-catalog.js'
+} from '../lib/tokens/catalog.js'
+import type { TokenCatalogEntry } from '../lib/tokens/catalog.js'
 import { getWorkerEnv } from '../lib/worker-env.js'
 import { mandateVaultAbi } from './abis/mandate-vault.js'
 import { mockPriceOracleAbi } from './abis/mock-price-oracle.js'

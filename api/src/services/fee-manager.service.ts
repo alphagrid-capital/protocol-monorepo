@@ -1,6 +1,6 @@
 import type { Address, PublicClient } from 'viem'
-import type { AgentRegistrationConfig } from '../lib/agent-registration-config.js'
-import { atomicUsdcToUsdString } from '../lib/token-utils.js'
+import type { AgentRegistrationConfig } from '../lib/agent/registration-config.js'
+import { atomicUsdcToUsdString } from '../lib/tokens/utils.js'
 import { feeManagerAbi } from './abis/fee-manager.js'
 import { ProviderService } from './provider.service.js'
 

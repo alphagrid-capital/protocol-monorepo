@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { buildAgentMetadataUri } from './agent-launch-metadata.ts'
+import { buildAgentMetadataUri } from './launch-metadata.ts'
 
 test('buildAgentMetadataUri encodes public profile fields only', () => {
   const uri = buildAgentMetadataUri({

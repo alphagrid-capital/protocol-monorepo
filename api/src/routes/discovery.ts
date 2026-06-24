@@ -4,9 +4,9 @@ import { mcpDiscovery } from '../mcp/discovery.js'
 import {
   buildDiscoveryFromOpenApi,
   buildLlmsTxtFromOpenApi,
-} from '../lib/discovery-from-openapi.js'
+} from '../lib/discovery/from-openapi.js'
 import { ROUTE_PATHS } from '../constants/routes.js'
-import { absoluteUrl } from '../lib/url-utils.js'
+import { absoluteUrl } from '../lib/http/url-utils.js'
 import { openApiJsonResponse } from '../openapi.js'
 
 const DiscoverySchema = z

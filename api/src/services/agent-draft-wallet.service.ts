@@ -6,9 +6,9 @@ import {
   decryptSignerPrivateKey,
   encryptSignerPrivateKey,
   requireSignerEncryptionKey,
-} from '../lib/signer-key-crypto.js'
+} from '../lib/crypto/signer-key-crypto.js'
 import { getWorkerEnv } from '../lib/worker-env.js'
-import { normalizeAddress } from '../lib/evm-uilts.js'
+import { normalizeAddress } from '../lib/evm/utils.js'
 import type { AgentWallet } from '../schemas/agent-draft.js'
 import { AgentDraftsService } from './agent-drafts.service.js'
 import type { WorkerEnv } from '../types/worker-env.js'

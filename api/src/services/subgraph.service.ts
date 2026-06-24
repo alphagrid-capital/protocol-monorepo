@@ -3,12 +3,12 @@ import {
   AGENT_ACTIVITIES_QUERY,
   AGENT_EQUITY_SNAPSHOTS_QUERY,
   CLOSED_POSITIONS_QUERY,
-} from '../lib/subgraph-queries.js'
+} from '../lib/subgraph/queries.js'
 import type {
   SubgraphActivitiesResult,
   SubgraphClosedPositionsResult,
   SubgraphEquitySnapshotsResult,
-} from '../lib/subgraph-mappers.js'
+} from '../lib/subgraph/mappers.js'
 import { getWorkerEnv } from '../lib/worker-env.js'
 
 export class SubgraphError extends AppError {

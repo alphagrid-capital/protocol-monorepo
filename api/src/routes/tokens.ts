@@ -8,7 +8,7 @@ import {
 } from '../schemas/token.js'
 import { VaultNotFoundSchema } from '../schemas/vault.js'
 import { getWorkerEnv } from '../lib/worker-env.js'
-import { isOracleRefreshAuthorized } from '../lib/oracle-refresh-auth.js'
+import { isOracleRefreshAuthorized } from '../lib/auth/oracle-refresh-auth.js'
 import { updateMockPrices } from '../jobs/update-mock-prices.js'
 import { TokensService } from '../services/tokens.service.js'
 

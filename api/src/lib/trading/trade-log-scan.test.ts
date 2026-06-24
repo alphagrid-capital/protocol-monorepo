@@ -7,7 +7,7 @@ import {
   logScanWindow,
   MAX_LOG_BLOCK_RANGE,
   sortActivitiesNewestFirst,
-} from './agent-trade-log-scan.ts'
+} from './trade-log-scan.ts'
 
 test('logScanWindow caps range at maxRange blocks', () => {
   assert.deepEqual(logScanWindow(50_000n), {

@@ -13,7 +13,7 @@ import type {
 import type { Network } from '@x402/core/types'
 import { HonoAdapter, paymentMiddlewareFromHTTPServer } from '@x402/hono'
 import type { Context, MiddlewareHandler, Next } from 'hono'
-import { FetchRequestAdapter } from './fetch-request-adapter.js'
+import { FetchRequestAdapter } from '../http/fetch-request-adapter.js'
 
 export interface X402PaymentConfig {
   method: string

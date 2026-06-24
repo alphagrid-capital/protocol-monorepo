@@ -1,10 +1,10 @@
 import { decodeEventLog } from 'viem'
 import type { Address, Hex } from 'viem'
-import { isContractRevert } from '../lib/viem-revert.js'
+import { isContractRevert } from '../lib/evm/viem-revert.js'
 import type { AgentRecord } from '../schemas/agent.js'
 import { agentRegistryAbi } from './abis/agent-registry.js'
 import type { ProviderService } from './provider.service.js'
-import type { SelfRegisterTypedData } from '../lib/eip712-agent-registration.js'
+import type { SelfRegisterTypedData } from '../lib/eip712/agent-registration.js'
 
 export class AgentNotFoundError extends Error {
   constructor(readonly agentId: string) {

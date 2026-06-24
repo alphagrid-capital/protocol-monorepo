@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { logScanWindow } from './agent-trade-log-scan.ts'
-import { resolveMinLogScanBlock } from './trading-log-from-block.ts'
+import { logScanWindow } from './trade-log-scan.ts'
+import { resolveMinLogScanBlock } from './log-from-block.ts'
 
 test('resolveMinLogScanBlock uses chain floor and query override', () => {
   assert.equal(

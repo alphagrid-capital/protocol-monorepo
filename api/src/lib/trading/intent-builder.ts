@@ -1,7 +1,7 @@
 import type { Address } from 'viem'
-import { parseHumanAmount } from './amount-utils.js'
-import { chainTokenAddress } from './token-catalog.js'
-import type { ExitRuleInput } from '../schemas/trading.js'
+import { parseHumanAmount } from '../tokens/amount-utils.js'
+import { chainTokenAddress } from '../tokens/catalog.js'
+import type { ExitRuleInput } from '../../schemas/trading.js'
 
 export const DEFAULT_EXIT_LADDER: ExitRuleInput[] = [
   { triggerType: 'StopLoss', triggerBps: -1000, exitBps: 10000 },

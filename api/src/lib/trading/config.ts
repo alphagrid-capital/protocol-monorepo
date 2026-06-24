@@ -1,6 +1,6 @@
-import { contracts } from '../constants/contracts.js'
-import type { ChainContracts } from '../constants/contracts.js'
-import { parseAddress, parsePrivateKey } from './evm-uilts.js'
+import { contracts } from '../../constants/contracts.js'
+import type { ChainContracts } from '../../constants/contracts.js'
+import { parseAddress, parsePrivateKey } from '../evm/utils.js'
 
 export interface TradingConfig {
   chainId: number

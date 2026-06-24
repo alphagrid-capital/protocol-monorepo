@@ -1,5 +1,5 @@
 import { AppError } from '../errors.js'
-import { requireDb } from '../lib/db.js'
+import { requireDb } from '../lib/db/db.js'
 import type { WorkerEnv } from '../types/worker-env.js'
 
 export type StrategyRunStatus = 'running' | 'completed' | 'failed'

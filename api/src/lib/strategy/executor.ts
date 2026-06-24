@@ -1,19 +1,19 @@
 import type { Address, Hex, PrivateKeyAccount } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
-import { ADD_TO_POSITION_TYPES } from './eip712-add-position.js'
-import { hashExitRules, OPEN_POSITION_TYPES } from './eip712-open-position.js'
-import { REDUCE_POSITION_TYPES } from './eip712-reduce-position.js'
-import { parseHumanAmount } from './amount-utils.js'
+import { ADD_TO_POSITION_TYPES } from '../eip712/add-position.js'
+import { hashExitRules, OPEN_POSITION_TYPES } from '../eip712/open-position.js'
+import { REDUCE_POSITION_TYPES } from '../eip712/reduce-position.js'
+import { parseHumanAmount } from '../tokens/amount-utils.js'
 import {
   buildOnChainIntent,
   DEFAULT_EXIT_LADDER,
-} from './trading-intent-builder.js'
-import type { StrategyAction, StrategyDecision } from './strategy-decision.js'
-import type { TradingConfig } from './trading-config.js'
-import { loadTradingConfig } from './trading-config.js'
-import type { TradingService } from '../services/trading.service.js'
-import { TradingError } from '../services/trading.service.js'
-import { getWorkerEnv } from './worker-env.js'
+} from '../trading/intent-builder.js'
+import type { StrategyAction, StrategyDecision } from './decision.js'
+import type { TradingConfig } from '../trading/config.js'
+import { loadTradingConfig } from '../trading/config.js'
+import type { TradingService } from '../../services/trading.service.js'
+import { TradingError } from '../../services/trading.service.js'
+import { getWorkerEnv } from '../worker-env.js'
 
 const TRADE_DEADLINE_SECONDS = 3600
 

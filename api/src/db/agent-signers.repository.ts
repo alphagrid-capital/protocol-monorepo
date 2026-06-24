@@ -1,6 +1,6 @@
 import { AppError } from '../errors.js'
-import { requireDb } from '../lib/db.js'
-import { normalizeAddress } from '../lib/evm-uilts.js'
+import { requireDb } from '../lib/db/db.js'
+import { normalizeAddress } from '../lib/evm/utils.js'
 import type { WorkerEnv } from '../types/worker-env.js'
 
 export interface AgentSignerRow {

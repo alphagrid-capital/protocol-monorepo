@@ -5,7 +5,7 @@ import {
 } from '../db/agent-drafts.repository.js'
 import type { AgentDraftRow, UpdateAgentDraftInput  } from '../db/agent-drafts.repository.js'
 import { getWorkerEnv } from '../lib/worker-env.js'
-import { normalizeAddress } from '../lib/evm-uilts.js'
+import { normalizeAddress } from '../lib/evm/utils.js'
 import type {
   AgentDraft,
   AgentIdentity,

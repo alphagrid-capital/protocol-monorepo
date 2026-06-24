@@ -3,7 +3,7 @@ import type { RouteHandler } from '@hono/zod-openapi'
 import { ROUTE_PATHS } from '../constants/routes.js'
 import { AgentProfilesRepository } from '../db/agent-profiles.repository.js'
 import { StrategyRunsRepository } from '../db/strategy-runs.repository.js'
-import { normalizeAddress } from '../lib/evm-uilts.js'
+import { normalizeAddress } from '../lib/evm/utils.js'
 import { getWorkerEnv } from '../lib/worker-env.js'
 import { requirePrivyAuth } from '../middleware/privy-auth.js'
 import { PrivyAuthHeadersSchema } from '../schemas/auth-headers.js'
@@ -14,8 +14,8 @@ import {
   StrategyRunErrorSchema,
   StrategyRunStatusSchema,
 } from '../schemas/strategy-run.js'
-import type { StrategyDecision } from '../lib/strategy-decision.js'
-import type { ExecutionActionResult } from '../lib/strategy-executor.js'
+import type { StrategyDecision } from '../lib/strategy/decision.js'
+import type { ExecutionActionResult } from '../lib/strategy/executor.js'
 
 const strategyRunRoutes = new OpenAPIHono()
 

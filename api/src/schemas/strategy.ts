@@ -1,8 +1,5 @@
 import { z } from 'zod'
-import { ExitRuleInputSchema } from '../schemas/trading.js'
-import type { BotFrequency } from '../schemas/agent-draft.js'
-import type { ListAgentPositionsResponse } from '../schemas/trading.js'
-import type { OraclePriceEntry } from '../services/tokens.service.js'
+import { ExitRuleInputSchema } from './trading.js'
 
 const OpenActionSchema = z
   .object({
@@ -57,20 +54,3 @@ export const StrategyDecisionSchema = z
 
 export type StrategyAction = z.infer<typeof StrategyActionSchema>
 export type StrategyDecision = z.infer<typeof StrategyDecisionSchema>
-
-export interface StrategyContext {
-  agentId: string
-  strategy: string
-  botFrequency: BotFrequency
-  prices: Record<string, OraclePriceEntry>
-  positions: ListAgentPositionsResponse['positions']
-}
-
-export async function decideStrategy(
-  _context: StrategyContext
-): Promise<StrategyDecision> {
-  return {
-    summary: 'Hold — no trades recommended.',
-    actions: [],
-  }
-}

@@ -1,6 +1,6 @@
-import { ROUTE_PATHS } from '../constants/routes.js'
-import { SOURCE_REPOSITORY_URL } from '../constants/project.js'
-import { absoluteUrl } from './url-utils.js'
+import { ROUTE_PATHS } from '../../constants/routes.js'
+import { SOURCE_REPOSITORY_URL } from '../../constants/project.js'
+import { absoluteUrl } from '../http/url-utils.js'
 
 const HTTP_METHODS = [
   'get',
