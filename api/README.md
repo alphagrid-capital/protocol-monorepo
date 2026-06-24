@@ -52,7 +52,14 @@ yarn deploy:all                 # Deploy all three sequentially
 | `GET`  | `/auth/me`                                    | Session + profile summary (Privy access + identity tokens)                             |
 | `POST` | `/auth/logout`                                | Logout acknowledgement (client discards Privy tokens)                                  |
 | `GET`  | `/users/me`                                   | Full user profile (Privy tokens)                                                       |
+| `GET`  | `/users/me/agent-drafts`                      | In-progress agent launch drafts for authenticated wallet                               |
 | `PATCH`| `/users/me`                                   | Update display name and/or preferred currency                                          |
+| `POST` | `/agent-drafts`                               | Create agent launch draft (Privy)                                                      |
+| `PUT`  | `/agent-drafts/{draftId}`                     | Partial update: `identity`, `strategy`, `botFrequency` (`1h` / `1d`) (Privy)           |
+| `GET`  | `/agent-drafts/{draftId}`                     | Resume agent launch draft (Privy)                                                      |
+| `DELETE` | `/agent-drafts/{draftId}`                   | Abandon draft and wipe encrypted signer key (Privy)                                    |
+| `POST` | `/agent-drafts/{draftId}/provision-wallet`    | Generate custodial signer; returns addresses only (Privy)                              |
+| `POST` | `/agent-drafts/{draftId}/launch`              | Sign + x402 + on-chain register; owner = Privy wallet, signer = custodial (Privy)    |
 | `GET`  | `/vaults`                                     | Vault catalog (`?format=md` for markdown)                                              |
 | `GET`  | `/vaults/{id}/tokens`                         | Tradable tokens for a vault mandate + oracle prices                                    |
 | `GET`  | `/tokens`                                     | Global token catalog + on-chain registry state                                         |
@@ -173,19 +180,25 @@ Per-chain Cloudflare D1 stores wallet user profiles (display name, preferred cur
 
 **One-time setup (per env):**
 
+| Wrangler env | D1 database | Chain ID |
+| ------------ | ----------- | -------- |
+| `arbitrum-sepolia` | `alphagrid-db-421614` | 421614 |
+| `arbitrum-one` | `alphagrid-db-42161` | 42161 |
+| `robinhood-testnet` | `alphagrid-db-46630` | 46630 |
+
 ```bash
 cd api
-wrangler d1 create alphagrid-users-arbitrum-sepolia
-# Paste the returned database_id into wrangler.toml under [env.arbitrum-sepolia.d1_databases]
-wrangler d1 migrations apply alphagrid-users-arbitrum-sepolia --env arbitrum-sepolia
+wrangler d1 create alphagrid-db-421614   # once per env; IDs live in wrangler.toml
+yarn db:migrate:local:sepolia            # local
+wrangler d1 migrations apply alphagrid-db-421614 --env arbitrum-sepolia
 ```
 
-Repeat for `alphagrid-users-robinhood-testnet` and `alphagrid-users-arbitrum-one`.
+Repeat for `alphagrid-db-42161` / `arbitrum-one` and `alphagrid-db-46630` / `robinhood-testnet`.
 
 **Local dev:**
 
 ```bash
-wrangler d1 migrations apply alphagrid-users-arbitrum-sepolia --local --env arbitrum-sepolia
+yarn db:migrate:local:sepolia
 yarn dev:arbitrum-sepolia
 ```
 
@@ -197,6 +210,59 @@ yarn dev:arbitrum-sepolia
 `GET /auth/me` upserts the user row (registration IP/time on first login, last login IP/time on every call). `GET /users/me` reads the profile without mutating login timestamps. IPs are stored server-side only.
 
 Without the `DB` binding or applied migrations, auth routes that persist profiles return **503**.
+
+## D1 schema migrations (Drizzle Kit)
+
+Schema is defined in `src/db/schema.ts`. **Never hand-write SQL in `migrations/`.**
+
+| Script | Action |
+| ------ | ------ |
+| `yarn db:generate <name>` | Diff schema → new `migrations/NNNN_<name>.sql` |
+| `yarn db:migrate:local` | Apply pending migrations to local D1 (`alphagrid-users-local`) |
+| `yarn db:migrate:local:sepolia` | Apply to local D1 for Arbitrum Sepolia env |
+
+Example:
+
+```bash
+# 1. Edit src/db/schema.ts
+# 2. Generate SQL
+yarn db:generate add_strategy_runs
+# 3. Apply locally
+yarn db:migrate:local:sepolia
+# 4. Remote (when ready)
+wrangler d1 migrations apply alphagrid-db-421614 --env arbitrum-sepolia
+```
+
+Wrangler applies generated files from `migrations/` (same folder as `drizzle.config.ts` `out`).
+
+If a database already has these tables but not `0000_baseline.sql` in `d1_migrations`, mark the baseline applied without re-running it:
+
+```bash
+wrangler d1 execute alphagrid-db-421614 --env arbitrum-sepolia --command \
+  "INSERT INTO d1_migrations (name) VALUES ('0000_baseline.sql');"
+```
+
+Fresh databases: `yarn db:migrate:local:sepolia` or remote `wrangler d1 migrations apply`.
+
+## Agent launch drafts (D1 + Privy)
+
+Off-chain launch wizard state for the frontend app. Step order is client-defined; the API only validates completeness at launch. Drafts are stored per-chain in D1 (`agent_drafts`, `agent_signers`, `agent_profiles`). All routes require Privy headers (`Authorization` + `privy-id-token`).
+
+| Variable | Role |
+| -------- | ---- |
+| `AGENT_SIGNER_ENCRYPTION_KEY` | Secret (`wrangler secret put`); 32-byte AES-256 key (hex or base64) for custodial agent signer private keys |
+| `RELAYER_PRIVATE_KEY` | Signs `registerAgent` at launch (owner = Privy wallet, signer = generated key) |
+| `RPC_URL` / `CHAIN_ID` | Genesis vault + registration |
+
+**Flow:** `POST /agent-drafts` → `POST .../provision-wallet` → `PUT` (`identity`, `strategy`, `botFrequency`) → `POST .../launch`.
+
+**Frontend notes:** API returns numeric `agentId` (format `ag_{id}` in UI). No wallet signature popup at launch; x402 may charge the user's wallet for the registration fee. Use `GET /users/me/agent-drafts` to resume after refresh.
+
+**On-chain metadata:** `metadataURI` is a `data:application/json;base64,...` profile with `handle`, `description`, and `links` only. `strategy` stays off-chain in `agent_profiles`. `pricingTier` (`free` / `paid`) is set at launch from on-chain `FeeManager.getRegistrationFee()` (zero fee → `free`, otherwise `paid`), not by the frontend.
+
+Apply D1 migrations with `yarn db:migrate:local:sepolia` (see **D1 schema migrations** above).
+
+**Frontend integration:** [`prd/11_agent_launch_frontend.md`](../prd/11_agent_launch_frontend.md)
 
 ## Agent registration (x402)
 

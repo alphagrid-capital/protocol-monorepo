@@ -5,6 +5,7 @@
 Simple map from **UI stats** to **HTTP API** routes for the AlphaGrid app. Use this when wiring agent profiles, dashboards, and position views.
 
 **API reference:** [`api/README.md`](../api/README.md), OpenAPI at `GET /docs/swagger.json`.  
+**Agent launch wizard:** [`11_agent_launch_frontend.md`](11_agent_launch_frontend.md).  
 **Build status:** [`09_implementation_status.md`](09_implementation_status.md).
 
 **Prerequisites:** Point the app at the API Worker for your chain (`arbitrum-sepolia`, `robinhood-testnet`, or `arbitrum-one` — see `api/README.md`). The Worker needs `CHAIN_ID` + `RPC_URL` for on-chain reads. Amounts are USDC **base units** (6 decimals) unless noted.
@@ -175,6 +176,7 @@ Minimal fetch sets for common screens:
 
 | Screen | Calls |
 | --- | --- |
+| Agent launch wizard | See [`prd/11_agent_launch_frontend.md`](../prd/11_agent_launch_frontend.md) |
 | Agent profile header | `GET /agents/{id}` + `GET /agents/{id}/risk-state` |
 | Performance chart | `GET /agents/{id}/equity-history` (requires `SUBGRAPH_URL`) |
 | Positions tab | `GET /agents/{id}/positions` + `GET /agents/{id}/closed-positions` |

@@ -21,16 +21,20 @@
     "deploy:arbitrum-one": "wrangler deploy --env arbitrum-one",
     "deploy:all": "yarn deploy:arbitrum-sepolia && yarn deploy:robinhood-testnet && yarn deploy:arbitrum-one",
     "type-check": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test src/lib/trading-metrics.test.ts src/lib/agent-trade-log-scan.test.ts src/lib/trading-log-from-block.test.ts",
+    "test": "node --experimental-strip-types --test src/lib/trading-metrics.test.ts src/lib/agent-trade-log-scan.test.ts src/lib/trading-log-from-block.test.ts src/lib/signer-key-crypto.test.ts src/lib/agent-launch-metadata.test.ts",
     "format": "prettier --write .",
     "lint:ts": "eslint \"src/**/*.ts\" --fix",
-    "lint:fix": "eslint \"src/**/*.ts\" --fix"
+    "lint:fix": "eslint \"src/**/*.ts\" --fix",
+    "db:generate": "node scripts/db-generate.mjs",
+    "db:migrate:local": "wrangler d1 migrations apply alphagrid-users-local --local",
+    "db:migrate:local:sepolia": "wrangler d1 migrations apply alphagrid-db-421614 --local --env arbitrum-sepolia"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250531.0",
     "@hono/eslint-config": "^2.1.0",
     "@typescript-eslint/eslint-plugin": "^8.60.1",
     "@typescript-eslint/parser": "^8.60.1",
+    "drizzle-kit": "^0.31.10",
     "eslint": "^10.4.1",
     "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.8.3",
@@ -49,6 +53,7 @@
     "@x402/evm": "^2.14.0",
     "@x402/hono": "^2.14.0",
     "agents": "^0.15.0",
+    "drizzle-orm": "^0.45.2",
     "hono": "^4.12.23",
     "viem": "^2.31.0",
     "zod": "^4.4.3"

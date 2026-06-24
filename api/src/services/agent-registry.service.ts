@@ -232,7 +232,8 @@ export class AgentRegistryService {
 
   async registerWithRelayer(
     relayerPrivateKey: Hex,
-    data: SelfRegisterTypedData
+    owner: Address,
+    data: SelfRegisterTypedData & { signature: Hex }
   ): Promise<{ agentId: string; transactionHash: Hex }> {
     const publicClient = this.providerService.createPublicClient()
     const walletClient =
@@ -243,7 +244,7 @@ export class AgentRegistryService {
       abi: agentRegistryAbi,
       functionName: 'registerAgent',
       args: [
-        data.signer,
+        owner,
         data.vault,
         data.name,
         data.metadataURI,

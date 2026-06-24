@@ -13,6 +13,19 @@ export const AGENT_REGISTRY_EIP712_DOMAIN = {
   version: '1',
 } as const
 
+export const SELF_REGISTER_TYPES = {
+  SelfRegister: [
+    { name: 'vault', type: 'address' },
+    { name: 'name', type: 'string' },
+    { name: 'metadataURI', type: 'string' },
+    { name: 'signer', type: 'address' },
+    { name: 'linkERC8004', type: 'bool' },
+    { name: 'erc8004AgentId', type: 'uint256' },
+    { name: 'nonce', type: 'uint256' },
+    { name: 'deadline', type: 'uint256' },
+  ],
+} as const
+
 export interface SelfRegisterTypedData {
   vault: Address
   name: string
@@ -69,18 +82,7 @@ export async function verifySelfRegisterSignature(params: {
       chainId,
       verifyingContract,
     },
-    types: {
-      SelfRegister: [
-        { name: 'vault', type: 'address' },
-        { name: 'name', type: 'string' },
-        { name: 'metadataURI', type: 'string' },
-        { name: 'signer', type: 'address' },
-        { name: 'linkERC8004', type: 'bool' },
-        { name: 'erc8004AgentId', type: 'uint256' },
-        { name: 'nonce', type: 'uint256' },
-        { name: 'deadline', type: 'uint256' },
-      ],
-    },
+    types: SELF_REGISTER_TYPES,
     primaryType: 'SelfRegister',
     message: {
       vault: data.vault,

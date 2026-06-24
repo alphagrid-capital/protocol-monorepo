@@ -301,6 +301,7 @@ export class AgentRegistrationService {
     try {
       return await this.agentRegistryService().registerWithRelayer(
         this.config.relayerPrivateKey,
+        parsed.signer,
         parsed
       )
     } catch (error) {

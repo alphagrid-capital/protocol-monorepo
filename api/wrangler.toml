@@ -28,6 +28,7 @@ ENABLE_SWAGGER = "true"
 # ORACLE_REFRESH_SECRET — optional; protects POST /prices/refresh
 # PRIVY_APP_ID — optional; Privy app ID (set in [env.*.vars] or api/.dev.vars)
 # PRIVY_JWT_VERIFICATION_KEY — optional; Privy JWT verification PEM (wrangler secret)
+# AGENT_SIGNER_ENCRYPTION_KEY — optional; 32-byte AES key (hex or base64) for custodial agent signer keys
 
 # Top-level bindings for plain `wrangler dev` (no --env).
 [[d1_databases]]

@@ -15,6 +15,8 @@ interface RegistrationFeeState {
 }
 const REGISTER_DESCRIPTION =
   'Agent registration on AlphaGrid AgentRegistry via backend registrar'
+const LAUNCH_DESCRIPTION =
+  'Agent launch on AlphaGrid AgentRegistry via backend registrar'
 
 function missingTreasuryResponse(): Response {
   return Response.json(
@@ -28,13 +30,15 @@ function missingTreasuryResponse(): Response {
 
 function buildRegistrationPaymentConfig(
   env: Record<string, string | undefined>,
-  feeState: RegistrationFeeState
+  feeState: RegistrationFeeState,
+  path: string,
+  description: string
 ): X402PaymentConfig {
   const config = loadAgentRegistrationConfig(env)
   return {
     method: REGISTER_METHOD,
-    path: ROUTE_PATHS.agentRegister,
-    description: REGISTER_DESCRIPTION,
+    path,
+    description,
     mimeType: 'application/json',
     price: {
       asset: feeState.feeAsset,
@@ -57,7 +61,9 @@ async function loadRegistrationFeeState(
   return new FeeManagerService(config).getRegistrationFee()
 }
 
-export async function runRegistrationWithPayment<T>(options: {
+export async function runRegistrationFeeProtectedRequest<T>(options: {
+  path: string
+  description: string
   request: Request
   parsedBody?: unknown
   env?: Record<string, string | undefined>
@@ -75,9 +81,45 @@ export async function runRegistrationWithPayment<T>(options: {
   }
 
   return runX402ProtectedRequest({
-    payment: buildRegistrationPaymentConfig(env, feeState),
+    payment: buildRegistrationPaymentConfig(
+      env,
+      feeState,
+      options.path,
+      options.description
+    ),
     request: options.request,
     parsedBody: options.parsedBody,
+    handler: options.handler,
+    toResponseBody: options.toResponseBody,
+  })
+}
+
+export async function runRegistrationWithPayment<T>(options: {
+  request: Request
+  parsedBody?: unknown
+  env?: Record<string, string | undefined>
+  handler: () => Promise<T>
+  toResponseBody: (value: T) => string
+}): Promise<{ ok: true; value: T } | { ok: false; response: Response }> {
+  return runRegistrationFeeProtectedRequest({
+    path: ROUTE_PATHS.agentRegister,
+    description: REGISTER_DESCRIPTION,
+    ...options,
+  })
+}
+
+export async function runLaunchWithPayment<T>(options: {
+  draftId: string
+  request: Request
+  env?: Record<string, string | undefined>
+  handler: () => Promise<T>
+  toResponseBody: (value: T) => string
+}): Promise<{ ok: true; value: T } | { ok: false; response: Response }> {
+  return runRegistrationFeeProtectedRequest({
+    path: ROUTE_PATHS.agentDraftLaunch.replace('{draftId}', options.draftId),
+    description: LAUNCH_DESCRIPTION,
+    request: options.request,
+    env: options.env,
     handler: options.handler,
     toResponseBody: options.toResponseBody,
   })
@@ -97,7 +139,12 @@ export function createRegistrationPaymentMiddleware(): MiddlewareHandler {
 
     await runX402HonoPayment(
       c,
-      buildRegistrationPaymentConfig(env, feeState),
+      buildRegistrationPaymentConfig(
+        env,
+        feeState,
+        ROUTE_PATHS.agentRegister,
+        REGISTER_DESCRIPTION
+      ),
       next
     )
   }

@@ -5,6 +5,7 @@ import { PRIVY_ID_TOKEN_HEADER } from './schemas/auth-headers.js'
 import { openApiJsonResponse } from './openapi.js'
 import { authRoutes } from './routes/auth.js'
 import { registerDiscoveryRoutes } from './routes/discovery.js'
+import { agentDraftRoutes } from './routes/agent-drafts.js'
 import { agentRoutes } from './routes/agents.js'
 import { healthRoutes } from './routes/health.js'
 import { tokenRoutes } from './routes/tokens.js'
@@ -31,7 +32,7 @@ function registerGlobalMiddleware(app: OpenAPIHono): void {
     '*',
     cors({
       origin: '*',
-      allowMethods: ['GET', 'HEAD', 'OPTIONS', 'POST', 'PATCH', 'DELETE'],
+      allowMethods: ['GET', 'HEAD', 'OPTIONS', 'POST', 'PUT', 'PATCH', 'DELETE'],
       allowHeaders: [
         'Content-Type',
         'Accept',
@@ -63,6 +64,7 @@ function registerHttpRoutes(app: OpenAPIHono): void {
   app.route('/', vaultRoutes)
   app.route('/', tokenRoutes)
   app.route('/', agentRoutes)
+  app.route('/', agentDraftRoutes)
   app.route('/', tradingRoutes)
   app.route('/', transactionRoutes)
   registerDiscoveryRoutes(app)
