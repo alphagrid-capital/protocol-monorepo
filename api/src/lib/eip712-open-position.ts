@@ -25,6 +25,20 @@ export function hashExitRules(exits: OnChainExitRule[]): Hex {
   )
 }
 
+export const OPEN_POSITION_TYPES = {
+  OpenPosition: [
+    { name: 'agentId', type: 'uint256' },
+    { name: 'vault', type: 'address' },
+    { name: 'token', type: 'address' },
+    { name: 'usdcAmount', type: 'uint256' },
+    { name: 'minTokenOut', type: 'uint256' },
+    { name: 'maxSlippageBps', type: 'uint16' },
+    { name: 'exitsHash', type: 'bytes32' },
+    { name: 'deadline', type: 'uint256' },
+    { name: 'nonce', type: 'uint256' },
+  ],
+} as const
+
 export async function verifyOpenPositionSignature(params: {
   domain: { name: string; version: string }
   chainId: number
@@ -51,19 +65,7 @@ export async function verifyOpenPositionSignature(params: {
       chainId,
       verifyingContract,
     },
-    types: {
-      OpenPosition: [
-        { name: 'agentId', type: 'uint256' },
-        { name: 'vault', type: 'address' },
-        { name: 'token', type: 'address' },
-        { name: 'usdcAmount', type: 'uint256' },
-        { name: 'minTokenOut', type: 'uint256' },
-        { name: 'maxSlippageBps', type: 'uint16' },
-        { name: 'exitsHash', type: 'bytes32' },
-        { name: 'deadline', type: 'uint256' },
-        { name: 'nonce', type: 'uint256' },
-      ],
-    },
+    types: OPEN_POSITION_TYPES,
     primaryType: 'OpenPosition',
     message: {
       agentId: intent.agentId,

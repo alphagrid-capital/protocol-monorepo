@@ -29,6 +29,7 @@ ENABLE_SWAGGER = "true"
 # PRIVY_APP_ID — optional; Privy app ID (set in [env.*.vars] or api/.dev.vars)
 # PRIVY_JWT_VERIFICATION_KEY — optional; Privy JWT verification PEM (wrangler secret)
 # AGENT_SIGNER_ENCRYPTION_KEY — optional; 32-byte AES key (hex or base64) for custodial agent signer keys
+# STRATEGY_RUNNER_EXECUTE — optional; set to "false" to persist decisions without on-chain execution
 
 # Top-level bindings for plain `wrangler dev` (no --env).
 [[d1_databases]]
@@ -46,7 +47,7 @@ tag = "v1"
 new_sqlite_classes = ["AlphagridMcp"]
 
 [triggers]
-crons = ["*/15 * * * *"]
+crons = ["*/10 * * * *"]
 
 # --- Per-chain deployments (one Worker per network) ---
 # Deploy: wrangler deploy --env <name>
@@ -78,7 +79,7 @@ tag = "v1"
 new_sqlite_classes = ["AlphagridMcp"]
 
 [env.arbitrum-sepolia.triggers]
-crons = ["* * * * *"]
+crons = ["*/10 * * * *"]
 
 [env.robinhood-testnet]
 name = "alphagrid-api-robinhood"
@@ -103,7 +104,7 @@ tag = "v1"
 new_sqlite_classes = ["AlphagridMcp"]
 
 [env.robinhood-testnet.triggers]
-crons = ["*/15 * * * *"]
+crons = ["*/10 * * * *"]
 
 [env.arbitrum-one]
 name = "alphagrid-api-arbitrum-one"
@@ -129,4 +130,4 @@ tag = "v1"
 new_sqlite_classes = ["AlphagridMcp"]
 
 [env.arbitrum-one.triggers]
-crons = ["*/15 * * * *"]
+crons = ["*/10 * * * *"]

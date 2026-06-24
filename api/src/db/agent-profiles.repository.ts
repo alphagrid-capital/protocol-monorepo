@@ -11,6 +11,7 @@ export interface AgentProfileRow {
   strategy: string
   bot_frequency: string
   pricing_tier: string
+  next_run_at: string
   created_at: string
 }
 
@@ -21,6 +22,7 @@ export interface CreateAgentProfileInput {
   strategy: string
   botFrequency: BotFrequency
   pricingTier: string
+  nextRunAt: string
   createdAt: string
 }
 
@@ -32,8 +34,9 @@ export class AgentProfilesRepository {
     const row = await db
       .prepare(
         `INSERT INTO agent_profiles (
-           agent_id, owner_address, handle, strategy, bot_frequency, pricing_tier, created_at
-         ) VALUES (?, ?, ?, ?, ?, ?, ?)
+           agent_id, owner_address, handle, strategy, bot_frequency,
+           pricing_tier, next_run_at, created_at
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
          RETURNING *`
       )
       .bind(
@@ -43,6 +46,7 @@ export class AgentProfilesRepository {
         input.strategy,
         input.botFrequency,
         input.pricingTier,
+        input.nextRunAt,
         input.createdAt
       )
       .first<AgentProfileRow>()
@@ -51,5 +55,36 @@ export class AgentProfilesRepository {
       throw new AppError('Failed to store agent profile', 503, 'SERVICE_UNAVAILABLE')
     }
     return row
+  }
+
+  async findByAgentId(agentId: string): Promise<AgentProfileRow | null> {
+    const db = requireDb(this.env)
+    return db
+      .prepare('SELECT * FROM agent_profiles WHERE agent_id = ?')
+      .bind(agentId)
+      .first<AgentProfileRow>()
+  }
+
+  async listDue(nowIso: string, limit: number): Promise<AgentProfileRow[]> {
+    const db = requireDb(this.env)
+    const result = await db
+      .prepare(
+        `SELECT * FROM agent_profiles
+         WHERE next_run_at <= ?
+         ORDER BY next_run_at ASC
+         LIMIT ?`
+      )
+      .bind(nowIso, limit)
+      .all<AgentProfileRow>()
+
+    return result.results ?? []
+  }
+
+  async bumpNextRunAt(agentId: string, nextRunAt: string): Promise<void> {
+    const db = requireDb(this.env)
+    await db
+      .prepare('UPDATE agent_profiles SET next_run_at = ? WHERE agent_id = ?')
+      .bind(nextRunAt, agentId)
+      .run()
   }
 }

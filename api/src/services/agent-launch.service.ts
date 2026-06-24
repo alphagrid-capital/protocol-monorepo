@@ -9,6 +9,7 @@ import { SELF_REGISTER_TYPES } from '../lib/eip712-agent-registration.js'
 import { loadAgentRegistrationConfig } from '../lib/agent-registration-config.js'
 import { buildAgentMetadataUri } from '../lib/agent-launch-metadata.js'
 import { normalizeAddress } from '../lib/evm-uilts.js'
+import { computeNextRunAt } from '../lib/strategy-schedule.js'
 import { getWorkerEnv } from '../lib/worker-env.js'
 import type { AgentIdentity, AgentWallet, BotFrequency } from '../schemas/agent-draft.js'
 import { AgentDraftsService } from './agent-drafts.service.js'
@@ -154,6 +155,7 @@ export class AgentLaunchService {
           strategy: row.strategy!,
           botFrequency: row.bot_frequency as BotFrequency,
           pricingTier,
+          nextRunAt: computeNextRunAt(row.bot_frequency as BotFrequency),
           createdAt: launchedAt,
         })
       } catch {

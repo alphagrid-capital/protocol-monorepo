@@ -11,6 +11,18 @@ export interface OnChainAddToPositionIntent {
   nonce: bigint
 }
 
+export const ADD_TO_POSITION_TYPES = {
+  AddToPosition: [
+    { name: 'agentId', type: 'uint256' },
+    { name: 'positionId', type: 'uint256' },
+    { name: 'usdcAmount', type: 'uint256' },
+    { name: 'minTokenOut', type: 'uint256' },
+    { name: 'maxSlippageBps', type: 'uint16' },
+    { name: 'deadline', type: 'uint256' },
+    { name: 'nonce', type: 'uint256' },
+  ],
+} as const
+
 export async function verifyAddToPositionSignature(params: {
   domain: { name: string; version: string }
   chainId: number
@@ -36,17 +48,7 @@ export async function verifyAddToPositionSignature(params: {
       chainId,
       verifyingContract,
     },
-    types: {
-      AddToPosition: [
-        { name: 'agentId', type: 'uint256' },
-        { name: 'positionId', type: 'uint256' },
-        { name: 'usdcAmount', type: 'uint256' },
-        { name: 'minTokenOut', type: 'uint256' },
-        { name: 'maxSlippageBps', type: 'uint16' },
-        { name: 'deadline', type: 'uint256' },
-        { name: 'nonce', type: 'uint256' },
-      ],
-    },
+    types: ADD_TO_POSITION_TYPES,
     primaryType: 'AddToPosition',
     message: {
       agentId: intent.agentId,

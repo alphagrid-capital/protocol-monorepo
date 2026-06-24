@@ -49,4 +49,12 @@ export class AgentSignersRepository {
     }
     return row
   }
+
+  async findByAgentId(agentId: string): Promise<AgentSignerRow | null> {
+    const db = requireDb(this.env)
+    return db
+      .prepare('SELECT * FROM agent_signers WHERE agent_id = ?')
+      .bind(agentId)
+      .first<AgentSignerRow>()
+  }
 }

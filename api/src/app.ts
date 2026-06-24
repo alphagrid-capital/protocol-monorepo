@@ -8,6 +8,7 @@ import { registerDiscoveryRoutes } from './routes/discovery.js'
 import { agentDraftRoutes } from './routes/agent-drafts.js'
 import { agentRoutes } from './routes/agents.js'
 import { healthRoutes } from './routes/health.js'
+import { strategyRunRoutes } from './routes/strategy-runs.js'
 import { tokenRoutes } from './routes/tokens.js'
 import { tradingRoutes } from './routes/trading.js'
 import { transactionRoutes } from './routes/transactions.js'
@@ -66,6 +67,7 @@ function registerHttpRoutes(app: OpenAPIHono): void {
   app.route('/', agentRoutes)
   app.route('/', agentDraftRoutes)
   app.route('/', tradingRoutes)
+  app.route('/', strategyRunRoutes)
   app.route('/', transactionRoutes)
   registerDiscoveryRoutes(app)
 }

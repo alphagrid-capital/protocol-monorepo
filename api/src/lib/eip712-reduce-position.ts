@@ -9,6 +9,16 @@ export interface OnChainReducePositionIntent {
   nonce: bigint
 }
 
+export const REDUCE_POSITION_TYPES = {
+  ReducePosition: [
+    { name: 'agentId', type: 'uint256' },
+    { name: 'positionId', type: 'uint256' },
+    { name: 'exitBps', type: 'uint16' },
+    { name: 'deadline', type: 'uint256' },
+    { name: 'nonce', type: 'uint256' },
+  ],
+} as const
+
 export async function verifyReducePositionSignature(params: {
   domain: { name: string; version: string }
   chainId: number
@@ -34,15 +44,7 @@ export async function verifyReducePositionSignature(params: {
       chainId,
       verifyingContract,
     },
-    types: {
-      ReducePosition: [
-        { name: 'agentId', type: 'uint256' },
-        { name: 'positionId', type: 'uint256' },
-        { name: 'exitBps', type: 'uint16' },
-        { name: 'deadline', type: 'uint256' },
-        { name: 'nonce', type: 'uint256' },
-      ],
-    },
+    types: REDUCE_POSITION_TYPES,
     primaryType: 'ReducePosition',
     message: {
       agentId: intent.agentId,

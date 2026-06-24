@@ -72,10 +72,30 @@ export const agentProfiles = sqliteTable(
     strategy: text('strategy').notNull(),
     botFrequency: text('bot_frequency').notNull().default('1h'),
     pricingTier: text('pricing_tier').notNull(),
+    nextRunAt: text('next_run_at').notNull(),
     createdAt: text('created_at').notNull(),
   },
   (table) => [
     index('idx_agent_profiles_owner').on(table.ownerAddress),
+    index('idx_agent_profiles_next_run_at').on(table.nextRunAt),
     uniqueIndex('idx_agent_profiles_handle').on(table.handle),
+  ]
+)
+
+export const strategyRuns = sqliteTable(
+  'strategy_runs',
+  {
+    id: text('id').primaryKey(),
+    agentId: text('agent_id').notNull(),
+    status: text('status').notNull(),
+    startedAt: text('started_at').notNull(),
+    completedAt: text('completed_at'),
+    contextJson: text('context_json').notNull(),
+    decisionJson: text('decision_json'),
+    executionJson: text('execution_json'),
+    error: text('error'),
+  },
+  (table) => [
+    index('idx_strategy_runs_agent_started').on(table.agentId, table.startedAt),
   ]
 )
