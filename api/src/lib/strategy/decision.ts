@@ -1,9 +1,26 @@
 import type { BotFrequency } from '../../schemas/agent-draft.js'
-import type { ListAgentPositionsResponse } from '../../schemas/trading.js'
+import type {
+  AgentRiskStateResponse,
+  ListAgentPositionsResponse,
+  TradeIntentQuote,
+} from '../../schemas/trading.js'
 import type { StrategyDecision } from '../../schemas/strategy.js'
 import type { OraclePriceEntry } from '../../services/tokens.service.js'
+import type { WorkerEnv } from '../../types/worker-env.js'
+import { resolveStrategyDecisionAdapter } from './adapters/resolve.js'
 
 export type { StrategyAction, StrategyDecision } from '../../schemas/strategy.js'
+
+export interface StrategyGuardrails {
+  allowedSymbols: TradeIntentQuote['allowedSymbols']
+  allocation: TradeIntentQuote['allocation']
+  exitBounds: TradeIntentQuote['exitBounds']
+  accountRiskBounds: TradeIntentQuote['accountRiskBounds']
+  dailyRealizedPnlUsdc: TradeIntentQuote['dailyRealizedPnlUsdc']
+  breaches: AgentRiskStateResponse['breaches']
+  defaultExit: TradeIntentQuote['defaultExit']
+  usdcDecimals: number
+}
 
 export interface StrategyContext {
   agentId: string
@@ -11,13 +28,16 @@ export interface StrategyContext {
   botFrequency: BotFrequency
   prices: Record<string, OraclePriceEntry>
   positions: ListAgentPositionsResponse['positions']
+  risk: AgentRiskStateResponse
+  guardrails: StrategyGuardrails
 }
 
+/** Example input: `api/src/lib/strategy/context.example.json` */
+
 export async function decideStrategy(
-  _context: StrategyContext
+  context: StrategyContext,
+  env?: WorkerEnv
 ): Promise<StrategyDecision> {
-  return {
-    summary: 'Hold — no trades recommended.',
-    actions: [],
-  }
+  const adapter = resolveStrategyDecisionAdapter(env)
+  return adapter.decide(context)
 }

@@ -3,18 +3,13 @@ import { AgentProfilesRepository } from '../db/agent-profiles.repository.js'
 import { AgentSignersRepository } from '../db/agent-signers.repository.js'
 import { StrategyRunsRepository } from '../db/strategy-runs.repository.js'
 import { AppError } from '../errors.js'
-import {
-  decideStrategy
-  
-  
-} from '../lib/strategy/decision.js'
-import type {StrategyContext, StrategyDecision} from '../lib/strategy/decision.js';
-import {
-  executeStrategyDecision
-  
-} from '../lib/strategy/executor.js'
-import type {ExecutionActionResult} from '../lib/strategy/executor.js';
+import { decideStrategy } from '../lib/strategy/decision.js'
+import type { StrategyContext, StrategyDecision } from '../lib/strategy/decision.js'
+import { executeStrategyDecision } from '../lib/strategy/executor.js'
+import type { ExecutionActionResult } from '../lib/strategy/executor.js'
+import { assertStrategyDecisionGuardrails } from '../lib/strategy/guardrails.js'
 import { computeNextRunAt } from '../lib/strategy/schedule.js'
+import { loadTradingConfig } from '../lib/trading/config.js'
 import {
   decryptSignerPrivateKey,
   requireSignerEncryptionKey,
@@ -123,13 +118,29 @@ export class StrategyRunnerService {
 
     try {
       const trading = TradingService.fromEnv(this.env)
-      const positionsResponse = await trading.listOpenPositions(profile.agent_id)
+      const [positionsResponse, risk, quote] = await Promise.all([
+        trading.listOpenPositions(profile.agent_id),
+        trading.getRiskState(profile.agent_id),
+        trading.getQuote(profile.agent_id),
+      ])
+      const tradingConfig = loadTradingConfig(this.env)
       const context: StrategyContext = {
         agentId: profile.agent_id,
         strategy: profile.strategy,
         botFrequency,
         prices,
         positions: positionsResponse.positions,
+        risk,
+        guardrails: {
+          allowedSymbols: quote.allowedSymbols,
+          allocation: quote.allocation,
+          exitBounds: quote.exitBounds,
+          accountRiskBounds: quote.accountRiskBounds,
+          dailyRealizedPnlUsdc: quote.dailyRealizedPnlUsdc,
+          breaches: risk.breaches,
+          defaultExit: quote.defaultExit,
+          usdcDecimals: tradingConfig.usdcDecimals,
+        },
       }
 
       await this.runsRepository.create({
@@ -141,7 +152,8 @@ export class StrategyRunnerService {
       })
       runCreated = true
 
-      decision = await decideStrategy(context)
+      decision = await decideStrategy(context, this.env)
+      assertStrategyDecisionGuardrails(decision, context)
 
       if (isStrategyRunnerExecuteEnabled(this.env) && decision.actions.length > 0) {
         const signerRow = await this.signersRepository.findByAgentId(

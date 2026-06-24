@@ -1,0 +1,140 @@
+import type { StrategyContext } from './decision.js'
+
+/**
+ * Example `StrategyContext` passed to `decideStrategy()`.
+ * Same shape persisted on each run as `strategy_runs.context_json`.
+ *
+ * JSON copy: `./context.example.json`
+ */
+export const strategyContextExample = {
+  agentId: '42',
+  strategy:
+    'Buy NVDA on pullbacks below 5% from recent highs. Take profit at +8%, stop at -3%. Do not add while daily loss is elevated.',
+  botFrequency: '1h',
+  prices: {
+    NVDA: {
+      symbol: 'NVDA',
+      address: '0x0000000000000000000000000000000000000001',
+      priceUsd: '135.42',
+      updatedAt: '1735689600',
+      quoted: true,
+    },
+    AAPL: {
+      symbol: 'AAPL',
+      address: '0x0000000000000000000000000000000000000002',
+      priceUsd: '198.11',
+      updatedAt: '1735689600',
+      quoted: true,
+    },
+  },
+  positions: [
+    {
+      positionId: '7',
+      agentId: '42',
+      symbol: 'NVDA',
+      token: '0x0000000000000000000000000000000000000001',
+      vault: '0x00000000000000000000000000000000000000a1',
+      tokenAmount: '184523000000000000000',
+      entryPriceUsdc: '128500000',
+      usdcCostBasis: '250000000',
+      maxSlippageBps: 100,
+      status: 'Open',
+      nextRuleIndex: 0,
+      exitRules: [
+        { triggerType: 'StopLoss', triggerBps: -300, exitBps: 10000 },
+        { triggerType: 'TakeProfit', triggerBps: 800, exitBps: 10000 },
+      ],
+      pendingRules: [
+        { triggerType: 'StopLoss', triggerBps: -300, exitBps: 10000 },
+        { triggerType: 'TakeProfit', triggerBps: 800, exitBps: 10000 },
+      ],
+      openedAt: '1735603200',
+      unrealizedPnlUsdc: '12750000',
+      derived: {
+        totalPnlUsdc: '12750000',
+        returnBps: 510,
+      },
+    },
+  ],
+  risk: {
+    agentId: '42',
+    trackId: 0,
+    allocation: {
+      cap: '100000000000',
+      used: '250000000',
+      available: '99750000000',
+    },
+    accountRiskBounds: {
+      maxDailyLossBps: 500,
+      maxDrawdownBps: 1000,
+    },
+    equity: {
+      peakUsdc: '100262750000',
+      currentUsdc: '100262750000',
+      currentDrawdownBps: 0,
+    },
+    pnl: {
+      lifetimeRealizedUsdc: '0',
+      dailyRealizedUsdc: '-1250000',
+      day: '20078',
+    },
+    positions: {
+      opened: 1,
+      closed: 0,
+      openCount: 1,
+    },
+    breaches: {
+      drawdown: false,
+      dailyLoss: false,
+    },
+    derived: {
+      returnBps: 26,
+      unrealizedPnlUsdc: '12750000',
+      drawdownUtilizationBps: 0,
+      maxDailyLossUsdc: '5000000000',
+      dailyLossUsedUsdc: '1250000',
+      dailyLossUtilizationBps: 25,
+    },
+    promotionReadiness: {
+      minTradesRequired: 10,
+      tradesCompleted: 0,
+      meetsMinTrades: false,
+      evaluationPeriodSeconds: '2592000',
+      evaluationElapsedSeconds: '86400',
+      meetsEvaluationPeriod: false,
+      promotionScoreRequired: 7000,
+      alphaScore: null,
+      meetsAlphaScore: null,
+      eligible: false,
+      blockers: ['min_trades', 'evaluation_period', 'alpha_score'],
+    },
+  },
+  guardrails: {
+    allowedSymbols: ['NVDA', 'AAPL', 'MSFT'],
+    allocation: {
+      cap: '100000000000',
+      used: '250000000',
+      available: '99750000000',
+    },
+    exitBounds: {
+      maxStopLossBps: 1000,
+      minTakeProfitBps: 100,
+      maxTakeProfitBps: 5000,
+      requireStopLoss: true,
+      requireTakeProfit: false,
+    },
+    accountRiskBounds: {
+      maxDailyLossBps: 500,
+      maxDrawdownBps: 1000,
+    },
+    dailyRealizedPnlUsdc: '-1250000',
+    breaches: {
+      drawdown: false,
+      dailyLoss: false,
+    },
+    defaultExit: [
+      { triggerType: 'StopLoss', triggerBps: -1000, exitBps: 10000 },
+    ],
+    usdcDecimals: 6,
+  },
+} satisfies StrategyContext
