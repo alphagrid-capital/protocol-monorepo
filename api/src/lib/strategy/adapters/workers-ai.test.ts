@@ -2,13 +2,16 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { strategyContextExample } from '../context.example.ts'
 import { loadWorkersAiConfig } from './workers-ai.config.ts'
-import { extractJsonText } from './workers-ai.json.ts'
+import {
+  extractJsonText,
+  readWorkersAiResponseText,
+} from './workers-ai.json.ts'
 import { mapEnvelopeToOutcome } from './workers-ai.outcome.ts'
 import { assessStrategyTradability, screenUserStrategy } from './workers-ai.screen.ts'
 
 test('loadWorkersAiConfig defaults model and max tokens', () => {
   const config = loadWorkersAiConfig({})
-  assert.equal(config.model, 'workers-ai/@cf/meta/llama-3.1-8b-instruct')
+  assert.equal(config.model, '@cf/meta/llama-3.1-8b-instruct-fast')
   assert.equal(config.gatewayId, 'alphagrid-ai-gateway')
   assert.equal(config.maxTokens, 512)
 })
@@ -22,6 +25,13 @@ test('loadWorkersAiConfig reads env overrides', () => {
   assert.equal(config.model, '@cf/custom-model')
   assert.equal(config.gatewayId, 'custom-gateway')
   assert.equal(config.maxTokens, 256)
+})
+
+test('loadWorkersAiConfig normalizes AI Gateway model prefixes', () => {
+  const config = loadWorkersAiConfig({
+    STRATEGY_AI_MODEL: 'workers-ai/@cf/custom-model',
+  })
+  assert.equal(config.model, '@cf/custom-model')
 })
 
 test('screenUserStrategy blocks injection patterns', () => {
@@ -55,6 +65,29 @@ test('assessStrategyTradability allows symbol-based strategy', () => {
     ['NVDA']
   )
   assert.equal(outcome, null)
+})
+
+test('readWorkersAiResponseText handles string response', () => {
+  assert.equal(readWorkersAiResponseText({ response: '{"a":1}' }), '{"a":1}')
+})
+
+test('readWorkersAiResponseText stringifies JSON Mode object response', () => {
+  const envelope = {
+    safety: { passed: true, reason: 'ok' },
+    strategyAssessment: { tradable: true, reason: 'ok' },
+    decision: null,
+  }
+  assert.equal(
+    readWorkersAiResponseText({ response: envelope }),
+    JSON.stringify(envelope)
+  )
+})
+
+test('readWorkersAiResponseText throws with shape detail', () => {
+  assert.throws(
+    () => readWorkersAiResponseText({ foo: 'bar' }),
+    /Unexpected Workers AI response shape: object\{foo\}/
+  )
 })
 
 test('extractJsonText strips markdown fences', () => {

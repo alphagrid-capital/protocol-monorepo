@@ -13,6 +13,114 @@ import {
   screenUserStrategy,
 } from './workers-ai.screen.js'
 
+const STRATEGY_AI_RESPONSE_FORMAT = {
+  type: 'json_schema' as const,
+  json_schema: {
+    type: 'object',
+    additionalProperties: false,
+    properties: {
+      safety: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          passed: { type: 'boolean' },
+          reason: { type: 'string' },
+        },
+        required: ['passed', 'reason'],
+      },
+      strategyAssessment: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          tradable: { type: 'boolean' },
+          reason: { type: 'string' },
+        },
+        required: ['tradable', 'reason'],
+      },
+      decision: {
+        anyOf: [
+          { type: 'null' },
+          {
+            type: 'object',
+            additionalProperties: false,
+            properties: {
+              summary: { type: 'string' },
+              actions: {
+                type: 'array',
+                items: {
+                  anyOf: [
+                    {
+                      type: 'object',
+                      additionalProperties: false,
+                      properties: {
+                        type: { const: 'open' },
+                        symbol: { type: 'string' },
+                        usdcAmount: { type: 'string' },
+                        exits: {
+                          type: 'array',
+                          items: {
+                            type: 'object',
+                            additionalProperties: false,
+                            properties: {
+                              triggerType: {
+                                enum: ['StopLoss', 'TakeProfit'],
+                              },
+                              triggerBps: { type: 'number' },
+                              exitBps: { type: 'number' },
+                            },
+                            required: [
+                              'triggerType',
+                              'triggerBps',
+                              'exitBps',
+                            ],
+                          },
+                        },
+                      },
+                      required: ['type', 'symbol', 'usdcAmount'],
+                    },
+                    {
+                      type: 'object',
+                      additionalProperties: false,
+                      properties: {
+                        type: { const: 'close' },
+                        positionId: { type: 'string' },
+                        exitBps: { type: 'number' },
+                      },
+                      required: ['type', 'positionId'],
+                    },
+                    {
+                      type: 'object',
+                      additionalProperties: false,
+                      properties: {
+                        type: { const: 'add' },
+                        positionId: { type: 'string' },
+                        usdcAmount: { type: 'string' },
+                      },
+                      required: ['type', 'positionId', 'usdcAmount'],
+                    },
+                    {
+                      type: 'object',
+                      additionalProperties: false,
+                      properties: {
+                        type: { const: 'reduce' },
+                        positionId: { type: 'string' },
+                        exitBps: { type: 'number' },
+                      },
+                      required: ['type', 'positionId', 'exitBps'],
+                    },
+                  ],
+                },
+              },
+            },
+            required: ['summary', 'actions'],
+          },
+        ],
+      },
+    },
+    required: ['safety', 'strategyAssessment', 'decision'],
+  },
+}
+
 export function createWorkersAiAdapter(
   env: WorkerEnvWithAi
 ): StrategyDecisionAdapter {
@@ -47,7 +155,7 @@ export function createWorkersAiAdapter(
         const response = await env.AI.run(config.model, {
           messages: buildWorkersAiMessages(context),
           max_tokens: config.maxTokens,
-          response_format: { type: 'json_object' },
+          response_format: STRATEGY_AI_RESPONSE_FORMAT,
         }, {
           gateway: {
             id: config.gatewayId,

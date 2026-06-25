@@ -116,4 +116,22 @@ export class StrategyRunsRepository {
 
     return result.results ?? []
   }
+
+  async findLatestStartedAtByAgentId(
+    agentId: string
+  ): Promise<string | null> {
+    const db = requireDb(this.env)
+    const row = await db
+      .prepare(
+        `SELECT started_at
+         FROM strategy_runs
+         WHERE agent_id = ?
+         ORDER BY started_at DESC
+         LIMIT 1`
+      )
+      .bind(agentId)
+      .first<{ started_at: string }>()
+
+    return row?.started_at ?? null
+  }
 }

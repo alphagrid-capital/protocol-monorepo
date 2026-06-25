@@ -48,3 +48,22 @@ export const StrategyRunErrorSchema = z
     error: z.string(),
   })
   .openapi('StrategyRunError')
+
+export const RunStrategyQuerySchema = z.object({
+  execute: z
+    .enum(['true', 'false'])
+    .optional()
+    .openapi({
+      param: { name: 'execute', in: 'query' },
+      description:
+        'When false, compute the strategy decision but skip trade execution even if STRATEGY_RUNNER_EXECUTE is enabled.',
+      example: 'false',
+    }),
+})
+
+export const RunStrategyResponseSchema = z
+  .object({
+    agentId: agentIdParamSchema,
+    run: StrategyRunItemSchema,
+  })
+  .openapi('RunStrategyResponse')

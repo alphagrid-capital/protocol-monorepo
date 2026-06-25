@@ -1,7 +1,7 @@
 import type { WorkerEnv } from '../../../types/worker-env.js'
 
 export const DEFAULT_STRATEGY_AI_MODEL =
-  'workers-ai/@cf/meta/llama-3.1-8b-instruct'
+  '@cf/meta/llama-3.1-8b-instruct-fast'
 export const DEFAULT_STRATEGY_AI_GATEWAY_ID = 'alphagrid-ai-gateway'
 export const DEFAULT_STRATEGY_AI_MAX_TOKENS = 512
 
@@ -23,11 +23,17 @@ function parseMaxTokens(env: WorkerEnv): number {
   return parsed
 }
 
+function normalizeWorkersAiModel(model: string): string {
+  return model.replace(/^workers-ai\//, '')
+}
+
 export function loadWorkersAiConfig(
   env: WorkerEnv = {}
 ): WorkersAiConfig {
   return {
-    model: env.STRATEGY_AI_MODEL?.trim() || DEFAULT_STRATEGY_AI_MODEL,
+    model: normalizeWorkersAiModel(
+      env.STRATEGY_AI_MODEL?.trim() || DEFAULT_STRATEGY_AI_MODEL
+    ),
     gatewayId:
       env.STRATEGY_AI_GATEWAY_ID?.trim() || DEFAULT_STRATEGY_AI_GATEWAY_ID,
     maxTokens: parseMaxTokens(env),

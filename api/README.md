@@ -86,6 +86,7 @@ yarn deploy:all                 # Deploy all three sequentially
 | `GET`    | `/agents/{agentId}/trades`                    | Trade activity (`source`: `indexed` when `SUBGRAPH_URL` set, else RPC log scan)        |
 | `GET`    | `/agents/{agentId}/equity-history`            | Trade-boundary equity snapshots (`SUBGRAPH_URL` required; optional live `current` tip) |
 | `GET`    | `/agents/{agentId}/strategy-runs`             | Strategy runner history for the agent owner (Privy; `?limit=`)                         |
+| `POST`   | `/agents/{agentId}/strategy-runs/run`         | Trigger an immediate strategy run for the agent owner (Privy; optional `?execute=false`; 429 if run within cooldown, default 5 min) |
 | `GET`    | `/transactions/{txHash}`                      | Transaction receipt status (confirm intent submit)                                     |
 | `GET`    | `/docs`                                       | Swagger UI (humans; poor fit for URL paste in chat)                                    |
 | `GET`    | `/docs/swagger.json`                          | OpenAPI 3.1 (Custom GPT Actions)                                                       |
