@@ -33,20 +33,17 @@ function parseBotFrequency(value: string | null): BotFrequency | null {
   return null
 }
 
-function toAgentDraft(row: AgentDraftRow): AgentDraft {
+function toAgentDraft(
+  row: AgentDraftRow,
+  fallbackVaultAddress: `0x${string}`
+): AgentDraft {
   const identity = parseIdentityJson(row.identity_json)
-  if (!row.vault_address) {
-    throw new AppError(
-      'Draft vault address is missing',
-      503,
-      'SERVICE_UNAVAILABLE'
-    )
-  }
   return {
     draftId: row.id,
     owner: row.owner_address,
     identity,
-    vaultAddress: row.vault_address as AgentDraft['vaultAddress'],
+    vaultAddress: (row.vault_address ??
+      fallbackVaultAddress) as AgentDraft['vaultAddress'],
     strategy: row.strategy,
     botFrequency: parseBotFrequency(row.bot_frequency),
     createdAt: row.created_at,
@@ -116,17 +113,18 @@ export class AgentDraftsService {
       vaultAddress: this.getGenesisVaultAddress(),
       createdAt,
     })
-    return toAgentDraft(row)
+    return toAgentDraft(row, this.getGenesisVaultAddress())
   }
 
   async getDraft(draftId: string, ownerAddress: string): Promise<AgentDraft> {
     const row = await this.requireOwnedDraft(draftId, ownerAddress)
-    return toAgentDraft(row)
+    return toAgentDraft(row, this.getGenesisVaultAddress())
   }
 
   async listDrafts(ownerAddress: string): Promise<AgentDraft[]> {
     const rows = await this.repository.findByOwner(ownerAddress)
-    return rows.map(toAgentDraft)
+    const fallbackVaultAddress = this.getGenesisVaultAddress()
+    return rows.map((row) => toAgentDraft(row, fallbackVaultAddress))
   }
 
   async updateDraft(
@@ -153,7 +151,7 @@ export class AgentDraftsService {
     }
 
     const row = await this.repository.update(draftId, patch)
-    return toAgentDraft(row)
+    return toAgentDraft(row, this.getGenesisVaultAddress())
   }
 
   async abandonDraft(draftId: string, ownerAddress: string): Promise<void> {
