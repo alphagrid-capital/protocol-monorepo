@@ -9,7 +9,6 @@ import {
 } from '../lib/crypto/signer-key-crypto.js'
 import { getWorkerEnv } from '../lib/worker-env.js'
 import { normalizeAddress } from '../lib/evm/utils.js'
-import type { AgentWallet } from '../schemas/agent-draft.js'
 import { AgentDraftsService } from './agent-drafts.service.js'
 import type { WorkerEnv } from '../types/worker-env.js'
 
@@ -48,7 +47,7 @@ export class AgentDraftWalletService {
   async provisionWallet(
     draftId: string,
     ownerAddress: string
-  ): Promise<AgentWallet> {
+  ): Promise<{ signerAddress: Address }> {
     const row = await this.draftsService.requireEditableDraft(
       draftId,
       ownerAddress
@@ -57,11 +56,10 @@ export class AgentDraftWalletService {
       throw new AppError('Draft identity is required', 400, 'INVALID_REQUEST')
     }
 
-    const vault = this.draftsService.getGenesisVaultAddress()
-    const payoutRecipient = normalizeAddress(ownerAddress) as Address
-
-    if (row.signer_address && row.wallet_json) {
-      return JSON.parse(row.wallet_json) as AgentWallet
+    if (row.signer_address) {
+      return {
+        signerAddress: normalizeAddress(row.signer_address) as Address,
+      }
     }
 
     const privateKey = generatePrivateKey()
@@ -72,20 +70,13 @@ export class AgentDraftWalletService {
       encryptionKey
     )
 
-    const wallet: AgentWallet = {
-      signer: account.address,
-      vault,
-      payoutRecipient,
-    }
-
     await this.repository.update(draftId, {
-      walletJson: JSON.stringify(wallet),
       signerAddress: account.address,
       encryptedSignerKey,
       updatedAt: nowIso(),
     })
 
-    return wallet
+    return { signerAddress: account.address }
   }
 
   async decryptDraftSignerKey(

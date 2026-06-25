@@ -14,7 +14,6 @@ import { computeNextRunAt } from '../lib/strategy/schedule.js'
 import { getWorkerEnv } from '../lib/worker-env.js'
 import type {
   AgentIdentity,
-  AgentWallet,
   BotFrequency,
 } from '../schemas/agent-draft.js'
 import { AgentDraftsService } from './agent-drafts.service.js'
@@ -84,7 +83,6 @@ export class AgentLaunchService {
     }
 
     const identity = JSON.parse(row.identity_json!) as AgentIdentity
-    const wallet = JSON.parse(row.wallet_json!) as AgentWallet
     const metadataURI = buildAgentMetadataUri(identity)
 
     const owner = normalizeAddress(ownerAddress) as Address
@@ -105,7 +103,7 @@ export class AgentLaunchService {
     )
 
     const typedData = {
-      vault: wallet.vault as Address,
+      vault: normalizeAddress(row.vault_address!) as Address,
       name: identity.name,
       metadataURI,
       signer: signerAddress,
@@ -211,7 +209,7 @@ export class AgentLaunchService {
   private assertLaunchReady(row: AgentDraftRow): void {
     if (
       !row.identity_json ||
-      !row.wallet_json ||
+      !row.vault_address ||
       !row.encrypted_signer_key ||
       !row.strategy ||
       !row.bot_frequency

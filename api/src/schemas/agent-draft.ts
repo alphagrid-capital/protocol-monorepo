@@ -33,20 +33,12 @@ export const AgentIdentitySchema = z
   })
   .strict()
 
-export const AgentWalletSchema = z
-  .object({
-    signer: addressSchema,
-    vault: addressSchema,
-    payoutRecipient: addressSchema,
-  })
-  .strict()
-
 export const AgentDraftSchema = z
   .object({
     draftId: z.string(),
     owner: addressSchema,
     identity: AgentIdentitySchema.optional(),
-    wallet: AgentWalletSchema.nullable(),
+    vaultAddress: addressSchema,
     strategy: z.string().nullable(),
     botFrequency: BotFrequencySchema.nullable(),
     createdAt: z.string(),
@@ -76,9 +68,7 @@ export const UpdateAgentDraftSchema = CreateAgentDraftSchema.partial()
 
 export const ProvisionWalletResponseSchema = z
   .object({
-    signer: addressSchema,
-    vault: addressSchema,
-    payoutRecipient: addressSchema,
+    signerAddress: addressSchema,
   })
   .openapi('ProvisionWalletResponse')
 
@@ -109,6 +99,5 @@ export const draftIdParamSchema = z
   .regex(/^draft_[0-9a-f-]{36}$/, 'Expected draft_<uuid>')
 
 export type AgentIdentity = z.infer<typeof AgentIdentitySchema>
-export type AgentWallet = z.infer<typeof AgentWalletSchema>
 export type AgentDraft = z.infer<typeof AgentDraftSchema>
 export type BotFrequency = z.infer<typeof BotFrequencySchema>

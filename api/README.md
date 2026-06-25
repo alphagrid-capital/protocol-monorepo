@@ -59,7 +59,7 @@ yarn deploy:all                 # Deploy all three sequentially
 | `PUT`    | `/agent-drafts/{draftId}`                     | Partial update: `identity`, `strategy`, `botFrequency` (`1h` / `1d`) (Privy)           |
 | `GET`    | `/agent-drafts/{draftId}`                     | Resume agent launch draft (Privy)                                                      |
 | `DELETE` | `/agent-drafts/{draftId}`                     | Abandon draft and wipe encrypted signer key (Privy)                                    |
-| `POST`   | `/agent-drafts/{draftId}/provision-wallet`    | Generate custodial signer; returns addresses only (Privy)                              |
+| `POST`   | `/agent-drafts/{draftId}/provision-wallet`    | Generate custodial signer; returns `{ signerAddress }` (Privy)                           |
 | `POST`   | `/agent-drafts/{draftId}/launch`              | Sign + x402 + on-chain register; owner = Privy wallet, signer = custodial (Privy)      |
 | `GET`    | `/vaults`                                     | Vault catalog (`?format=md` for markdown)                                              |
 | `GET`    | `/vaults/{id}/tokens`                         | Tradable tokens for a vault mandate + oracle prices                                    |
@@ -260,7 +260,7 @@ Off-chain launch wizard state for the frontend app. Step order is client-defined
 | `RELAYER_PRIVATE_KEY`         | Signs `registerAgent` at launch (owner = Privy wallet, signer = generated key)                              |
 | `RPC_URL` / `CHAIN_ID`        | Genesis vault + registration                                                                                |
 
-**Flow:** `POST /agent-drafts` → `POST .../provision-wallet` → `PUT` (`identity`, `strategy`, `botFrequency`) → `POST .../launch`.
+**Flow:** `POST /agent-drafts` (assigns `vaultAddress`) → `POST .../provision-wallet` (signer) → `PUT` (`identity`, `strategy`, `botFrequency`) → `POST .../launch`.
 
 **Per-user limit:** Each wallet may have at most **5 active** (non-archived) managed agents. Launch returns **400** `Maximum of 5 active agents per user` when the limit is reached. Use `GET /managed-agents/me` (`activeCount`, `maxAgents`) to gate the wizard. Drafts do not count toward the limit.
 

@@ -29,7 +29,7 @@ export const agentDrafts = sqliteTable(
     ownerAddress: text('owner_address').notNull(),
     handle: text('handle'),
     identityJson: text('identity_json'),
-    walletJson: text('wallet_json'),
+    vaultAddress: text('vault_address'),
     strategy: text('strategy'),
     botFrequency: text('bot_frequency'),
     pricingTier: text('pricing_tier'),

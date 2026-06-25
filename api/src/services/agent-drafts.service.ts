@@ -11,7 +11,6 @@ import { normalizeAddress } from '../lib/evm/utils.js'
 import type {
   AgentDraft,
   AgentIdentity,
-  AgentWallet,
   BotFrequency,
   UpdateAgentDraftSchema,
 } from '../schemas/agent-draft.js'
@@ -27,13 +26,6 @@ function parseIdentityJson(value: string | null): AgentIdentity | undefined {
   return JSON.parse(value) as AgentIdentity
 }
 
-function parseWalletJson(value: string | null): AgentWallet | undefined {
-  if (!value) {
-    return undefined
-  }
-  return JSON.parse(value) as AgentWallet
-}
-
 function parseBotFrequency(value: string | null): BotFrequency | null {
   if (value === '1h' || value === '1d') {
     return value
@@ -43,12 +35,18 @@ function parseBotFrequency(value: string | null): BotFrequency | null {
 
 function toAgentDraft(row: AgentDraftRow): AgentDraft {
   const identity = parseIdentityJson(row.identity_json)
-  const wallet = parseWalletJson(row.wallet_json) ?? null
+  if (!row.vault_address) {
+    throw new AppError(
+      'Draft vault address is missing',
+      503,
+      'SERVICE_UNAVAILABLE'
+    )
+  }
   return {
     draftId: row.id,
     owner: row.owner_address,
     identity,
-    wallet,
+    vaultAddress: row.vault_address as AgentDraft['vaultAddress'],
     strategy: row.strategy,
     botFrequency: parseBotFrequency(row.bot_frequency),
     createdAt: row.created_at,
@@ -115,6 +113,7 @@ export class AgentDraftsService {
       ownerAddress,
       handle: identity.handle,
       identityJson: JSON.stringify(identity),
+      vaultAddress: this.getGenesisVaultAddress(),
       createdAt,
     })
     return toAgentDraft(row)

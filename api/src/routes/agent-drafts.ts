@@ -86,7 +86,7 @@ const updateDraftRoute = createRoute({
   tags: ['Agent drafts'],
   summary: 'Update agent launch draft',
   description:
-    'Partial update. Same `identity` shape as create, plus optional `strategy` and `botFrequency` (`1h` or `1d` only). Launch requires identity, provisioned wallet, strategy, and bot frequency.',
+    'Partial update. Same `identity` shape as create, plus optional `strategy` and `botFrequency` (`1h` or `1d` only). Launch requires identity, provisioned signer, strategy, and bot frequency. Vault is assigned at draft creation.',
   request: {
     headers: PrivyAuthHeadersSchema,
     params: draftIdParam,
@@ -173,14 +173,16 @@ const provisionWalletRoute = createRoute({
   method: 'post',
   path: ROUTE_PATHS.agentDraftProvisionWallet,
   tags: ['Agent drafts'],
-  summary: 'Provision custodial agent signer wallet',
+  summary: 'Provision custodial agent signer',
+  description:
+    'Generates and stores an encrypted custodial signer for the draft. Vault address is already set on draft creation. Idempotent: returns the existing signer if already provisioned.',
   request: {
     headers: PrivyAuthHeadersSchema,
     params: draftIdParam,
   },
   responses: {
     200: {
-      description: 'Provisioned wallet addresses',
+      description: 'Provisioned signer address',
       content: {
         'application/json': { schema: ProvisionWalletResponseSchema },
       },
@@ -314,10 +316,10 @@ agentDraftRoutes.openapi(deleteDraftRoute, async (c) => {
 agentDraftRoutes.openapi(provisionWalletRoute, async (c) => {
   const { draftId } = c.req.valid('param')
   try {
-    const wallet = await AgentDraftWalletService.fromEnv(
+    const { signerAddress } = await AgentDraftWalletService.fromEnv(
       getWorkerEnv()
     ).provisionWallet(draftId, c.get('authAddress'))
-    return c.json(wallet, 200)
+    return c.json({ signerAddress }, 200)
   } catch (error) {
     return handleDraftRouteError(c, error)
   }

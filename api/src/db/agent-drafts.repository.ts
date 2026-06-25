@@ -10,7 +10,7 @@ export interface AgentDraftRow {
   owner_address: string
   handle: string | null
   identity_json: string | null
-  wallet_json: string | null
+  vault_address: string | null
   strategy: string | null
   bot_frequency: string | null
   pricing_tier: string | null
@@ -29,13 +29,13 @@ export interface CreateAgentDraftInput {
   ownerAddress: string
   handle: string
   identityJson: string
+  vaultAddress: string
   createdAt: string
 }
 
 export interface UpdateAgentDraftInput {
   handle?: string | null
   identityJson?: string | null
-  walletJson?: string | null
   strategy?: string | null
   botFrequency?: string | null
   pricingTier?: string | null
@@ -47,7 +47,7 @@ export interface UpdateAgentDraftInput {
   updatedAt: string
 }
 
-const DRAFT_COLUMNS = `id, owner_address, handle, identity_json, wallet_json,
+const DRAFT_COLUMNS = `id, owner_address, handle, identity_json, vault_address,
   strategy, bot_frequency, pricing_tier, signer_address, encrypted_signer_key,
   key_version, status, launched_agent_id, launch_tx_hash, created_at, updated_at`
 
@@ -95,9 +95,9 @@ export class AgentDraftsRepository {
     const row = await db
       .prepare(
         `INSERT INTO agent_drafts (
-           id, owner_address, handle, identity_json, status,
+           id, owner_address, handle, identity_json, vault_address, status,
            created_at, updated_at
-         ) VALUES (?, ?, ?, ?, 'draft', ?, ?)
+         ) VALUES (?, ?, ?, ?, ?, 'draft', ?, ?)
          RETURNING ${DRAFT_COLUMNS}`
       )
       .bind(
@@ -105,6 +105,7 @@ export class AgentDraftsRepository {
         owner,
         input.handle,
         input.identityJson,
+        input.vaultAddress,
         input.createdAt,
         input.createdAt
       )
@@ -135,10 +136,6 @@ export class AgentDraftsRepository {
     if (input.identityJson !== undefined) {
       sets.push('identity_json = ?')
       values.push(input.identityJson)
-    }
-    if (input.walletJson !== undefined) {
-      sets.push('wallet_json = ?')
-      values.push(input.walletJson)
     }
     if (input.strategy !== undefined) {
       sets.push('strategy = ?')
