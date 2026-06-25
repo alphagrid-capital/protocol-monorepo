@@ -17,12 +17,24 @@ export function mapEnvelopeToOutcome(
     }
   }
 
+  if (!envelope.strategyAssessment.tradable) {
+    return {
+      status: 'error',
+      code: 'NOT_TRADABLE_STRATEGY',
+      summary: 'Strategy rejected — not a tradable strategy.',
+      message:
+        envelope.strategyAssessment.reason ||
+        'User strategy does not describe actionable trading rules.',
+      actions: [],
+    }
+  }
+
   if (!envelope.decision) {
     return {
       status: 'error',
       code: 'INVALID_MODEL_OUTPUT',
       summary: 'Strategy decision failed — invalid model output.',
-      message: 'Safety passed but decision was null.',
+      message: 'Strategy is tradable but decision was null.',
       actions: [],
     }
   }

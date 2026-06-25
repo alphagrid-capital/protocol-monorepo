@@ -4,6 +4,7 @@ import { StrategyActionSchema, StrategyDecisionSchema } from './strategy.js'
 export const StrategyAdapterErrorCodeSchema = z.enum([
   'PROMPT_INJECTION',
   'STRATEGY_TOO_LONG',
+  'NOT_TRADABLE_STRATEGY',
   'INVALID_MODEL_OUTPUT',
   'AI_UNAVAILABLE',
 ])
@@ -46,9 +47,17 @@ export const StrategyAiSafetySchema = z
   })
   .strict()
 
+export const StrategyAiAssessmentSchema = z
+  .object({
+    tradable: z.boolean(),
+    reason: z.string(),
+  })
+  .strict()
+
 export const StrategyAiEnvelopeSchema = z
   .object({
     safety: StrategyAiSafetySchema,
+    strategyAssessment: StrategyAiAssessmentSchema,
     decision: StrategyDecisionSchema.nullable(),
   })
   .strict()

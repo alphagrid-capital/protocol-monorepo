@@ -8,7 +8,10 @@ import {
   readWorkersAiResponseText,
 } from './workers-ai.parse.js'
 import { buildWorkersAiMessages } from './workers-ai.prompt.js'
-import { screenUserStrategy } from './workers-ai.screen.js'
+import {
+  assessStrategyTradability,
+  screenUserStrategy,
+} from './workers-ai.screen.js'
 
 export function createWorkersAiAdapter(
   env: WorkerEnvWithAi
@@ -20,6 +23,14 @@ export function createWorkersAiAdapter(
       const screened = screenUserStrategy(context.strategy)
       if (screened) {
         return screened
+      }
+
+      const tradability = assessStrategyTradability(
+        context.strategy,
+        context.guardrails.allowedSymbols
+      )
+      if (tradability) {
+        return tradability
       }
 
       if (!env.AI) {
