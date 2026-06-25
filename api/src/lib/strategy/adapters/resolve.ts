@@ -1,23 +1,24 @@
-import type { WorkerEnv } from '../../../types/worker-env.js'
+import type { WorkerEnvWithAi } from '../../../types/worker-env.js'
 import { noneStrategyDecisionAdapter } from './none.js'
 import type { StrategyDecisionAdapter } from './types.js'
+import { createWorkersAiAdapter } from './workers-ai.js'
 
-export type StrategyDecisionProvider = 'none'
+export type StrategyDecisionProvider = 'none' | 'workers-ai'
 
-const PROVIDERS: Record<StrategyDecisionProvider, StrategyDecisionAdapter> = {
-  none: noneStrategyDecisionAdapter,
-}
-
-function parseProvider(env: WorkerEnv): StrategyDecisionProvider {
+function parseProvider(env: WorkerEnvWithAi): StrategyDecisionProvider {
   const raw = String(env.STRATEGY_DECISION_PROVIDER ?? 'none').toLowerCase()
-  if (raw in PROVIDERS) {
-    return raw as StrategyDecisionProvider
+  if (raw === 'none' || raw === 'workers-ai') {
+    return raw
   }
   throw new Error(`Unknown STRATEGY_DECISION_PROVIDER: ${raw}`)
 }
 
 export function resolveStrategyDecisionAdapter(
-  env: WorkerEnv = {}
+  env: WorkerEnvWithAi = {}
 ): StrategyDecisionAdapter {
-  return PROVIDERS[parseProvider(env)]
+  const provider = parseProvider(env)
+  if (provider === 'workers-ai') {
+    return createWorkersAiAdapter(env)
+  }
+  return noneStrategyDecisionAdapter
 }

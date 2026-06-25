@@ -5,14 +5,16 @@ import type {
   TradeIntentQuote,
 } from '../../schemas/trading.js'
 import type { StrategyDecision } from '../../schemas/strategy.js'
+import type { StrategyAdapterOutcome } from '../../schemas/strategy-adapter.js'
 import type { OraclePriceEntry } from '../../services/tokens.service.js'
-import type { WorkerEnv } from '../../types/worker-env.js'
+import type { WorkerEnvWithAi } from '../../types/worker-env.js'
 import { resolveStrategyDecisionAdapter } from './adapters/resolve.js'
 
 export type {
   StrategyAction,
   StrategyDecision,
 } from '../../schemas/strategy.js'
+export type { StrategyAdapterOutcome } from '../../schemas/strategy-adapter.js'
 
 export interface StrategyGuardrails {
   allowedSymbols: TradeIntentQuote['allowedSymbols']
@@ -39,8 +41,8 @@ export interface StrategyContext {
 
 export async function decideStrategy(
   context: StrategyContext,
-  env?: WorkerEnv
-): Promise<StrategyDecision> {
+  env?: WorkerEnvWithAi
+): Promise<StrategyAdapterOutcome> {
   const adapter = resolveStrategyDecisionAdapter(env)
   return adapter.decide(context)
 }

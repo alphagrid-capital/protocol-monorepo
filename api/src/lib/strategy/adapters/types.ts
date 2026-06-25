@@ -1,6 +1,6 @@
-import type { StrategyDecision } from '../../../schemas/strategy.js'
+import type { StrategyAdapterOutcome } from '../../../schemas/strategy-adapter.js'
 import type { StrategyContext } from '../decision.js'
 
 export interface StrategyDecisionAdapter {
-  decide(context: StrategyContext): Promise<StrategyDecision>
+  decide(context: StrategyContext): Promise<StrategyAdapterOutcome>
 }

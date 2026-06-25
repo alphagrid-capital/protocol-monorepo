@@ -21,13 +21,14 @@
     "deploy:arbitrum-one": "wrangler deploy --env arbitrum-one",
     "deploy:all": "yarn deploy:arbitrum-sepolia && yarn deploy:robinhood-testnet && yarn deploy:arbitrum-one",
     "type-check": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test src/lib/trading/metrics.test.ts src/lib/trading/trade-log-scan.test.ts src/lib/trading/log-from-block.test.ts src/lib/crypto/signer-key-crypto.test.ts src/lib/agent/launch-metadata.test.ts src/lib/strategy/guardrails.test.ts src/lib/strategy/adapters/adapters.test.ts",
+    "test": "node --experimental-strip-types --test src/lib/trading/metrics.test.ts src/lib/trading/trade-log-scan.test.ts src/lib/trading/log-from-block.test.ts src/lib/crypto/signer-key-crypto.test.ts src/lib/agent/launch-metadata.test.ts src/lib/strategy/guardrails.test.ts src/lib/strategy/adapters/adapters.test.ts src/lib/strategy/adapters/workers-ai.test.ts",
     "format": "prettier --write .",
     "lint:ts": "eslint \"src/**/*.ts\" --fix",
     "lint:fix": "eslint \"src/**/*.ts\" --fix",
     "db:generate": "node scripts/db-generate.mjs",
     "db:migrate:local": "wrangler d1 migrations apply alphagrid-users-local --local",
-    "db:migrate:local:sepolia": "wrangler d1 migrations apply alphagrid-db-421614 --local --env arbitrum-sepolia"
+    "db:migrate:local:sepolia": "wrangler d1 migrations apply alphagrid-db-421614 --local --env arbitrum-sepolia",
+    "strategy:shadow-run": "node scripts/strategy-shadow-run.mjs"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250531.0",

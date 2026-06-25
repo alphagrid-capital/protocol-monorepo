@@ -8,6 +8,7 @@ test('none adapter returns hold decision', async () => {
     strategyContextExample
   )
 
+  assert.equal(decision.status, 'ok')
   assert.equal(decision.summary, 'Hold — no trades recommended.')
   assert.deepEqual(decision.actions, [])
 })

@@ -8,6 +8,7 @@ import { decideStrategy } from '../lib/strategy/decision.js'
 import type {
   StrategyContext,
   StrategyDecision,
+  StrategyAdapterOutcome,
 } from '../lib/strategy/decision.js'
 import { executeStrategyDecision } from '../lib/strategy/executor.js'
 import type { ExecutionActionResult } from '../lib/strategy/executor.js'
@@ -23,11 +24,11 @@ import { BotFrequencySchema } from '../schemas/agent-draft.js'
 import { TokensService } from './tokens.service.js'
 import { TradingService } from './trading.service.js'
 import { AgentRegistrationService } from './agent-registration.service.js'
-import type { WorkerEnv } from '../types/worker-env.js'
+import type { WorkerEnvWithAi } from '../types/worker-env.js'
 
 const DUE_LIMIT = 10
 
-function isStrategyRunnerExecuteEnabled(env: WorkerEnv): boolean {
+function isStrategyRunnerExecuteEnabled(env: WorkerEnvWithAi): boolean {
   const raw = String(env.STRATEGY_RUNNER_EXECUTE ?? 'true').toLowerCase()
   return raw !== 'false' && raw !== '0' && raw !== 'no' && raw !== 'off'
 }
@@ -63,10 +64,10 @@ export class StrategyRunnerService {
     private readonly profilesRepository: AgentProfilesRepository,
     private readonly signersRepository: AgentSignersRepository,
     private readonly runsRepository: StrategyRunsRepository,
-    private readonly env: WorkerEnv
+    private readonly env: WorkerEnvWithAi
   ) {}
 
-  static fromEnv(env: WorkerEnv = getWorkerEnv()): StrategyRunnerService {
+  static fromEnv(env: WorkerEnvWithAi = getWorkerEnv()): StrategyRunnerService {
     return new StrategyRunnerService(
       new AgentProfilesRepository(env),
       new AgentSignersRepository(env),
@@ -118,6 +119,7 @@ export class StrategyRunnerService {
     const botFrequency = BotFrequencySchema.parse(profile.bot_frequency)
 
     let decision: StrategyDecision | null = null
+    let outcome: StrategyAdapterOutcome | null = null
     let execution: ExecutionActionResult[] = []
     let runCreated = false
 
@@ -174,7 +176,15 @@ export class StrategyRunnerService {
       })
       runCreated = true
 
-      decision = await decideStrategy(context, this.env)
+      outcome = await decideStrategy(context, this.env)
+      if (outcome.status === 'error') {
+        throw new Error(outcome.message)
+      }
+
+      decision = {
+        summary: outcome.summary,
+        actions: outcome.actions,
+      }
       assertStrategyDecisionGuardrails(decision, context)
 
       if (
@@ -208,7 +218,7 @@ export class StrategyRunnerService {
 
       await this.runsRepository.complete(runId, {
         status,
-        decisionJson: JSON.stringify(decision),
+        decisionJson: JSON.stringify(outcome ?? decision),
         executionJson: JSON.stringify(execution),
         error: executionError ?? null,
         completedAt: new Date().toISOString(),
@@ -219,7 +229,11 @@ export class StrategyRunnerService {
       if (runCreated) {
         await this.runsRepository.complete(runId, {
           status: 'failed',
-          decisionJson: decision ? JSON.stringify(decision) : null,
+          decisionJson: outcome
+            ? JSON.stringify(outcome)
+            : decision
+              ? JSON.stringify(decision)
+              : null,
           executionJson: JSON.stringify(execution),
           error: errorMessage(error, 'Strategy run failed'),
           completedAt: new Date().toISOString(),

@@ -30,7 +30,13 @@ ENABLE_SWAGGER = "true"
 # PRIVY_JWT_VERIFICATION_KEY — optional; Privy JWT verification PEM (wrangler secret)
 # AGENT_SIGNER_ENCRYPTION_KEY — optional; 32-byte AES key (hex or base64) for custodial agent signer keys
 # STRATEGY_RUNNER_EXECUTE — optional; set to "false" to persist decisions without on-chain execution
-# STRATEGY_DECISION_PROVIDER — optional; strategy decision adapter ("none" default; external TBD)
+# STRATEGY_DECISION_PROVIDER — optional; "none" (default) or "workers-ai"
+# STRATEGY_AI_MODEL — optional; Workers AI model id (default workers-ai/@cf/meta/llama-3.1-8b-instruct)
+# STRATEGY_AI_GATEWAY_ID — optional; AI Gateway id (default alphagrid-ai-gateway)
+# STRATEGY_AI_MAX_TOKENS — optional; max output tokens (default 512)
+
+[ai]
+binding = "AI"
 
 # Top-level bindings for plain `wrangler dev` (no --env).
 [[d1_databases]]
@@ -82,6 +88,9 @@ new_sqlite_classes = ["AlphagridMcp"]
 [env.arbitrum-sepolia.triggers]
 crons = ["*/10 * * * *"]
 
+[env.arbitrum-sepolia.ai]
+binding = "AI"
+
 [env.robinhood-testnet]
 name = "alphagrid-api-robinhood"
 
@@ -106,6 +115,9 @@ new_sqlite_classes = ["AlphagridMcp"]
 
 [env.robinhood-testnet.triggers]
 crons = ["*/10 * * * *"]
+
+[env.robinhood-testnet.ai]
+binding = "AI"
 
 [env.arbitrum-one]
 name = "alphagrid-api-arbitrum-one"
@@ -132,3 +144,6 @@ new_sqlite_classes = ["AlphagridMcp"]
 
 [env.arbitrum-one.triggers]
 crons = ["*/10 * * * *"]
+
+[env.arbitrum-one.ai]
+binding = "AI"
