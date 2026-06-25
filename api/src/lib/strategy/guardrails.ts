@@ -116,7 +116,9 @@ export function assertStrategyDecisionGuardrails(
           fail(`Agent already has an open ${action.symbol} position`)
         }
         assertAmountWithinAvailable('Open', action.usdcAmount, context)
-        assertExitRules(action.exits ?? context.guardrails.defaultExit, context)
+        if (action.exits) {
+          assertExitRules(action.exits, context)
+        }
         break
       }
       case 'add':

@@ -106,6 +106,41 @@ test('allows guarded open action', () => {
   )
 })
 
+test('allows open action without exits when system defaultExit uses signed bps', () => {
+  const context = baseContext()
+  context.guardrails.defaultExit = [
+    { triggerType: 'StopLoss', triggerBps: -1000, exitBps: 10000 },
+  ]
+  const decision: StrategyDecision = {
+    summary: 'Open NVDA',
+    actions: [{ type: 'open', symbol: 'NVDA', usdcAmount: '50' }],
+  }
+
+  assert.doesNotThrow(() =>
+    assertStrategyDecisionGuardrails(decision, context)
+  )
+})
+
+test('still validates AI-provided exits', () => {
+  const context = baseContext()
+  context.guardrails.exitBounds.requireTakeProfit = false
+  const decision: StrategyDecision = {
+    summary: 'Open NVDA',
+    actions: [
+      {
+        type: 'open',
+        symbol: 'NVDA',
+        usdcAmount: '50',
+        exits: [{ triggerType: 'StopLoss', triggerBps: -1000, exitBps: 10000 }],
+      },
+    ],
+  }
+
+  assert.throws(() => assertStrategyDecisionGuardrails(decision, context), {
+    message: /triggerBps must be greater than zero/,
+  })
+})
+
 test('blocks open action for disallowed symbol', () => {
   const decision: StrategyDecision = {
     summary: 'Open TSLA',
