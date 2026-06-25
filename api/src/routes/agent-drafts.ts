@@ -243,7 +243,7 @@ const privyProtectedDraftPaths = [
 ] as const
 
 for (const path of privyProtectedDraftPaths) {
-  agentDraftRoutes.use(path, requirePrivyAuth)
+  agentDraftRoutes.use(path.replace(/\{(\w+)\}/g, ':$1'), requirePrivyAuth)
 }
 
 agentDraftRoutes.openapi(createDraftRoute, async (c) => {

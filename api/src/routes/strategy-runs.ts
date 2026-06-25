@@ -18,7 +18,10 @@ import { ManagedAgentService } from '../services/managed-agent.service.js'
 
 const strategyRunRoutes = new OpenAPIHono()
 
-strategyRunRoutes.use(ROUTE_PATHS.agentStrategyRuns, requirePrivyAuth)
+strategyRunRoutes.use(
+  ROUTE_PATHS.agentStrategyRuns.replace(/\{(\w+)\}/g, ':$1'),
+  requirePrivyAuth
+)
 
 const listStrategyRunsRoute = createRoute({
   method: 'get',

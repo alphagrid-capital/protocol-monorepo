@@ -154,6 +154,7 @@ jobs:
             FINNHUB_API_KEY
             PRIVY_APP_ID
             PRIVY_JWT_VERIFICATION_KEY
+            AGENT_SIGNER_ENCRYPTION_KEY
         env:
           RPC_URL: ${{ secrets.RPC_URL }}
           X402_FACILITATOR_URL: ${{ secrets.X402_FACILITATOR_URL }}
@@ -163,3 +164,4 @@ jobs:
           FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
           PRIVY_APP_ID: ${{ secrets.PRIVY_APP_ID }}
           PRIVY_JWT_VERIFICATION_KEY: ${{ secrets.PRIVY_JWT_VERIFICATION_KEY }}
+          AGENT_SIGNER_ENCRYPTION_KEY: ${{ secrets.AGENT_SIGNER_ENCRYPTION_KEY }}

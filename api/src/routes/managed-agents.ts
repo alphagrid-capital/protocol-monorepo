@@ -26,7 +26,7 @@ const privyProtectedPaths = [
 ] as const
 
 for (const path of privyProtectedPaths) {
-  managedAgentRoutes.use(path, requirePrivyAuth)
+  managedAgentRoutes.use(path.replace(/\{(\w+)\}/g, ':$1'), requirePrivyAuth)
 }
 
 function handleManagedRouteError(c: Context, error: unknown): never {
