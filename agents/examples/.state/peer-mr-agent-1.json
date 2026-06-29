@@ -1,0 +1,38 @@
+{
+  "agentId": "1",
+  "vaultId": "genesis",
+  "persona": "peer-mr",
+  "lastRunAt": "2026-06-29T13:30:01Z",
+  "lastSlot": 6,
+  "dailyTurnoverUsdc": 0,
+  "dailyTurnoverDay": "2026-06-29",
+  "priceHistory": [
+    {
+      "capturedAt": "2026-06-29T13:30:01Z",
+      "prices": {
+        "MSFT": 376.14,
+        "META": 560.23,
+        "NVDA": 193.62,
+        "AAPL": 283.78,
+        "GOOGL": 337.39,
+        "AMZN": 234.24,
+        "TSLA": 379.71,
+        "COIN": 151.13,
+        "HOOD": 100.88,
+        "SPY": 736.62
+      }
+    }
+  ],
+  "prevPrices": {
+    "MSFT": 376.14,
+    "META": 560.23,
+    "NVDA": 193.62,
+    "AAPL": 283.78,
+    "GOOGL": 337.39,
+    "AMZN": 234.24,
+    "TSLA": 379.71,
+    "COIN": 151.13,
+    "HOOD": 100.88,
+    "SPY": 736.62
+  }
+}
