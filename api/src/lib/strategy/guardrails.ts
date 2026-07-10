@@ -113,7 +113,9 @@ export function assertStrategyDecisionGuardrails(
             position.status === 'Open' && position.symbol === action.symbol
         )
         if (duplicate) {
-          fail(`Agent already has an open ${action.symbol} position`)
+          fail(
+            `Agent already has an open ${action.symbol} position. Use 'add' to increase the position.`
+          )
         }
         assertAmountWithinAvailable('Open', action.usdcAmount, context)
         if (action.exits) {

@@ -1,7 +1,7 @@
 import type { WorkerEnv } from '../../../types/worker-env.js'
 
 export const DEFAULT_STRATEGY_AI_MODEL =
-  '@cf/meta/llama-3.1-8b-instruct-fast'
+  '@cf/meta/llama-3.3-70b-instruct-fp8-fast'
 export const DEFAULT_STRATEGY_AI_GATEWAY_ID = 'alphagrid-ai-gateway'
 export const DEFAULT_STRATEGY_AI_MAX_TOKENS = 512
 

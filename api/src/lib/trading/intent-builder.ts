@@ -2,6 +2,7 @@ import type { Address } from 'viem'
 import { parseHumanAmount } from '../tokens/amount-utils.js'
 import { chainTokenAddress } from '../tokens/catalog.js'
 import type { ExitRuleInput } from '../../schemas/trading.js'
+import { toOnChainTriggerBps } from './exit-rule-convention.js'
 
 export const DEFAULT_EXIT_LADDER: ExitRuleInput[] = [
   { triggerType: 'StopLoss', triggerBps: -1000, exitBps: 10000 },
@@ -46,7 +47,7 @@ export function mapOnChainExitRule(rule: {
 export function mapExitRules(exits: ExitRuleInput[]): OnChainExitRule[] {
   return exits.map((rule) => ({
     triggerType: mapTriggerType(rule.triggerType),
-    triggerBps: BigInt(rule.triggerBps),
+    triggerBps: toOnChainTriggerBps(rule.triggerType, rule.triggerBps),
     exitBps: rule.exitBps,
   }))
 }

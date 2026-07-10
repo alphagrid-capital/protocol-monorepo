@@ -31,7 +31,7 @@ ENABLE_SWAGGER = "true"
 # AGENT_SIGNER_ENCRYPTION_KEY — optional; 32-byte AES key (hex or base64) for custodial agent signer keys
 # STRATEGY_RUNNER_EXECUTE — optional; set to "false" to persist decisions without on-chain execution
 # STRATEGY_DECISION_PROVIDER — optional; "none" or "workers-ai" (default)
-# STRATEGY_AI_MODEL — optional; Workers AI model id (default @cf/meta/llama-3.1-8b-instruct-fast)
+# STRATEGY_AI_MODEL — optional; Workers AI model id (default @cf/meta/llama-3.3-70b-instruct-fp8-fast)
 # STRATEGY_AI_GATEWAY_ID — optional; AI Gateway id (default alphagrid-ai-gateway)
 # STRATEGY_AI_MAX_TOKENS — optional; max output tokens (default 512)
 # STRATEGY_RUN_MANUAL_COOLDOWN_SECONDS — optional; min seconds between manual runs per agent (default 300)

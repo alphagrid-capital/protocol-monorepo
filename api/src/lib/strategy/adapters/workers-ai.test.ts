@@ -11,7 +11,7 @@ import { assessStrategyTradability, screenUserStrategy } from './workers-ai.scre
 
 test('loadWorkersAiConfig defaults model and max tokens', () => {
   const config = loadWorkersAiConfig({})
-  assert.equal(config.model, '@cf/meta/llama-3.1-8b-instruct-fast')
+  assert.equal(config.model, '@cf/meta/llama-3.3-70b-instruct-fp8-fast')
   assert.equal(config.gatewayId, 'alphagrid-ai-gateway')
   assert.equal(config.maxTokens, 512)
 })
