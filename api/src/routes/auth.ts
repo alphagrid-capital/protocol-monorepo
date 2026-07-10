@@ -67,7 +67,8 @@ authRoutes.openapi(getSessionRoute, async (c) => {
   try {
     const profile = await UsersService.fromEnv(getWorkerEnv()).upsertOnLogin(
       c.get('authAddress'),
-      getClientIp(c.req.raw)
+      getClientIp(c.req.raw),
+      c.get('authEmail')
     )
     return c.json(
       {

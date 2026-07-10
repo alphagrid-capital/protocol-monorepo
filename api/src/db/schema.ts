@@ -12,6 +12,7 @@ export const users = sqliteTable(
   {
     address: text('address').primaryKey(),
     displayName: text('display_name'),
+    email: text('email'),
     preferredCurrency: text('preferred_currency').notNull().default('USD'),
     registeredAt: text('registered_at').notNull(),
     registeredIp: text('registered_ip'),

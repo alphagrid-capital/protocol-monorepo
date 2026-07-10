@@ -31,6 +31,8 @@ export default {
     env: WorkerEnv,
     ctx: ExecutionContext
   ): void {
-    ctx.waitUntil(handleScheduled(env))
+    ctx.waitUntil(
+      Promise.resolve(runWithWorkerEnv(env, () => handleScheduled(env)))
+    )
   },
 }

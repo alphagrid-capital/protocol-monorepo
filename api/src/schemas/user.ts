@@ -9,6 +9,7 @@ export const PreferredCurrencySchema = z
 export const UserProfileSummarySchema = z
   .object({
     displayName: z.string().nullable(),
+    email: z.string().email().nullable(),
     preferredCurrency: PreferredCurrencySchema,
     registeredAt: z.iso.datetime(),
     lastLoginAt: z.iso.datetime(),

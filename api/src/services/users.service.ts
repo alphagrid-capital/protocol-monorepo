@@ -8,6 +8,7 @@ import type { WorkerEnv } from '../types/worker-env.js'
 
 export interface UserProfileSummary {
   displayName: string | null
+  email: string | null
   preferredCurrency: PreferredCurrency
   registeredAt: string
   lastLoginAt: string
@@ -25,6 +26,7 @@ function toPreferredCurrency(value: string): PreferredCurrency {
 function toProfileSummary(row: UserRow): UserProfileSummary {
   return {
     displayName: row.display_name,
+    email: row.email,
     preferredCurrency: toPreferredCurrency(row.preferred_currency),
     registeredAt: row.registered_at,
     lastLoginAt: row.last_login_at,
@@ -53,9 +55,10 @@ export class UsersService {
 
   async upsertOnLogin(
     address: string,
-    ip: string | null
+    ip: string | null,
+    email: string | null = null
   ): Promise<UserProfile> {
-    const row = await this.repository.upsertOnLogin(address, ip)
+    const row = await this.repository.upsertOnLogin(address, ip, email)
     return toProfile(row)
   }
 

@@ -6,6 +6,7 @@ import type { WorkerEnv } from '../types/worker-env.js'
 export interface UserRow {
   address: string
   display_name: string | null
+  email: string | null
   preferred_currency: string
   registered_at: string
   registered_ip: string | null
@@ -25,7 +26,11 @@ export class UsersRepository {
       .first<UserRow>()
   }
 
-  async upsertOnLogin(address: string, ip: string | null): Promise<UserRow> {
+  async upsertOnLogin(
+    address: string,
+    ip: string | null,
+    email: string | null
+  ): Promise<UserRow> {
     const db = requireDb(this.env)
     const normalizedAddress = normalizeAddress(address)
     const now = new Date().toISOString()
@@ -33,16 +38,17 @@ export class UsersRepository {
     const row = await db
       .prepare(
         `INSERT INTO users (
-           address, display_name, preferred_currency,
+           address, display_name, email, preferred_currency,
            registered_at, registered_ip, last_login_at, last_login_ip, updated_at
-         ) VALUES (?, NULL, 'USD', ?, ?, ?, ?, ?)
+         ) VALUES (?, NULL, ?, 'USD', ?, ?, ?, ?, ?)
          ON CONFLICT(address) DO UPDATE SET
            last_login_at = excluded.last_login_at,
            last_login_ip = excluded.last_login_ip,
+           email = COALESCE(excluded.email, users.email),
            updated_at = excluded.updated_at
          RETURNING *`
       )
-      .bind(normalizedAddress, now, ip, now, ip, now)
+      .bind(normalizedAddress, email, now, ip, now, ip, now)
       .first<UserRow>()
 
     if (!row) {

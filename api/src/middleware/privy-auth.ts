@@ -29,14 +29,13 @@ export const requirePrivyAuth: MiddlewareHandler = async (c, next) => {
   }
 
   try {
-    c.set(
-      'authAddress',
-      await verifyPrivySession(
-        getWorkerEnv(),
-        tokens.accessToken,
-        tokens.identityToken
-      )
+    const session = await verifyPrivySession(
+      getWorkerEnv(),
+      tokens.accessToken,
+      tokens.identityToken
     )
+    c.set('authAddress', session.address)
+    c.set('authEmail', session.email)
     await next()
   } catch (error) {
     if (error instanceof AppError) {

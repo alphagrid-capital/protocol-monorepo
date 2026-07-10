@@ -29,11 +29,38 @@ function pickEthereumWalletAddress(accounts: LinkedAccount[]): string {
   return normalizeAddress((embedded ?? ethereumAccounts[0]).address)
 }
 
+function pickEmail(accounts: LinkedAccount[]): string | null {
+  const emailAccount = accounts.find(
+    (account): account is LinkedAccount & { type: 'email'; address: string } =>
+      account.type === 'email'
+  )
+  if (emailAccount) {
+    return emailAccount.address.toLowerCase()
+  }
+
+  for (const account of accounts) {
+    if (
+      'email' in account &&
+      typeof account.email === 'string' &&
+      account.email.length > 0
+    ) {
+      return account.email.toLowerCase()
+    }
+  }
+
+  return null
+}
+
+export interface PrivySession {
+  address: string
+  email: string | null
+}
+
 export async function verifyPrivySession(
   env: WorkerEnv,
   accessToken: string,
   identityToken: string
-): Promise<string> {
+): Promise<PrivySession> {
   const config = loadAuthConfig(env)
 
   try {
@@ -54,7 +81,10 @@ export async function verifyPrivySession(
       throw new AppError('Unauthorized', 401, 'INVALID_REQUEST')
     }
 
-    return pickEthereumWalletAddress(user.linked_accounts)
+    return {
+      address: pickEthereumWalletAddress(user.linked_accounts),
+      email: pickEmail(user.linked_accounts),
+    }
   } catch (error) {
     if (error instanceof InvalidAuthTokenError) {
       throw new AppError('Unauthorized', 401, 'INVALID_REQUEST')
