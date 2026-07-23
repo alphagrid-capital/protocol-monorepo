@@ -1,0 +1,68 @@
+{
+  "agentId": "1",
+  "vaultId": "genesis",
+  "persona": "peer-mr",
+  "lastRunAt": "2026-07-23T13:30:02Z",
+  "lastSlot": 6,
+  "dailyTurnoverUsdc": 0,
+  "dailyTurnoverDay": "2026-07-23",
+  "priceHistory": [
+    {
+      "capturedAt": "2026-07-23T12:30:00Z",
+      "prices": {
+        "MSFT": 390.34,
+        "META": 627.17,
+        "NVDA": 212.06,
+        "AAPL": 325.89,
+        "GOOGL": 342.09,
+        "AMZN": 244.85,
+        "TSLA": 374.01,
+        "COIN": 166.12,
+        "HOOD": 104.48,
+        "SPY": 747.41
+      }
+    },
+    {
+      "capturedAt": "2026-07-23T13:00:00Z",
+      "prices": {
+        "MSFT": 390.34,
+        "META": 627.17,
+        "NVDA": 212.06,
+        "AAPL": 325.89,
+        "GOOGL": 342.09,
+        "AMZN": 244.85,
+        "TSLA": 374.01,
+        "COIN": 166.12,
+        "HOOD": 104.48,
+        "SPY": 747.41
+      }
+    },
+    {
+      "capturedAt": "2026-07-23T13:30:02Z",
+      "prices": {
+        "MSFT": 390.34,
+        "META": 627.17,
+        "NVDA": 212.06,
+        "AAPL": 325.89,
+        "GOOGL": 342.09,
+        "AMZN": 244.85,
+        "TSLA": 374.01,
+        "COIN": 166.12,
+        "HOOD": 104.48,
+        "SPY": 747.41
+      }
+    }
+  ],
+  "prevPrices": {
+    "MSFT": 390.34,
+    "META": 627.17,
+    "NVDA": 212.06,
+    "AAPL": 325.89,
+    "GOOGL": 342.09,
+    "AMZN": 244.85,
+    "TSLA": 374.01,
+    "COIN": 166.12,
+    "HOOD": 104.48,
+    "SPY": 747.41
+  }
+}
