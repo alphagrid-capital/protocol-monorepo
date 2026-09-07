@@ -147,6 +147,7 @@ jobs:
           command: deploy
           secrets: |
             RPC_URL
+            RPC_SECRET_KEY
             X402_FACILITATOR_URL
             ORACLE_KEEPER_PRIVATE_KEY
             RELAYER_PRIVATE_KEY
@@ -157,6 +158,7 @@ jobs:
             AGENT_SIGNER_ENCRYPTION_KEY
         env:
           RPC_URL: ${{ secrets.RPC_URL }}
+          RPC_SECRET_KEY: ${{ secrets.RPC_SECRET_KEY }}
           X402_FACILITATOR_URL: ${{ secrets.X402_FACILITATOR_URL }}
           ORACLE_KEEPER_PRIVATE_KEY: ${{ secrets.ORACLE_KEEPER_PRIVATE_KEY }}
           RELAYER_PRIVATE_KEY: ${{ secrets.RELAYER_PRIVATE_KEY }}

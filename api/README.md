@@ -356,6 +356,7 @@ In **each** environment, add secrets with the **same names** but chain-specific 
 | Secret                      | Description                                                      |
 | --------------------------- | ---------------------------------------------------------------- |
 | `RPC_URL`                   | JSON-RPC URL for that chain                                      |
+| `RPC_SECRET_KEY`            | Optional; sent as `x-secret-key` on RPC requests                 |
 | `X402_FACILITATOR_URL`      | x402 facilitator for that network                                |
 | `RELAYER_PRIVATE_KEY`       | EOA with `REGISTRAR_ROLE` on that chain's `AgentRegistry`        |
 | `EXECUTOR_PRIVATE_KEY`      | EOA with `EXECUTOR_ROLE` on that chain's `TradeRouter`           |

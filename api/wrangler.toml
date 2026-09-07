@@ -20,6 +20,7 @@ head_sampling_rate = 1
 [vars]
 ENABLE_SWAGGER = "true"
 # RPC_URL — api/.dev.vars or `wrangler secret put RPC_URL --env <name>`
+# RPC_SECRET_KEY — optional; sent as x-secret-key on RPC requests (`wrangler secret put RPC_SECRET_KEY --env <name>`)
 # RELAYER_PRIVATE_KEY — `wrangler secret put RELAYER_PRIVATE_KEY --env <name>`
 # EXECUTOR_PRIVATE_KEY — `wrangler secret put EXECUTOR_PRIVATE_KEY --env <name>`
 # ORACLE_KEEPER_PRIVATE_KEY — `wrangler secret put ORACLE_KEEPER_PRIVATE_KEY --env <name>`
