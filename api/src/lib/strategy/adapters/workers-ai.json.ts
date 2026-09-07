@@ -1,6 +1,6 @@
 export function extractJsonText(raw: string): string {
   const trimmed = raw.trim()
-  const fenced = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i)
+  const fenced = /^```(?:json)?\s*([\s\S]*?)\s*```$/i.exec(trimmed)
   if (fenced) {
     return fenced[1].trim()
   }
@@ -11,7 +11,7 @@ function describeResponseShape(response: unknown): string {
   if (response === null || typeof response !== 'object') {
     return typeof response
   }
-  const keys = Object.keys(response as Record<string, unknown>).join(', ')
+  const keys = Object.keys(response).join(', ')
   const preview = JSON.stringify(response).slice(0, 300)
   return `object{${keys}} ${preview}`
 }
@@ -21,7 +21,7 @@ export function readWorkersAiResponseText(response: unknown): string {
     return response
   }
   if (response && typeof response === 'object' && 'response' in response) {
-    const inner = (response as { response: unknown }).response
+    const inner = (response).response
     if (typeof inner === 'string') {
       return inner
     }

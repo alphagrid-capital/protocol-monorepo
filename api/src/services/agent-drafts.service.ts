@@ -43,7 +43,7 @@ function toAgentDraft(
     owner: row.owner_address,
     identity,
     vaultAddress: (row.vault_address ??
-      fallbackVaultAddress) as AgentDraft['vaultAddress'],
+      fallbackVaultAddress) satisfies AgentDraft['vaultAddress'],
     strategy: row.strategy,
     botFrequency: parseBotFrequency(row.bot_frequency),
     createdAt: row.created_at,

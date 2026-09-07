@@ -25,8 +25,8 @@ import type {
   AgentRegistrationResponse,
   LinkErc8004Request,
   LinkErc8004Response,
+  OnChainAgentsByOwnerResponse,
 } from '../schemas/agent.js'
-import type { OnChainAgentsByOwnerResponse } from '../schemas/agent.js'
 
 export interface GetAgentResult {
   agentId: string

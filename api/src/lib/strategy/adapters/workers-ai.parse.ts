@@ -1,7 +1,8 @@
 import {
-  StrategyAiEnvelopeSchema,
-  type StrategyAdapterOutcome,
+  StrategyAiEnvelopeSchema
+  
 } from '../../../schemas/strategy-adapter.js'
+import type {StrategyAdapterOutcome} from '../../../schemas/strategy-adapter.js';
 import { extractJsonText } from './workers-ai.json.js'
 import { mapEnvelopeToOutcome } from './workers-ai.outcome.js'
 

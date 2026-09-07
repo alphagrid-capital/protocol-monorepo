@@ -14,13 +14,14 @@ import {
 import { requirePrivyAuth } from '../middleware/privy-auth.js'
 import { PrivyAuthHeadersSchema } from '../schemas/auth-headers.js'
 import { agentIdParamSchema } from '../schemas/agent.js'
+import type {
+  StrategyRunItemSchema} from '../schemas/strategy-run.js';
 import {
   ListStrategyRunsQuerySchema,
   ListStrategyRunsResponseSchema,
   RunStrategyQuerySchema,
   RunStrategyResponseSchema,
   StrategyRunErrorSchema,
-  StrategyRunItemSchema,
   StrategyRunStatusSchema,
 } from '../schemas/strategy-run.js'
 import { ManagedAgentService } from '../services/managed-agent.service.js'

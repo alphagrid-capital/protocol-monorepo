@@ -1,9 +1,10 @@
 import type { Address } from 'viem'
 import { MAX_AGENTS_PER_USER } from '../constants/agent-limits.js'
 import {
-  AgentProfilesRepository,
-  type AgentProfileRow,
+  AgentProfilesRepository
+  
 } from '../db/agent-profiles.repository.js'
+import type {AgentProfileRow} from '../db/agent-profiles.repository.js';
 import { AgentSignersRepository } from '../db/agent-signers.repository.js'
 import { AppError } from '../errors.js'
 import { normalizeAddress } from '../lib/evm/utils.js'

@@ -4,6 +4,7 @@ import { privateKeyToAccount } from 'viem/accounts'
 import * as viemChains from 'viem/chains'
 import { robinhoodTestnet } from '../constants/chains/robinhoodTestnet.js'
 import type { AgentRegistrationConfig } from '../lib/agent/registration-config.js'
+import { getWorkerEnv } from '../lib/worker-env.js'
 
 const SUPPORTED_CHAINS = [
   viemChains.baseSepolia,
@@ -48,7 +49,9 @@ export class ProviderService {
   createPublicClient() {
     return createPublicClient({
       chain: this.chain,
-      transport: http(this.rpcUrl),
+      transport: http(this.rpcUrl, {
+        fetchOptions: this.rpcFetchOptions(),
+      }),
     })
   }
 
@@ -56,7 +59,18 @@ export class ProviderService {
     return createWalletClient({
       account: privateKeyToAccount(privateKey),
       chain: this.chain,
-      transport: http(this.rpcUrl),
+      transport: http(this.rpcUrl, {
+        fetchOptions: this.rpcFetchOptions(),
+      }),
     })
+  }
+
+  private rpcFetchOptions() {
+    const secretKey = getWorkerEnv().RPC_SECRET_KEY
+    console.log('secretKey', secretKey)
+    if (!secretKey) {
+      return undefined
+    }
+    return { headers: { 'x-secret-key': secretKey } }
   }
 }
