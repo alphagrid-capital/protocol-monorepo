@@ -67,7 +67,6 @@ export class ProviderService {
 
   private rpcFetchOptions() {
     const secretKey = getWorkerEnv().RPC_SECRET_KEY
-    console.log('secretKey', secretKey)
     if (!secretKey) {
       return undefined
     }

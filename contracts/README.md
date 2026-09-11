@@ -60,7 +60,8 @@ contracts/
 └── script/
     ├── helpers/                    # DeploymentEnv, AgentCoreDeploy, VaultDeploy, DeploymentArtifacts
     ├── config/                     # VaultTrackPolicies, Fees, TokenCatalog
-    ├── ops/                        # SetRegistrationFee, DepositToGenesisVault, EnableGenesisVaultTokens
+    ├── ops/                        # SetRegistrationFee, DepositToGenesisVault, EnableGenesisVaultTokens,
+    │                               # GrantOperatorRole, SetAgentStatus
     ├── DeployAgentCore.s.sol
     ├── DeployVaultInfrastructure.s.sol
     ├── DeployFullStack.s.sol       # dev-complete greenfield orchestrator
@@ -138,6 +139,24 @@ cast call $GENESIS_VAULT "allowedTokenCount()(uint256)" --rpc-url $RPC_URL
 ```
 
 `DeployTrading` env vars: `ADMIN`, `EXECUTOR`, `OPERATOR` (optional), `AGENT_REGISTRY`, `ALLOCATION_MANAGER`, `VAULT_TRACK_REGISTRY`, `GENESIS_VAULT`, `DEPLOY_MOCK_SWAP_ADAPTER`.
+
+### Grant operator role / suspend an agent
+
+```bash
+cd contracts
+# .env: PRIVATE_KEY, AGENT_REGISTRY, OPERATOR
+# optional TRADE_ROUTER (also grants forceClose rights)
+
+forge script script/ops/GrantOperatorRole.s.sol:GrantOperatorRole \
+  --rpc-url $RPC_URL --broadcast
+
+# Suspend agent (blocks opens + API intent relay). Default AGENT_STATUS=2.
+# AGENT_ID=16 AGENT_STATUS=2
+forge script script/ops/SetAgentStatus.s.sol:SetAgentStatus \
+  --rpc-url $RPC_URL --broadcast
+```
+
+`SetAgentStatus` requires `OPERATOR_ROLE` on `AgentRegistry`. Status values: `0` Draft, `1` Active, `2` Suspended, `3` Failed, `4` Graduated, `5` Exited.
 
 - `DEPLOY_MOCK_SWAP_ADAPTER=true` — test/dev adapter (mints mock tokens)
 - `DEPLOY_MOCK_SWAP_ADAPTER=false` — `InventorySwapAdapter` (pre-funded ERC-20 inventory)
