@@ -86,7 +86,7 @@ const updateDraftRoute = createRoute({
   tags: ['Agent drafts'],
   summary: 'Update agent launch draft',
   description:
-    'Partial update. Same `identity` shape as create, plus optional `strategy` and `botFrequency` (`1h` or `1d` only). Launch requires identity, provisioned signer, strategy, and bot frequency. Vault is assigned at draft creation.',
+    'Partial update. Same `identity` shape as create, plus optional `strategy`, `botFrequency` (`1h` or `1d` only), and `dataConnections` (e.g. Truth Social). Launch requires identity, provisioned signer, strategy, and bot frequency. Vault is assigned at draft creation.',
   request: {
     headers: PrivyAuthHeadersSchema,
     params: draftIdParam,

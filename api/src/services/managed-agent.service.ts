@@ -11,6 +11,11 @@ import { normalizeAddress } from '../lib/evm/utils.js'
 import { computeNextRunAt } from '../lib/strategy/schedule.js'
 import { getWorkerEnv } from '../lib/worker-env.js'
 import type { BotFrequency } from '../schemas/agent-draft.js'
+import type { DataConnections } from '../schemas/data-connections.js'
+import {
+  parseDataConnections,
+  serializeDataConnections,
+} from '../schemas/data-connections.js'
 import type {
   GetAgentResponse,
   ListAgentsByOwnerResponse,
@@ -27,6 +32,7 @@ export interface ManagedAgentProfile {
   handle: string
   strategy: string
   botFrequency: BotFrequency
+  dataConnections: DataConnections
   pricingTier: string
   nextRunAt: string
   archivedAt: string | null
@@ -58,6 +64,7 @@ function toManagedProfile(row: AgentProfileRow): ManagedAgentProfile {
     handle: row.handle,
     strategy: row.strategy,
     botFrequency,
+    dataConnections: parseDataConnections(row.data_connections),
     pricingTier: row.pricing_tier,
     nextRunAt: row.next_run_at,
     archivedAt: row.archived_at,
@@ -192,7 +199,11 @@ export class ManagedAgentService {
   async updateManagedProfile(
     agentId: string,
     authAddress: string,
-    input: { strategy?: string; botFrequency?: BotFrequency }
+    input: {
+      strategy?: string
+      botFrequency?: BotFrequency
+      dataConnections?: DataConnections
+    }
   ): Promise<ManagedAgentProfile> {
     const access = await this.requireManagedOwner(agentId, authAddress)
     if ('error' in access) {
@@ -210,6 +221,10 @@ export class ManagedAgentService {
     const updated = await this.profilesRepository.update(agentId, {
       strategy: input.strategy,
       botFrequency: input.botFrequency,
+      dataConnections:
+        input.dataConnections !== undefined
+          ? serializeDataConnections(input.dataConnections)
+          : undefined,
       nextRunAt:
         input.botFrequency !== undefined
           ? computeNextRunAt(input.botFrequency)

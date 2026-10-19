@@ -6,6 +6,7 @@ import type {
 } from '../../schemas/trading.js'
 import type { StrategyDecision } from '../../schemas/strategy.js'
 import type { StrategyAdapterOutcome } from '../../schemas/strategy-adapter.js'
+import type { SignalFeed } from '../signals/types.js'
 import type { OraclePriceEntry } from '../../services/tokens.service.js'
 import type { WorkerEnvWithAi } from '../../types/worker-env.js'
 import { resolveStrategyDecisionAdapter } from './adapters/resolve.js'
@@ -35,6 +36,8 @@ export interface StrategyContext {
   positions: ListAgentPositionsResponse['positions']
   risk: AgentRiskStateResponse
   guardrails: StrategyGuardrails
+  /** External signal feeds (Truth Social, etc.). Omitted when none loaded. */
+  signals?: SignalFeed[]
 }
 
 /** Example input: `api/src/lib/strategy/context.example.json` */

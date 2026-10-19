@@ -33,6 +33,7 @@ export const agentDrafts = sqliteTable(
     vaultAddress: text('vault_address'),
     strategy: text('strategy'),
     botFrequency: text('bot_frequency'),
+    dataConnections: text('data_connections'),
     pricingTier: text('pricing_tier'),
     signerAddress: text('signer_address'),
     encryptedSignerKey: text('encrypted_signer_key'),
@@ -72,6 +73,7 @@ export const agentProfiles = sqliteTable(
     handle: text('handle').notNull(),
     strategy: text('strategy').notNull(),
     botFrequency: text('bot_frequency').notNull().default('1h'),
+    dataConnections: text('data_connections'),
     pricingTier: text('pricing_tier').notNull(),
     nextRunAt: text('next_run_at').notNull(),
     archivedAt: text('archived_at'),
@@ -85,6 +87,12 @@ export const agentProfiles = sqliteTable(
       .where(sql`archived_at IS NULL`),
   ]
 )
+
+export const signalsCache = sqliteTable('signals_cache', {
+  cacheKey: text('cache_key').primaryKey(),
+  payloadJson: text('payload_json').notNull(),
+  fetchedAt: text('fetched_at').notNull(),
+})
 
 export const strategyRuns = sqliteTable(
   'strategy_runs',

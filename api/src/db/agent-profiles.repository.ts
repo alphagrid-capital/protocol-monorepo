@@ -10,6 +10,7 @@ export interface AgentProfileRow {
   handle: string
   strategy: string
   bot_frequency: string
+  data_connections: string | null
   pricing_tier: string
   next_run_at: string
   archived_at: string | null
@@ -22,6 +23,7 @@ export interface CreateAgentProfileInput {
   handle: string
   strategy: string
   botFrequency: BotFrequency
+  dataConnections?: string | null
   pricingTier: string
   nextRunAt: string
   createdAt: string
@@ -30,6 +32,7 @@ export interface CreateAgentProfileInput {
 export interface UpdateAgentProfileInput {
   strategy?: string
   botFrequency?: BotFrequency
+  dataConnections?: string | null
   nextRunAt?: string
 }
 
@@ -42,8 +45,8 @@ export class AgentProfilesRepository {
       .prepare(
         `INSERT INTO agent_profiles (
            agent_id, owner_address, handle, strategy, bot_frequency,
-           pricing_tier, next_run_at, created_at
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+           data_connections, pricing_tier, next_run_at, created_at
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
          RETURNING *`
       )
       .bind(
@@ -52,6 +55,7 @@ export class AgentProfilesRepository {
         input.handle,
         input.strategy,
         input.botFrequency,
+        input.dataConnections ?? null,
         input.pricingTier,
         input.nextRunAt,
         input.createdAt
@@ -204,7 +208,7 @@ export class AgentProfilesRepository {
   ): Promise<AgentProfileRow | null> {
     const db = requireDb(this.env)
     const sets: string[] = []
-    const values: string[] = []
+    const values: Array<string | null> = []
 
     if (input.strategy !== undefined) {
       sets.push('strategy = ?')
@@ -213,6 +217,10 @@ export class AgentProfilesRepository {
     if (input.botFrequency !== undefined) {
       sets.push('bot_frequency = ?')
       values.push(input.botFrequency)
+    }
+    if (input.dataConnections !== undefined) {
+      sets.push('data_connections = ?')
+      values.push(input.dataConnections)
     }
     if (input.nextRunAt !== undefined) {
       sets.push('next_run_at = ?')

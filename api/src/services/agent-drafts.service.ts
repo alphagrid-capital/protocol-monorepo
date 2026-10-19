@@ -14,6 +14,10 @@ import type {
   BotFrequency,
   UpdateAgentDraftSchema,
 } from '../schemas/agent-draft.js'
+import {
+  parseDataConnections,
+  serializeDataConnections,
+} from '../schemas/data-connections.js'
 import type { z } from 'zod'
 import type { WorkerEnv } from '../types/worker-env.js'
 
@@ -46,6 +50,10 @@ function toAgentDraft(
       fallbackVaultAddress) satisfies AgentDraft['vaultAddress'],
     strategy: row.strategy,
     botFrequency: parseBotFrequency(row.bot_frequency),
+    dataConnections: (() => {
+      const connections = parseDataConnections(row.data_connections)
+      return Object.keys(connections).length > 0 ? connections : null
+    })(),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }
@@ -148,6 +156,9 @@ export class AgentDraftsService {
     }
     if (body.botFrequency !== undefined) {
       patch.botFrequency = body.botFrequency
+    }
+    if (body.dataConnections !== undefined) {
+      patch.dataConnections = serializeDataConnections(body.dataConnections)
     }
 
     const row = await this.repository.update(draftId, patch)

@@ -19,8 +19,11 @@ import {
   decryptSignerPrivateKey,
   requireSignerEncryptionKey,
 } from '../lib/crypto/signer-key-crypto.js'
+import type { SignalFeed } from '../lib/signals/types.js'
 import { getWorkerEnv } from '../lib/worker-env.js'
 import { BotFrequencySchema } from '../schemas/agent-draft.js'
+import { parseDataConnections } from '../schemas/data-connections.js'
+import { createSignalsService } from './signals.service.js'
 import { TokensService } from './tokens.service.js'
 import { TradingService } from './trading.service.js'
 import { AgentRegistrationService } from './agent-registration.service.js'
@@ -106,11 +109,31 @@ export class StrategyRunnerService {
       prices = {}
     }
 
+    const truthUsernames = dueProfiles
+      .map((profile) => {
+        const connections = parseDataConnections(profile.data_connections)
+        const truth = connections.truthsocial
+        if (!truth?.enabled || !truth.username) {
+          return null
+        }
+        return truth.username
+      })
+      .filter((username): username is string => Boolean(username))
+
+    let truthFeeds = new Map<string, SignalFeed>()
+    try {
+      truthFeeds = await createSignalsService(this.env).prefetchTruthSocial(
+        truthUsernames
+      )
+    } catch {
+      truthFeeds = new Map()
+    }
+
     let completed = 0
     let failed = 0
 
     for (const profile of dueProfiles) {
-      const result = await this.runAgent(profile, prices)
+      const result = await this.runAgent(profile, prices, {}, truthFeeds)
       if (result.status === 'completed') {
         completed += 1
       } else {
@@ -159,7 +182,8 @@ export class StrategyRunnerService {
   private async runAgent(
     profile: AgentProfileRow,
     prices: StrategyContext['prices'],
-    options: RunAgentOptions = {}
+    options: RunAgentOptions = {},
+    prefetchedTruthFeeds?: Map<string, SignalFeed>
   ): Promise<StrategyAgentRunResult> {
     const runId = newRunId()
     const startedAt = new Date().toISOString()
@@ -196,6 +220,7 @@ export class StrategyRunnerService {
         trading.getQuote(profile.agent_id),
       ])
       const tradingConfig = loadTradingConfig(this.env)
+      const signals = await this.resolveSignals(profile, prefetchedTruthFeeds)
       const context: StrategyContext = {
         agentId: profile.agent_id,
         strategy: profile.strategy,
@@ -213,6 +238,7 @@ export class StrategyRunnerService {
           defaultExit: quote.defaultExit,
           usdcDecimals: tradingConfig.usdcDecimals,
         },
+        ...(signals.length > 0 ? { signals } : {}),
       }
 
       await this.runsRepository.create({
@@ -317,6 +343,29 @@ export class StrategyRunnerService {
         profile.agent_id,
         computeNextRunAt(botFrequency)
       )
+    }
+  }
+
+  private async resolveSignals(
+    profile: AgentProfileRow,
+    prefetchedTruthFeeds?: Map<string, SignalFeed>
+  ): Promise<SignalFeed[]> {
+    const connections = parseDataConnections(profile.data_connections)
+    const truth = connections.truthsocial
+    if (!truth?.enabled || !truth.username) {
+      return []
+    }
+
+    const key = truth.username.toLowerCase()
+    const prefetched = prefetchedTruthFeeds?.get(key)
+    if (prefetched) {
+      return [prefetched]
+    }
+
+    try {
+      return await createSignalsService(this.env).loadSignals(connections)
+    } catch {
+      return []
     }
   }
 }

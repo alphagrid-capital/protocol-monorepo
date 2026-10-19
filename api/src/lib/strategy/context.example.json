@@ -127,5 +127,19 @@
       { "triggerType": "StopLoss", "triggerBps": -1000, "exitBps": 10000 }
     ],
     "usdcDecimals": 6
-  }
+  },
+  "signals": [
+    {
+      "source": "truthsocial",
+      "handle": "realDonaldTrump",
+      "fetchedAt": "1735689600",
+      "items": [
+        {
+          "id": "123",
+          "createdAt": "1735686000",
+          "text": "Markets looking strong. America First!"
+        }
+      ]
+    }
+  ]
 }

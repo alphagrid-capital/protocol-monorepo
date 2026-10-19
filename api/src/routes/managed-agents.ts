@@ -117,7 +117,7 @@ const updateManagedAgentRoute = createRoute({
   tags: ['Managed agents'],
   summary: 'Update managed agent strategy profile',
   description:
-    'Updates strategy text and/or bot frequency for future strategy runner executions. No on-chain metadata is changed.',
+    'Updates strategy text, bot frequency, and/or dataConnections for future strategy runner executions. No on-chain metadata is changed.',
   security: [{ bearerAuth: [] }],
   request: {
     headers: PrivyAuthHeadersSchema,

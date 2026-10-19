@@ -13,6 +13,7 @@ export interface AgentDraftRow {
   vault_address: string | null
   strategy: string | null
   bot_frequency: string | null
+  data_connections: string | null
   pricing_tier: string | null
   signer_address: string | null
   encrypted_signer_key: string | null
@@ -38,6 +39,7 @@ export interface UpdateAgentDraftInput {
   identityJson?: string | null
   strategy?: string | null
   botFrequency?: string | null
+  dataConnections?: string | null
   pricingTier?: string | null
   signerAddress?: string | null
   encryptedSignerKey?: string | null
@@ -48,8 +50,9 @@ export interface UpdateAgentDraftInput {
 }
 
 const DRAFT_COLUMNS = `id, owner_address, handle, identity_json, vault_address,
-  strategy, bot_frequency, pricing_tier, signer_address, encrypted_signer_key,
-  key_version, status, launched_agent_id, launch_tx_hash, created_at, updated_at`
+  strategy, bot_frequency, data_connections, pricing_tier, signer_address,
+  encrypted_signer_key, key_version, status, launched_agent_id, launch_tx_hash,
+  created_at, updated_at`
 
 export class AgentDraftsRepository {
   constructor(private readonly env: WorkerEnv) {}
@@ -144,6 +147,10 @@ export class AgentDraftsRepository {
     if (input.botFrequency !== undefined) {
       sets.push('bot_frequency = ?')
       values.push(input.botFrequency)
+    }
+    if (input.dataConnections !== undefined) {
+      sets.push('data_connections = ?')
+      values.push(input.dataConnections)
     }
     if (input.pricingTier !== undefined) {
       sets.push('pricing_tier = ?')

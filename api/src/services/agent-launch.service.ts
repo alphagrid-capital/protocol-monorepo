@@ -172,6 +172,7 @@ export class AgentLaunchService {
           handle: identity.handle,
           strategy: row.strategy!,
           botFrequency: row.bot_frequency as BotFrequency,
+          dataConnections: row.data_connections,
           pricingTier,
           nextRunAt: computeNextRunAt(row.bot_frequency as BotFrequency),
           createdAt: launchedAt,

@@ -137,4 +137,18 @@ export const strategyContextExample = {
     ],
     usdcDecimals: 6,
   },
+  signals: [
+    {
+      source: 'truthsocial',
+      handle: 'realDonaldTrump',
+      fetchedAt: '1735689600',
+      items: [
+        {
+          id: '123',
+          createdAt: '1735686000',
+          text: 'Markets looking strong. America First!',
+        },
+      ],
+    },
+  ],
 } satisfies StrategyContext

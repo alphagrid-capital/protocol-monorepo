@@ -36,6 +36,11 @@ ENABLE_SWAGGER = "true"
 # STRATEGY_AI_GATEWAY_ID — optional; AI Gateway id (default alphagrid-ai-gateway)
 # STRATEGY_AI_MAX_TOKENS — optional; max output tokens (default 512)
 # STRATEGY_RUN_MANUAL_COOLDOWN_SECONDS — optional; min seconds between manual runs per agent (default 300)
+# APIFY_TOKEN — optional; Apify API token for Truth Social (and future) signal fetches (`wrangler secret put APIFY_TOKEN`)
+# APIFY_TRUTH_ACTOR_ID — optional; default muhammetakkurtt~truth-social-scraper
+# APIFY_MAX_POSTS — optional; max posts to request/normalize per fetch (default 20 request / 10 in context)
+# APIFY_WAIT_FOR_FINISH_SECONDS — optional; Apify run wait timeout (default 120)
+# SIGNALS_CACHE_TTL_SECONDS — optional; D1 signals cache TTL (default 900)
 
 [ai]
 binding = "AI"

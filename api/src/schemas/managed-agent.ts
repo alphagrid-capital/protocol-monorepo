@@ -1,6 +1,7 @@
 import { z } from '@hono/zod-openapi'
 import { agentIdParamSchema } from './agent.js'
 import { BotFrequencySchema } from './agent-draft.js'
+import { DataConnectionsSchema } from './data-connections.js'
 
 export const ManagedAgentProfileSchema = z
   .object({
@@ -8,6 +9,7 @@ export const ManagedAgentProfileSchema = z
     handle: z.string(),
     strategy: z.string(),
     botFrequency: BotFrequencySchema,
+    dataConnections: DataConnectionsSchema,
     pricingTier: z.string(),
     nextRunAt: z.string(),
     archivedAt: z.string().nullable(),
@@ -19,10 +21,14 @@ export const UpdateManagedAgentSchema = z
   .object({
     strategy: z.string().min(1).max(8192).optional(),
     botFrequency: BotFrequencySchema.optional(),
+    dataConnections: DataConnectionsSchema.optional(),
   })
   .strict()
   .refine(
-    (body) => body.strategy !== undefined || body.botFrequency !== undefined,
+    (body) =>
+      body.strategy !== undefined ||
+      body.botFrequency !== undefined ||
+      body.dataConnections !== undefined,
     { message: 'At least one field must be provided' }
   )
 

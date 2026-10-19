@@ -1,4 +1,5 @@
 import { z } from '@hono/zod-openapi'
+import { DataConnectionsSchema } from './data-connections.js'
 
 const addressSchema = z
   .string()
@@ -41,6 +42,7 @@ export const AgentDraftSchema = z
     vaultAddress: addressSchema,
     strategy: z.string().nullable(),
     botFrequency: BotFrequencySchema.nullable(),
+    dataConnections: DataConnectionsSchema.nullable(),
     createdAt: z.string(),
     updatedAt: z.string(),
   })
@@ -56,13 +58,15 @@ export const UpdateAgentDraftSchema = CreateAgentDraftSchema.partial()
   .extend({
     strategy: z.string().min(1).max(8192).optional(),
     botFrequency: BotFrequencySchema.optional(),
+    dataConnections: DataConnectionsSchema.optional(),
   })
   .strict()
   .refine(
     (body) =>
       body.identity !== undefined ||
       body.strategy !== undefined ||
-      body.botFrequency !== undefined,
+      body.botFrequency !== undefined ||
+      body.dataConnections !== undefined,
     { message: 'At least one field must be provided' }
   )
 
