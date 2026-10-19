@@ -3,8 +3,8 @@ import test from 'node:test'
 import {
   SignalsService,
   truthSocialCacheKey,
+  type SignalsApifyFetcher,
   type SignalsCacheStore,
-  type TruthSocialFetcher,
 } from './load-signals.ts'
 import type { SignalFeed } from './types.ts'
 
@@ -19,11 +19,12 @@ function mockCache(
 }
 
 function mockApify(
-  overrides: Partial<TruthSocialFetcher> = {}
-): TruthSocialFetcher {
+  overrides: Partial<SignalsApifyFetcher> = {}
+): SignalsApifyFetcher {
   return {
     isConfigured: () => false,
     runTruthSocialScraper: async () => [],
+    runEquityNewsScraper: async () => [],
     ...overrides,
   }
 }
@@ -117,4 +118,57 @@ test('loadSignals skips disabled Truth Social connection', async () => {
     truthsocial: { enabled: false, username: 'someone' },
   })
   assert.deepEqual(feeds, [])
+})
+
+test('loadSignals returns equity news using fallback symbols', async () => {
+  const fetchedAt = new Date().toISOString()
+  let calledWith: string[] | null = null
+  const service = new SignalsService(
+    {},
+    mockCache(),
+    mockApify({
+      isConfigured: () => true,
+      runEquityNewsScraper: async (symbols) => {
+        calledWith = symbols
+        return [
+          {
+            headline: 'NVDA rally',
+            summary: 'AI chips',
+            articleLink: 'https://example.com/1',
+            publishedDate: fetchedAt,
+            tickers: ['NVDA'],
+          },
+        ]
+      },
+    })
+  )
+
+  const feeds = await service.loadSignals(
+    { equitynews: { enabled: true } },
+    { fallbackSymbols: ['nvda', 'AAPL'] }
+  )
+  assert.deepEqual(calledWith, ['NVDA', 'AAPL'])
+  assert.equal(feeds.length, 1)
+  assert.equal(feeds[0]?.source, 'equitynews')
+  assert.equal(feeds[0]?.handle, 'NVDA,AAPL')
+  assert.equal(feeds[0]?.items.length, 1)
+  assert.match(feeds[0]?.items[0]?.text ?? '', /NVDA rally/)
+})
+
+test('loadSignals skips equity news when enabled but no symbols', async () => {
+  let called = false
+  const service = new SignalsService(
+    {},
+    mockCache(),
+    mockApify({
+      isConfigured: () => true,
+      runEquityNewsScraper: async () => {
+        called = true
+        return []
+      },
+    })
+  )
+  const feeds = await service.loadSignals({ equitynews: { enabled: true } })
+  assert.deepEqual(feeds, [])
+  assert.equal(called, false)
 })

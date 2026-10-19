@@ -159,6 +159,12 @@ jobs:
             PRIVY_APP_ID
             PRIVY_JWT_VERIFICATION_KEY
             AGENT_SIGNER_ENCRYPTION_KEY
+            APIFY_TOKEN
+            AWS_ACCESS_KEY_ID
+            AWS_SECRET_ACCESS_KEY
+            AWS_SESSION_TOKEN
+            AWS_REGION
+            BEDROCK_MODEL_ID
         env:
           RPC_URL: ${{ secrets.RPC_URL }}
           RPC_SECRET_KEY: ${{ secrets.RPC_SECRET_KEY }}
@@ -170,3 +176,9 @@ jobs:
           PRIVY_APP_ID: ${{ secrets.PRIVY_APP_ID }}
           PRIVY_JWT_VERIFICATION_KEY: ${{ secrets.PRIVY_JWT_VERIFICATION_KEY }}
           AGENT_SIGNER_ENCRYPTION_KEY: ${{ secrets.AGENT_SIGNER_ENCRYPTION_KEY }}
+          APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          BEDROCK_MODEL_ID: ${{ secrets.BEDROCK_MODEL_ID }}

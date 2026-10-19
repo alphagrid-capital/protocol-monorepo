@@ -1,9 +1,13 @@
 import { getWorkerEnv } from '../lib/worker-env.js'
 import type { WorkerEnv } from '../types/worker-env.js'
 
-const DEFAULT_ACTOR_ID = 'muhammetakkurtt~truth-social-scraper'
+const DEFAULT_TRUTH_ACTOR_ID = 'muhammetakkurtt~truth-social-scraper'
+const DEFAULT_EQUITY_NEWS_ACTOR_ID =
+  'vamsi-krishna~stock-market-news-collector'
 const DEFAULT_WAIT_FOR_FINISH_SECONDS = 120
 const DEFAULT_MAX_POSTS = 20
+const DEFAULT_EQUITY_NEWS_MAX_ITEMS = 20
+const DEFAULT_EQUITY_NEWS_HOURS_BACK = 48
 
 interface ApifyRunData {
   id?: string
@@ -31,17 +35,82 @@ export class ApifyService {
   }
 
   async runTruthSocialScraper(username: string): Promise<unknown[]> {
-    const token = this.env.APIFY_TOKEN?.trim()
-    if (!token) {
-      throw new Error('APIFY_TOKEN is not configured')
-    }
-
+    const token = this.requireToken()
     const actorId =
-      this.env.APIFY_TRUTH_ACTOR_ID?.trim() || DEFAULT_ACTOR_ID
+      this.env.APIFY_TRUTH_ACTOR_ID?.trim() || DEFAULT_TRUTH_ACTOR_ID
     const maxPosts = parsePositiveInt(
       this.env.APIFY_MAX_POSTS,
       DEFAULT_MAX_POSTS
     )
+
+    return this.runActorAndFetchItems(
+      token,
+      actorId,
+      {
+        username,
+        maxPosts,
+        cleanContent: true,
+        onlyMedia: false,
+        onlyReplies: false,
+        useLastPostId: false,
+      },
+      maxPosts
+    )
+  }
+
+  /**
+   * Fetch recent equity / company news for tickers via Apify
+   * (`vamsi-krishna~stock-market-news-collector` by default).
+   */
+  async runEquityNewsScraper(symbols: string[]): Promise<unknown[]> {
+    const token = this.requireToken()
+    if (symbols.length === 0) {
+      return []
+    }
+
+    const actorId =
+      this.env.APIFY_EQUITY_NEWS_ACTOR_ID?.trim() ||
+      DEFAULT_EQUITY_NEWS_ACTOR_ID
+    const maxItems = parsePositiveInt(
+      this.env.APIFY_EQUITY_NEWS_MAX_ITEMS,
+      DEFAULT_EQUITY_NEWS_MAX_ITEMS
+    )
+    const hoursBack = parsePositiveInt(
+      this.env.APIFY_EQUITY_NEWS_HOURS_BACK,
+      DEFAULT_EQUITY_NEWS_HOURS_BACK
+    )
+
+    return this.runActorAndFetchItems(
+      token,
+      actorId,
+      {
+        tickers: symbols,
+        feedPreset: 'us_markets',
+        onlyNewArticles: false,
+        hoursBack,
+        maxItems,
+        includeFullText: false,
+        deduplicate: true,
+        useTickerFeeds: true,
+      },
+      maxItems
+    )
+  }
+
+  private requireToken(): string {
+    const token = this.env.APIFY_TOKEN?.trim()
+    if (!token) {
+      throw new Error('APIFY_TOKEN is not configured')
+    }
+    return token
+  }
+
+  private async runActorAndFetchItems(
+    token: string,
+    actorId: string,
+    input: Record<string, unknown>,
+    itemLimit: number
+  ): Promise<unknown[]> {
     const waitForFinish = parsePositiveInt(
       this.env.APIFY_WAIT_FOR_FINISH_SECONDS,
       DEFAULT_WAIT_FOR_FINISH_SECONDS
@@ -58,14 +127,7 @@ export class ApifyService {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        username,
-        maxPosts,
-        cleanContent: true,
-        onlyMedia: false,
-        onlyReplies: false,
-        useLastPostId: false,
-      }),
+      body: JSON.stringify(input),
     })
 
     if (!runResponse.ok) {
@@ -85,7 +147,7 @@ export class ApifyService {
       throw new Error(`Apify run did not succeed (status=${status})`)
     }
 
-    return this.fetchDatasetItems(datasetId, token, maxPosts)
+    return this.fetchDatasetItems(datasetId, token, itemLimit)
   }
 
   private async fetchDatasetItems(

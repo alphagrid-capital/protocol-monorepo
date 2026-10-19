@@ -150,5 +150,17 @@ export const strategyContextExample = {
         },
       ],
     },
+    {
+      source: 'equitynews',
+      handle: 'NVDA,AAPL',
+      fetchedAt: '1735689600',
+      items: [
+        {
+          id: 'https://example.com/nvda-ai',
+          createdAt: '1735686000',
+          text: '[NVDA] NVDA rises on AI demand — Analysts lift price targets.',
+        },
+      ],
+    },
   ],
 } satisfies StrategyContext

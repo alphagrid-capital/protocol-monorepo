@@ -23,6 +23,24 @@ test('DataConnectionsSchema rejects unknown providers', () => {
   )
 })
 
+test('DataConnectionsSchema normalizes equity news symbols', () => {
+  const parsed = DataConnectionsSchema.parse({
+    equitynews: { enabled: true, symbols: ['nvda', 'AAPL'] },
+  })
+  assert.deepEqual(parsed, {
+    equitynews: { enabled: true, symbols: ['NVDA', 'AAPL'] },
+  })
+})
+
+test('DataConnectionsSchema allows equity news without symbols', () => {
+  const parsed = DataConnectionsSchema.parse({
+    equitynews: { enabled: true },
+  })
+  assert.deepEqual(parsed, {
+    equitynews: { enabled: true },
+  })
+})
+
 test('parseDataConnections returns empty object for invalid JSON', () => {
   assert.deepEqual(parseDataConnections('not-json'), {})
   assert.deepEqual(parseDataConnections(null), {})

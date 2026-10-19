@@ -113,31 +113,45 @@ export class StrategyRunnerService {
       prices = {}
     }
 
-    const truthUsernames = dueProfiles
-      .map((profile) => {
-        const connections = parseDataConnections(profile.data_connections)
-        const truth = connections.truthsocial
-        if (!truth?.enabled || !truth.username) {
-          return null
-        }
-        return truth.username
-      })
-      .filter((username): username is string => Boolean(username))
+    const truthUsernames: string[] = []
+    const equitySymbolSets: string[][] = []
+    for (const profile of dueProfiles) {
+      const connections = parseDataConnections(profile.data_connections)
+      const truth = connections.truthsocial
+      if (truth?.enabled && truth.username) {
+        truthUsernames.push(truth.username)
+      }
+      const equity = connections.equitynews
+      if (equity?.enabled && equity.symbols && equity.symbols.length > 0) {
+        equitySymbolSets.push(equity.symbols)
+      }
+    }
 
+    const signalsService = createSignalsService(this.env)
     let truthFeeds = new Map<string, SignalFeed>()
+    let equityFeeds = new Map<string, SignalFeed>()
     try {
-      truthFeeds = await createSignalsService(this.env).prefetchTruthSocial(
-        truthUsernames
-      )
+      truthFeeds = await signalsService.prefetchTruthSocial(truthUsernames)
     } catch {
       truthFeeds = new Map()
+    }
+    try {
+      equityFeeds = await signalsService.prefetchEquityNews(equitySymbolSets)
+    } catch {
+      equityFeeds = new Map()
     }
 
     let completed = 0
     let failed = 0
 
     for (const profile of dueProfiles) {
-      const result = await this.runAgent(profile, prices, {}, truthFeeds)
+      const result = await this.runAgent(
+        profile,
+        prices,
+        {},
+        truthFeeds,
+        equityFeeds
+      )
       if (result.status === 'completed') {
         completed += 1
       } else {
@@ -187,7 +201,8 @@ export class StrategyRunnerService {
     profile: AgentProfileRow,
     prices: StrategyContext['prices'],
     options: RunAgentOptions = {},
-    prefetchedTruthFeeds?: Map<string, SignalFeed>
+    prefetchedTruthFeeds?: Map<string, SignalFeed>,
+    prefetchedEquityFeeds?: Map<string, SignalFeed>
   ): Promise<StrategyAgentRunResult> {
     const runId = newRunId()
     const startedAt = new Date().toISOString()
@@ -225,7 +240,12 @@ export class StrategyRunnerService {
         trading.getQuote(profile.agent_id),
       ])
       const tradingConfig = loadTradingConfig(this.env)
-      const signals = await this.resolveSignals(profile, prefetchedTruthFeeds)
+      const signals = await this.resolveSignals(
+        profile,
+        quote.allowedSymbols,
+        prefetchedTruthFeeds,
+        prefetchedEquityFeeds
+      )
       const context: StrategyContext = {
         agentId: profile.agent_id,
         strategy: profile.strategy,
@@ -362,22 +382,25 @@ export class StrategyRunnerService {
 
   private async resolveSignals(
     profile: AgentProfileRow,
-    prefetchedTruthFeeds?: Map<string, SignalFeed>
+    allowedSymbols: readonly string[],
+    prefetchedTruthFeeds?: Map<string, SignalFeed>,
+    prefetchedEquityFeeds?: Map<string, SignalFeed>
   ): Promise<SignalFeed[]> {
     const connections = parseDataConnections(profile.data_connections)
-    const truth = connections.truthsocial
-    if (!truth?.enabled || !truth.username) {
+    const truthEnabled = Boolean(
+      connections.truthsocial?.enabled && connections.truthsocial.username
+    )
+    const equityEnabled = Boolean(connections.equitynews?.enabled)
+    if (!truthEnabled && !equityEnabled) {
       return []
     }
 
-    const key = truth.username.toLowerCase()
-    const prefetched = prefetchedTruthFeeds?.get(key)
-    if (prefetched) {
-      return [prefetched]
-    }
-
     try {
-      return await createSignalsService(this.env).loadSignals(connections)
+      return await createSignalsService(this.env).loadSignals(connections, {
+        fallbackSymbols: allowedSymbols,
+        prefetchedTruthSocial: prefetchedTruthFeeds,
+        prefetchedEquityNews: prefetchedEquityFeeds,
+      })
     } catch {
       return []
     }
