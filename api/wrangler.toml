@@ -83,6 +83,7 @@ CHAIN_ID = "421614"
 X402_NETWORK = "eip155:421614"
 ENABLE_SWAGGER = "true"
 SUBGRAPH_URL = "https://api.studio.thegraph.com/query/1724541/alphagrid-protocol-subgraph-arbitrum-sepolia/version/latest"
+STRATEGY_DECISION_PROVIDER = "bedrock"
 
 [[env.arbitrum-sepolia.d1_databases]]
 binding = "DB"
