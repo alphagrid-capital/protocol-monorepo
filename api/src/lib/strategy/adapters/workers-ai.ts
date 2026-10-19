@@ -153,8 +153,15 @@ export function createWorkersAiAdapter(
       }
 
       try {
+        const messages = buildWorkersAiMessages(context)
+        console.log('[strategy-ai] workers-ai input', {
+          agentId: context.agentId,
+          model: config.model,
+          signals: context.signals,
+          messages,
+        })
         const response = await env.AI.run(config.model, {
-          messages: buildWorkersAiMessages(context),
+          messages,
           max_tokens: config.maxTokens,
           response_format: STRATEGY_AI_RESPONSE_FORMAT,
         }, {
@@ -162,7 +169,14 @@ export function createWorkersAiAdapter(
             id: config.gatewayId,
           },
         })
-        return parseWorkersAiResponse(readWorkersAiResponseText(response))
+        const rawText = readWorkersAiResponseText(response)
+        const outcome = parseWorkersAiResponse(rawText)
+        console.log('[strategy-ai] workers-ai output', {
+          agentId: context.agentId,
+          rawText,
+          outcome,
+        })
+        return outcome
       } catch (error) {
         const message =
           error instanceof Error ? error.message : 'Workers AI request failed.'

@@ -137,8 +137,21 @@ export function createBedrockAdapter(
       }
 
       try {
-        const raw = await invokeBedrockConverse(config, context)
-        return parseWorkersAiResponse(raw)
+        const messages = buildWorkersAiMessages(context)
+        console.log('[strategy-ai] bedrock input', {
+          agentId: context.agentId,
+          modelId: config.modelId,
+          signals: context.signals,
+          messages,
+        })
+        const rawText = await invokeBedrockConverse(config, context)
+        const outcome = parseWorkersAiResponse(rawText)
+        console.log('[strategy-ai] bedrock output', {
+          agentId: context.agentId,
+          rawText,
+          outcome,
+        })
+        return outcome
       } catch (error) {
         const message =
           error instanceof Error ? error.message : 'Bedrock request failed.'
