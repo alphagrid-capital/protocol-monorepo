@@ -18,7 +18,7 @@ test('loadWorkersAiConfig defaults model and max tokens', () => {
 
 test('loadWorkersAiConfig reads env overrides', () => {
   const config = loadWorkersAiConfig({
-    STRATEGY_AI_MODEL: '@cf/custom-model',
+    CF_WORKERS_MODEL_ID: '@cf/custom-model',
     STRATEGY_AI_GATEWAY_ID: 'custom-gateway',
     STRATEGY_AI_MAX_TOKENS: '256',
   })
@@ -29,7 +29,7 @@ test('loadWorkersAiConfig reads env overrides', () => {
 
 test('loadWorkersAiConfig normalizes AI Gateway model prefixes', () => {
   const config = loadWorkersAiConfig({
-    STRATEGY_AI_MODEL: 'workers-ai/@cf/custom-model',
+    CF_WORKERS_MODEL_ID: 'workers-ai/@cf/custom-model',
   })
   assert.equal(config.model, '@cf/custom-model')
 })
@@ -109,12 +109,17 @@ test('mapEnvelopeToOutcome returns hold decision when safe', () => {
     },
     decision: {
       summary: 'Hold — no trades recommended.',
+      reasoning: 'No entry signal matched the strategy this run.',
       actions: [],
     },
   })
 
   assert.equal(outcome.status, 'ok')
   if (outcome.status === 'ok') {
+    assert.equal(
+      outcome.reasoning,
+      'No entry signal matched the strategy this run.'
+    )
     assert.deepEqual(outcome.actions, [])
   }
 })

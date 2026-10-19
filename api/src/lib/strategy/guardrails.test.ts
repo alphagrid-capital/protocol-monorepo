@@ -98,6 +98,7 @@ function baseContext(): StrategyContext {
 test('allows guarded open action', () => {
   const decision: StrategyDecision = {
     summary: 'Open NVDA',
+    reasoning: 'Test reasoning.',
     actions: [{ type: 'open', symbol: 'NVDA', usdcAmount: '50' }],
   }
 
@@ -113,6 +114,7 @@ test('allows open action without exits when system defaultExit uses signed bps',
   ]
   const decision: StrategyDecision = {
     summary: 'Open NVDA',
+    reasoning: 'Test reasoning.',
     actions: [{ type: 'open', symbol: 'NVDA', usdcAmount: '50' }],
   }
 
@@ -126,6 +128,7 @@ test('still validates AI-provided exits', () => {
   context.guardrails.exitBounds.requireTakeProfit = false
   const decision: StrategyDecision = {
     summary: 'Open NVDA',
+    reasoning: 'Test reasoning.',
     actions: [
       {
         type: 'open',
@@ -144,6 +147,7 @@ test('still validates AI-provided exits', () => {
 test('blocks open action for disallowed symbol', () => {
   const decision: StrategyDecision = {
     summary: 'Open TSLA',
+    reasoning: 'Test reasoning.',
     actions: [{ type: 'open', symbol: 'TSLA', usdcAmount: '50' }],
   }
 
@@ -158,6 +162,7 @@ test('blocks open action for disallowed symbol', () => {
 test('blocks open action above available allocation', () => {
   const decision: StrategyDecision = {
     summary: 'Open too large',
+    reasoning: 'Test reasoning.',
     actions: [{ type: 'open', symbol: 'NVDA', usdcAmount: '101' }],
   }
 
@@ -174,6 +179,7 @@ test('blocks open action during risk breach', () => {
   context.guardrails.breaches.dailyLoss = true
   const decision: StrategyDecision = {
     summary: 'Open while breached',
+    reasoning: 'Test reasoning.',
     actions: [{ type: 'open', symbol: 'NVDA', usdcAmount: '50' }],
   }
 
@@ -185,6 +191,7 @@ test('blocks open action during risk breach', () => {
 test('blocks close action for unknown position', () => {
   const decision: StrategyDecision = {
     summary: 'Close unknown',
+    reasoning: 'Test reasoning.',
     actions: [{ type: 'close', positionId: '1' }],
   }
 

@@ -48,6 +48,8 @@ export const StrategyActionSchema = z.discriminatedUnion('type', [
 export const StrategyDecisionSchema = z
   .object({
     summary: z.string(),
+    /** One sentence explaining why these actions (or hold) were chosen. */
+    reasoning: z.string(),
     actions: z.array(StrategyActionSchema),
   })
   .strict()

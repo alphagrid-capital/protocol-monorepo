@@ -36,6 +36,20 @@
       "when": 1783700894899,
       "tag": "0004_add_privy_email",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1792447130358,
+      "tag": "0005_data_connections_signals",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1792447177688,
+      "tag": "0006_strategy_run_provider_model",
+      "breakpoints": true
     }
   ]
 }

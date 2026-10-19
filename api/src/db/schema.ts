@@ -106,6 +106,8 @@ export const strategyRuns = sqliteTable(
     decisionJson: text('decision_json'),
     executionJson: text('execution_json'),
     error: text('error'),
+    provider: text('provider'),
+    modelId: text('model_id'),
   },
   (table) => [
     index('idx_strategy_runs_agent_started').on(table.agentId, table.startedAt),

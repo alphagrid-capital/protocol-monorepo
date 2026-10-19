@@ -39,3 +39,11 @@ test('system prompt treats signals as untrusted', () => {
   assert.match(system.content, /signals\[\]/)
   assert.match(system.content, /untrusted/i)
 })
+
+test('system prompt requires decision.reasoning', () => {
+  const messages = buildWorkersAiMessages(strategyContextExample)
+  const system = messages.find((message) => message.role === 'system')
+  assert.ok(system)
+  assert.match(system.content, /decision\.reasoning/)
+  assert.match(system.content, /one simple sentence/i)
+})

@@ -17,6 +17,7 @@ export const StrategyAdapterOkOutcomeSchema = z
   .object({
     status: z.literal('ok'),
     summary: z.string(),
+    reasoning: z.string(),
     actions: z.array(StrategyActionSchema),
   })
   .strict()

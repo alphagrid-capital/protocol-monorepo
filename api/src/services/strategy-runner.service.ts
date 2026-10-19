@@ -10,6 +10,7 @@ import type {
   StrategyDecision,
   StrategyAdapterOutcome,
 } from '../lib/strategy/decision.js'
+import { resolveStrategyDecisionMeta } from '../lib/strategy/adapters/decision-meta.js'
 import { executeStrategyDecision } from '../lib/strategy/executor.js'
 import type { ExecutionActionResult } from '../lib/strategy/executor.js'
 import { assertStrategyDecisionGuardrails } from '../lib/strategy/guardrails.js'
@@ -68,6 +69,9 @@ export interface StrategyAgentRunResult {
   startedAt: string
   completedAt: string | null
   summary: string | null
+  reasoning: string | null
+  provider: string | null
+  modelId: string | null
   actions: StrategyDecision['actions']
   execution: ExecutionActionResult[]
   error: string | null
@@ -194,6 +198,7 @@ export class StrategyRunnerService {
     let execution: ExecutionActionResult[] = []
     let runCreated = false
     let completedAt: string | null = null
+    const decisionMeta = resolveStrategyDecisionMeta(this.env)
 
     try {
       const onChain = await AgentRegistrationService.fromEnv(this.env).getAgent(
@@ -247,6 +252,8 @@ export class StrategyRunnerService {
         status: 'running',
         startedAt,
         contextJson: JSON.stringify(context),
+        provider: decisionMeta.provider,
+        modelId: decisionMeta.modelId,
       })
       runCreated = true
 
@@ -257,6 +264,7 @@ export class StrategyRunnerService {
 
       decision = {
         summary: outcome.summary,
+        reasoning: outcome.reasoning,
         actions: outcome.actions,
       }
       assertStrategyDecisionGuardrails(decision, context)
@@ -307,6 +315,9 @@ export class StrategyRunnerService {
         startedAt,
         completedAt,
         summary: decision.summary,
+        reasoning: decision.reasoning,
+        provider: decisionMeta.provider,
+        modelId: decisionMeta.modelId,
         actions: decision.actions,
         execution,
         error: executionError ?? null,
@@ -334,6 +345,9 @@ export class StrategyRunnerService {
         startedAt,
         completedAt,
         summary: decision?.summary ?? null,
+        reasoning: decision?.reasoning ?? null,
+        provider: decisionMeta.provider,
+        modelId: decisionMeta.modelId,
         actions: decision?.actions ?? [],
         execution,
         error: message,

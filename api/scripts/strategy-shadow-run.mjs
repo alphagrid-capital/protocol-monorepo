@@ -304,7 +304,7 @@ async function main() {
 
   const runPayload = d1Query(
     config,
-    `SELECT id, agent_id, status, started_at, completed_at, decision_json, error
+    `SELECT id, agent_id, status, started_at, completed_at, provider, model_id, decision_json, error
      FROM strategy_runs
      WHERE agent_id = '${options.agentId}'
      ORDER BY started_at DESC

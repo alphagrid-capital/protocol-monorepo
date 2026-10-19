@@ -14,6 +14,8 @@ export interface StrategyRunRow {
   decision_json: string | null
   execution_json: string | null
   error: string | null
+  provider: string | null
+  model_id: string | null
 }
 
 export type StrategyRunListRow = Omit<StrategyRunRow, 'context_json'>
@@ -24,6 +26,8 @@ export interface CreateStrategyRunInput {
   status: StrategyRunStatus
   startedAt: string
   contextJson: string
+  provider: string | null
+  modelId: string | null
 }
 
 export interface CompleteStrategyRunInput {
@@ -42,8 +46,8 @@ export class StrategyRunsRepository {
     const row = await db
       .prepare(
         `INSERT INTO strategy_runs (
-           id, agent_id, status, started_at, context_json
-         ) VALUES (?, ?, ?, ?, ?)
+           id, agent_id, status, started_at, context_json, provider, model_id
+         ) VALUES (?, ?, ?, ?, ?, ?, ?)
          RETURNING *`
       )
       .bind(
@@ -51,7 +55,9 @@ export class StrategyRunsRepository {
         input.agentId,
         input.status,
         input.startedAt,
-        input.contextJson
+        input.contextJson,
+        input.provider,
+        input.modelId
       )
       .first<StrategyRunRow>()
 
@@ -105,7 +111,7 @@ export class StrategyRunsRepository {
     const result = await db
       .prepare(
         `SELECT id, agent_id, status, started_at, completed_at,
-                decision_json, execution_json, error
+                decision_json, execution_json, error, provider, model_id
          FROM strategy_runs
          WHERE agent_id = ?
          ORDER BY started_at DESC

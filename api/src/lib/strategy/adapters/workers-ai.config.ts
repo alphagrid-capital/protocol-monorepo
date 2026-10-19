@@ -1,6 +1,6 @@
 import type { WorkerEnv } from '../../../types/worker-env.js'
 
-export const DEFAULT_STRATEGY_AI_MODEL =
+export const DEFAULT_CF_WORKERS_MODEL_ID =
   '@cf/meta/llama-3.3-70b-instruct-fp8-fast'
 export const DEFAULT_STRATEGY_AI_GATEWAY_ID = 'alphagrid-ai-gateway'
 export const DEFAULT_STRATEGY_AI_MAX_TOKENS = 512
@@ -32,7 +32,7 @@ export function loadWorkersAiConfig(
 ): WorkersAiConfig {
   return {
     model: normalizeWorkersAiModel(
-      env.STRATEGY_AI_MODEL?.trim() || DEFAULT_STRATEGY_AI_MODEL
+      env.CF_WORKERS_MODEL_ID?.trim() || DEFAULT_CF_WORKERS_MODEL_ID
     ),
     gatewayId:
       env.STRATEGY_AI_GATEWAY_ID?.trim() || DEFAULT_STRATEGY_AI_GATEWAY_ID,

@@ -42,6 +42,7 @@ export function mapEnvelopeToOutcome(
   return {
     status: 'ok',
     summary: envelope.decision.summary,
+    reasoning: envelope.decision.reasoning,
     actions: envelope.decision.actions,
   }
 }

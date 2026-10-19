@@ -2,7 +2,7 @@ name: API
 
 on:
   push:
-    branches: [main]
+    branches: [main, feat/fintechers]
     paths:
       - "api/**"
       - ".github/workflows/api.yml"
@@ -64,7 +64,10 @@ jobs:
   resolve-deploy-matrix:
     name: Resolve deploy targets
     needs: check
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'push' &&
+       (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/fintechers'))
     runs-on: ubuntu-latest
     defaults:
       run:

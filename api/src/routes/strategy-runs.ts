@@ -40,16 +40,20 @@ for (const path of privyProtectedPaths) {
 
 function toStrategyRunItem(row: StrategyRunListRow): z.infer<typeof StrategyRunItemSchema> {
   let summary: string | null = null
+  let reasoning: string | null = null
   let actions: StrategyDecision['actions'] = []
   let execution: ExecutionActionResult[] = []
 
   if (row.decision_json) {
     try {
-      const decision = JSON.parse(row.decision_json) as StrategyDecision
-      summary = decision.summary
-      actions = decision.actions
+      const decision = JSON.parse(row.decision_json) as Partial<StrategyDecision>
+      summary = typeof decision.summary === 'string' ? decision.summary : null
+      reasoning =
+        typeof decision.reasoning === 'string' ? decision.reasoning : null
+      actions = Array.isArray(decision.actions) ? decision.actions : []
     } catch {
       summary = null
+      reasoning = null
       actions = []
     }
   }
@@ -68,6 +72,9 @@ function toStrategyRunItem(row: StrategyRunListRow): z.infer<typeof StrategyRunI
     startedAt: row.started_at,
     completedAt: row.completed_at,
     summary,
+    reasoning,
+    provider: row.provider,
+    modelId: row.model_id,
     actions,
     execution,
     error: row.error,
@@ -253,6 +260,9 @@ const runStrategyHandler: RouteHandler<typeof runStrategyRoute> = async (c) => {
           startedAt: result.startedAt,
           completedAt: result.completedAt,
           summary: result.summary,
+          reasoning: result.reasoning,
+          provider: result.provider,
+          modelId: result.modelId,
           actions: result.actions,
           execution: result.execution,
           error: result.error,

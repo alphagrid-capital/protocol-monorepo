@@ -45,6 +45,7 @@ const STRATEGY_AI_RESPONSE_FORMAT = {
             additionalProperties: false,
             properties: {
               summary: { type: 'string' },
+              reasoning: { type: 'string' },
               actions: {
                 type: 'array',
                 items: {
@@ -112,7 +113,7 @@ const STRATEGY_AI_RESPONSE_FORMAT = {
                 },
               },
             },
-            required: ['summary', 'actions'],
+            required: ['summary', 'reasoning', 'actions'],
           },
         ],
       },

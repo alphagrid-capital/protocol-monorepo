@@ -1,23 +1,20 @@
 import type { WorkerEnvWithAi } from '../../../types/worker-env.js'
 import { createBedrockAdapter } from './bedrock.js'
+import { parseStrategyDecisionProvider } from './decision-meta.js'
 import { noneStrategyDecisionAdapter } from './none.js'
 import type { StrategyDecisionAdapter } from './types.js'
 import { createWorkersAiAdapter } from './workers-ai.js'
 
-export type StrategyDecisionProvider = 'none' | 'workers-ai' | 'bedrock'
-
-function parseProvider(env: WorkerEnvWithAi): StrategyDecisionProvider {
-  const raw = String(env.STRATEGY_DECISION_PROVIDER ?? 'workers-ai').toLowerCase()
-  if (raw === 'none' || raw === 'workers-ai' || raw === 'bedrock') {
-    return raw
-  }
-  throw new Error(`Unknown STRATEGY_DECISION_PROVIDER: ${raw}`)
-}
+export type {
+  StrategyDecisionMeta,
+  StrategyDecisionProvider,
+} from './decision-meta.js'
+export { resolveStrategyDecisionMeta } from './decision-meta.js'
 
 export function resolveStrategyDecisionAdapter(
   env: WorkerEnvWithAi = {}
 ): StrategyDecisionAdapter {
-  const provider = parseProvider(env)
+  const provider = parseStrategyDecisionProvider(env)
   if (provider === 'workers-ai') {
     return createWorkersAiAdapter(env)
   }
