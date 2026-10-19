@@ -21,7 +21,7 @@
     "deploy:arbitrum-one": "wrangler deploy --env arbitrum-one",
     "deploy:all": "yarn deploy:arbitrum-sepolia && yarn deploy:robinhood-testnet && yarn deploy:arbitrum-one",
     "type-check": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test src/lib/trading/metrics.test.ts src/lib/trading/exit-rule-convention.test.ts src/lib/trading/trade-log-scan.test.ts src/lib/trading/log-from-block.test.ts src/lib/crypto/signer-key-crypto.test.ts src/lib/agent/launch-metadata.test.ts src/lib/strategy/guardrails.test.ts src/lib/strategy/run-cooldown.test.ts src/lib/strategy/adapters/adapters.test.ts src/lib/strategy/adapters/workers-ai.test.ts src/lib/strategy/adapters/workers-ai.prompt.test.ts src/lib/signals/normalize-truthsocial.test.ts src/lib/signals/load-signals.test.ts src/schemas/data-connections.test.ts",
+    "test": "node --experimental-strip-types --test src/lib/trading/metrics.test.ts src/lib/trading/exit-rule-convention.test.ts src/lib/trading/trade-log-scan.test.ts src/lib/trading/log-from-block.test.ts src/lib/crypto/signer-key-crypto.test.ts src/lib/agent/launch-metadata.test.ts src/lib/strategy/guardrails.test.ts src/lib/strategy/run-cooldown.test.ts src/lib/strategy/adapters/adapters.test.ts src/lib/strategy/adapters/workers-ai.test.ts src/lib/strategy/adapters/workers-ai.prompt.test.ts src/lib/strategy/adapters/bedrock.config.test.ts src/lib/signals/normalize-truthsocial.test.ts src/lib/signals/load-signals.test.ts src/schemas/data-connections.test.ts",
     "format": "prettier --write .",
     "lint:ts": "eslint \"src/**/*.ts\" --fix",
     "lint:fix": "eslint \"src/**/*.ts\" --fix",
@@ -40,7 +40,8 @@
     "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.8.3",
     "typescript": "^5.8.3",
-    "wrangler": "^4.19.1"
+    "wrangler": "^4.19.1",
+    "tsx": "^4.23.15"
   },
   "dependencies": {
     "@cfworker/json-schema": "^4.1.1",
@@ -57,6 +58,7 @@
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.23",
     "viem": "^2.31.0",
-    "zod": "^4.4.3"
+    "zod": "^4.4.3",
+    "aws4fetch": "^1.0.20"
   }
 }

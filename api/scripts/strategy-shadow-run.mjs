@@ -5,8 +5,9 @@
  * Prerequisites:
  *   1. `yarn dev:arbitrum-sepolia` (or matching --env) running on --port
  *   2. api/.dev.vars includes at least:
- *        STRATEGY_DECISION_PROVIDER=workers-ai
+ *        STRATEGY_DECISION_PROVIDER=bedrock   # or workers-ai
  *        STRATEGY_RUNNER_EXECUTE=false
+ *        # bedrock also needs AWS_* + BEDROCK_MODEL_ID in .dev.vars
  *   3. Managed agent profile exists in local D1
  *
  * Usage:
