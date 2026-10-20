@@ -1,0 +1,393 @@
+<!doctype html><html><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body><title>Earnings Volatility Research</title>
+<meta name="description" content="Signal research behind AlphaGrid's Feed Reader: can filing text forecast the size of earnings moves well enough to trade options after costs?" />
+<style>
+/* Layout: single 860px reading column, sticky brand bar, numbered research sections — same committed dark "terminal" world as the earlier Feed Reader note. */
+:root{
+  color-scheme: dark;
+  --bg:#000; --surface:#0b0c0b; --panel:#0e0f0e; --border:#1b1d1b; --border-2:#2a2d2a;
+  --ink:#f3f5f3; --ink-2:#9aa29a; --ink-3:#6c746c;
+  --mint:#00e696; --mint-soft:#66f0be; --mint-dim:rgba(0,230,150,.12);
+  --red:#ff6b6b; --red-dim:rgba(255,107,107,.12); --amber:#f5b942; --amber-dim:rgba(245,185,66,.12);
+  --sans:"Inter",ui-sans-serif,system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:860px;margin:0 auto;padding-inline:20px;padding-block:0}
+a{color:var(--mint-soft)}
+a:focus-visible{outline:2px solid var(--mint);outline-offset:2px}
+h1,h2,h3{text-wrap:balance;letter-spacing:-.02em;line-height:1.15;margin:0}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.pos{color:var(--mint)} .neg{color:var(--red)} .amb{color:var(--amber)}
+
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:flex;justify-content:space-between;align-items:center;
+  gap:1rem;padding:.7rem 20px;background:rgba(0,0,0,.8);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+.brand{display:flex;align-items:center;gap:.6rem;font-weight:700;letter-spacing:.14em;font-size:.82rem}
+.brand .m{width:14px;height:14px;background:conic-gradient(from 210deg,var(--mint),#0a6b4c);clip-path:polygon(50% 0,100% 100%,0 100%)}
+.brand .tag{color:var(--ink-3);font-weight:600;letter-spacing:.14em;border-left:1px solid var(--border-2);padding-left:.6rem}
+.bar .date{color:var(--ink-3);font-size:.76rem;letter-spacing:.06em}
+
+.hero{padding-block:3.2rem 1.4rem}
+.eyebrow{color:var(--mint);font-size:.72rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;margin:0 0 1rem}
+.hero h1{font-size:clamp(2rem,6vw,3.1rem);font-weight:600}
+.dek{color:var(--ink-2);font-size:1.08rem;max-width:62ch;margin:1.1rem 0 0}
+.byline{color:var(--ink-3);font-size:.8rem;letter-spacing:.04em;margin-top:1.4rem;border-top:1px solid var(--border);padding-top:1rem}
+
+.verdict{border:1px solid var(--border-2);background:linear-gradient(160deg,#0f110f,#080908);border-radius:14px;padding:1.4rem 1.5rem;margin:1.6rem 0 0}
+.verdict h2{font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);font-weight:600;margin-bottom:1rem}
+.verdict ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.8rem}
+.verdict li{display:grid;grid-template-columns:auto 1fr;gap:.8rem;font-size:.96rem;min-width:0}
+.verdict li>span:last-child{min-width:0}
+.verdict .k{font-family:var(--mono);font-size:.7rem;font-weight:700;letter-spacing:.04em;padding:.2rem .5rem;border-radius:5px;height:fit-content;white-space:nowrap}
+.k.no{color:var(--red);background:var(--red-dim)} .k.priced{color:var(--amber);background:var(--amber-dim)} .k.edge{color:var(--mint);background:var(--mint-dim)}
+
+section{padding-block:2.6rem}
+section+section{border-top:1px solid var(--border)}
+.num{color:var(--mint);font-family:var(--mono);font-size:.8rem;font-weight:700;letter-spacing:.08em;margin:0}
+section h2{font-size:clamp(1.35rem,3.5vw,1.8rem);font-weight:600;margin:.4rem 0 .8rem}
+section p{color:var(--ink-2);margin:0 0 1rem;max-width:66ch}
+section p strong{color:var(--ink);font-weight:600}
+.lead{color:var(--ink)!important;font-size:1.02rem}
+
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.7rem;margin:1.2rem 0}
+.tile{border:1px solid var(--border);background:var(--panel);border-radius:11px;padding:1rem 1.1rem;min-width:0}
+.tile .v{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:1.5rem;font-weight:600;letter-spacing:-.02em}
+.tile .l{color:var(--ink-3);font-size:.74rem;margin-top:.3rem;line-height:1.4}
+
+figure{margin:1.4rem 0 .6rem;border:1px solid var(--border);background:var(--panel);border-radius:12px;padding:1.1rem 1.1rem .8rem;min-width:0}
+figure .cap{color:var(--ink-3);font-size:.78rem;margin-top:.7rem;line-height:1.5}
+figure .ct{color:var(--ink);font-size:.9rem;font-weight:600;margin-bottom:.1rem}
+figure .cs{color:var(--ink-3);font-size:.76rem;margin-bottom:.8rem}
+.chart{width:100%;overflow-x:auto}
+svg{display:block;width:100%;height:auto}
+svg text{font-family:var(--mono)}
+.c-ax{fill:var(--ink-3);font-size:10.5px}
+.c-lab{fill:var(--ink-2);font-size:11.5px;font-family:var(--sans)}
+.c-val{fill:var(--ink);font-size:11.5px;font-weight:600}
+.c-note{fill:var(--ink-3);font-size:10px;font-family:var(--sans)}
+
+.cases{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin:1.2rem 0}
+.case{border:1px solid var(--border);background:var(--panel);border-radius:11px;padding:1.05rem 1.1rem;min-width:0}
+.case .tagrow{display:flex;gap:.5rem;align-items:center;margin-bottom:.6rem}
+.case .st{font-family:var(--mono);font-size:.62rem;font-weight:700;letter-spacing:.06em;padding:.16rem .45rem;border-radius:4px;text-transform:uppercase}
+.st.ed{color:var(--mint);background:var(--mint-dim)} .st.pr{color:var(--amber);background:var(--amber-dim)} .st.bl{color:var(--red);background:var(--red-dim)} .st.nt{color:var(--ink-2);background:rgba(255,255,255,.06)}
+.case h3{font-size:.98rem;font-weight:600}
+.case p{font-size:.84rem;margin:.4rem 0 0}
+.case .out{font-family:var(--mono);font-size:.8rem;margin-top:.6rem;color:var(--ink-2)}
+
+.tblwrap{overflow-x:auto;margin:1.2rem 0;border:1px solid var(--border);border-radius:12px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;min-width:700px;font-size:.8rem}
+th{color:var(--ink-3);font-weight:600;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;text-align:left;padding:.75rem .8rem;border-bottom:1px solid var(--border-2)}
+td{color:var(--ink-2);padding:.65rem .8rem;border-bottom:1px solid var(--border);vertical-align:top}
+tr:last-child td{border-bottom:0}
+td:first-child{color:var(--ink);font-weight:600}
+td.r{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.grp td{color:var(--mint);font-family:var(--mono);font-size:.66rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;background:rgba(255,255,255,.02);padding-block:.45rem}
+
+.method{color:var(--ink-3);font-size:.82rem}
+.method li{margin-bottom:.5rem}
+footer{border-top:1px solid var(--border);padding-block:1.8rem 3rem;color:var(--ink-3);font-size:.76rem}
+
+@media(max-width:620px){.cases{grid-template-columns:1fr}.verdict li{grid-template-columns:1fr;gap:.3rem}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style>
+
+<header class="bar">
+  <span class="brand"><span class="m"></span>ALPHAGRID<span class="tag">RESEARCH</span></span>
+  <span class="date">Earnings volatility · 20 Oct 2026</span>
+</header>
+
+<div class="wrap">
+
+  <div class="hero">
+    <p class="eyebrow">Signal research · the one thing filing text predicts</p>
+    <h1>Can a language model price earnings risk better than the options market?</h1>
+    <p class="dek">Every attempt to predict the direction of a stock from public text failed. One thing survived: filing text forecasts how big a company's earnings move will be, out of sample. This note tests whether that forecast can be traded with options, and what execution costs do to it.</p>
+    <p class="byline">Holdout Oct 2025 – Oct 2026, after the model's training cutoff · 18,785 8-K filings from the 1,000 largest US filers · 451 earnings straddles priced from Alpaca option bars · spreads from Cboe and Alpaca live quotes · embeddings by Amazon Titan via Bedrock · scripts in <span class="mono">demo/</span>.</p>
+  </div>
+
+  <div class="verdict">
+    <h2>What we concluded</h2>
+    <ul>
+      <li><span class="k no">DIRECTION · NO</span><span>Text cannot predict which way a stock goes after a filing. Every direction and drift test, from 1 minute to 20 days, came back at zero once duplicates, lookahead and outliers were removed.</span></li>
+      <li><span class="k edge">SIZE · EDGE</span><span>Text does forecast <strong>how big</strong> the move will be: +0.21 correlation beyond the filing type, and +0.15 beyond the company's own history for earnings, before the release.</span></li>
+      <li><span class="k priced">STRADDLES · BEFORE COSTS</span><span>Buying the straddles the forecast calls cheap and selling the ones it calls expensive earned <strong>+37% per pair</strong> (t=4.15, IC +0.17), a Sharpe of about 3.1 before costs.</span></li>
+      <li><span class="k no">COSTS · BREAKS IT</span><span>Measured option spreads are 7–10% of premium per side. Break-even is <strong>7.4%</strong>. Paying the quoted spread the strategy loses (Sharpe −0.85); filling halfway to mid it earns Sharpe 1.4.</span></li>
+    </ul>
+  </div>
+
+  <section>
+    <p class="num">01</p><h2>The idea</h2>
+    <p class="lead">Options let you bet on how far a stock moves without betting on which way. We forecast that distance with a language model and trade where it disagrees with the options market.</p>
+    <div class="cases">
+      <div class="case"><div class="tagrow"><span class="st nt">Instrument</span></div><h3>Straddle</h3><p>A call and a put at the same strike, near the current price. It pays if the stock moves a lot in either direction and loses if it barely moves.</p></div>
+      <div class="case"><div class="tagrow"><span class="st nt">The market's forecast</span></div><h3>Implied move</h3><p>The straddle's price divided by the stock price, for example 7% around an earnings release. Buyers win when the real move beats it.</p></div>
+      <div class="case"><div class="tagrow"><span class="st ed">Our forecast</span></div><h3>Similar past releases</h3><p>Embed the company's previous earnings release, find the 50 most similar past releases, and average how far those stocks moved at their next earnings.</p></div>
+      <div class="case"><div class="tagrow"><span class="st ed">Signal</span></div><h3>Forecast ÷ implied move</h3><p>Above 1, options look cheap: buy the straddle. Below 1, they look expensive: sell it. Direction never enters.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <p class="num">02</p><h2>What filing text can and cannot predict</h2>
+    <p>We had Claude Haiku read 18,785 8-Ks into structured facts and Titan embed every filing. Each was matched to its company's abnormal stock move, with the market and the stock's own normal volatility removed. Models trained on 2023–25 were scored once on 2025–26.</p>
+    <figure>
+      <div class="ct">Out-of-sample correlation with what happened</div>
+      <div class="cs">Spearman, holdout Oct 2025 – Oct 2026, 7,494 filings · each filing predicted from its 50 most similar 2023–25 filings</div>
+      <div class="chart" id="c-predict"></div>
+      <div class="cap">Only the size of the move is predictable. Topic clusters keep their reaction size from one period to the next (correlation 0.95), but no cluster keeps its drift.</div>
+    </figure>
+    <div class="tiles">
+      <div class="tile"><div class="v">18,785</div><div class="l">large-cap 8-K filings read and embedded</div></div>
+      <div class="tile"><div class="v pos">0.95</div><div class="l">topic stability of reaction size, 2023–25 vs 2025–26</div></div>
+      <div class="tile"><div class="v">≈0</div><div class="l">correlation with 5- and 20-day drift, in large and small caps</div></div>
+    </div>
+  </section>
+
+  <section>
+    <p class="num">03</p><h2>Forecasting the move before the release</h2>
+    <p>A forecast is only tradable if it exists before the news. So for each earnings release we used the company's <strong>previous</strong> release, and compared it with the company's own average past move, the baseline any options trader already has.</p>
+    <figure>
+      <div class="ct">Which forecast predicts the size of the earnings move?</div>
+      <div class="cs">Spearman with the actual move, 3,001 holdout earnings releases</div>
+      <div class="chart" id="c-pre"></div>
+      <div class="cap">The text adds information the company's history does not contain (+0.15). The release itself adds nothing over earlier filings: how violently a stock reacts depends on what kind of company it is.</div>
+    </figure>
+    <figure>
+      <div class="ct">The spread between low and high forecasts is large</div>
+      <div class="cs">actual average earnings move by forecast third (company history alone)</div>
+      <div class="chart" id="c-terc"></div>
+      <div class="cap">Even the simplest forecast separates a 3% mover from an 8% mover. More than half of the high-forecast names moved over 5% in a day.</div>
+    </figure>
+  </section>
+
+  <section>
+    <p class="num">04</p><h2>The straddle backtest</h2>
+    <p>For 451 holdout earnings released outside market hours, we bought the at-the-money straddle at the close before the release and sold it at the reaction-day close, using Alpaca's historical option prices. Signal thirds were set from past events only.</p>
+    <div class="tiles">
+      <div class="tile"><div class="v">451</div><div class="l">earnings straddles priced, Oct 2025 – Oct 2026</div></div>
+      <div class="tile"><div class="v pos">+0.17</div><div class="l">IC of the text signal with straddle return</div></div>
+      <div class="tile"><div class="v pos">t=4.15</div><div class="l">buy cheap − sell expensive, per pair</div></div>
+      <div class="tile"><div class="v amb">3.10</div><div class="l">portfolio Sharpe before costs</div></div>
+    </div>
+    <figure>
+      <div class="ct">Straddle return by signal third</div>
+      <div class="cs">mean return on premium, text signal (forecast ÷ implied move), before costs</div>
+      <div class="chart" id="c-thirds"></div>
+      <div class="cap">Straddles the text calls cheap gained 27% on average; the ones it calls expensive lost 10%. Selling the expensive and buying the cheap earned 37% per pair.</div>
+    </figure>
+    <figure>
+      <div class="ct">Which signal works?</div>
+      <div class="cs">buy cheap − sell expensive, return on premium per pair, before costs</div>
+      <div class="chart" id="c-signals"></div>
+      <div class="cap">The options market's implied move is still the best single forecast of the move (correlation 0.43 vs 0.27 for text). The text pays where it disagrees with the market.</div>
+    </figure>
+    <p>A Sharpe of 3 is a reason for suspicion. About half the straddles were priced from the day's last option trade rather than a quote, and the next section shows what real spreads do.</p>
+  </section>
+
+  <section>
+    <p class="num">05</p><h2>Execution costs: where it breaks</h2>
+    <p class="lead">Historical option quotes were not available, so we measured live ones: the bid-ask spread of each pre-earnings at-the-money straddle, as a share of its mid price, per side.</p>
+    <div class="tiles">
+      <div class="tile"><div class="v neg">9.3%</div><div class="l">median cost per side, this week's large-cap reporters (Cboe)</div></div>
+      <div class="tile"><div class="v amb">7.2%</div><div class="l">median for reporters worth over $100B</div></div>
+      <div class="tile"><div class="v pos">0.5%</div><div class="l">TSLA, the most liquid; META 0.6%, NFLX 1.1%</div></div>
+    </div>
+    <figure>
+      <div class="ct">Cost per side varies 50× between names</div>
+      <div class="cs">half the at-the-money straddle spread, % of mid · this week's earnings reporters · Cboe delayed quotes</div>
+      <div class="chart" id="c-names"></div>
+      <div class="cap">Quotes were stamped 02:33 New York time, when spreads are widest. Daytime spreads near the close are likely lower and are the next thing to measure.</div>
+    </figure>
+    <figure>
+      <div class="ct">Profit depends on execution</div>
+      <div class="cs">annualised Sharpe vs cost per side (% of premium) · measured median spreads marked</div>
+      <div class="chart" id="c-cost"></div>
+      <div class="cap">Break-even is 7.4% per side, right where the measured spreads sit. Charging each trade its own ticker's measured spread, the strategy loses at the quoted price and earns a Sharpe of 1.4 when filled halfway to mid.</div>
+    </figure>
+    <div class="cases">
+      <div class="case"><div class="tagrow"><span class="st bl">Fill at the quote</span></div><h3>123 trades, measured spreads</h3><div class="out"><span class="neg">−11.9%/yr</span> · Sharpe <span class="neg">−0.85</span> · max DD −13.3%</div></div>
+      <div class="case"><div class="tagrow"><span class="st ed">Fill halfway to mid</span></div><h3>Same trades, patient limit orders</h3><div class="out"><span class="pos">+18.4%/yr</span> · Sharpe <span class="pos">+1.43</span> · max DD −5.1%</div></div>
+    </div>
+  </section>
+
+  <section>
+    <p class="num">06</p><h2>Other instruments</h2>
+    <p>Only options pay for the size of a move regardless of direction, so no other instrument carries this signal. What can change is how cheaply the options are traded.</p>
+    <div class="cases">
+      <div class="case"><div class="tagrow"><span class="st bl">No</span></div><h3>Stocks, futures, AlphaGrid tokens</h3><p>Linear instruments pay for direction, which the text cannot predict.</p></div>
+      <div class="case"><div class="tagrow"><span class="st bl">No</span></div><h3>CFDs (Plus500, IG, eToro)</h3><p>Linear, the broker is your counterparty, and spreads are at or above the exchange.</p></div>
+      <div class="case"><div class="tagrow"><span class="st pr">Barely</span></div><h3>A different options broker</h3><p>Exchange market makers set the spread. Brokers differ by commission and small price improvement.</p></div>
+      <div class="case"><div class="tagrow"><span class="st ed">Most promising</span></div><h3>Liquid names only</h3><p>TSLA, META and NFLX cost 0.5–1% per side. Needs a test on every liquid earnings release, not a random sample.</p></div>
+      <div class="case"><div class="tagrow"><span class="st ed">Yes</span></div><h3>Patient limit orders, daytime</h3><p>Roughly halves the cost. Turns Sharpe −0.85 into +1.43 in the backtest.</p></div>
+      <div class="case"><div class="tagrow"><span class="st pr">Partly</span></div><h3>Sell the expensive straddles only</h3><p>One leg's spread instead of two, with the forecast filtering out likely blow-ups. A short straddle can lose several times its premium.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <p class="num">07</p><h2>Tried and failed</h2>
+    <p>Every approach that tried to predict the direction of a stock from public text failed once duplicates, lookahead and outliers were handled. In order of testing:</p>
+    <div class="tblwrap">
+      <table>
+        <thead><tr><th>Approach</th><th>Data</th><th>Result</th><th>Why it failed</th></tr></thead>
+        <tbody>
+          <tr class="grp"><td colspan="4">Trump posts</td></tr>
+          <tr><td>Posts → price or volatility</td><td>Truth Social, hourly and daily</td><td class="r">no effect (p&gt;0.3)</td><td>Posts move nothing measurable</td></tr>
+          <tr><td>Read-through trades, v1/v2</td><td>4,486 posts, Oct 2025 – Oct 2026</td><td class="r">Sharpe 1.22 → ≈0</td><td>One defense headline counted 5×; median trade negative</td></tr>
+          <tr><td>v3: prompt for non-obvious links</td><td>Same</td><td class="r">+0.01% / 3d</td><td>Model invented chains</td></tr>
+          <tr><td>v4: adversarial critic</td><td>Same</td><td class="r">−0.98% / 3d</td><td>Kept trades no better than rejected</td></tr>
+          <tr><td>v4b: looser prompt</td><td>Same</td><td class="r">−0.11% / 3d</td><td>More trades, same quality</td></tr>
+          <tr><td>Fade the posts</td><td>Same</td><td class="r">mirror − costs</td><td>Costs paid twice; driven by outliers</td></tr>
+          <tr><td>Posts at minute horizons</td><td>Alpaca 1-minute bars</td><td class="r">+0.03–0.11%</td><td>Nothing after correction; overnight gap goes against the call</td></tr>
+          <tr class="grp"><td colspan="4">SEC 8-K read-through</td></tr>
+          <tr><td>Filer → linked company</td><td>1,032 trades, top 500, 2025–26</td><td class="r">+0.01% / 3d</td><td>Spillover priced at once</td></tr>
+          <tr><td>Pre-registered out of sample</td><td>781 trades, top 2,000, 2023–25</td><td class="r">+0.22%, Sharpe 0.19</td><td>Failed 3 of 5 criteria</td></tr>
+          <tr><td>Minute lead-lag</td><td>1,019 filings</td><td class="r">30% pass-through</td><td>Linked stock moves in the same minutes</td></tr>
+          <tr><td>"A moved, B hasn't yet"</td><td>Same</td><td class="r">−0.28% / 5d</td><td>The market's smaller move was right</td></tr>
+          <tr><td>Link momentum</td><td>1,014 stocks, 118 months</td><td class="r">IC +0.007</td><td>Holdout hint was a 2025–26 AI-cluster regime</td></tr>
+          <tr class="grp"><td colspan="4">Filing facts and embeddings</td></tr>
+          <tr><td>Metadata: item, timing, size, busy days</td><td>51,723 filings</td><td class="r">ρ ≈ 0</td><td>No under-reaction anywhere</td></tr>
+          <tr><td>LLM facts → 5- and 20-day drift</td><td>18,785 large + 10,054 small caps</td><td class="r">≈0</td><td>Text priced by the open</td></tr>
+          <tr><td>"Market missed it"</td><td>Material filing, small reaction</td><td class="r">−0.73% / +0.02%</td><td>The market was right to shrug</td></tr>
+          <tr><td>Embeddings → next-day open-to-close</td><td>13,190 filings</td><td class="r">IC +0.017</td><td>Signal sits in one fact, not the whole text</td></tr>
+          <tr><td>Guidance raised, small caps</td><td>382 events</td><td class="r">+0.87% → −0.26%</td><td>Did not replicate in the holdout</td></tr>
+          <tr class="grp"><td colspan="4">Volatility</td></tr>
+          <tr><td>Straddles, company-history signal</td><td>451 straddles</td><td class="r">IC +0.07 (p=0.17)</td><td>History adds little over the implied move</td></tr>
+          <tr><td>Text straddles at quoted spreads</td><td>123 trades</td><td class="r">Sharpe −0.85</td><td>Spreads exceed the edge</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Two results survived. <strong>Guidance raised</strong> in large caps (buy at the open, sell at the close) replicated in two periods and has its own report. <strong>Move-size forecasting</strong> survived as information, but not yet as a trade.</p>
+  </section>
+
+  <section>
+    <p class="num">08</p><h2>Decisions and next steps</h2>
+    <p>One measurement decides whether this becomes a strategy: the real daytime spread near the close, when it would trade.</p>
+    <div class="verdict" style="margin-top:0">
+      <h2>What happens next</h2>
+      <ul>
+        <li><span class="k edge">TONIGHT</span><span>Rerun the Cboe spread check at 21:00 CEST (15:00 New York) for the after-close reporters. If daytime spreads are about half the overnight ones, the strategy sits near <strong>Sharpe 1–1.4</strong>.</span></li>
+        <li><span class="k edge">UNIVERSE</span><span>Test the signal on <strong>every liquid earnings release</strong> (straddle cost under ~3% per side) instead of a random sample.</span></li>
+        <li><span class="k priced">DATA</span><span>If tonight is promising, buy historical end-of-day bid/ask (Cboe DataShop, ThetaData or MarketData.app) and reprice every trade. Databento declined both cards.</span></li>
+        <li><span class="k priced">VARIANT</span><span>Test selling only the straddles the forecast calls expensive, with a loss cap per trade.</span></li>
+        <li><span class="k no">ALPHAGRID</span><span>The protocol trades spot tokens, so no straddles there. The forecast ships as <strong>risk sizing</strong>: smaller positions before a predicted violent move.</span></li>
+      </ul>
+    </div>
+    <p style="margin-top:1.4rem;color:var(--ink)">In one line: <strong>the model knows how hard a stock will move, not which way, and option spreads currently eat that knowledge.</strong></p>
+  </section>
+
+  <footer>
+    <strong style="color:var(--ink-2)">Method &amp; data.</strong>
+    <ul class="method">
+      <li>Filings: SEC EDGAR submissions and full-text 8-Ks for the 1,000 largest filers; non-earnings filings within a day of the company's earnings removed; one event per company per day. Facts by Bedrock <span class="mono">eu.anthropic.claude-haiku-4-5</span>; embeddings by <span class="mono">amazon.titan-embed-text-v2</span>, 512 dimensions.</li>
+      <li>Outcomes: abnormal return = stock − beta × SPY (250-day beta), scaled by the stock's own volatility over the 60 days ending 10 days before the filing. Discovery Oct 2023 – Feb 2025; holdout Oct 2025 – Oct 2026, after the model's training cutoff.</li>
+      <li>Straddles: Alpaca historical option bars (last 15 one-minute bars, daily close as fallback); at-the-money call and put, first expiry on or after the reaction day; signal thirds from past events only; 1% of capital in premium per straddle.</li>
+      <li>Costs: live quotes from Alpaca's indicative feed and Cboe's public delayed quotes, 20 Oct 2026; each backtest trade charged its own ticker's measured half-spread.</li>
+      <li>Illustrative research in a testnet context, not investment advice. One holdout year; costs taken from today's quotes; treat the volatility edge as a hypothesis pending real bid/ask data.</li>
+    </ul>
+  </footer>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const MINT="#00e696",RED="#ff6b6b",GRAY="#5b6b5f",AMBER="#f5b942",LINE="#4a544a";
+const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const sgn=(v,d)=>(v>0?'+':'')+v.toFixed(d);
+
+// dot plot on a signed axis: rows {label,note,v,tone}
+function dots(el,rows,{min,max,step,dec=2,unit="",aria}){
+  const W=680,rh=40,top=12,bot=30,labW=220,x0=labW+14,x1=W-30,h=top+rows.length*rh+bot;
+  const X=v=>x0+(v-min)/(max-min)*(x1-x0);
+  let s=`<svg viewBox="0 0 ${W} ${h}" role="img" aria-label="${esc(aria)}">`;
+  for(let t=min;t<=max+1e-9;t+=step){const x=X(t),z=Math.abs(t)<1e-9;
+    s+=`<line x1="${x}" y1="${top-4}" x2="${x}" y2="${top+rows.length*rh}" stroke="${z?LINE:'rgba(255,255,255,.06)'}" stroke-width="${z?1.5:1}"${z?' stroke-dasharray="3 3"':''}/>`;
+    s+=`<text class="c-ax" x="${x}" y="${h-10}" text-anchor="middle">${sgn(t,dec===2?2:1)}${unit}</text>`;}
+  rows.forEach((r,i)=>{const cy=top+i*rh+rh/2,col=r.tone==='edge'?MINT:r.tone==='neg'?RED:GRAY;
+    s+=`<text class="c-lab" x="${labW}" y="${cy-2}" text-anchor="end">${esc(r.label)}</text>`;
+    if(r.note)s+=`<text class="c-note" x="${labW}" y="${cy+12}" text-anchor="end">${esc(r.note)}</text>`;
+    s+=`<line x1="${X(0)}" y1="${cy}" x2="${X(r.v)}" y2="${cy}" stroke="${col}" stroke-width="2"/>`;
+    s+=`<circle cx="${X(r.v)}" cy="${cy}" r="5.5" fill="${col}" stroke="#000" stroke-width="1.5"><title>${esc(r.label)}: ${sgn(r.v,dec)}${unit}</title></circle>`;
+    const right=r.v>=0;s+=`<text class="c-val" x="${X(r.v)+(right?11:-11)}" y="${cy+4}" text-anchor="${right?'start':'end'}" fill="${col}">${sgn(r.v,dec)}${unit}</text>`;});
+  el.innerHTML=s+`</svg>`;
+}
+
+// horizontal bars from zero: rows [label,value,tone,note]
+function hbars(el,rows,{max,dec=2,unit="",aria,ref}){
+  const W=680,rh=34,top=ref?22:8,bot=8,labW=200,x0=labW+12,x1=W-70,h=top+rows.length*rh+bot;
+  const X=v=>x0+v/max*(x1-x0);
+  let s=`<svg viewBox="0 0 ${W} ${h}" role="img" aria-label="${esc(aria)}">`;
+  if(ref){const x=X(ref.v);s+=`<line x1="${x}" y1="${top-6}" x2="${x}" y2="${top+rows.length*rh}" stroke="${LINE}" stroke-dasharray="4 4"/><text class="c-note" x="${x}" y="${top-10}" text-anchor="middle">${esc(ref.label)}</text>`;}
+  rows.forEach((r,i)=>{const y=top+i*rh,cy=y+rh/2,col=r[2]==='edge'?MINT:r[2]==='neg'?RED:r[2]==='amb'?AMBER:GRAY,bw=Math.max(2,X(r[1])-x0);
+    s+=`<text class="c-lab" x="${labW}" y="${cy+(r[3]?-1:4)}" text-anchor="end">${esc(r[0])}</text>`;
+    if(r[3])s+=`<text class="c-note" x="${labW}" y="${cy+12}" text-anchor="end">${esc(r[3])}</text>`;
+    s+=`<rect x="${x0}" y="${y+7}" width="${bw}" height="${rh-14}" rx="3" fill="${col}"><title>${esc(r[0])}: ${r[1].toFixed(dec)}${unit}</title></rect>`;
+    s+=`<text class="c-val" x="${x0+bw+8}" y="${cy+4}" fill="${col}">${r[1].toFixed(dec)}${unit}</text>`;});
+  el.innerHTML=s+`</svg>`;
+}
+
+// vertical bars with a second figure above: rows [label,value,sub]
+function vbars(el,rows,{max,unit,aria}){
+  const W=680,top=30,ph=170,bot=30,x0=50,x1=W-20,h=top+ph+bot,n=rows.length,gw=(x1-x0)/n,bw=Math.min(90,gw*.5);
+  const Y=v=>top+ph-v/max*ph;
+  let s=`<svg viewBox="0 0 ${W} ${h}" role="img" aria-label="${esc(aria)}">`;
+  [0,2,4,6,8].forEach(t=>{if(t>max)return;const y=Y(t);s+=`<line x1="${x0}" y1="${y}" x2="${x1}" y2="${y}" stroke="rgba(255,255,255,.06)"/><text class="c-ax" x="${x0-6}" y="${y+3}" text-anchor="end">${t}${unit}</text>`;});
+  rows.forEach((r,i)=>{const cx=x0+i*gw+gw/2,col=i===n-1?MINT:GRAY;
+    s+=`<rect x="${cx-bw/2}" y="${Y(r[1])}" width="${bw}" height="${Y(0)-Y(r[1])}" rx="4" fill="${col}"><title>${esc(r[0])}: ${r[1].toFixed(1)}${unit} average move</title></rect>`;
+    s+=`<text class="c-val" x="${cx}" y="${Y(r[1])-16}" text-anchor="middle" fill="${col}">${r[1].toFixed(1)}${unit}</text>`;
+    s+=`<text class="c-note" x="${cx}" y="${Y(r[1])-4}" text-anchor="middle">${esc(r[2])}</text>`;
+    s+=`<text class="c-lab" x="${cx}" y="${top+ph+18}" text-anchor="middle">${esc(r[0])}</text>`;});
+  el.innerHTML=s+`</svg>`;
+}
+
+// Sharpe vs cost line, with measured spreads and a computed break-even
+function costLine(el,pts,refs){
+  const W=680,top=24,ph=230,bot=44,x0=46,x1=W-24,h=top+ph+bot;
+  const X=c=>x0+c/12*(x1-x0),Y=v=>top+(3.5-v)/5.5*ph;
+  const i=pts.findIndex((p,k)=>k<pts.length-1&&p[1]>0&&pts[k+1][1]<=0),a=pts[i],b=pts[i+1];
+  const be=a[0]+a[1]/(a[1]-b[1])*(b[0]-a[0]);
+  let s=`<svg viewBox="0 0 ${W} ${h}" role="img" aria-label="Sharpe ratio falls from 3.1 at zero cost to break-even at ${be.toFixed(1)}% per side">`;
+  [-2,-1,0,1,2,3].forEach(t=>{const y=Y(t),z=t===0;s+=`<line x1="${x0}" y1="${y}" x2="${x1}" y2="${y}" stroke="${z?LINE:'rgba(255,255,255,.06)'}" stroke-width="${z?1.5:1}"/><text class="c-ax" x="${x0-6}" y="${y+3}" text-anchor="end">${t>0?'+':''}${t}</text>`;});
+  [0,2,4,6,8,10,12].forEach(c=>{s+=`<text class="c-ax" x="${X(c)}" y="${top+ph+16}" text-anchor="middle">${c}%</text>`;});
+  s+=`<text class="c-note" x="${(x0+x1)/2}" y="${top+ph+36}" text-anchor="middle">cost per side, % of straddle premium</text>`;
+  refs.forEach(r=>{const x=X(r[1]);s+=`<line x1="${x}" y1="${top}" x2="${x}" y2="${top+ph}" stroke="${LINE}" stroke-dasharray="4 4"><title>${esc(r[0])}: ${r[1]}% per side</title></line>`;
+    s+=`<text class="c-note" x="${x+4}" y="${top+4}" transform="rotate(90 ${x+4} ${top+4})">${esc(r[0])} ${r[1]}%</text>`;});
+  s+=`<path d="${pts.map((p,k)=>(k?'L':'M')+X(p[0])+' '+Y(p[1])).join(' ')}" fill="none" stroke="${MINT}" stroke-width="2.5"/>`;
+  pts.forEach(p=>{const col=p[1]>=0?MINT:RED;s+=`<circle cx="${X(p[0])}" cy="${Y(p[1])}" r="5" fill="${col}" stroke="#000" stroke-width="1.5"><title>${p[0]}% per side: Sharpe ${sgn(p[1],2)}</title></circle><text class="c-val" x="${X(p[0])+9}" y="${Y(p[1])+(p[1]>0?-9:17)}" fill="${col}">${sgn(p[1],2)}</text>`;});
+  s+=`<circle cx="${X(be)}" cy="${Y(0)}" r="6" fill="none" stroke="#f3f5f3" stroke-width="1.5"/><text class="c-val" x="${X(be)-10}" y="${Y(0)+18}" text-anchor="end">break-even ${be.toFixed(1)}%</text>`;
+  el.innerHTML=s+`</svg>`;
+}
+
+dots($("c-predict"),[
+  {label:"Size of the move",note:"beyond the filing's item type",v:0.21,tone:"edge"},
+  {label:"Direction of the reaction",note:"happens before you can trade",v:0.05},
+  {label:"Next session, open to close",note:"tradable at the open",v:-0.01},
+  {label:"Drift over the next 5 days",v:-0.05,tone:"neg"},
+  {label:"Drift over the next 20 days",v:0.00},
+],{min:-0.1,max:0.3,step:0.1,dec:2,aria:"Only the size of the move is predictable out of sample"});
+hbars($("c-pre"),[
+  ["Company's own past moves",0.39,"gray","what traders already know"],
+  ["Previous release text",0.36,"gray","known before the release"],
+  ["This release's own text",0.36,"gray","after the fact, not tradable"],
+  ["Text beyond past moves",0.15,"edge","new information"],
+],{max:0.45,dec:2,aria:"Pre-event forecasts of earnings move size"});
+vbars($("c-terc"),[
+  ["Low forecast",3.32,"22% moved >5%"],
+  ["Middle",5.47,"41% moved >5%"],
+  ["High forecast",8.21,"58% moved >5%"],
+],{max:9,unit:"%",aria:"Average earnings move by forecast third: 3.3%, 5.5%, 8.2%"});
+dots($("c-thirds"),[
+  {label:"Expensive third: sell",note:"forecast well below implied",v:-9.8,tone:"neg"},
+  {label:"Middle third: no trade",v:4.8},
+  {label:"Cheap third: buy",note:"forecast well above implied",v:27.3,tone:"edge"},
+],{min:-10,max:30,step:10,dec:1,unit:"%",aria:"Straddle return by signal third"});
+hbars($("c-signals"),[
+  ["Previous-release text",37.1,"edge","t = 4.15 · IC +0.17"],
+  ["Text + company history",29.4,"edge","t = 3.25 · IC +0.12"],
+  ["Company history only",19.5,"gray","t = 2.21 · IC +0.07"],
+],{max:42,dec:1,unit:"%",aria:"Long-short straddle return per pair by signal"});
+hbars($("c-names"),[
+  ["TSLA",0.5,"edge"],["META",0.6,"edge"],["NFLX",1.1,"edge"],["CB",3.9,"amb"],["GE",4.4,"amb"],
+  ["IBM",5.2,"amb"],["LRCX",7.2,"amb"],["ISRG",15.5,"neg"],["TMO",20.2,"neg"],["UNP",25.4,"neg"],
+],{max:27,dec:1,unit:"%",aria:"Straddle cost per side by company",ref:{v:7.4,label:"break-even 7.4%"}});
+costLine($("c-cost"),[[0,3.10],[5,1.04],[10,-1.16]],[["mega caps",7.2],["reporters",9.3],["Alpaca",9.9]]);
+</script>
+</body></html>
