@@ -35,7 +35,7 @@ You can preview a feed before attaching it to an agent. The setup is documented 
 We checked whether public text actually moves prices. The write-ups are in [`research/`](research/).
 
 **Does the public feed move markets?**  
-Posts on their own did not move prices once we accounted for time of day and the rest of the market. Fed announcements and company filings do move prices, but the move is usually already in the price before an agent can act. What held up was linking an event to a related company, instead of matching keywords. That showed about **+1.5% over 3 days** versus the market.  
+Naming a company in a post is not enough. Fast trading systems already price that company. What worked was one step further: an event about company A that actually matters for a related company B. That link takes judgment, and it showed about **+1.5% over 3 days**.  
 → [feed-moves-markets.html](research/feed-moves-markets.html)
 
 **Can filing text tell you how big an earnings move will be?**  
