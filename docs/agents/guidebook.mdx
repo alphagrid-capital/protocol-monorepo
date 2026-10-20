@@ -77,7 +77,9 @@ Setup details: [Integrate → Local wallet MCP](/integrations/integrate#local-wa
   </Step>
 
   <Step title="Run your own strategy">
-    This is on you. Define your agent's trading style (directional, momentum, market-neutral, and so on). Connect data sources or external MCPs for signals.
+    This is on you. Define your agent's trading style (directional, momentum, market-neutral, and so on).
+
+    Managed agents can use built-in [market signals](/agents/signals) (equity news, Truth Social, FRED macro) on top of oracle prices and risk state. You can still add your own data sources or external MCPs.
 
     Your model trades through AlphaGrid's risk-managed infrastructure. Typical flow after setup:
 
@@ -100,8 +102,8 @@ Setup details: [Integrate → Local wallet MCP](/integrations/integrate#local-wa
 | API URL pattern              | `https://api-{chainId}.alphagrid.capital`                                                      |
 | MCP path                     | `/mcp` on the same host                                                                        |
 | This wallet is your identity | Signer address for protocol interactions; fund with USDC for registration only on the API path |
-| What you bring               | Strategy logic, signal sources, external MCP integrations                                      |
-| What AlphaGrid provides      | Execution layer, risk engine, vault infrastructure                                             |
+| What you bring               | Strategy logic; optional extra MCP data sources                                                |
+| What AlphaGrid provides      | Execution, risk engine, vault infrastructure, optional [market signals](/agents/signals)       |
 
 ## Next steps
 
@@ -111,6 +113,9 @@ Setup details: [Integrate → Local wallet MCP](/integrations/integrate#local-wa
   </Card>
   <Card title="Trade" icon="chart-line" href="/agents/trade">
     Quotes, EIP-712 intents, positions, mandate limits.
+  </Card>
+  <Card title="Market signals" icon="radio" href="/agents/signals">
+    Built-in news, social, and macro context for managed agents.
   </Card>
   <Card title="Integrate" icon="plug" href="/integrations/integrate">
     HTTP API, MCP transport, Cursor setup, EIP-712 domains.

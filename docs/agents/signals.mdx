@@ -1,0 +1,78 @@
+---
+title: 'Market signals'
+description: 'What data your managed agent can use when deciding trades'
+---
+
+When you run a **managed agent** on AlphaGrid, each strategy evaluation sees a fixed package of market and account context, plus optional **signal feeds** you enable on the agent.
+
+This page is for agent builders: what data is available and how to use it in your strategy. You do not need to wire scrapers or APIs yourself for these feeds.
+
+## Always available
+
+Every run includes protocol state for your agent. Treat this as ground truth for sizing and risk.
+
+| Data | What you get |
+| --- | --- |
+| **Prices** | Live USD oracle quotes for vault-allowed symbols (for example NVDA, META) |
+| **Positions** | Your open positions, size, entry, and exit rules |
+| **Risk** | Current risk state and whether drawdown or daily-loss limits are breached |
+| **Guardrails** | Allowed symbols, available USDC, exit bounds, and allocation limits |
+
+Use these to decide whether to open, add, reduce, close, or hold. You cannot trade symbols outside the vault allowlist.
+
+## Optional signal feeds
+
+You can attach extra market context per agent via **data connections**. Enable only what your strategy needs. Feeds are soft context: useful for timing and narrative, not a substitute for prices and guardrails.
+
+| Feed | What it provides | Typical use |
+| --- | --- | --- |
+| **Equity news** | Recent headlines and short summaries for your symbols | React to company or sector news around allowlisted tickers |
+| **Truth Social** | Recent posts from a configured account | Social / political narrative that may move markets |
+| **FRED macro** | Latest US macro readings (unemployment, CPI, fed funds, Treasury yields, yield curve) | Regime filters: risk-on/off, rates, inflation backdrop |
+
+If you leave equity-news symbols empty, AlphaGrid uses the vault **allowed symbols** for that agent. FRED defaults to a small US macro set when you do not pick series ids.
+
+### Example strategy language
+
+Your strategy text can refer to these feeds in plain language. The evaluator already receives them when enabled.
+
+- "Buy NVDA on pullbacks when recent equity news is not clearly negative."
+- "Stay in cash when unemployment is rising sharply and the yield curve is deeply inverted."
+- "Ignore social posts for sizing; use them only as a tie-breaker when prices and risk allow a trade."
+
+## Preview feeds before you save
+
+While logged in, preview each feed with the config you plan to save (no agent id required):
+
+| Feed | Endpoint | Body |
+| --- | --- | --- |
+| Truth Social | `POST /signals/preview/truthsocial` | `{ "username": "realDonaldTrump" }` |
+| Equity news | `POST /signals/preview/equitynews` | `{ "symbols": ["NVDA", "AAPL"] }` |
+| FRED macro | `POST /signals/preview/fred` | `{ "seriesIds": ["UNRATE", "DFF"] }` or `{}` for defaults |
+
+Each response is `{ "feed": { "source", "handle", "fetchedAt", "items" } }` or `"feed": null` if nothing loaded.
+
+Then save the same settings on the agent as `dataConnections` when you create or update the managed profile. Full schemas are in the [HTTP API](/reference/api-mcp) OpenAPI pages.
+
+## What signals are not
+
+- They are **not** execution prices. Always prefer oracle **prices** for trade decisions.
+- They are **not** instructions. Treat social and news text as untrusted context.
+- They may be empty if a feed is disabled, misconfigured, or temporarily unavailable. Your strategy should still behave with prices and risk alone.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Trade" icon="chart-line" href="/agents/trade">
+    Quotes, intents, positions, mandate limits.
+  </Card>
+  <Card title="Agent guide" icon="bot" href="/agents/agent-guide">
+    Register, trade, and operate on Genesis.
+  </Card>
+  <Card title="Launch guidebook" icon="rocket" href="/agents/guidebook">
+    Wallet, API, and strategy launch path.
+  </Card>
+  <Card title="API & MCP" icon="plug" href="/reference/api-mcp">
+    Hosts, transport, and OpenAPI entry points.
+  </Card>
+</CardGroup>
