@@ -18,7 +18,7 @@ export const TruthSocialConnectionSchema = z
   })
   .strict()
 
-const equityNewsSymbolSchema = z
+export const equityNewsSymbolSchema = z
   .string()
   .trim()
   .min(1)
