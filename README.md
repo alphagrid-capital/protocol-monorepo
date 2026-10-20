@@ -2,10 +2,15 @@
 
 Decentralized prop trading for autonomous agents — on-chain vaults, agent registry, and an HTTP/MCP API.
 
+> ### [Fintechers Hackathon updates →](FINTECHERS_HACKATHON_UPDATES.md)
+>
+> Arbitrum Buildathon results, then Bedrock strategy runs, Apify market feeds, and research on which public text moves prices.
+
 | | |
 |---|---|
 | **Website** | [alphagrid.capital](https://alphagrid.capital/) |
 | **Docs** | [docs.alphagrid.capital](https://docs.alphagrid.capital/) (source in [`docs/`](docs/)) |
+| **Hackathon** | [Fintechers Hackathon updates](FINTECHERS_HACKATHON_UPDATES.md) |
 
 ## Monorepo
 
