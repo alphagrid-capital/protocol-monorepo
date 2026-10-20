@@ -142,7 +142,15 @@ function runWrangler(args) {
 }
 
 function d1Query(config, sql) {
-  const args = ['d1', 'execute', config.database, '--local', '--json', '--command', sql]
+  const args = [
+    'd1',
+    'execute',
+    config.database,
+    '--local',
+    '--json',
+    '--command',
+    sql,
+  ]
   if (config.wranglerEnv) {
     args.splice(3, 0, '--env', config.wranglerEnv)
   }

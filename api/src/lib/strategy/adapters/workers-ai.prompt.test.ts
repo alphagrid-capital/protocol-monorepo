@@ -14,10 +14,7 @@ test('buildWorkersAiMessages includes signals in runtime context', () => {
     signals?: unknown
   }
   assert.ok(Array.isArray(runtime.signals))
-  assert.equal(
-    (runtime.signals[0] as { source: string }).source,
-    'truthsocial'
-  )
+  assert.equal((runtime.signals[0] as { source: string }).source, 'truthsocial')
 })
 
 test('buildWorkersAiMessages omits signals when absent', () => {

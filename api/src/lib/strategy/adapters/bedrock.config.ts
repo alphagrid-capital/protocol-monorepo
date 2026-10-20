@@ -39,8 +39,7 @@ export function loadBedrockConfig(env: WorkerEnv = {}): BedrockConfig {
     env.AWS_REGION?.trim() ||
     env.AWS_DEFAULT_REGION?.trim() ||
     DEFAULT_BEDROCK_REGION
-  const modelId =
-    env.BEDROCK_MODEL_ID?.trim() || DEFAULT_BEDROCK_MODEL_ID
+  const modelId = env.BEDROCK_MODEL_ID?.trim() || DEFAULT_BEDROCK_MODEL_ID
 
   return {
     region,

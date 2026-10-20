@@ -123,9 +123,7 @@ export class StrategyRunsRepository {
     return result.results ?? []
   }
 
-  async findLatestStartedAtByAgentId(
-    agentId: string
-  ): Promise<string | null> {
+  async findLatestStartedAtByAgentId(agentId: string): Promise<string | null> {
     const db = requireDb(this.env)
     const row = await db
       .prepare(

@@ -2,8 +2,7 @@ import { getWorkerEnv } from '../lib/worker-env.js'
 import type { WorkerEnv } from '../types/worker-env.js'
 
 const DEFAULT_TRUTH_ACTOR_ID = 'muhammetakkurtt~truth-social-scraper'
-const DEFAULT_EQUITY_NEWS_ACTOR_ID =
-  'vamsi-krishna~stock-market-news-collector'
+const DEFAULT_EQUITY_NEWS_ACTOR_ID = 'vamsi-krishna~stock-market-news-collector'
 const DEFAULT_WAIT_FOR_FINISH_SECONDS = 120
 const DEFAULT_MAX_POSTS = 20
 const DEFAULT_EQUITY_NEWS_MAX_ITEMS = 20
@@ -179,10 +178,7 @@ export class ApifyService {
   }
 }
 
-function parsePositiveInt(
-  raw: string | undefined,
-  fallback: number
-): number {
+function parsePositiveInt(raw: string | undefined, fallback: number): number {
   if (!raw) {
     return fallback
   }

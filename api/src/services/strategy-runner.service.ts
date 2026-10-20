@@ -115,6 +115,7 @@ export class StrategyRunnerService {
 
     const truthUsernames: string[] = []
     const equitySymbolSets: string[][] = []
+    const fredSeriesSets: string[][] = []
     for (const profile of dueProfiles) {
       const connections = parseDataConnections(profile.data_connections)
       const truth = connections.truthsocial
@@ -125,11 +126,16 @@ export class StrategyRunnerService {
       if (equity?.enabled && equity.symbols && equity.symbols.length > 0) {
         equitySymbolSets.push(equity.symbols)
       }
+      const fred = connections.fred
+      if (fred?.enabled) {
+        fredSeriesSets.push(fred.seriesIds ?? [])
+      }
     }
 
     const signalsService = createSignalsService(this.env)
     let truthFeeds = new Map<string, SignalFeed>()
     let equityFeeds = new Map<string, SignalFeed>()
+    let fredFeeds = new Map<string, SignalFeed>()
     try {
       truthFeeds = await signalsService.prefetchTruthSocial(truthUsernames)
     } catch {
@@ -139,6 +145,11 @@ export class StrategyRunnerService {
       equityFeeds = await signalsService.prefetchEquityNews(equitySymbolSets)
     } catch {
       equityFeeds = new Map()
+    }
+    try {
+      fredFeeds = await signalsService.prefetchFred(fredSeriesSets)
+    } catch {
+      fredFeeds = new Map()
     }
 
     let completed = 0
@@ -150,7 +161,8 @@ export class StrategyRunnerService {
         prices,
         {},
         truthFeeds,
-        equityFeeds
+        equityFeeds,
+        fredFeeds
       )
       if (result.status === 'completed') {
         completed += 1
@@ -202,7 +214,8 @@ export class StrategyRunnerService {
     prices: StrategyContext['prices'],
     options: RunAgentOptions = {},
     prefetchedTruthFeeds?: Map<string, SignalFeed>,
-    prefetchedEquityFeeds?: Map<string, SignalFeed>
+    prefetchedEquityFeeds?: Map<string, SignalFeed>,
+    prefetchedFredFeeds?: Map<string, SignalFeed>
   ): Promise<StrategyAgentRunResult> {
     const runId = newRunId()
     const startedAt = new Date().toISOString()
@@ -244,7 +257,8 @@ export class StrategyRunnerService {
         profile,
         quote.allowedSymbols,
         prefetchedTruthFeeds,
-        prefetchedEquityFeeds
+        prefetchedEquityFeeds,
+        prefetchedFredFeeds
       )
       const context: StrategyContext = {
         agentId: profile.agent_id,
@@ -384,14 +398,16 @@ export class StrategyRunnerService {
     profile: AgentProfileRow,
     allowedSymbols: readonly string[],
     prefetchedTruthFeeds?: Map<string, SignalFeed>,
-    prefetchedEquityFeeds?: Map<string, SignalFeed>
+    prefetchedEquityFeeds?: Map<string, SignalFeed>,
+    prefetchedFredFeeds?: Map<string, SignalFeed>
   ): Promise<SignalFeed[]> {
     const connections = parseDataConnections(profile.data_connections)
     const truthEnabled = Boolean(
       connections.truthsocial?.enabled && connections.truthsocial.username
     )
     const equityEnabled = Boolean(connections.equitynews?.enabled)
-    if (!truthEnabled && !equityEnabled) {
+    const fredEnabled = Boolean(connections.fred?.enabled)
+    if (!truthEnabled && !equityEnabled && !fredEnabled) {
       return []
     }
 
@@ -400,6 +416,7 @@ export class StrategyRunnerService {
         fallbackSymbols: allowedSymbols,
         prefetchedTruthSocial: prefetchedTruthFeeds,
         prefetchedEquityNews: prefetchedEquityFeeds,
+        prefetchedFred: prefetchedFredFeeds,
       })
     } catch {
       return []

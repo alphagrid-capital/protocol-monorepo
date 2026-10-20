@@ -21,7 +21,7 @@ export function readWorkersAiResponseText(response: unknown): string {
     return response
   }
   if (response && typeof response === 'object' && 'response' in response) {
-    const inner = (response).response
+    const inner = response.response
     if (typeof inner === 'string') {
       return inner
     }

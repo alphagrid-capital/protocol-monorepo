@@ -162,5 +162,17 @@ export const strategyContextExample = {
         },
       ],
     },
+    {
+      source: 'fred',
+      handle: 'UNRATE,CPIAUCSL,DFF,DGS10,T10Y2Y',
+      fetchedAt: '1735689600',
+      items: [
+        {
+          id: 'fred:UNRATE:2026-09-01',
+          createdAt: '2026-09-01T00:00:00.000Z',
+          text: 'UNRATE (Unemployment Rate): 4.1 (2026-09-01); prior 4.2 (2026-08-01)',
+        },
+      ],
+    },
   ],
 } satisfies StrategyContext

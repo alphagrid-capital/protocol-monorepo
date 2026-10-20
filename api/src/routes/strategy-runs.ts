@@ -14,8 +14,7 @@ import {
 import { requirePrivyAuth } from '../middleware/privy-auth.js'
 import { PrivyAuthHeadersSchema } from '../schemas/auth-headers.js'
 import { agentIdParamSchema } from '../schemas/agent.js'
-import type {
-  StrategyRunItemSchema} from '../schemas/strategy-run.js';
+import type { StrategyRunItemSchema } from '../schemas/strategy-run.js'
 import {
   ListStrategyRunsQuerySchema,
   ListStrategyRunsResponseSchema,
@@ -38,7 +37,9 @@ for (const path of privyProtectedPaths) {
   strategyRunRoutes.use(path.replace(/\{(\w+)\}/g, ':$1'), requirePrivyAuth)
 }
 
-function toStrategyRunItem(row: StrategyRunListRow): z.infer<typeof StrategyRunItemSchema> {
+function toStrategyRunItem(
+  row: StrategyRunListRow
+): z.infer<typeof StrategyRunItemSchema> {
   let summary: string | null = null
   let reasoning: string | null = null
   let actions: StrategyDecision['actions'] = []
@@ -46,7 +47,9 @@ function toStrategyRunItem(row: StrategyRunListRow): z.infer<typeof StrategyRunI
 
   if (row.decision_json) {
     try {
-      const decision = JSON.parse(row.decision_json) as Partial<StrategyDecision>
+      const decision = JSON.parse(
+        row.decision_json
+      ) as Partial<StrategyDecision>
       summary = typeof decision.summary === 'string' ? decision.summary : null
       reasoning =
         typeof decision.reasoning === 'string' ? decision.reasoning : null
@@ -141,7 +144,8 @@ const runStrategyRoute = createRoute({
   },
   responses: {
     200: {
-      description: 'Strategy run completed or failed with a persisted run record',
+      description:
+        'Strategy run completed or failed with a persisted run record',
       content: {
         'application/json': { schema: RunStrategyResponseSchema },
       },
@@ -163,13 +167,14 @@ const runStrategyRoute = createRoute({
       content: { 'application/json': { schema: StrategyRunErrorSchema } },
     },
     429: {
-      description: 'Strategy was run within the cooldown window (default 5 minutes)',
+      description:
+        'Strategy was run within the cooldown window (default 5 minutes)',
       content: { 'application/json': { schema: StrategyRunErrorSchema } },
     },
     503: {
       description: 'Strategy run failed before a run record could be created',
       content: { 'application/json': { schema: StrategyRunErrorSchema } },
-    }
+    },
   },
 })
 
@@ -224,7 +229,8 @@ const runStrategyHandler: RouteHandler<typeof runStrategyRoute> = async (c) => {
   }
 
   const runsRepository = new StrategyRunsRepository(env)
-  const lastStartedAt = await runsRepository.findLatestStartedAtByAgentId(agentId)
+  const lastStartedAt =
+    await runsRepository.findLatestStartedAtByAgentId(agentId)
   const cooldown = getStrategyRunCooldown(
     lastStartedAt,
     loadStrategyRunManualCooldownMs(env)
@@ -240,13 +246,19 @@ const runStrategyHandler: RouteHandler<typeof runStrategyRoute> = async (c) => {
   }
 
   try {
-    const result = await StrategyRunnerService.fromEnv(env).runAgentById(agentId, {
-      executeOverride: execute === 'false' ? false : undefined,
-    })
+    const result = await StrategyRunnerService.fromEnv(env).runAgentById(
+      agentId,
+      {
+        executeOverride: execute === 'false' ? false : undefined,
+      }
+    )
 
     if (!result.runId) {
       return c.json(
-        { error: result.error ?? 'Strategy run failed before creating a run record' },
+        {
+          error:
+            result.error ?? 'Strategy run failed before creating a run record',
+        },
         503
       )
     }

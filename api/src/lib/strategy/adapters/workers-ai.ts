@@ -69,11 +69,7 @@ const STRATEGY_AI_RESPONSE_FORMAT = {
                               triggerBps: { type: 'number' },
                               exitBps: { type: 'number' },
                             },
-                            required: [
-                              'triggerType',
-                              'triggerBps',
-                              'exitBps',
-                            ],
+                            required: ['triggerType', 'triggerBps', 'exitBps'],
                           },
                         },
                       },
@@ -160,15 +156,19 @@ export function createWorkersAiAdapter(
           signals: context.signals,
           messages,
         })
-        const response = await env.AI.run(config.model, {
-          messages,
-          max_tokens: config.maxTokens,
-          response_format: STRATEGY_AI_RESPONSE_FORMAT,
-        }, {
-          gateway: {
-            id: config.gatewayId,
+        const response = await env.AI.run(
+          config.model,
+          {
+            messages,
+            max_tokens: config.maxTokens,
+            response_format: STRATEGY_AI_RESPONSE_FORMAT,
           },
-        })
+          {
+            gateway: {
+              id: config.gatewayId,
+            },
+          }
+        )
         const rawText = readWorkersAiResponseText(response)
         const outcome = parseWorkersAiResponse(rawText)
         console.log('[strategy-ai] workers-ai output', {

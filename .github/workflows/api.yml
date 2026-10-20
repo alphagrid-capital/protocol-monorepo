@@ -160,6 +160,7 @@ jobs:
             PRIVY_JWT_VERIFICATION_KEY
             AGENT_SIGNER_ENCRYPTION_KEY
             APIFY_TOKEN
+            FRED_API_KEY
             AWS_ACCESS_KEY_ID
             AWS_SECRET_ACCESS_KEY
             AWS_SESSION_TOKEN
@@ -175,6 +176,7 @@ jobs:
           PRIVY_JWT_VERIFICATION_KEY: ${{ secrets.PRIVY_JWT_VERIFICATION_KEY }}
           AGENT_SIGNER_ENCRYPTION_KEY: ${{ secrets.AGENT_SIGNER_ENCRYPTION_KEY }}
           APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}

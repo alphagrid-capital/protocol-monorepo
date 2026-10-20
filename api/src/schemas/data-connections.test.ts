@@ -41,6 +41,24 @@ test('DataConnectionsSchema allows equity news without symbols', () => {
   })
 })
 
+test('DataConnectionsSchema normalizes FRED series ids', () => {
+  const parsed = DataConnectionsSchema.parse({
+    fred: { enabled: true, seriesIds: ['unrate', 'DFF'] },
+  })
+  assert.deepEqual(parsed, {
+    fred: { enabled: true, seriesIds: ['UNRATE', 'DFF'] },
+  })
+})
+
+test('DataConnectionsSchema allows FRED without seriesIds', () => {
+  const parsed = DataConnectionsSchema.parse({
+    fred: { enabled: true },
+  })
+  assert.deepEqual(parsed, {
+    fred: { enabled: true },
+  })
+})
+
 test('parseDataConnections returns empty object for invalid JSON', () => {
   assert.deepEqual(parseDataConnections('not-json'), {})
   assert.deepEqual(parseDataConnections(null), {})

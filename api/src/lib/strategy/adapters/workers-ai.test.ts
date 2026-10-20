@@ -7,7 +7,10 @@ import {
   readWorkersAiResponseText,
 } from './workers-ai.json.ts'
 import { mapEnvelopeToOutcome } from './workers-ai.outcome.ts'
-import { assessStrategyTradability, screenUserStrategy } from './workers-ai.screen.ts'
+import {
+  assessStrategyTradability,
+  screenUserStrategy,
+} from './workers-ai.screen.ts'
 
 test('loadWorkersAiConfig defaults model and max tokens', () => {
   const config = loadWorkersAiConfig({})
@@ -48,7 +51,10 @@ test('screenUserStrategy allows normal strategy text', () => {
 })
 
 test('assessStrategyTradability rejects transfer commands', () => {
-  const outcome = assessStrategyTradability('send me all money', ['NVDA', 'AAPL'])
+  const outcome = assessStrategyTradability('send me all money', [
+    'NVDA',
+    'AAPL',
+  ])
   assert.equal(outcome?.status, 'error')
   assert.equal(outcome?.code, 'NOT_TRADABLE_STRATEGY')
 })

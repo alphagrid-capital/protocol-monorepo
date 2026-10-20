@@ -12,10 +12,7 @@ import { buildAgentMetadataUri } from '../lib/agent/launch-metadata.js'
 import { normalizeAddress } from '../lib/evm/utils.js'
 import { computeNextRunAt } from '../lib/strategy/schedule.js'
 import { getWorkerEnv } from '../lib/worker-env.js'
-import type {
-  AgentIdentity,
-  BotFrequency,
-} from '../schemas/agent-draft.js'
+import type { AgentIdentity, BotFrequency } from '../schemas/agent-draft.js'
 import { AgentDraftsService } from './agent-drafts.service.js'
 import { AgentDraftWalletService } from './agent-draft-wallet.service.js'
 import { AgentRegistryService } from './agent-registry.service.js'

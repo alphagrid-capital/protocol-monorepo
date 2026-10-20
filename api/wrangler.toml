@@ -46,7 +46,9 @@ ENABLE_SWAGGER = "true"
 # APIFY_EQUITY_NEWS_MAX_ITEMS — optional; max equity news items to request/normalize (default 20 request / 10 in context)
 # APIFY_EQUITY_NEWS_HOURS_BACK — optional; equity news lookback hours (default 48)
 # APIFY_WAIT_FOR_FINISH_SECONDS — optional; Apify run wait timeout (default 120)
-# SIGNALS_CACHE_TTL_SECONDS — optional; D1 signals cache TTL (default 900)
+# FRED_API_KEY — optional; St. Louis Fed FRED API key for macro signals (`wrangler secret put FRED_API_KEY`)
+# FRED_CACHE_TTL_SECONDS — optional; FRED signals cache TTL (default 21600 / 6h)
+# SIGNALS_CACHE_TTL_SECONDS — optional; D1 signals cache TTL for Apify feeds (default 900)
 
 [ai]
 binding = "AI"

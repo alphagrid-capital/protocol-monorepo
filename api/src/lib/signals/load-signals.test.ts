@@ -3,6 +3,7 @@ import test from 'node:test'
 import {
   SignalsService,
   truthSocialCacheKey,
+  type FredFetcher,
   type SignalsApifyFetcher,
   type SignalsCacheStore,
 } from './load-signals.ts'
@@ -29,6 +30,23 @@ function mockApify(
   }
 }
 
+function mockFred(overrides: Partial<FredFetcher> = {}): FredFetcher {
+  return {
+    isConfigured: () => false,
+    fetchLatest: async () => [],
+    ...overrides,
+  }
+}
+
+function service(
+  env: Record<string, string | undefined> = {},
+  cache: SignalsCacheStore = mockCache(),
+  apify: SignalsApifyFetcher = mockApify(),
+  fred: FredFetcher = mockFred()
+) {
+  return new SignalsService(env, cache, apify, fred)
+}
+
 test('truthSocialCacheKey lowercases username', () => {
   assert.equal(
     truthSocialCacheKey('RealDonaldTrump'),
@@ -37,8 +55,7 @@ test('truthSocialCacheKey lowercases username', () => {
 })
 
 test('loadTruthSocial returns null when Apify is not configured and cache empty', async () => {
-  const service = new SignalsService({}, mockCache(), mockApify())
-  assert.equal(await service.loadTruthSocial('realDonaldTrump'), null)
+  assert.equal(await service().loadTruthSocial('realDonaldTrump'), null)
 })
 
 test('loadTruthSocial returns fresh cache without calling Apify', async () => {
@@ -50,7 +67,7 @@ test('loadTruthSocial returns fresh cache without calling Apify', async () => {
     items: [{ id: '1', createdAt: fetchedAt, text: 'cached' }],
   }
   let apifyCalled = false
-  const service = new SignalsService(
+  const svc = service(
     { SIGNALS_CACHE_TTL_SECONDS: '3600' },
     mockCache({
       get: async () => ({
@@ -67,13 +84,13 @@ test('loadTruthSocial returns fresh cache without calling Apify', async () => {
     })
   )
 
-  const result = await service.loadTruthSocial('realDonaldTrump')
+  const result = await svc.loadTruthSocial('realDonaldTrump')
   assert.deepEqual(result, feed)
   assert.equal(apifyCalled, false)
 })
 
 test('loadTruthSocial soft-fails when Apify throws', async () => {
-  const service = new SignalsService(
+  const svc = service(
     {},
     mockCache(),
     mockApify({
@@ -83,7 +100,7 @@ test('loadTruthSocial soft-fails when Apify throws', async () => {
       },
     })
   )
-  assert.equal(await service.loadTruthSocial('realDonaldTrump'), null)
+  assert.equal(await svc.loadTruthSocial('realDonaldTrump'), null)
 })
 
 test('loadSignals returns feed for enabled Truth Social connection', async () => {
@@ -94,18 +111,17 @@ test('loadSignals returns feed for enabled Truth Social connection', async () =>
     fetchedAt,
     items: [],
   }
-  const service = new SignalsService(
+  const svc = service(
     { SIGNALS_CACHE_TTL_SECONDS: '3600' },
     mockCache({
       get: async () => ({
         payload_json: JSON.stringify(feed),
         fetched_at: feed.fetchedAt,
       }),
-    }),
-    mockApify()
+    })
   )
 
-  const feeds = await service.loadSignals({
+  const feeds = await svc.loadSignals({
     truthsocial: { enabled: true, username: 'someone' },
   })
   assert.equal(feeds.length, 1)
@@ -113,8 +129,7 @@ test('loadSignals returns feed for enabled Truth Social connection', async () =>
 })
 
 test('loadSignals skips disabled Truth Social connection', async () => {
-  const service = new SignalsService({}, mockCache(), mockApify())
-  const feeds = await service.loadSignals({
+  const feeds = await service().loadSignals({
     truthsocial: { enabled: false, username: 'someone' },
   })
   assert.deepEqual(feeds, [])
@@ -123,7 +138,7 @@ test('loadSignals skips disabled Truth Social connection', async () => {
 test('loadSignals returns equity news using fallback symbols', async () => {
   const fetchedAt = new Date().toISOString()
   let calledWith: string[] | null = null
-  const service = new SignalsService(
+  const svc = service(
     {},
     mockCache(),
     mockApify({
@@ -143,7 +158,7 @@ test('loadSignals returns equity news using fallback symbols', async () => {
     })
   )
 
-  const feeds = await service.loadSignals(
+  const feeds = await svc.loadSignals(
     { equitynews: { enabled: true } },
     { fallbackSymbols: ['nvda', 'AAPL'] }
   )
@@ -157,7 +172,7 @@ test('loadSignals returns equity news using fallback symbols', async () => {
 
 test('loadSignals skips equity news when enabled but no symbols', async () => {
   let called = false
-  const service = new SignalsService(
+  const svc = service(
     {},
     mockCache(),
     mockApify({
@@ -168,7 +183,38 @@ test('loadSignals skips equity news when enabled but no symbols', async () => {
       },
     })
   )
-  const feeds = await service.loadSignals({ equitynews: { enabled: true } })
+  const feeds = await svc.loadSignals({ equitynews: { enabled: true } })
   assert.deepEqual(feeds, [])
   assert.equal(called, false)
+})
+
+test('loadSignals returns FRED feed with default series when omitted', async () => {
+  let calledWith: readonly string[] | null = null
+  const svc = service(
+    {},
+    mockCache(),
+    mockApify(),
+    mockFred({
+      isConfigured: () => true,
+      fetchLatest: async (seriesIds) => {
+        calledWith = seriesIds
+        return [
+          {
+            seriesId: 'UNRATE',
+            title: 'Unemployment Rate',
+            date: '2026-09-01',
+            value: '4.1',
+            priorDate: '2026-08-01',
+            priorValue: '4.2',
+          },
+        ]
+      },
+    })
+  )
+
+  const feeds = await svc.loadSignals({ fred: { enabled: true } })
+  assert.ok(calledWith && calledWith.includes('UNRATE'))
+  assert.equal(feeds.length, 1)
+  assert.equal(feeds[0]?.source, 'fred')
+  assert.match(feeds[0]?.items[0]?.text ?? '', /UNRATE/)
 })

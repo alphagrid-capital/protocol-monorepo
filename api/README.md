@@ -44,53 +44,53 @@ yarn deploy:all                 # Deploy all three sequentially
 
 ## Endpoints
 
-| Method   | Path                                          | Description                                                                            |
-| -------- | --------------------------------------------- | -------------------------------------------------------------------------------------- |
-| `GET`    | `/`                                           | API discovery JSON (generated from OpenAPI)                                            |
-| `GET`    | `/llms.txt`                                   | LLM-oriented index ([llms.txt spec](https://llmstxt.org/))                             |
-| `GET`    | `/health`                                     | Liveness probe                                                                         |
-| `GET`    | `/auth/me`                                    | Session + profile summary (Privy access + identity tokens)                             |
-| `POST`   | `/auth/logout`                                | Logout acknowledgement (client discards Privy tokens)                                  |
-| `GET`    | `/users/me`                                   | Full user profile (Privy tokens)                                                       |
-| `GET`    | `/users/me/agent-drafts`                      | In-progress agent launch drafts for authenticated wallet                               |
-| `GET`    | `/managed-agents/me`                          | Managed agent profiles for authenticated on-chain owner                                |
-| `PATCH`  | `/users/me`                                   | Update display name and/or preferred currency                                          |
-| `POST`   | `/agent-drafts`                               | Create agent launch draft (Privy)                                                      |
-| `PUT`    | `/agent-drafts/{draftId}`                     | Partial update: `identity`, `strategy`, `botFrequency` (`1h` / `1d`) (Privy)           |
-| `GET`    | `/agent-drafts/{draftId}`                     | Resume agent launch draft (Privy)                                                      |
-| `DELETE` | `/agent-drafts/{draftId}`                     | Abandon draft and wipe encrypted signer key (Privy)                                    |
-| `POST`   | `/agent-drafts/{draftId}/provision-wallet`    | Generate custodial signer; returns `{ signerAddress }` (Privy)                           |
-| `POST`   | `/agent-drafts/{draftId}/launch`              | Sign + x402 + on-chain register; owner = Privy wallet, signer = custodial (Privy)      |
-| `GET`    | `/vaults`                                     | Vault catalog (`?format=md` for markdown)                                              |
-| `GET`    | `/vaults/{id}/tokens`                         | Tradable tokens for a vault mandate + oracle prices                                    |
-| `GET`    | `/tokens`                                     | Global token catalog + on-chain registry state                                         |
-| `GET`    | `/prices`                                     | MockPriceOracle quotes indexed by symbol (e.g. `NVDA`)                                 |
-| `POST`   | `/prices/refresh`                             | Manually fetch Finnhub quotes and update the oracle                                    |
-| `GET`    | `/agents/by-owner/{owner}`                    | List agents owned by address (`agentCountByOwner` + `getAgent` + `managed` flag)       |
-| `GET`    | `/agents/{agentId}`                           | On-chain agent record (`getAgent` + `managed` flag)                                    |
-| `GET`    | `/agents/{agentId}/trade-intents/quote`       | EIP-712 quote for open-position intent (nonce, vault, allocation, exit bounds)         |
-| `POST`   | `/agents/{agentId}/trade-intents`             | Verify signed open intent; relay `TradeRouter.openPosition` (201)                      |
-| `GET`    | `/agents/{agentId}/add-intents/quote`         | Quote for `AddToPosition` (`?positionId=`)                                             |
-| `POST`   | `/agents/{agentId}/add-intents`               | Relay signed add-to-position intent (201)                                              |
-| `GET`    | `/agents/{agentId}/reduce-intents/quote`      | Quote for `ReducePosition` (`?positionId=`)                                            |
-| `POST`   | `/agents/{agentId}/reduce-intents`            | Relay signed reduce intent — partial or full close (201)                               |
-| `GET`    | `/agents/{agentId}/exit-ladder-intents/quote` | Quote for `UpdateExitLadder` (`?positionId=`)                                          |
-| `POST`   | `/agents/{agentId}/exit-ladder-intents`       | Relay signed pending TP/SL update (201)                                                |
-| `GET`    | `/managed-agents/{agentId}`                   | Owner-only managed agent strategy profile (Privy)                                      |
-| `PATCH`  | `/managed-agents/{agentId}`                   | Update strategy and/or bot frequency for future runs (Privy)                           |
-| `POST`   | `/managed-agents/{agentId}/archive`           | Archive managed agent; stops strategy runs; frees agent slot (Privy)                   |
-| `GET`    | `/agents/{agentId}/positions`                 | Agent open positions (`getOpenPositionIds` + multicall; includes `derived`)            |
-| `GET`    | `/agents/{agentId}/closed-positions`          | Closed positions via bounded global id scan (`?limit=`, max 100)                       |
-| `GET`    | `/agents/{agentId}/positions/{positionId}`    | Single position by id (open or closed; realized/unrealized PnL + `derived`)            |
-| `GET`    | `/agents/{agentId}/risk-state`                | Equity, drawdown, PnL, `derived`, `promotionReadiness`, breach flags                   |
-| `GET`    | `/agents/{agentId}/trades`                    | Trade activity (`source`: `indexed` when `SUBGRAPH_URL` set, else RPC log scan)        |
-| `GET`    | `/agents/{agentId}/equity-history`            | Trade-boundary equity snapshots (`SUBGRAPH_URL` required; optional live `current` tip) |
-| `GET`    | `/agents/{agentId}/strategy-runs`             | Strategy runner history for the agent owner (Privy; `?limit=`)                         |
+| Method   | Path                                          | Description                                                                                                                         |
+| -------- | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `GET`    | `/`                                           | API discovery JSON (generated from OpenAPI)                                                                                         |
+| `GET`    | `/llms.txt`                                   | LLM-oriented index ([llms.txt spec](https://llmstxt.org/))                                                                          |
+| `GET`    | `/health`                                     | Liveness probe                                                                                                                      |
+| `GET`    | `/auth/me`                                    | Session + profile summary (Privy access + identity tokens)                                                                          |
+| `POST`   | `/auth/logout`                                | Logout acknowledgement (client discards Privy tokens)                                                                               |
+| `GET`    | `/users/me`                                   | Full user profile (Privy tokens)                                                                                                    |
+| `GET`    | `/users/me/agent-drafts`                      | In-progress agent launch drafts for authenticated wallet                                                                            |
+| `GET`    | `/managed-agents/me`                          | Managed agent profiles for authenticated on-chain owner                                                                             |
+| `PATCH`  | `/users/me`                                   | Update display name and/or preferred currency                                                                                       |
+| `POST`   | `/agent-drafts`                               | Create agent launch draft (Privy)                                                                                                   |
+| `PUT`    | `/agent-drafts/{draftId}`                     | Partial update: `identity`, `strategy`, `botFrequency` (`1h` / `1d`) (Privy)                                                        |
+| `GET`    | `/agent-drafts/{draftId}`                     | Resume agent launch draft (Privy)                                                                                                   |
+| `DELETE` | `/agent-drafts/{draftId}`                     | Abandon draft and wipe encrypted signer key (Privy)                                                                                 |
+| `POST`   | `/agent-drafts/{draftId}/provision-wallet`    | Generate custodial signer; returns `{ signerAddress }` (Privy)                                                                      |
+| `POST`   | `/agent-drafts/{draftId}/launch`              | Sign + x402 + on-chain register; owner = Privy wallet, signer = custodial (Privy)                                                   |
+| `GET`    | `/vaults`                                     | Vault catalog (`?format=md` for markdown)                                                                                           |
+| `GET`    | `/vaults/{id}/tokens`                         | Tradable tokens for a vault mandate + oracle prices                                                                                 |
+| `GET`    | `/tokens`                                     | Global token catalog + on-chain registry state                                                                                      |
+| `GET`    | `/prices`                                     | MockPriceOracle quotes indexed by symbol (e.g. `NVDA`)                                                                              |
+| `POST`   | `/prices/refresh`                             | Manually fetch Finnhub quotes and update the oracle                                                                                 |
+| `GET`    | `/agents/by-owner/{owner}`                    | List agents owned by address (`agentCountByOwner` + `getAgent` + `managed` flag)                                                    |
+| `GET`    | `/agents/{agentId}`                           | On-chain agent record (`getAgent` + `managed` flag)                                                                                 |
+| `GET`    | `/agents/{agentId}/trade-intents/quote`       | EIP-712 quote for open-position intent (nonce, vault, allocation, exit bounds)                                                      |
+| `POST`   | `/agents/{agentId}/trade-intents`             | Verify signed open intent; relay `TradeRouter.openPosition` (201)                                                                   |
+| `GET`    | `/agents/{agentId}/add-intents/quote`         | Quote for `AddToPosition` (`?positionId=`)                                                                                          |
+| `POST`   | `/agents/{agentId}/add-intents`               | Relay signed add-to-position intent (201)                                                                                           |
+| `GET`    | `/agents/{agentId}/reduce-intents/quote`      | Quote for `ReducePosition` (`?positionId=`)                                                                                         |
+| `POST`   | `/agents/{agentId}/reduce-intents`            | Relay signed reduce intent — partial or full close (201)                                                                            |
+| `GET`    | `/agents/{agentId}/exit-ladder-intents/quote` | Quote for `UpdateExitLadder` (`?positionId=`)                                                                                       |
+| `POST`   | `/agents/{agentId}/exit-ladder-intents`       | Relay signed pending TP/SL update (201)                                                                                             |
+| `GET`    | `/managed-agents/{agentId}`                   | Owner-only managed agent strategy profile (Privy)                                                                                   |
+| `PATCH`  | `/managed-agents/{agentId}`                   | Update strategy and/or bot frequency for future runs (Privy)                                                                        |
+| `POST`   | `/managed-agents/{agentId}/archive`           | Archive managed agent; stops strategy runs; frees agent slot (Privy)                                                                |
+| `GET`    | `/agents/{agentId}/positions`                 | Agent open positions (`getOpenPositionIds` + multicall; includes `derived`)                                                         |
+| `GET`    | `/agents/{agentId}/closed-positions`          | Closed positions via bounded global id scan (`?limit=`, max 100)                                                                    |
+| `GET`    | `/agents/{agentId}/positions/{positionId}`    | Single position by id (open or closed; realized/unrealized PnL + `derived`)                                                         |
+| `GET`    | `/agents/{agentId}/risk-state`                | Equity, drawdown, PnL, `derived`, `promotionReadiness`, breach flags                                                                |
+| `GET`    | `/agents/{agentId}/trades`                    | Trade activity (`source`: `indexed` when `SUBGRAPH_URL` set, else RPC log scan)                                                     |
+| `GET`    | `/agents/{agentId}/equity-history`            | Trade-boundary equity snapshots (`SUBGRAPH_URL` required; optional live `current` tip)                                              |
+| `GET`    | `/agents/{agentId}/strategy-runs`             | Strategy runner history for the agent owner (Privy; `?limit=`)                                                                      |
 | `POST`   | `/agents/{agentId}/strategy-runs/run`         | Trigger an immediate strategy run for the agent owner (Privy; optional `?execute=false`; 429 if run within cooldown, default 5 min) |
-| `GET`    | `/transactions/{txHash}`                      | Transaction receipt status (confirm intent submit)                                     |
-| `GET`    | `/docs`                                       | Swagger UI (humans; poor fit for URL paste in chat)                                    |
-| `GET`    | `/docs/swagger.json`                          | OpenAPI 3.1 (Custom GPT Actions)                                                       |
-| `POST`   | `/mcp`                                        | MCP Streamable HTTP (Durable Object sessions)                                          |
+| `GET`    | `/transactions/{txHash}`                      | Transaction receipt status (confirm intent submit)                                                                                  |
+| `GET`    | `/docs`                                       | Swagger UI (humans; poor fit for URL paste in chat)                                                                                 |
+| `GET`    | `/docs/swagger.json`                          | OpenAPI 3.1 (Custom GPT Actions)                                                                                                    |
+| `POST`   | `/mcp`                                        | MCP Streamable HTTP (Durable Object sessions)                                                                                       |
 
 ## Using with ChatGPT and other LLMs
 

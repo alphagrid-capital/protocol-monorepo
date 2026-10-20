@@ -3,24 +3,44 @@ import type { WorkerEnv } from '../../types/worker-env.js'
 import type { SignalFeed, SignalItem } from './types.js'
 
 const DEFAULT_CACHE_TTL_SECONDS = 900
+const DEFAULT_FRED_CACHE_TTL_SECONDS = 21_600
 const DEFAULT_MAX_ITEMS = 10
 const DEFAULT_MAX_TEXT_CHARS = 400
+
+/** Curated US macro set when `dataConnections.fred.seriesIds` is omitted. */
+export const DEFAULT_FRED_SERIES_IDS = [
+  'UNRATE',
+  'CPIAUCSL',
+  'DFF',
+  'DGS10',
+  'T10Y2Y',
+] as const
+
+export interface FredSeriesSnapshot {
+  seriesId: string
+  title: string
+  date: string
+  value: string
+  priorDate?: string
+  priorValue?: string
+}
 
 export interface SignalsCacheStore {
   get(
     cacheKey: string
   ): Promise<{ payload_json: string; fetched_at: string } | null>
-  put(
-    cacheKey: string,
-    payloadJson: string,
-    fetchedAt: string
-  ): Promise<void>
+  put(cacheKey: string, payloadJson: string, fetchedAt: string): Promise<void>
 }
 
 export interface SignalsApifyFetcher {
   isConfigured(): boolean
   runTruthSocialScraper(username: string): Promise<unknown[]>
   runEquityNewsScraper(symbols: string[]): Promise<unknown[]>
+}
+
+export interface FredFetcher {
+  isConfigured(): boolean
+  fetchLatest(seriesIds: readonly string[]): Promise<FredSeriesSnapshot[]>
 }
 
 export interface LoadSignalsOptions {
@@ -30,6 +50,8 @@ export interface LoadSignalsOptions {
   prefetchedTruthSocial?: Map<string, SignalFeed>
   /** Prefetched equity news feeds keyed by equityNewsCacheKey(symbols). */
   prefetchedEquityNews?: Map<string, SignalFeed>
+  /** Prefetched FRED feeds keyed by fredCacheKey(seriesIds). */
+  prefetchedFred?: Map<string, SignalFeed>
 }
 
 export function truthSocialCacheKey(username: string): string {
@@ -64,6 +86,43 @@ export function normalizeEquityNewsSymbols(
 
 export function equityNewsCacheKey(symbols: readonly string[]): string {
   return `equitynews:${[...normalizeEquityNewsSymbols(symbols)].sort().join(',')}`
+}
+
+/** Stable unique FRED series ids for cache keys / API calls. */
+export function normalizeFredSeriesIds(
+  seriesIds: readonly string[] | undefined | null
+): string[] {
+  if (!seriesIds || seriesIds.length === 0) {
+    return []
+  }
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const raw of seriesIds) {
+    const id = String(raw).trim().toUpperCase()
+    if (!id || seen.has(id)) {
+      continue
+    }
+    if (!/^[A-Z0-9][A-Z0-9_]*$/.test(id)) {
+      continue
+    }
+    seen.add(id)
+    out.push(id)
+    if (out.length >= 15) {
+      break
+    }
+  }
+  return out
+}
+
+export function resolveFredSeriesIds(
+  seriesIds: readonly string[] | undefined | null
+): string[] {
+  const normalized = normalizeFredSeriesIds(seriesIds)
+  return normalized.length > 0 ? normalized : [...DEFAULT_FRED_SERIES_IDS]
+}
+
+export function fredCacheKey(seriesIds: readonly string[]): string {
+  return `fred:${[...normalizeFredSeriesIds(seriesIds)].sort().join(',')}`
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -180,12 +239,7 @@ export function normalizeEquityNewsItem(
     return null
   }
 
-  const headline = pickString(record, [
-    'headline',
-    'title',
-    'text',
-    'content',
-  ])
+  const headline = pickString(record, ['headline', 'title', 'text', 'content'])
   if (!headline) {
     return null
   }
@@ -194,7 +248,9 @@ export function normalizeEquityNewsItem(
   const tickersRaw = record.tickers
   const tickers = Array.isArray(tickersRaw)
     ? tickersRaw
-        .filter((t): t is string => typeof t === 'string' && t.trim().length > 0)
+        .filter(
+          (t): t is string => typeof t === 'string' && t.trim().length > 0
+        )
         .map((t) => t.trim().toUpperCase())
         .slice(0, 5)
     : []
@@ -203,13 +259,8 @@ export function normalizeEquityNewsItem(
   const text = truncateText(`${tickerPrefix}${body}`.trim(), maxTextChars)
 
   const id =
-    pickString(record, [
-      'dedupeKey',
-      'articleLink',
-      'url',
-      'link',
-      'id',
-    ]) ?? `equitynews_${hashText(text)}`
+    pickString(record, ['dedupeKey', 'articleLink', 'url', 'link', 'id']) ??
+    `equitynews_${hashText(text)}`
 
   const createdAt =
     pickString(record, [
@@ -248,7 +299,49 @@ export function normalizeEquityNewsItems(
   return normalized
 }
 
-function isFresh(fetchedAt: string, ttlSeconds: number, nowMs: number): boolean {
+/** Map a FRED series snapshot to a slim signal item. */
+export function normalizeFredSnapshot(
+  snapshot: FredSeriesSnapshot,
+  maxTextChars = DEFAULT_MAX_TEXT_CHARS
+): SignalItem {
+  const prior =
+    snapshot.priorValue && snapshot.priorDate
+      ? `; prior ${snapshot.priorValue} (${snapshot.priorDate})`
+      : ''
+  const text = truncateText(
+    `${snapshot.seriesId} (${snapshot.title}): ${snapshot.value} (${snapshot.date})${prior}`,
+    maxTextChars
+  )
+  return {
+    id: `fred:${snapshot.seriesId}:${snapshot.date}`,
+    createdAt: `${snapshot.date}T00:00:00.000Z`,
+    text,
+  }
+}
+
+export function normalizeFredSnapshots(
+  snapshots: FredSeriesSnapshot[],
+  options: { maxItems?: number; maxTextChars?: number } = {}
+): SignalItem[] {
+  const maxItems = options.maxItems ?? DEFAULT_MAX_ITEMS
+  const maxTextChars = options.maxTextChars ?? DEFAULT_MAX_TEXT_CHARS
+  const normalized: SignalItem[] = []
+
+  for (const snapshot of snapshots) {
+    normalized.push(normalizeFredSnapshot(snapshot, maxTextChars))
+    if (normalized.length >= maxItems) {
+      break
+    }
+  }
+
+  return normalized
+}
+
+function isFresh(
+  fetchedAt: string,
+  ttlSeconds: number,
+  nowMs: number
+): boolean {
   const fetchedMs = Date.parse(fetchedAt)
   if (!Number.isFinite(fetchedMs)) {
     return false
@@ -292,6 +385,18 @@ function parseEquityNewsMaxItems(env: WorkerEnv): number {
   return Math.min(parsed, DEFAULT_MAX_ITEMS)
 }
 
+function parseFredCacheTtlSeconds(env: WorkerEnv): number {
+  const raw = env.FRED_CACHE_TTL_SECONDS ?? env.SIGNALS_CACHE_TTL_SECONDS
+  if (!raw) {
+    return DEFAULT_FRED_CACHE_TTL_SECONDS
+  }
+  const parsed = Number.parseInt(raw, 10)
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return DEFAULT_FRED_CACHE_TTL_SECONDS
+  }
+  return parsed
+}
+
 function parseFeed(payloadJson: string): SignalFeed | null {
   try {
     const parsed = JSON.parse(payloadJson) as SignalFeed
@@ -312,15 +417,18 @@ export class SignalsService {
   private readonly env: WorkerEnv
   private readonly cache: SignalsCacheStore
   private readonly apify: SignalsApifyFetcher
+  private readonly fred: FredFetcher
 
   constructor(
     env: WorkerEnv,
     cache: SignalsCacheStore,
-    apify: SignalsApifyFetcher
+    apify: SignalsApifyFetcher,
+    fred: FredFetcher
   ) {
     this.env = env
     this.cache = cache
     this.apify = apify
+    this.fred = fred
   }
 
   /**
@@ -357,6 +465,17 @@ export class SignalsService {
         if (feed) {
           feeds.push(feed)
         }
+      }
+    }
+
+    const fred = connections.fred
+    if (fred?.enabled) {
+      const seriesIds = resolveFredSeriesIds(fred.seriesIds)
+      const cacheKey = fredCacheKey(seriesIds)
+      const prefetched = options.prefetchedFred?.get(cacheKey)
+      const feed = prefetched ?? (await this.loadFred(seriesIds))
+      if (feed) {
+        feeds.push(feed)
       }
     }
 
@@ -448,7 +567,8 @@ export class SignalsService {
     }
 
     try {
-      const rawItems = await this.apify.runTruthSocialScraper(normalizedUsername)
+      const rawItems =
+        await this.apify.runTruthSocialScraper(normalizedUsername)
       const fetchedAt = new Date().toISOString()
       const feed: SignalFeed = {
         source: 'truthsocial',
@@ -502,6 +622,80 @@ export class SignalsService {
         items: normalizeEquityNewsItems(rawItems, {
           maxItems: parseEquityNewsMaxItems(this.env),
         }),
+      }
+      try {
+        await this.cache.put(cacheKey, JSON.stringify(feed), fetchedAt)
+      } catch {
+        // Persist failure is non-fatal; still return the feed for this run.
+      }
+      return feed
+    } catch {
+      return null
+    }
+  }
+
+  /**
+   * Prefetch FRED feeds for unique series sets (used by strategy tick).
+   * Keys are `fredCacheKey(seriesIds)`.
+   */
+  async prefetchFred(
+    seriesIdSets: string[][]
+  ): Promise<Map<string, SignalFeed>> {
+    const uniqueKeys = new Map<string, string[]>()
+    for (const set of seriesIdSets) {
+      const seriesIds = resolveFredSeriesIds(set)
+      uniqueKeys.set(fredCacheKey(seriesIds), seriesIds)
+    }
+
+    const results = await Promise.all(
+      [...uniqueKeys.entries()].map(async ([key, seriesIds]) => {
+        const feed = await this.loadFred(seriesIds)
+        return [key, feed] as const
+      })
+    )
+    const map = new Map<string, SignalFeed>()
+    for (const [key, feed] of results) {
+      if (feed) {
+        map.set(key, feed)
+      }
+    }
+    return map
+  }
+
+  async loadFred(seriesIds: string[]): Promise<SignalFeed | null> {
+    const normalized = resolveFredSeriesIds(seriesIds)
+    if (normalized.length === 0) {
+      return null
+    }
+
+    const cacheKey = fredCacheKey(normalized)
+    const ttlSeconds = parseFredCacheTtlSeconds(this.env)
+    const nowMs = Date.now()
+
+    try {
+      const cached = await this.cache.get(cacheKey)
+      if (cached && isFresh(cached.fetched_at, ttlSeconds, nowMs)) {
+        return parseFeed(cached.payload_json)
+      }
+    } catch {
+      // Cache read failures should not block a live FRED fetch.
+    }
+
+    if (!this.fred.isConfigured()) {
+      return null
+    }
+
+    try {
+      const snapshots = await this.fred.fetchLatest(normalized)
+      if (snapshots.length === 0) {
+        return null
+      }
+      const fetchedAt = new Date().toISOString()
+      const feed: SignalFeed = {
+        source: 'fred',
+        handle: normalized.join(','),
+        fetchedAt,
+        items: normalizeFredSnapshots(snapshots),
       }
       try {
         await this.cache.put(cacheKey, JSON.stringify(feed), fetchedAt)

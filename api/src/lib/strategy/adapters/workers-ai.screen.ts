@@ -50,7 +50,9 @@ function notTradableOutcome(message: string): StrategyAdapterOutcome {
   }
 }
 
-export function screenUserStrategy(strategy: string): StrategyAdapterOutcome | null {
+export function screenUserStrategy(
+  strategy: string
+): StrategyAdapterOutcome | null {
   if (strategy.length > MAX_STRATEGY_TEXT_LENGTH) {
     return {
       status: 'error',

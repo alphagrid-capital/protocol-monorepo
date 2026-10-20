@@ -40,11 +40,34 @@ export const EquityNewsConnectionSchema = z
   })
   .strict()
 
+const fredSeriesIdSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(32)
+  .transform((value) => value.toUpperCase())
+  .refine((value) => /^[A-Z0-9][A-Z0-9_]*$/.test(value), {
+    message: 'FRED series id must be letters, digits, or underscores',
+  })
+
+/**
+ * Macro series from the free FRED API (St. Louis Fed).
+ * When `seriesIds` is omitted or empty, the API uses a curated default set
+ * (unemployment, CPI, fed funds, 10Y yield, yield curve).
+ */
+export const FredConnectionSchema = z
+  .object({
+    enabled: z.boolean(),
+    seriesIds: z.array(fredSeriesIdSchema).max(15).optional(),
+  })
+  .strict()
+
 /** Per-agent external data provider configs. Unknown keys are rejected. */
 export const DataConnectionsSchema = z
   .object({
     truthsocial: TruthSocialConnectionSchema.optional(),
     equitynews: EquityNewsConnectionSchema.optional(),
+    fred: FredConnectionSchema.optional(),
   })
   .strict()
   .openapi('DataConnections')
@@ -52,6 +75,7 @@ export const DataConnectionsSchema = z
 export type DataConnections = z.infer<typeof DataConnectionsSchema>
 export type TruthSocialConnection = z.infer<typeof TruthSocialConnectionSchema>
 export type EquityNewsConnection = z.infer<typeof EquityNewsConnectionSchema>
+export type FredConnection = z.infer<typeof FredConnectionSchema>
 
 export function parseDataConnections(
   value: string | null | undefined

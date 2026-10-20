@@ -118,9 +118,7 @@ test('allows open action without exits when system defaultExit uses signed bps',
     actions: [{ type: 'open', symbol: 'NVDA', usdcAmount: '50' }],
   }
 
-  assert.doesNotThrow(() =>
-    assertStrategyDecisionGuardrails(decision, context)
-  )
+  assert.doesNotThrow(() => assertStrategyDecisionGuardrails(decision, context))
 })
 
 test('still validates AI-provided exits', () => {

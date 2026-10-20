@@ -27,9 +27,7 @@ function normalizeWorkersAiModel(model: string): string {
   return model.replace(/^workers-ai\//, '')
 }
 
-export function loadWorkersAiConfig(
-  env: WorkerEnv = {}
-): WorkersAiConfig {
+export function loadWorkersAiConfig(env: WorkerEnv = {}): WorkersAiConfig {
   return {
     model: normalizeWorkersAiModel(
       env.CF_WORKERS_MODEL_ID?.trim() || DEFAULT_CF_WORKERS_MODEL_ID
