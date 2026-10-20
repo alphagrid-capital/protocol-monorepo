@@ -44,3 +44,17 @@ test('system prompt requires decision.reasoning', () => {
   assert.match(system.content, /decision\.reasoning/)
   assert.match(system.content, /one simple sentence/i)
 })
+
+test('system prompt maps percent exits to triggerBps', () => {
+  const messages = buildWorkersAiMessages(strategyContextExample)
+  const system = messages.find((message) => message.role === 'system')
+  assert.ok(system)
+  assert.match(system.content, /Percent → triggerBps/)
+  assert.match(system.content, /10% → 1000/)
+  assert.match(system.content, /20% → 2000/)
+  assert.match(system.content, /10% is NOT 10 and NOT 100/)
+  assert.match(
+    system.content,
+    /"triggerType": "StopLoss", "triggerBps": 1000.*"triggerType": "TakeProfit", "triggerBps": 2000/
+  )
+})
